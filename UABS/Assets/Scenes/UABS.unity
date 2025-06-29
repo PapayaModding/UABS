@@ -1421,7 +1421,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 243.20012, y: -6.199995}
+  m_AnchoredPosition: {x: 243.20012, y: 2.36}
   m_SizeDelta: {x: 200, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &312543102
@@ -1446,8 +1446,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: "\u25B6"
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 5ec142ee0936ae147b32fef3c7d22e5e, type: 2}
-  m_sharedMaterial: {fileID: -169848178952585589, guid: 5ec142ee0936ae147b32fef3c7d22e5e, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: c0a4e2e6ead513c4cb93b84463e5361a, type: 2}
+  m_sharedMaterial: {fileID: -1070343120787272911, guid: c0a4e2e6ead513c4cb93b84463e5361a, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -1510,7 +1510,7 @@ MonoBehaviour:
   m_margin: {x: 0, y: 0, z: 0, w: 0}
   m_isUsingLegacyAnimationComponent: 0
   m_isVolumetricText: 0
-  m_hasFontAssetChanged: 0
+  m_hasFontAssetChanged: 1
   m_baseMaterial: {fileID: 0}
   m_maskOffset: {x: 0, y: 0, z: 0, w: 0}
 --- !u!222 &312543103
@@ -7837,7 +7837,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 243.20013, y: -6}
+  m_AnchoredPosition: {x: 243.20013, y: 2.96}
   m_SizeDelta: {x: 200, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1575628889
@@ -7862,8 +7862,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: "\u25B6"
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 5ec142ee0936ae147b32fef3c7d22e5e, type: 2}
-  m_sharedMaterial: {fileID: -169848178952585589, guid: 5ec142ee0936ae147b32fef3c7d22e5e, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: c0a4e2e6ead513c4cb93b84463e5361a, type: 2}
+  m_sharedMaterial: {fileID: -1070343120787272911, guid: c0a4e2e6ead513c4cb93b84463e5361a, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -7926,7 +7926,7 @@ MonoBehaviour:
   m_margin: {x: 0, y: 0, z: 0, w: 0}
   m_isUsingLegacyAnimationComponent: 0
   m_isVolumetricText: 0
-  m_hasFontAssetChanged: 0
+  m_hasFontAssetChanged: 1
   m_baseMaterial: {fileID: 0}
   m_maskOffset: {x: 0, y: 0, z: 0, w: 0}
 --- !u!222 &1575628890

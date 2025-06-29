@@ -1,10 +1,12 @@
 using System.Collections.Generic;
+using System.IO;
 using AssetsTools.NET.Extra;
 using UABS.Assets.Script.DataStruct;
 using UABS.Assets.Script.Event;
 using UABS.Assets.Script.EventListener;
 using UABS.Assets.Script.Misc;
 using UABS.Assets.Script.Reader;
+using UnityEditor.Experimental.GraphView;
 using UnityEngine;
 
 namespace UABS.Assets.Script.DataSource
@@ -27,6 +29,7 @@ namespace UABS.Assets.Script.DataSource
             if (e is BundleReadEvent bre)
             {
                 _currBunInst = bre.Bundle;
+                Debug.Log($"Dependency data source: Received Bundle from {bre.FilePath}");
             }
             else if (e is DependencyRequestEvent dre)
             {
@@ -43,7 +46,11 @@ namespace UABS.Assets.Script.DataSource
             }
             else if (e is FolderReadEvent fre)
             {
-                _currBunInst = null;
+                if (Directory.Exists(fre.FolderPath))
+                {
+                    Debug.Log("Dependency data source: Reading folder, reset bunInst");
+                    _currBunInst = null;
+                }
             }
         }
     }
