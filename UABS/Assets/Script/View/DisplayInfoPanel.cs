@@ -51,6 +51,25 @@ namespace UABS.Assets.Script.EventListener
                 _sizeField.text = "";
                 _pathField.text = "";
             }
+            else if (e is FolderReadEvent fr4d)
+            {
+                if (Directory.Exists(fr4d.FolderPath))
+                {
+                    _nameField.text = "";
+                    _pathIDField.text = "";
+                    _fileIDField.text = "";
+                    _sizeField.text = "";
+                    _pathField.text = "";
+                }
+            }
+            else if (e is BundleRead4DependencyEvent br4d)
+            {
+                _nameField.text = "";
+                _pathIDField.text = "";
+                _fileIDField.text = "";
+                _sizeField.text = "";
+                _pathField.text = "";
+            }
         }
     }
 }

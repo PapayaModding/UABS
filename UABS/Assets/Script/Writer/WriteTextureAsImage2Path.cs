@@ -2,7 +2,6 @@ using System.Collections.Generic;
 using System.IO;
 using AssetsTools.NET.Extra;
 using UABS.Assets.Script.DataStruct;
-using UABS.Assets.Script.Misc;
 using UABS.Assets.Script.Reader;
 using UnityEngine;
 

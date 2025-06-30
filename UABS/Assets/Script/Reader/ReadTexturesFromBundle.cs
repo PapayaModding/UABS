@@ -598,21 +598,52 @@ namespace UABS.Assets.Script.Reader
         {
             switch (unityFormat)
             {
+                // Uncompressed 8-bit/channel formats
                 case TextureFormat.RGBA32:
+                case TextureFormat.ARGB32:
+                case TextureFormat.BGRA32:
                     format = CompressionFormat.Rgba;
                     return true;
+
+                case TextureFormat.RGB24:
+                    format = CompressionFormat.Rgb;
+                    return true;
+
+                case TextureFormat.Alpha8:
+                    format = CompressionFormat.Bc1WithAlpha;
+                    return true;
+
+                case TextureFormat.R8:
+                    format = CompressionFormat.R;
+                    return true;
+
+                case TextureFormat.R16:
+                    format = CompressionFormat.Rg;
+                    return true;
+
+                // BCn (DXT) compressed formats
                 case TextureFormat.DXT1:
+                case TextureFormat.BC4:
                     format = CompressionFormat.Bc1;
                     return true;
+
                 case TextureFormat.DXT5:
                     format = CompressionFormat.Bc3;
                     return true;
-                case TextureFormat.BC6H:
-                    format = CompressionFormat.Bc6U; // assumes unsigned HDR, can adjust if needed
+
+                case TextureFormat.BC5:
+                    format = CompressionFormat.Bc5;
                     return true;
+
+                case TextureFormat.BC6H:
+                    format = CompressionFormat.Bc6U;
+                    return true;
+
                 case TextureFormat.BC7:
                     format = CompressionFormat.Bc7;
                     return true;
+
+                // Fallback/default
                 default:
                     format = default;
                     return false;

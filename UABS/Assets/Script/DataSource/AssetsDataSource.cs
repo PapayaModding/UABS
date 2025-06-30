@@ -25,7 +25,31 @@ namespace UABS.Assets.Script.DataSource
 
         public void OnEvent(AppEvent e)
         {
-            if (e is BundleReadEvent bre)
+            if (e is BundleRead4DependencyEvent br4d)
+            {
+                _currBunInst = br4d.Bundle;
+                _assetsDisplayInfo = new();
+                List<AssetTextInfo> assetsTextInfo = _readTextInfoFromBundle.ReadAllBasicInfo(_currBunInst);
+                foreach (AssetTextInfo assetTextInfo in assetsTextInfo)
+                {
+                    AssetTextInfo newAssetTextInfo = new()
+                    {
+                        path = string.IsNullOrWhiteSpace(br4d.RealFilPath) ? assetTextInfo.path : br4d.RealFilPath,
+                        name = assetTextInfo.name,
+                        pathID = assetTextInfo.pathID,
+                        fileID = assetTextInfo.fileID,
+                        uncompressedSize = assetTextInfo.uncompressedSize,
+                        compressedSize = assetTextInfo.compressedSize,
+                        type = assetTextInfo.type
+                    };
+                    _assetsDisplayInfo.Add(new()
+                    {
+                        assetTextInfo = newAssetTextInfo
+                    });
+                }
+                _appEnvironment.Dispatcher.Dispatch(new AssetsDisplayInfoEvent(_assetsDisplayInfo));
+            }
+            else if (e is BundleReadEvent bre)
             {
                 _currBunInst = bre.Bundle;
                 _assetsDisplayInfo = new();

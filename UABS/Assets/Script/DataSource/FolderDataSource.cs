@@ -16,6 +16,7 @@ namespace UABS.Assets.Script.DataSource
 
         private ReadFolderContent _readFolderContent = new();
         private List<string> _recordPaths = new();
+        private List<List<DependencyInfo>> _recordDependencyInfosList = new();
 
         public void Initialize(AppEnvironment appEnvironment)
         {
@@ -30,6 +31,7 @@ namespace UABS.Assets.Script.DataSource
                 {
                     List<FolderViewInfo> allReadable = _readFolderContent.ReadAllReadable(fr4d.FolderPath);
                     List<DependencyInfo> dependencyInfos = fr4d.DependencyInfos;
+                    _recordDependencyInfosList.Add(dependencyInfos);
                     foreach (FolderViewInfo readable in allReadable)
                     {
                         foreach (DependencyInfo dependencyInfo in dependencyInfos)
@@ -69,7 +71,15 @@ namespace UABS.Assets.Script.DataSource
             else if (e is GoBackEvent)
             {
                 string backDir = GetBackDirectory();
-                AppEnvironment.Dispatcher.Dispatch(new FolderReadEvent(backDir));
+                if (_recordDependencyInfosList.Count == 0)
+                {
+                    AppEnvironment.Dispatcher.Dispatch(new FolderReadEvent(backDir));
+                }
+                else
+                {
+                    AppEnvironment.Dispatcher.Dispatch(new FolderRead4DependencyEvent(backDir, _recordDependencyInfosList[^1]));
+                    _recordDependencyInfosList.RemoveAt(_recordDependencyInfosList.Count-1);
+                }
             }
             else if (e is BundleReadEvent bre)
             {

@@ -31,7 +31,7 @@ namespace UABS.Assets.Script.DataSource
             if (e is BundleReadEvent bre)
             {
                 _currBunInst = bre.Bundle;
-                Debug.Log($"Dependency data source: Received Bundle from {bre.FilePath}");
+                // Debug.Log($"Dependency data source: Received Bundle from {bre.FilePath}");
             }
             else if (e is DependencyRequestEvent dre)
             {
@@ -41,6 +41,7 @@ namespace UABS.Assets.Script.DataSource
                     return;
                 }
                 List<DependencyInfo> dependencyInfos = _readDependencyInfo.ReadInfoFor(_currBunInst, dre.ReadFromCachePath);
+                Debug.Log("DEPENDENCIES:");
                 foreach (DependencyInfo dependencyInfo in dependencyInfos)
                 {
                     Debug.Log($"{dependencyInfo.name}, {dependencyInfo.cabCode}, {dependencyInfo.path}");

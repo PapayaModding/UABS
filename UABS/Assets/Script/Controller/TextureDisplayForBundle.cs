@@ -56,6 +56,23 @@ namespace UABS.Assets.Script.Controller
                     _textureView.AssignIndexText("");
                 }
             }
+            else if (e is BundleRead4DependencyEvent br4d)
+            {
+                _currBunInst = br4d.Bundle;
+                _cacheTextureByPathID = new();
+                _textureView.AssignSizeText("");
+                _textureView.Render(null);
+                _textureView.AssignIndexText("");
+            }
+            else if (e is FolderRead4DependencyEvent fr4d)
+            {
+                if (Directory.Exists(fr4d.FolderPath))
+                {
+                    _textureView.AssignSizeText("");
+                    _textureView.Render(null);
+                    _textureView.AssignIndexText("");
+                }
+            }
         }
 
         private Texture2DWithMeta GetTextureByPathID(long pathID)
