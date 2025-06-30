@@ -1,9 +1,5 @@
-using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text.RegularExpressions;
-using AssetsTools.NET.Extra;
 using UABS.Assets.Script.DataStruct;
 using UABS.Assets.Script.Event;
 using UABS.Assets.Script.EventListener;
@@ -19,6 +15,7 @@ namespace UABS.Assets.Script.DataSource
         public AppEnvironment AppEnvironment => _appEnvironment;
 
         private ReadFolderContent _readFolderContent = new();
+        private List<string> _recordPaths = new();
 
         public void Initialize(AppEnvironment appEnvironment)
         {
@@ -27,6 +24,33 @@ namespace UABS.Assets.Script.DataSource
 
         public void OnEvent(AppEvent e)
         {
+            if (e is FolderRead4DependencyEvent fr4d)
+            {
+                if (Directory.Exists(fr4d.FolderPath))
+                {
+                    List<FolderViewInfo> allReadable = _readFolderContent.ReadAllReadable(fr4d.FolderPath);
+                    List<DependencyInfo> dependencyInfos = fr4d.DependencyInfos;
+                    foreach (FolderViewInfo readable in allReadable)
+                    {
+                        foreach (DependencyInfo dependencyInfo in dependencyInfos)
+                        {
+                            if (readable.name == dependencyInfo.name)
+                            {
+                                readable.RealPath = dependencyInfo.path;
+                                continue;
+                            }
+                        }
+                    }
+                    AppEnvironment.Dispatcher.Dispatch(new FolderViewInfosEvent(allReadable));
+                }
+                else
+                {
+                    Debug.Log($"{fr4d.FolderPath} is not a folder, attempt to read it as a bundle.");
+                    BundleReader bundleReader = new(AppEnvironment);
+                    bundleReader.ReadBundle4Dependency(fr4d.FolderPath, fr4d.OverrideBundlePath);
+                }
+                RecordPath(fr4d.FolderPath);
+            }
             if (e is FolderReadEvent fre)
             {
                 if (Directory.Exists(fre.FolderPath))
@@ -40,7 +64,107 @@ namespace UABS.Assets.Script.DataSource
                     BundleReader bundleReader = new(AppEnvironment);
                     bundleReader.ReadBundle(fre.FolderPath);
                 }
+                RecordPath(fre.FolderPath);
             }
+            else if (e is GoBackEvent)
+            {
+                string backDir = GetBackDirectory();
+                AppEnvironment.Dispatcher.Dispatch(new FolderReadEvent(backDir));
+            }
+        }
+
+        private void RecordPath(string newPath)
+        {
+            if (_recordPaths.Count == 0)
+            {
+                _recordPaths.Add(newPath);
+                return;
+            }
+
+            // If the new path is the same as the last recorded one, don't record
+            string last = GetLastRecordedPath();
+            if (newPath == last)
+                return;
+
+            if (IsPathPrefix(last, newPath) || IsPathPrefix(newPath, last))
+            {
+                _recordPaths[^1] = newPath;
+            }
+            else
+            {
+                _recordPaths.Add(newPath);
+            }
+            // PrintRecordedPaths();
+        }
+
+        private string GetBackDirectory()
+        {
+            if (_recordPaths.Count == 1) // This is the main path
+            {
+                return Path.GetDirectoryName(GetMainPath());
+            }
+
+            // Must have sub-paths (such as dependency view)
+            // ! Side-Effect: Remove if sub-path cannot be go back further
+            string last = GetLastRecordedPath();
+            // Debug.Log($"Last path: {last}");
+            if (ShouldPathBeRemoved(last))
+            {
+                // Debug.Log($"REMOVED {_recordPaths[^1]}");
+                _recordPaths.RemoveAt(_recordPaths.Count - 1);
+                return GetLastRecordedPath();
+            }
+            else
+            {
+                return Path.GetDirectoryName(last);
+            }
+        }
+
+        private bool ShouldPathBeRemoved(string subPath)
+        {
+            return ArePathsEqual(Path.GetDirectoryName(subPath), PredefinedPaths.ExternalSystemDepCache);
+        }
+
+        private bool ArePathsEqual(string pathA, string pathB)
+        {
+            string fullA = Path.GetFullPath(pathA).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            string fullB = Path.GetFullPath(pathB).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+
+        #if UNITY_EDITOR_WIN || UNITY_STANDALONE_WIN
+            // Windows paths are case-insensitive
+            return string.Equals(fullA, fullB, System.StringComparison.OrdinalIgnoreCase);
+        #else
+            // macOS/Linux paths are case-sensitive
+            return string.Equals(fullA, fullB, System.StringComparison.Ordinal);
+        #endif
+        }
+
+        private string GetMainPath()
+        {
+            return _recordPaths[0];
+        }
+
+        private string GetLastRecordedPath()
+        {
+            return _recordPaths[^1];
+        }
+
+        private void PrintRecordedPaths()
+        {
+            string result = "Currently recorded paths: \n";
+            foreach (string path in _recordPaths)
+            {
+                result += $"\t - {path}\n";
+            }
+            Debug.Log(result);
+        }
+        
+        private bool IsPathPrefix(string basePath, string targetPath)
+        {
+            string fullBase = Path.GetFullPath(basePath).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            string fullTarget = Path.GetFullPath(targetPath).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+
+            return fullTarget.StartsWith(fullBase + Path.DirectorySeparatorChar);
         }
     }
 }

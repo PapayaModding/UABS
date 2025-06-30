@@ -7,7 +7,6 @@ using UABS.Assets.Script.Event;
 using UABS.Assets.Script.Misc;
 using UABS.Assets.Script.Dispatcher;
 using UABS.Assets.Script.EventListener;
-using UABS.Assets.Script.DataStruct;
 
 namespace UABS.Assets.Script.View
 {

@@ -1,12 +1,13 @@
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using AssetsTools.NET.Extra;
 using UABS.Assets.Script.DataStruct;
 using UABS.Assets.Script.Event;
 using UABS.Assets.Script.EventListener;
 using UABS.Assets.Script.Misc;
 using UABS.Assets.Script.Reader;
-using UnityEditor.Experimental.GraphView;
+using UABS.Assets.Script.Writer.Dependency;
 using UnityEngine;
 
 namespace UABS.Assets.Script.DataSource
@@ -17,6 +18,7 @@ namespace UABS.Assets.Script.DataSource
         private AppEnvironment _appEnvironment = null;
         public AppEnvironment AppEnvironment => _appEnvironment;
         private ReadDependencyInfo _readDependencyInfo;
+        private CopyDepToSysFolder _copyDepToSysFolder = new();
 
         public void Initialize(AppEnvironment appEnvironment)
         {
@@ -43,12 +45,17 @@ namespace UABS.Assets.Script.DataSource
                 {
                     Debug.Log($"{dependencyInfo.name}, {dependencyInfo.cabCode}, {dependencyInfo.path}");
                 }
+
+                List<string> dependencyPaths = dependencyInfos.Select(x => x.path).ToList();
+                string previewFolderPath = _copyDepToSysFolder.CopyFromPaths(dependencyPaths);
+
+                AppEnvironment.Dispatcher.Dispatch(new FolderRead4DependencyEvent(previewFolderPath, dependencyInfos));
             }
             else if (e is FolderReadEvent fre)
             {
                 if (Directory.Exists(fre.FolderPath))
                 {
-                    Debug.Log("Dependency data source: Reading folder, reset bunInst");
+                    // Debug.Log("Dependency data source: Reading folder, reset bunInst");
                     _currBunInst = null;
                 }
             }

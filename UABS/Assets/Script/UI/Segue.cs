@@ -39,6 +39,22 @@ namespace UABS.Assets.Script.Controller
                     _folderPage.gameObject.SetActive(false);
                 }
             }
+            else if (e is FolderRead4DependencyEvent fr4d)
+            {
+                if (Directory.Exists(fr4d.FolderPath))
+                {
+                    _bundlePage.gameObject.SetActive(false);
+                    _folderPage.gameObject.SetActive(true);
+                }
+            }
+            else if (e is BundleRead4DependencyEvent br4d)
+            {
+                if (File.Exists(br4d.FilePath))
+                {
+                    _bundlePage.gameObject.SetActive(true);
+                    _folderPage.gameObject.SetActive(false);
+                }
+            }
         }
     }
 }

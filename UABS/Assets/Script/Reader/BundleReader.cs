@@ -1,5 +1,4 @@
 using AssetsTools.NET.Extra;
-using UABS.Assets.Script.Dispatcher;
 using UABS.Assets.Script.Event;
 using UABS.Assets.Script.Misc;
 
@@ -9,7 +8,7 @@ namespace UABS.Assets.Script.Reader
     {
         private readonly AppEnvironment _appEnvironment;
 
-        public BundleReader( AppEnvironment appEnvironment)
+        public BundleReader(AppEnvironment appEnvironment)
         {
             _appEnvironment = appEnvironment;
         }
@@ -18,6 +17,13 @@ namespace UABS.Assets.Script.Reader
         {
             BundleFileInstance bunInst = _appEnvironment.AssetsManager.LoadBundleFile(@path, true);
             _appEnvironment.Dispatcher.Dispatch(new BundleReadEvent(bunInst, path));
+            return bunInst;
+        }
+
+        public BundleFileInstance ReadBundle4Dependency(string path, string overridePath)
+        {
+            BundleFileInstance bunInst = _appEnvironment.AssetsManager.LoadBundleFile(@path, true);
+            _appEnvironment.Dispatcher.Dispatch(new BundleRead4DependencyEvent(bunInst, path, overridePath));
             return bunInst;
         }
     }
