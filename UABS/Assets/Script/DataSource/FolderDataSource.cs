@@ -78,12 +78,16 @@ namespace UABS.Assets.Script.DataSource
                 else
                 {
                     AppEnvironment.Dispatcher.Dispatch(new FolderRead4DependencyEvent(backDir, _recordDependencyInfosList[^1]));
-                    _recordDependencyInfosList.RemoveAt(_recordDependencyInfosList.Count-1);
+                    _recordDependencyInfosList.RemoveAt(_recordDependencyInfosList.Count - 1);
                 }
             }
             else if (e is BundleReadEvent bre)
             {
                 RecordPath(bre.FilePath);
+            }
+            else if (e is BundleRead4DependencyEvent br4d)
+            {
+                RecordPath(br4d.FilePath);
             }
         }
 

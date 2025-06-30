@@ -173,6 +173,13 @@ namespace UABS.Assets.Script.Reader
                     spriteBase["m_Rect"]["width"].AsFloat,
                     spriteBase["m_Rect"]["height"].AsFloat
                 );
+
+                // No SpriteAtlas file found in bundle but Sprite has m_SpriteAtlas field. Skip.
+                if (spriteBase.Get("m_SpriteAtlas") != null)
+                {
+                    return null;
+                }
+
                 AssetTypeValueField texRefField = spriteBase["m_RD"]["texture"];
                 AssetExternal texAsset = GetExternalAsset(AssetsManager, _currFileInst, bunInst, texRefField);
                 AssetTypeValueField texBase = AssetsManager.GetBaseField(texAsset.file, texAsset.info);
