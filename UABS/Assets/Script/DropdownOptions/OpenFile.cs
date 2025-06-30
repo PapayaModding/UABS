@@ -28,7 +28,7 @@ namespace UABS.Assets.Script.DropdownOptions
             {
                 BundleReader bundleReader = new(AppEnvironment);
                 // Debug.Log(filePath);
-                bundleReader.ReadBundle(filePath);
+                bundleReader.ReadBundle(PathUtils.GetLongPath(filePath));
             }
         }
     }

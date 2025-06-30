@@ -51,7 +51,7 @@ namespace UABS.Assets.Script.DataSource
                 }
                 RecordPath(fr4d.FolderPath);
             }
-            if (e is FolderReadEvent fre)
+            else if (e is FolderReadEvent fre)
             {
                 if (Directory.Exists(fre.FolderPath))
                 {
@@ -71,6 +71,10 @@ namespace UABS.Assets.Script.DataSource
                 string backDir = GetBackDirectory();
                 AppEnvironment.Dispatcher.Dispatch(new FolderReadEvent(backDir));
             }
+            else if (e is BundleReadEvent bre)
+            {
+                RecordPath(bre.FilePath);
+            }
         }
 
         private void RecordPath(string newPath)
@@ -81,19 +85,21 @@ namespace UABS.Assets.Script.DataSource
                 return;
             }
 
-            // If the new path is the same as the last recorded one, don't record
             string last = GetLastRecordedPath();
             if (newPath == last)
+            {
+                // Avoid adding the same last path (prevents go back loop)
                 return;
+            }
 
             if (IsPathPrefix(last, newPath) || IsPathPrefix(newPath, last))
-            {
-                _recordPaths[^1] = newPath;
-            }
-            else
-            {
-                _recordPaths.Add(newPath);
-            }
+                {
+                    _recordPaths[^1] = newPath;
+                }
+                else
+                {
+                    _recordPaths.Add(newPath);
+                }
             // PrintRecordedPaths();
         }
 
@@ -122,6 +128,8 @@ namespace UABS.Assets.Script.DataSource
 
         private bool ShouldPathBeRemoved(string subPath)
         {
+            if (_recordPaths.Count == 1)
+                return false;
             return ArePathsEqual(Path.GetDirectoryName(subPath), PredefinedPaths.ExternalSystemDepCache);
         }
 
