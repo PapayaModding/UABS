@@ -33,6 +33,10 @@ namespace UABS.Assets.Script.DataSource
                 _currBunInst = bre.Bundle;
                 // Debug.Log($"Dependency data source: Received Bundle from {bre.FilePath}");
             }
+            else if (e is BundleRead4DependencyEvent br4d)
+            {
+                _currBunInst = br4d.Bundle;
+            }
             else if (e is DependencyRequestEvent dre)
             {
                 if (_currBunInst == null)
@@ -56,7 +60,13 @@ namespace UABS.Assets.Script.DataSource
             {
                 if (Directory.Exists(fre.FolderPath))
                 {
-                    // Debug.Log("Dependency data source: Reading folder, reset bunInst");
+                    _currBunInst = null;
+                }
+            }
+            else if (e is FolderRead4DependencyEvent fr4d)
+            {
+                if (Directory.Exists(fr4d.FolderPath))
+                {
                     _currBunInst = null;
                 }
             }
