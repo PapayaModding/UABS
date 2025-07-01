@@ -6,7 +6,7 @@ namespace UABS.Assets.Script.DataStruct
     public struct ParsedAsset
     {
         public AssetFileInfo fileInfo;
-        public AssetClassID assetType;
+        public AssetClassID classID;
         public AssetsFileInstance fileInst;
     }
 }

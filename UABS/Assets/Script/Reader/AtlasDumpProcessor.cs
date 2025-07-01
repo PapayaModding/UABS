@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Newtonsoft.Json.Linq;
+using UABS.Assets.Script.DataStruct;
 using UnityEngine;
 using static UABS.Assets.Script.Reader.DumpReader;
 

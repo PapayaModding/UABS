@@ -6,9 +6,17 @@ namespace UABS.Assets.Script.DataStruct
         Filtered,
         Selected
     }
+
+    public enum ExportKind
+    {
+        Asset,
+        Dump
+    }
+
     public struct ExportMethod
     {
         public ExportType exportType;
+        public ExportKind exportKind;
         public string destination;
     }
 }

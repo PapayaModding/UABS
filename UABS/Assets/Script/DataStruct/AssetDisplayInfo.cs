@@ -1,11 +1,8 @@
-using UABS.Assets.Script.Misc;
-using UnityEngine;
-
 namespace UABS.Assets.Script.DataStruct
 {
-    public class AssetDisplayInfo
+    public struct AssetDisplayInfo
     {
-        public AssetTextInfo assetTextInfo;
-        public Texture2D shownImage = null;
+        public AssetEntryInfo entryInfo;
+        public AssetExtraInfo extraInfo;
     }
 }

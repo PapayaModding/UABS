@@ -30,7 +30,7 @@ namespace UABS.Assets.Script.DataSource
                 {
                     _selections = new();
                 }
-                long currPathID = ase.AssetSelectionInfo.pathID;
+                long currPathID = ase.PathID;
                 if (_selections.Contains(currPathID))
                 {
                     _selections.Remove(currPathID);
@@ -42,9 +42,9 @@ namespace UABS.Assets.Script.DataSource
                 _lastPathID = currPathID;
                 AppEnvironment.Dispatcher.Dispatch(new AssetMultiSelectionEvent(_selections));
             }
-            else if (e is AssetsDisplayInfoEvent adie)
+            else if (e is GoBundleViewEvent gbve)
             {
-                _currBunPathIDs = adie.AssetsDisplayInfo.Select(x => x.assetTextInfo).Select(x => x.pathID).ToList();
+                _currBunPathIDs = gbve.EntryInfos.Select(x => x.assetEntryInfo.pathID).ToList();
             }
         }
 

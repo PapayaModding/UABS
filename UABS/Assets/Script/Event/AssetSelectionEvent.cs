@@ -4,7 +4,9 @@ namespace UABS.Assets.Script.Event
 {
     public class AssetSelectionEvent : AppEvent // On focus item's path id. (Only applicable in AssetBundle view)
     {
-        public AssetSelectionInfo AssetSelectionInfo;
+        public long PathID { get; }
+
+        public int CurrIndex { get; }
 
         public int TotalNumOfAssets { get; }
 
@@ -16,11 +18,8 @@ namespace UABS.Assets.Script.Event
                                     int totalNumOfAssets = 0, bool useJump = false,
                                     bool isHoldingShift = false)
         {
-            AssetSelectionInfo = new()
-            {
-                pathID = pathID,
-                currIndex = currIndex
-            };
+            PathID = pathID;
+            CurrIndex = currIndex;
             TotalNumOfAssets = totalNumOfAssets;
             UseJump = useJump;
             IsHoldingShift = isHoldingShift;

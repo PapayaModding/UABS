@@ -2,22 +2,27 @@ using AssetsTools.NET;
 using Newtonsoft.Json.Linq;
 using System.Collections.Generic;
 using AssetsTools.NET.Extra;
+using UABS.Assets.Script.DataStruct;
 
 namespace UABS.Assets.Script.Reader
 {
     public class DumpReader
     {
-        public struct DumpInfo
-        {
-            public JObject dumpJson;
-            public long pathID;
-        }
-
         private AssetsManager AssetsManager { get; }
 
         public DumpReader(AssetsManager am)
         {
             AssetsManager = am;
+        }
+
+        public List<DumpInfo> ReadSpriteAtlasDumps(AssetsFileInstance fileInst)
+        {
+            return ReadDumps(fileInst, AssetClassID.SpriteAtlas);
+        }
+
+        public List<DumpInfo> ReadSpriteDumps(AssetsFileInstance fileInst)
+        {
+            return ReadDumps(fileInst, AssetClassID.Sprite);
         }
 
         public List<DumpInfo> ReadSpriteAtlasDumps(BundleFileInstance bunInst)
@@ -37,8 +42,12 @@ namespace UABS.Assets.Script.Reader
 
         private List<DumpInfo> ReadDumps(BundleFileInstance bunInst, AssetClassID assetType)
         {
+            return ReadDumps(AssetsManager.LoadAssetsFileFromBundle(bunInst, 0, false), assetType);
+        }
+        
+        private List<DumpInfo> ReadDumps(AssetsFileInstance fileInst, AssetClassID assetType)
+        {
             List<DumpInfo> result = new();
-            AssetsFileInstance fileInst = AssetsManager.LoadAssetsFileFromBundle(bunInst, 0, false);
 
             List<AssetFileInfo> assetInfos = fileInst.file.GetAssetsOfType(assetType);
             if (assetInfos.Count == 0)

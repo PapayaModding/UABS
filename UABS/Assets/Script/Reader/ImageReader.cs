@@ -1,52 +1,43 @@
 using System;
-using UnityEngine;
-using AssetsTools.NET;
-using AssetsTools.NET.Extra;
 using System.Collections.Generic;
 using System.IO;
-using BCnEncoder.Decoder;
-using BCnEncoder.Shared;
-using CommunityToolkit.HighPerformance;
 using System.Runtime.InteropServices;
 using System.Text;
-using static UABS.Assets.Script.Reader.AtlasDumpProcessor;
+using AssetsTools.NET;
+using AssetsTools.NET.Extra;
+using BCnEncoder.Decoder;
+using BCnEncoder.Shared;
 using UABS.Assets.Script.DataStruct;
+using UnityEngine;
 
 namespace UABS.Assets.Script.Reader
 {
-    public class ReadTexturesFromBundle
+    public class ImageReader
     {
-        public struct AssetExternal
-        {
-            public AssetsFileInstance file;
-            public AssetFileInfo info;
-            public AssetTypeValueField instance;
-        }
-
-        private AssetsManager _assetsManager { get; }
-
-        private DumpReader _dumpReader;
-
-        private BundleFileInstance _currBunInst = null;
-
-        private List<DumpInfo> _currSpriteDumps = null;
+        private AssetsFileInstance _currFileInst;
 
         private List<AtlasDumpProcessor> _currAtlasDumpProcessors = null;
 
-        private List<AssetFileInfo> _currAssetInfos = null;
-
-        private AssetsFileInstance _currFileInst = null;
-
         private AssetClassID _lastReadType = AssetClassID.@void;
 
-        public ReadTexturesFromBundle(AssetsManager am)
+        private DumpReader _dumpReader;
+
+        private List<DumpInfo> _currSpriteDumps = null;
+
+        private AssetsManager _assetsManager;
+
+        public ImageReader(AssetsManager assetsManager)
         {
-            _assetsManager = am;
-            _dumpReader = new(_assetsManager);
+            _assetsManager = assetsManager;
+            _dumpReader = new(assetsManager);
         }
 
-        public AssetImageInfo? ReadSpriteByPathID(BundleFileInstance bunInst, long pathID)
+        public AssetImageInfo? SpriteToImage(ParsedAssetAndEntry entryInfo)
         {
+            AssetsFileInstance fileInst = entryInfo.parsedAsset.fileInst;
+            AssetFileInfo fileInfo = entryInfo.parsedAsset.fileInfo;
+            long pathID = entryInfo.assetEntryInfo.pathID;
+
             AtlasDumpProcessor? GetAtlasDumpProcessorForSpriteDump(DumpInfo spriteDump)
             {
                 foreach (AtlasDumpProcessor atlasDumpProcessor in _currAtlasDumpProcessors)
@@ -61,23 +52,26 @@ namespace UABS.Assets.Script.Reader
 
             int GetIndexInAssets()
             {
-                for (int i = 0; i < _currAssetInfos.Count; i++)
+                for (int i = 0; i < _currSpriteDumps.Count; i++)
                 {
-                    long infoPathID = _currAssetInfos[i].PathId;
+                    long infoPathID = _currSpriteDumps[i].pathID;
                     if (infoPathID == pathID)
                         return i;
                 }
                 return -1;
             }
 
-            if (_currBunInst != bunInst || _lastReadType != AssetClassID.Sprite)
+            // 1. Check if the entry is really sprite
+            if (entryInfo.parsedAsset.classID != AssetClassID.Sprite)
+                return null;
+
+            // 2. Cache Sprite-Atlas connection
+            if (_currFileInst != fileInst || _lastReadType != AssetClassID.Sprite)
             {
-                _currBunInst = bunInst;
-                List<DumpInfo> atlasDumps = _dumpReader.ReadSpriteAtlasDumps(bunInst);
-                _currSpriteDumps = _dumpReader.ReadSpriteDumps(bunInst);
-                _currAtlasDumpProcessors = DistributeProcessors(atlasDumps, _currSpriteDumps);
-                _currFileInst = _assetsManager.LoadAssetsFileFromBundle(bunInst, 0, false);
-                _currAssetInfos = _currFileInst.file.GetAssetsOfType(AssetClassID.Sprite);
+                _currFileInst = fileInst;
+                List<DumpInfo> atlasDumps = _dumpReader.ReadSpriteAtlasDumps(fileInst);
+                _currSpriteDumps = _dumpReader.ReadSpriteDumps(fileInst);
+                _currAtlasDumpProcessors = AtlasDumpProcessor.DistributeProcessors(atlasDumps, _currSpriteDumps);
                 _lastReadType = AssetClassID.Sprite;
             }
 
@@ -88,7 +82,7 @@ namespace UABS.Assets.Script.Reader
                 return null;
             }
 
-            AssetFileInfo targetAsset = _currAssetInfos[indexInAssets];
+            AssetFileInfo targetAsset = fileInfo;
             DumpInfo targetDump = _currSpriteDumps[indexInAssets];
             AtlasDumpProcessor? _atlasDumpInfoForSprite = GetAtlasDumpProcessorForSpriteDump(targetDump);
             if (_atlasDumpInfoForSprite != null) // Has Atlas
@@ -96,71 +90,19 @@ namespace UABS.Assets.Script.Reader
                 AtlasDumpProcessor atlasDumpInfoForSprite = (AtlasDumpProcessor)_atlasDumpInfoForSprite;
                 Dictionary<int, int> index2RenderDataKey = atlasDumpInfoForSprite.GetIndex2ActualRenderDataKeyIndex();
                 Dictionary<long, int> pathID2Index = atlasDumpInfoForSprite.GetPathID2Index();
-                // foreach (var item in index2RenderDataKey)
-                // {
-                //     Debug.Log($"{item.Key}, {item.Value}");
-                // }
-                // Debug.Log($"{pathID}, {pathID2Index[pathID]}, {index2RenderDataKey[pathID2Index[pathID]]}");
                 AssetTypeValueField spriteBase = _assetsManager.GetBaseField(_currFileInst, targetAsset);
                 AssetTypeValueField atlasRefField = spriteBase["m_SpriteAtlas"];
-                AssetExternal atlasAsset = GetExternalAsset(_assetsManager, _currFileInst, bunInst, atlasRefField);
+                AssetExternal atlasAsset = GetExternalAsset(_currFileInst, fileInst.parentBundle, atlasRefField);
                 AssetTypeValueField atlasBase = _assetsManager.GetBaseField(atlasAsset.file, atlasAsset.info);
                 AssetTypeValueField renderDataMap = atlasBase["m_RenderDataMap"];
                 AssetTypeValueField dataArray = renderDataMap["Array"][index2RenderDataKey[pathID2Index[pathID]]]; // The true index in dict
                 AssetTypeValueField firstEntry = dataArray["second"];
                 AssetTypeValueField texturePtr = firstEntry["texture"];
-                AssetExternal texAsset = GetExternalAsset(_assetsManager, _currFileInst, bunInst, texturePtr);
+                AssetExternal texAsset = GetExternalAsset(_currFileInst, fileInst.parentBundle, texturePtr);
                 AssetTypeValueField texBase = _assetsManager.GetBaseField(atlasAsset.file, texAsset.info);
-
                 Rect spriteRect = atlasDumpInfoForSprite.GetRectAtActualIndex(index2RenderDataKey[pathID2Index[pathID]]);
 
-                int textureWidth = texBase["m_Width"].AsInt;
-                int textureHeight = texBase["m_Height"].AsInt;
-                int textureFormat = texBase["m_TextureFormat"].AsInt;
-                byte[] imageBytes = GetImageData(texBase, _currFileInst, bunInst);
-
-                if (IsSupportedBCnFormat((TextureFormat)textureFormat, out CompressionFormat bcnFormat))
-                {
-                    var decoder = new BcDecoder();
-                    ColorRgba32[] decoded = decoder.DecodeRaw(imageBytes, textureWidth, textureHeight, bcnFormat);
-
-                    byte[] rgbaBytes = new byte[decoded.Length * 4];
-                    MemoryMarshal.Cast<ColorRgba32, byte>(decoded.AsSpan()).CopyTo(rgbaBytes);
-
-                    Texture2D texture = new(textureWidth, textureHeight, TextureFormat.RGBA32, false);
-                    texture.LoadRawTextureData(rgbaBytes);
-                    texture.filterMode = FilterMode.Point;
-                    texture.Apply();
-
-                    // Now you can assign tex to a material or use it however you need
-                    // Debug.Log($"Decoded BC7 texture: {width}x{height}");
-                    texture = CropTexture(texture, spriteRect);
-                    return new()
-                    {
-                        texture2D = PadToSquare(texture),
-                        rect = spriteRect,
-                        compressionFormat = (TextureFormat)textureFormat
-                    };
-                }
-                else if (imageBytes.Length == textureWidth * textureHeight * textureFormat)
-                {
-                    TextureFormat unityFormat = (TextureFormat) textureFormat;
-                    Texture2D texture = new(textureWidth, textureHeight, unityFormat, false);
-                    texture.LoadRawTextureData(imageBytes);
-                    texture.filterMode = FilterMode.Point;
-                    texture.Apply();
-                    texture = CropTexture(texture, spriteRect);
-                    return new()
-                    {
-                        texture2D = PadToSquare(texture),
-                        rect = spriteRect,
-                        compressionFormat = (TextureFormat)textureFormat
-                    };
-                }
-                else
-                {
-                    Debug.LogError($"Expected {textureWidth * textureHeight * textureFormat} bytes, got {imageBytes.Length}");
-                }
+                return ExtractImage(texBase, fileInst.parentBundle, spriteRect);
             }
             else // No Atlas
             {
@@ -179,139 +121,84 @@ namespace UABS.Assets.Script.Reader
                 }
 
                 AssetTypeValueField texRefField = spriteBase["m_RD"]["texture"];
-                AssetExternal texAsset = GetExternalAsset(_assetsManager, _currFileInst, bunInst, texRefField);
+                AssetExternal texAsset = GetExternalAsset(_currFileInst, fileInst.parentBundle, texRefField);
                 AssetTypeValueField texBase = _assetsManager.GetBaseField(texAsset.file, texAsset.info);
 
-                int textureWidth = texBase["m_Width"].AsInt;
-                int textureHeight = texBase["m_Height"].AsInt;
-                int textureFormat = texBase["m_TextureFormat"].AsInt;
-                byte[] imageBytes = GetImageData(texBase, _currFileInst, bunInst);
-
-                if (IsSupportedBCnFormat((TextureFormat)textureFormat, out CompressionFormat bcnFormat))
-                {
-                    var decoder = new BcDecoder();
-                    ColorRgba32[] decoded = decoder.DecodeRaw(imageBytes, textureWidth, textureHeight, bcnFormat);
-
-                    byte[] rgbaBytes = new byte[decoded.Length * 4];
-                    MemoryMarshal.Cast<ColorRgba32, byte>(decoded.AsSpan()).CopyTo(rgbaBytes);
-
-                    Texture2D texture = new(textureWidth, textureHeight, TextureFormat.RGBA32, false);
-                    texture.LoadRawTextureData(rgbaBytes);
-                    texture.filterMode = FilterMode.Point;
-                    texture.Apply();
-
-                    // Now you can assign tex to a material or use it however you need
-                    // Debug.Log($"Decoded BC7 texture: {width}x{height}");
-                    texture = CropTexture(texture, spriteRect);
-                    return new()
-                    {
-                        texture2D = PadToSquare(texture),
-                        rect = spriteRect,
-                        compressionFormat = (TextureFormat)textureFormat
-                    };
-                }
-                else if (imageBytes.Length == textureWidth * textureHeight * textureFormat)
-                {
-                    TextureFormat unityFormat = (TextureFormat)textureFormat;
-                    Texture2D texture = new(textureWidth, textureHeight, unityFormat, false);
-                    texture.LoadRawTextureData(imageBytes);
-                    texture.filterMode = FilterMode.Point;
-                    texture.Apply();
-                    texture = CropTexture(texture, spriteRect);
-                    return new()
-                    {
-                        texture2D = PadToSquare(texture),
-                        rect = spriteRect,
-                        compressionFormat = (TextureFormat)textureFormat
-                    };
-                }
-                else
-                {
-                    Debug.LogError($"Expected {textureWidth * textureHeight * textureFormat} bytes, got {imageBytes.Length}");
-                }
+                return ExtractImage(texBase, fileInst.parentBundle, spriteRect);
             }
-
-            return null;
         }
 
-        public AssetImageInfo? ReadTexture2DByPathID(BundleFileInstance bunInst, long pathID)
+        public AssetImageInfo? Texture2DToImage(ParsedAssetAndEntry entryInfo)
         {
-            int GetIndexInAssets()
-            {
-
-                for (int i = 0; i < _currAssetInfos.Count; i++)
-                {
-                    long infoPathID = _currAssetInfos[i].PathId;
-                    if (infoPathID == pathID)
-                        return i;
-                }
-                return -1;
-            }
-
-            if (_currBunInst != bunInst || _lastReadType != AssetClassID.Texture2D)
-            {
-                _currBunInst = bunInst;
-                _currFileInst = _assetsManager.LoadAssetsFileFromBundle(bunInst, 0, false);
-                _currAssetInfos = _currFileInst.file.GetAssetsOfType(AssetClassID.Texture2D);
-                _lastReadType = AssetClassID.Texture2D;
-            }
-
-            int indexInAssets = GetIndexInAssets();
-            if (indexInAssets == -1)
-            {
-                Debug.LogWarning($"The given path id {pathID} is not found in textures.");
+            if (entryInfo.parsedAsset.classID != AssetClassID.Texture2D)
                 return null;
+
+            AssetsFileInstance fileInst = entryInfo.parsedAsset.fileInst;
+            AssetFileInfo fileInfo = entryInfo.parsedAsset.fileInfo;
+
+            // 2. Cache Sprite-Atlas connection
+            if (_currFileInst != fileInst || _lastReadType != AssetClassID.Texture2D)
+            {
+                _currFileInst = fileInst;
+                _lastReadType = AssetClassID.Sprite;
             }
 
-            AssetFileInfo targetAsset = _currAssetInfos[indexInAssets];
-            AssetTypeValueField texBase = _assetsManager.GetBaseField(_currFileInst, targetAsset);
+            AssetTypeValueField texBase = _assetsManager.GetBaseField(_currFileInst, fileInfo);
+            return ExtractImage(texBase, fileInst.parentBundle, null);
+        }
+
+        private AssetImageInfo? ExtractImage(AssetTypeValueField texBase, BundleFileInstance bunInst, Rect? cropRect)
+        {
             int width = texBase["m_Width"].AsInt;
             int height = texBase["m_Height"].AsInt;
             int format = texBase["m_TextureFormat"].AsInt;
             byte[] imageBytes = GetImageData(texBase, _currFileInst, bunInst);
 
+            AssetImageInfo LoadImage(byte[] bytes)
+            {
+                Texture2D texture = new(width, height, TextureFormat.RGBA32, false);
+                texture.LoadRawTextureData(bytes);
+                texture.filterMode = FilterMode.Point;
+                texture.Apply();
+
+                if (cropRect != null)
+                {
+                    texture = CropTexture(texture, (Rect)cropRect);
+                    return new()
+                    {
+                        texture2D = PadToSquare(texture),
+                        rect = (Rect)cropRect,
+                        compressionFormat = (TextureFormat)format
+                    };
+                }
+                else
+                {
+                    return new()
+                    {
+                        texture2D = PadToSquare(texture),
+                        rect = new(0, 0, width, height),
+                        compressionFormat = (TextureFormat)format
+                    };
+                }
+            }
+
             if (IsSupportedBCnFormat((TextureFormat)format, out CompressionFormat bcnFormat))
             {
                 var decoder = new BcDecoder();
                 ColorRgba32[] decoded = decoder.DecodeRaw(imageBytes, width, height, bcnFormat);
-
                 byte[] rgbaBytes = new byte[decoded.Length * 4];
                 MemoryMarshal.Cast<ColorRgba32, byte>(decoded.AsSpan()).CopyTo(rgbaBytes);
-
-                Texture2D texture = new(width, height, TextureFormat.RGBA32, false);
-                texture.LoadRawTextureData(rgbaBytes);
-                texture.filterMode = FilterMode.Point;
-                texture.Apply();
-
-                // Now you can assign tex to a material or use it however you need
-                // Debug.Log($"Decoded BC7 texture: {width}x{height}");
-                return new()
-                {
-                    texture2D = PadToSquare(texture),
-                    rect = new(0, 0, width, height),
-                    compressionFormat = (TextureFormat)format
-                };
+                return LoadImage(rgbaBytes);
             }
             else if (imageBytes.Length == width * height * format)
             {
-                TextureFormat unityFormat = (TextureFormat)format;
-                Texture2D texture = new(width, height, unityFormat, false);
-                texture.LoadRawTextureData(imageBytes);
-                texture.filterMode = FilterMode.Point;
-                texture.Apply();
-                return new()
-                {
-                    texture2D = PadToSquare(texture),
-                    rect = new(0, 0, width, height),
-                    compressionFormat = (TextureFormat)format
-                };
+                return LoadImage(imageBytes);
             }
             else
             {
                 Debug.LogError($"Expected {width * height * format} bytes, got {imageBytes.Length}");
+                return null;
             }
-
-            return null;
         }
 
         private byte[] GetImageData(AssetTypeValueField texField, AssetsFileInstance fileInst, BundleFileInstance bunInst)
@@ -330,7 +217,6 @@ namespace UABS.Assets.Script.Reader
                 {
                     // Extract internal stream file from bundle
                     string internalFileName = Path.GetFileName(path); // e.g. "CAB-c8b157fca857626dbba75589e140a72a.resS"
-                    string bundleFilePath = fileInst.path; // path to the .bundle file
 
                     byte[] internalFileData = ExtractFileManually(bunInst, internalFileName);
 
@@ -349,7 +235,7 @@ namespace UABS.Assets.Script.Reader
                         throw new FileNotFoundException("Stream data file not found", fullPath);
 
                     byte[] buffer = new byte[size];
-                    using (FileStream fs = new FileStream(fullPath, FileMode.Open, FileAccess.Read))
+                    using (FileStream fs = new(fullPath, FileMode.Open, FileAccess.Read))
                     {
                         fs.Seek(offset, SeekOrigin.Begin);
 
@@ -478,14 +364,16 @@ namespace UABS.Assets.Script.Reader
             return square;
         }
 
-        private AssetExternal GetExternalAsset(AssetsManager am, AssetsFileInstance currentFile, BundleFileInstance bundleFile, AssetTypeValueField pptr)
+        private AssetExternal GetExternalAsset(AssetsFileInstance currentFile,
+                                                BundleFileInstance bundleFile,
+                                                AssetTypeValueField pptr)
         {
             int fileId = pptr["m_FileID"].AsInt;
             long pathId = pptr["m_PathID"].AsLong;
 
             AssetsFileInstance targetFile = (fileId == 0)
                 ? currentFile
-                : am.LoadAssetsFileFromBundle(bundleFile, fileId, false);  // use fileId as index
+                : _assetsManager.LoadAssetsFileFromBundle(bundleFile, fileId, false);  // use fileId as index
 
             AssetFileInfo targetInfo = targetFile.file.GetAssetInfo(pathId);
             if (targetFile == null)
@@ -494,7 +382,7 @@ namespace UABS.Assets.Script.Reader
             if (targetInfo == null)
                 throw new Exception($"Asset with pathId {pathId} not found in file.");
 
-            var baseField = am.GetBaseField(targetFile, targetInfo);
+            var baseField = _assetsManager.GetBaseField(targetFile, targetInfo);
             if (baseField == null)
                 throw new Exception("GetBaseField returned null.");
 
@@ -502,7 +390,7 @@ namespace UABS.Assets.Script.Reader
             {
                 file = targetFile,
                 info = targetInfo,
-                instance = am.GetBaseField(targetFile, targetInfo)
+                baseField = _assetsManager.GetBaseField(targetFile, targetInfo)
             };
         }
 
@@ -523,7 +411,7 @@ namespace UABS.Assets.Script.Reader
             Color[] pixels = source.GetPixels(x, y, width, height);
 
             // Create new texture and apply pixels
-            Texture2D cropped = new Texture2D(width, height, source.format, false);
+            Texture2D cropped = new(width, height, source.format, false);
             cropped.SetPixels(pixels);
             cropped.Apply();
 
@@ -534,8 +422,8 @@ namespace UABS.Assets.Script.Reader
         {
             if (field == null) return "<null>";
 
-            StringBuilder sb = new StringBuilder();
-            string indent = new string(' ', indentLevel * 2);
+            StringBuilder sb = new();
+            string indent = new(' ', indentLevel * 2);
 
             // Field name and type
             sb.Append(indent);

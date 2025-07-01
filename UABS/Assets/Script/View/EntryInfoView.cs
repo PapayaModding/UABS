@@ -7,6 +7,7 @@ using UABS.Assets.Script.Event;
 using UABS.Assets.Script.Misc;
 using UABS.Assets.Script.Dispatcher;
 using UABS.Assets.Script.EventListener;
+using UABS.Assets.Script.DataStruct;
 
 namespace UABS.Assets.Script.View
 {
@@ -40,7 +41,7 @@ namespace UABS.Assets.Script.View
         [SerializeField]
         private RectTransform _rectTransform;
 
-        private AssetTextInfo _storedAssetInfo;
+        private ParsedAssetAndEntry _currEntryInfo;
 
         public EventDispatcher dispatcher = null;
         private Scrollbar _scrollbarRef;
@@ -54,8 +55,8 @@ namespace UABS.Assets.Script.View
             {
                 if (_assetType2IconData != null)
                 {
-                    dispatcher.Dispatch(new AssetTextInfoEvent(_storedAssetInfo));
-                    dispatcher.Dispatch(new AssetSelectionEvent(_storedAssetInfo.pathID, _index, _totalEntryNum, isHoldingShift: IsShiftHeld()));
+                    dispatcher.Dispatch(new ClickAssetEntryEvent(_currEntryInfo));
+                    dispatcher.Dispatch(new AssetSelectionEvent(_currEntryInfo.assetEntryInfo.pathID, _index, _totalEntryNum, isHoldingShift: IsShiftHeld()));
                 }
             }
             else
@@ -71,9 +72,11 @@ namespace UABS.Assets.Script.View
             _scrollbarRef = scrollbar;
         }
 
-        public void Render(AssetTextInfo assetTextInfo, bool isHighlighted=false)
+        public void Render(ParsedAssetAndEntry entryInfo, bool isHighlighted=false)
         {
-            _storedAssetInfo = assetTextInfo;
+            _currEntryInfo = entryInfo;
+            AssetEntryInfo assetEntryInfo = entryInfo.assetEntryInfo;
+            
             if (!isHighlighted)
             {
                 _bg.color = _index % 2 == 0 ? _alternateColor1 : _alternateColor2;
@@ -82,9 +85,9 @@ namespace UABS.Assets.Script.View
             {
                 _bg.color = _highlightColor;
             }
-            AssetClassID assetType = assetTextInfo.type;
-            long pathID = assetTextInfo.pathID;
-            string name = assetTextInfo.name;
+            AssetClassID assetType = assetEntryInfo.classID;
+            long pathID = assetEntryInfo.pathID;
+            string name = assetEntryInfo.name;
 
             _icon.sprite = _assetType2IconData.GetIcon(assetType);
             _name.text = name;
@@ -109,11 +112,11 @@ namespace UABS.Assets.Script.View
         {
             if (e is AssetSelectionEvent ase)
             {
-                if (_storedAssetInfo.pathID == ase.AssetSelectionInfo.pathID)
+                if (_currEntryInfo.assetEntryInfo.pathID == ase.PathID)
                 {
                     if (ase.UseJump)
                         Jump2Me();
-                    dispatcher.Dispatch(new AssetTextInfoEvent(_storedAssetInfo));
+                    dispatcher.Dispatch(new ClickAssetEntryEvent(_currEntryInfo));
                 }
             }
         }

@@ -2,10 +2,12 @@ using UnityEngine;
 using UABS.Assets.Script.Event;
 using TMPro;
 using System.IO;
+using UABS.Assets.Script.Misc;
+using UABS.Assets.Script.DataStruct;
 
 namespace UABS.Assets.Script.EventListener
 {
-    public class DisplayInfoPanel : MonoBehaviour, IAppEventListener
+    public class DisplayInfoPanel : MonoBehaviour, IAppEventListener, IAppEnvironment
     {
         [SerializeField]
         private TMP_InputField  _nameField;
@@ -22,15 +24,28 @@ namespace UABS.Assets.Script.EventListener
         [SerializeField]
         private TMP_InputField  _pathField;
 
+        private AppEnvironment _appEnvironment;
+        public AppEnvironment AppEnvironment => _appEnvironment;
+
+        public void Initialize(AppEnvironment appEnvironment)
+        {
+            _appEnvironment = appEnvironment;
+        }
+
         public void OnEvent(AppEvent e)
         {
-            if (e is AssetTextInfoEvent assetTextInfoEvent)
+            if (e is ClickAssetEntryEvent caee)
             {
-                _nameField.text = assetTextInfoEvent.Info.name;
-                _pathIDField.text = assetTextInfoEvent.Info.pathID.ToString();
-                _fileIDField.text = assetTextInfoEvent.Info.fileID.ToString();
-                _sizeField.text = $"{assetTextInfoEvent.Info.compressedSize} ({assetTextInfoEvent.Info.uncompressedSize})";
-                _pathField.text = assetTextInfoEvent.Info.path;
+                _nameField.text = caee.EntryInfo.assetEntryInfo.name;
+                _pathIDField.text = caee.EntryInfo.assetEntryInfo.pathID.ToString();
+                // _fileIDField.text = assetTextInfoEvent.Info.fileID.ToString();
+                // _sizeField.text = $"{assetTextInfoEvent.Info.compressedSize} ({assetTextInfoEvent.Info.uncompressedSize})";
+                // _pathField.text = assetTextInfoEvent.Info.path;
+                // ! Lazy loading extra information about the asset.
+                AssetExtraInfo extraInfo = _appEnvironment.AssetReader.ReadExtraInfoFromAsset(caee.EntryInfo.parsedAsset);
+                _fileIDField.text = extraInfo.fileID.ToString();
+                _sizeField.text = $"{extraInfo.compressedSize} ({extraInfo.uncompressedSize})";
+                _pathField.text = !string.IsNullOrWhiteSpace(caee.EntryInfo.realBundlePath) ? caee.EntryInfo.realBundlePath : extraInfo.path;
             }
             else if (e is FolderReadEvent fre)
             {

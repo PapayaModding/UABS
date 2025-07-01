@@ -18,7 +18,7 @@ namespace UABS.Assets.Script.Controller
         private TextureView _textureView;
         private ReadTexturesFromBundle _readTexturesFromBundle;
         private BundleFileInstance _currBunInst;
-        private Dictionary<long, Texture2DWithMeta> _cacheTextureByPathID = new();
+        private Dictionary<long, AssetImageInfo> _cacheTextureByPathID = new();
 
         private AppEnvironment _appEnvironment = null;
         public AppEnvironment AppEnvironment => _appEnvironment;
@@ -42,10 +42,10 @@ namespace UABS.Assets.Script.Controller
             }
             else if (e is AssetSelectionEvent ase)
             {
-                Texture2DWithMeta textureWithMeta = GetTextureByPathID(ase.AssetSelectionInfo.pathID);
+                AssetImageInfo textureWithMeta = GetTextureByPathID(ase.PathID);
                 _textureView.AssignSizeText($"{textureWithMeta.rect.width}x{textureWithMeta.rect.height} ({textureWithMeta.compressionFormat})");
                 _textureView.Render(textureWithMeta.texture2D);
-                _textureView.AssignIndexText($"{ase.AssetSelectionInfo.currIndex + 1} / {ase.TotalNumOfAssets}");
+                _textureView.AssignIndexText($"{ase.CurrIndex + 1} / {ase.TotalNumOfAssets}");
             }
             else if (e is FolderReadEvent fre)
             {
@@ -75,18 +75,18 @@ namespace UABS.Assets.Script.Controller
             }
         }
 
-        private Texture2DWithMeta GetTextureByPathID(long pathID)
+        private AssetImageInfo GetTextureByPathID(long pathID)
         {
             if (!_cacheTextureByPathID.ContainsKey(pathID))
             {
-                Texture2DWithMeta? _textureWithMeta = _readTexturesFromBundle.ReadSpriteByPathID(_currBunInst, pathID);
+                AssetImageInfo? _textureWithMeta = _readTexturesFromBundle.ReadSpriteByPathID(_currBunInst, pathID);
                 _textureWithMeta ??= _readTexturesFromBundle.ReadTexture2DByPathID(_currBunInst, pathID);
                 if (_textureWithMeta == null)
                 {
                     Debug.LogWarning($"The given path id {pathID} is neither Texture2D nor Sprite.");
                     return new();
                 }
-                _cacheTextureByPathID[pathID] = (Texture2DWithMeta)_textureWithMeta;
+                _cacheTextureByPathID[pathID] = (AssetImageInfo)_textureWithMeta;
             }
             return _cacheTextureByPathID[pathID];
         }

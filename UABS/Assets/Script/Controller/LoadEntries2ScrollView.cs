@@ -4,7 +4,6 @@ using UABS.Assets.Script.Misc;
 using UABS.Assets.Script.View;
 using UABS.Assets.Script.EventListener;
 using UABS.Assets.Script.Event;
-using System.Linq;
 using UnityEngine.UI;
 using UABS.Assets.Script.DataStruct;
 
@@ -27,7 +26,9 @@ namespace UABS.Assets.Script.Controller
         [SerializeField]
         private int _maxNumOfEntryPerPage = 15;
         private List<EntryInfoView> _entryPool = new();
-        private List<AssetTextInfo> _currAssetsTextInfo;
+        // private List<AssetTextInfo> _currAssetsTextInfo;
+        private List<ParsedAssetAndEntry> _currEntryInfos;
+
         private float _itemHeight = 80f;
         [SerializeField]
         private float _paddingTop = -35f;
@@ -39,31 +40,41 @@ namespace UABS.Assets.Script.Controller
         public void OnScroll()
         {
             float scrollY = GetScrollAxisY();
-            int startIndex = GetStartIndex(scrollY, _currAssetsTextInfo.Count, _maxNumOfEntryPerPage);
+            int startIndex = GetStartIndex(scrollY, _currEntryInfos.Count, _maxNumOfEntryPerPage);
 
             for (int i = 0; i < _maxNumOfEntryPerPage; i++)
             {
                 int dataIndex = startIndex + i;
-                if (dataIndex >= _currAssetsTextInfo.Count)
+                if (dataIndex >= _currEntryInfos.Count)
                 {
                     _entryPool[i].Hide();
                     continue;
                 }
+
                 _entryPool[i].Show();
-                _entryPool[i].AssignStuff(dataIndex, _currAssetsTextInfo.Count, _scrollbarRef);
-                _entryPool[i].Render(_currAssetsTextInfo[dataIndex], _highlighted.Contains(_currAssetsTextInfo[dataIndex].pathID));
+                _entryPool[i].AssignStuff(dataIndex, _currEntryInfos.Count, _scrollbarRef);
+                _entryPool[i].Render(_currEntryInfos[dataIndex], _highlighted.Contains(_currEntryInfos[dataIndex].assetEntryInfo.pathID));
                 _entryPool[i].SetPosition(new Vector2(_paddingLeft, -dataIndex * _itemHeight + _paddingTop));
             }
         }
 
         public void OnEvent(AppEvent e)
         {
-            if (e is AssetsDisplayInfoEvent adie)
+            // if (e is AssetsDisplayInfoEvent adie)
+            // {
+            //     _currAssetsTextInfo = adie.AssetsDisplayInfo.Select(x => x.assetTextInfo).ToList();
+            //     _content.sizeDelta = new Vector2(
+            //         _content.sizeDelta.x,
+            //         _currAssetsTextInfo.Count * _itemHeight
+            //     );
+            //     OnScroll();
+            // }
+            if (e is GoBundleViewEvent gbve)
             {
-                _currAssetsTextInfo = adie.AssetsDisplayInfo.Select(x => x.assetTextInfo).ToList();
+                _currEntryInfos = gbve.EntryInfos;
                 _content.sizeDelta = new Vector2(
                     _content.sizeDelta.x,
-                    _currAssetsTextInfo.Count * _itemHeight
+                     _currEntryInfos.Count * _itemHeight
                 );
                 OnScroll();
             }

@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace UABS.Assets.Script.DataStruct
 {
-    public struct Texture2DWithMeta
+    public struct AssetImageInfo
     {
         public Texture2D texture2D;
         public Rect rect;
