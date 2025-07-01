@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using AssetsTools.NET.Extra;
@@ -68,7 +67,7 @@ namespace UABS.Assets.Script.DataSource
                 SortByType sortByType = ssve.SortProp.sortByType;
                 SortOrder sortOrder = ssve.SortProp.sortOrder;
                 _assetsDisplayInfo = SortedAssetsDisplayInfo(sortByType, sortOrder);
-                _appEnvironment.Dispatcher.Dispatch(new AssetsDisplayInfoEvent(_assetsDisplayInfo, false));
+                _appEnvironment.Dispatcher.Dispatch(new AssetsDisplayInfoEvent(_assetsDisplayInfo));
             }
             else if (e is ExportAssetsEvent eae)
             {
@@ -152,11 +151,6 @@ namespace UABS.Assets.Script.DataSource
             _appEnvironment = appEnvironment;
             _readTextInfoFromBundle = new(_appEnvironment.AssetsManager);
             _writeTextureAsImage2Path = new(_appEnvironment.AssetsManager);
-        }
-
-        public AssetDisplayInfo GetDisplayInfoAtIndex(int index)
-        {
-            return _assetsDisplayInfo[index];
         }
     }
 }

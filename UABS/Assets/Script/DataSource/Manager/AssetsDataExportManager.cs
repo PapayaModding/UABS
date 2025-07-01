@@ -1,6 +1,6 @@
 namespace UABS.Assets.Script.DataSource.Manager
 {
-    public class FolderDataPageManager
+    public class AssetsDataExportManager
     {
         
     }

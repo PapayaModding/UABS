@@ -8,13 +8,12 @@ using System.Linq;
 using UnityEngine.UI;
 using UABS.Assets.Script.DataStruct;
 
-
 namespace UABS.Assets.Script.Controller
 {
     public class LoadEntries2ScrollView : MonoBehaviour, IAppEventListener, IAppEnvironment
     {
         [SerializeField]
-        private GameObject _content;
+        private RectTransform _content;
 
         [SerializeField]
         private Scrollbar _scrollbarRef;
@@ -24,64 +23,36 @@ namespace UABS.Assets.Script.Controller
 
         private AppEnvironment _appEnvironment = null;
         public AppEnvironment AppEnvironment => _appEnvironment;
-        private List<EntryInfoView> _currEntryInfoViews = new();
 
-        public void ClearAndLoadFolder()
+        [SerializeField]
+        private int _maxNumOfEntryPerPage = 15;
+        private List<EntryInfoView> _entryPool = new();
+        private List<AssetTextInfo> _currAssetsTextInfo;
+        private float _itemHeight = 80f;
+        [SerializeField]
+        private float _paddingTop = -35f;
+        [SerializeField]
+        private float _paddingLeft = -10f;
+
+        private HashSet<long> _highlighted = new();
+
+        public void OnScroll()
         {
-            ClearContentChildren();
-        }
+            float scrollY = GetScrollAxisY();
+            int startIndex = GetStartIndex(scrollY, _currAssetsTextInfo.Count, _maxNumOfEntryPerPage);
 
-        public void LoadBundle(List<AssetTextInfo> assetTextInfos)
-        {
-            for (int i = 0; i < _currEntryInfoViews.Count; i++)
+            for (int i = 0; i < _maxNumOfEntryPerPage; i++)
             {
-                _currEntryInfoViews[i].AssignStuff(i, assetTextInfos.Count, _scrollbarRef);
-                _currEntryInfoViews[i].Render(assetTextInfos[i]);
-            }
-        }
-
-        public void ClearAndLoadBundle(List<AssetTextInfo> assetTextInfos)
-        {
-            ClearContentChildren();
-
-            _currEntryInfoViews = new();
-            for (int i = 0; i < assetTextInfos.Count; i++)
-            {
-                GameObject entryObj = CreateEntry();
-                entryObj.transform.SetParent(_content.transform, worldPositionStays: false);
-                _currEntryInfoViews.Add(entryObj.GetComponentInChildren<EntryInfoView>());
-            }
-
-            for (int i = 0; i < assetTextInfos.Count; i++)
-            {
-                AssetTextInfo assetTextInfo = assetTextInfos[i];
-                EntryInfoView entryInfoView = _currEntryInfoViews[i];
-                entryInfoView.dispatcher = _appEnvironment.Dispatcher;
-                _appEnvironment.Dispatcher.Register(entryInfoView);
-                entryInfoView.AssignStuff(i, assetTextInfos.Count, _scrollbarRef);
-                entryInfoView.Render(assetTextInfo);
-            }
-        }
-
-        private GameObject CreateEntry()
-        {
-            return Instantiate(_entryPrefab);
-        }
-
-        private void ClearContentChildren()
-        {
-            for (int i = 0; i < _currEntryInfoViews.Count; i++)
-            {
-                AppEnvironment.Dispatcher.Unregister(_currEntryInfoViews[i]);
-            }
-
-            Transform parentTransform = _content.transform;
-
-            for (int i = parentTransform.childCount - 1; i >= 0; i--)
-            {
-                GameObject child = parentTransform.GetChild(i).gameObject;
-                Destroy(child);
-                child = null;
+                int dataIndex = startIndex + i;
+                if (dataIndex >= _currAssetsTextInfo.Count)
+                {
+                    _entryPool[i].Hide();
+                    continue;
+                }
+                _entryPool[i].Show();
+                _entryPool[i].AssignStuff(dataIndex, _currAssetsTextInfo.Count, _scrollbarRef);
+                _entryPool[i].Render(_currAssetsTextInfo[dataIndex], _highlighted.Contains(_currAssetsTextInfo[dataIndex].pathID));
+                _entryPool[i].SetPosition(new Vector2(_paddingLeft, -dataIndex * _itemHeight + _paddingTop));
             }
         }
 
@@ -89,20 +60,45 @@ namespace UABS.Assets.Script.Controller
         {
             if (e is AssetsDisplayInfoEvent adie)
             {
-                if (adie.ClearCurrEntries)
-                {
-                    ClearAndLoadBundle(adie.AssetsDisplayInfo.Select(x => x.assetTextInfo).ToList());
-                }
-                else
-                {
-                    LoadBundle(adie.AssetsDisplayInfo.Select(x => x.assetTextInfo).ToList());
-                }
+                _currAssetsTextInfo = adie.AssetsDisplayInfo.Select(x => x.assetTextInfo).ToList();
+                _content.sizeDelta = new Vector2(
+                    _content.sizeDelta.x,
+                    _currAssetsTextInfo.Count * _itemHeight
+                );
+                OnScroll();
+            }
+            else if (e is AssetMultiSelectionEvent amse)
+            {
+                _highlighted = amse.SelectedPathIDs;
+                OnScroll();
             }
         }
 
         public void Initialize(AppEnvironment appEnvironment)
         {
             _appEnvironment = appEnvironment;
+            // Initialize pool
+            for (int i = 0; i < _maxNumOfEntryPerPage; i++)
+            {
+                GameObject entryObj = Instantiate(_entryPrefab);
+                entryObj.transform.SetParent(_content.transform, worldPositionStays: false);
+                EntryInfoView entryInfoView = entryObj.GetComponentInChildren<EntryInfoView>();
+                entryInfoView.dispatcher = _appEnvironment.Dispatcher;
+                _appEnvironment.Dispatcher.Register(entryInfoView);
+                _entryPool.Add(entryInfoView);
+            }
+            _itemHeight = _entryPrefab.GetComponent<RectTransform>().rect.height;
+        }
+
+        private float GetScrollAxisY()
+        {
+            return 1f - _scrollbarRef.value;
+        }
+
+        private int GetStartIndex(float scrollY, int totalItems, int visibleCount)
+        {
+            int maxStart = Mathf.Max(0, totalItems - visibleCount);
+            return Mathf.Clamp(Mathf.FloorToInt(scrollY * maxStart), 0, maxStart);
         }
     }
 }

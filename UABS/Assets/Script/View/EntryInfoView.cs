@@ -37,6 +37,9 @@ namespace UABS.Assets.Script.View
         [SerializeField]
         private TextMeshProUGUI _pathID;
 
+        [SerializeField]
+        private RectTransform _rectTransform;
+
         private AssetTextInfo _storedAssetInfo;
 
         public EventDispatcher dispatcher = null;
@@ -44,7 +47,7 @@ namespace UABS.Assets.Script.View
 
         private int _index;
         private int _totalEntryNum;
-        
+
         public void TriggerEvent()
         {
             if (dispatcher != null)
@@ -52,13 +55,13 @@ namespace UABS.Assets.Script.View
                 if (_assetType2IconData != null)
                 {
                     dispatcher.Dispatch(new AssetTextInfoEvent(_storedAssetInfo));
-                    dispatcher.Dispatch(new AssetSelectionEvent(_storedAssetInfo.pathID, _index, _totalEntryNum));
+                    dispatcher.Dispatch(new AssetSelectionEvent(_storedAssetInfo.pathID, _index, _totalEntryNum, isHoldingShift: IsShiftHeld()));
                 }
             }
-                else
-                {
-                    throw new System.Exception("Entry Info View missing dispatcher. Please assign first.");
-                }
+            else
+            {
+                throw new System.Exception("Entry Info View missing dispatcher. Please assign first.");
+            }
         }
 
         public void AssignStuff(int index, int totalEntryNum, Scrollbar scrollbar)
@@ -68,10 +71,17 @@ namespace UABS.Assets.Script.View
             _scrollbarRef = scrollbar;
         }
 
-        public void Render(AssetTextInfo assetTextInfo)
+        public void Render(AssetTextInfo assetTextInfo, bool isHighlighted=false)
         {
             _storedAssetInfo = assetTextInfo;
-            _bg.color = _index % 2 == 0 ? _alternateColor1 : _alternateColor2;
+            if (!isHighlighted)
+            {
+                _bg.color = _index % 2 == 0 ? _alternateColor1 : _alternateColor2;
+            }
+            else
+            {
+                _bg.color = _highlightColor;
+            }
             AssetClassID assetType = assetTextInfo.type;
             long pathID = assetTextInfo.pathID;
             string name = assetTextInfo.name;
@@ -100,30 +110,31 @@ namespace UABS.Assets.Script.View
         {
             if (e is AssetSelectionEvent ase)
             {
-                if (_storedAssetInfo.pathID == ase.PathID)
+                if (_storedAssetInfo.pathID == ase.AssetSelectionInfo.pathID)
                 {
-                    if (_bg.color != _highlightColor)
-                    {
-                        _bg.color = _highlightColor;
-                    }
-                    else
-                    {
-                        _bg.color = _index % 2 == 0 ? _alternateColor1 : _alternateColor2;
-                    }
+                    // if (_bg.color != _highlightColor)
+                    // {
+                    //     _bg.color = _highlightColor;
+                    //     Debug.Log($"Change bg color for {ase.AssetSelectionInfo.pathID}");
+                    // }
+                    // else
+                    // {
+                    //     _bg.color = _index % 2 == 0 ? _alternateColor1 : _alternateColor2;
+                    // }
                     if (ase.UseJump)
                         Jump2Me();
                     dispatcher.Dispatch(new AssetTextInfoEvent(_storedAssetInfo));
                 }
-                else
-                {
-                    if (_bg != null)
-                    {
-                        if (_bg.color == _highlightColor)
-                        {
-                            _bg.color = _index % 2 == 0 ? _alternateColor1 : _alternateColor2;
-                        }
-                    }
-                }
+                // else
+                // {
+                //     if (_bg != null)
+                //     {
+                //         if (_bg.color == _highlightColor)
+                //         {
+                //             _bg.color = _index % 2 == 0 ? _alternateColor1 : _alternateColor2;
+                //         }
+                //     }
+                // }
             }
         }
 
@@ -133,6 +144,26 @@ namespace UABS.Assets.Script.View
             if (_index == _totalEntryNum - 1)
                 newScrollbarValue = 0;
             _scrollbarRef.value = newScrollbarValue;
+        }
+
+        public void Hide()
+        {
+            _rectTransform.gameObject.SetActive(false);
+        }
+
+        public void Show()
+        {
+            _rectTransform.gameObject.SetActive(true);
+        }
+
+        public void SetPosition(Vector2 newPosition)
+        {
+            _rectTransform.anchoredPosition = newPosition;
+        }
+
+        private static bool IsShiftHeld()
+        {
+            return Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
         }
     }
 }

@@ -42,10 +42,10 @@ namespace UABS.Assets.Script.Controller
             }
             else if (e is AssetSelectionEvent ase)
             {
-                Texture2DWithMeta textureWithMeta = GetTextureByPathID(ase.PathID);
+                Texture2DWithMeta textureWithMeta = GetTextureByPathID(ase.AssetSelectionInfo.pathID);
                 _textureView.AssignSizeText($"{textureWithMeta.rect.width}x{textureWithMeta.rect.height} ({textureWithMeta.compressionFormat})");
                 _textureView.Render(textureWithMeta.texture2D);
-                _textureView.AssignIndexText($"{ase.CurrIndex + 1} / {ase.TotalNumOfAssets}");
+                _textureView.AssignIndexText($"{ase.AssetSelectionInfo.currIndex + 1} / {ase.TotalNumOfAssets}");
             }
             else if (e is FolderReadEvent fre)
             {

@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using UABS.Assets.Script.DataStruct;
 using UABS.Assets.Script.Event;
 using UABS.Assets.Script.EventListener;
 using UABS.Assets.Script.Misc;
@@ -13,17 +14,33 @@ namespace UABS.Assets.Script.DataSource
         public AppEnvironment AppEnvironment => _appEnvironment;
         private long _lastPathID;
         private List<long> _currBunPathIDs;
+        private HashSet<long> _selections;
 
         public void Initialize(AppEnvironment appEnvironment)
         {
             _appEnvironment = appEnvironment;
+            _selections = new();
         }
 
         public void OnEvent(AppEvent e)
         {
             if (e is AssetSelectionEvent ase)
             {
-                _lastPathID = ase.PathID;
+                if (!ase.IsHoldingShift)
+                {
+                    _selections = new();
+                }
+                long currPathID = ase.AssetSelectionInfo.pathID;
+                if (_selections.Contains(currPathID))
+                {
+                    _selections.Remove(currPathID);
+                }
+                else
+                {
+                    _selections.Add(currPathID);
+                }
+                _lastPathID = currPathID;
+                AppEnvironment.Dispatcher.Dispatch(new AssetMultiSelectionEvent(_selections));
             }
             else if (e is AssetsDisplayInfoEvent adie)
             {
