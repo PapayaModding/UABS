@@ -113,11 +113,14 @@ namespace UABS.Assets.Script.Reader
                     spriteBase["m_Rect"]["width"].AsFloat,
                     spriteBase["m_Rect"]["height"].AsFloat
                 );
-
-                // No SpriteAtlas file found in bundle but Sprite has m_SpriteAtlas field. Skip.
-                if (spriteBase.Get("m_SpriteAtlas") != null)
+                
+                if (spriteBase.Get("m_AtlasTags") != null)
                 {
-                    return null;
+                    if (spriteBase["m_AtlasTags"]["Array"].AsArray.size != 0)
+                    {
+                        Debug.Log("No SpriteAtlas file found in bundle but Sprite has atlas tag. Skip.");
+                        return null;
+                    }
                 }
 
                 AssetTypeValueField texRefField = spriteBase["m_RD"]["texture"];
@@ -140,7 +143,7 @@ namespace UABS.Assets.Script.Reader
             if (_currFileInst != fileInst || _lastReadType != AssetClassID.Texture2D)
             {
                 _currFileInst = fileInst;
-                _lastReadType = AssetClassID.Sprite;
+                _lastReadType = AssetClassID.Texture2D;
             }
 
             AssetTypeValueField texBase = _assetsManager.GetBaseField(_currFileInst, fileInfo);

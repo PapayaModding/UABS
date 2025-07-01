@@ -35,6 +35,9 @@ namespace UABS.Assets.Script.DataSource
             }
             else if (e is GoBackEvent)
             {
+                Debug.Log("Unloaded everything from assets manager.");
+                _appEnvironment.AssetsManager.UnloadAll();
+                
                 string backDir = _pathManager.GetBackDirectory();
                 if (_recordDependencyInfosList.Count == 0)
                 {

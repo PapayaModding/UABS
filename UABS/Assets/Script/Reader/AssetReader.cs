@@ -2,6 +2,7 @@ using AssetsTools.NET;
 using AssetsTools.NET.Extra;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Security.Cryptography;
 using System.Text;
 using UABS.Assets.Script.DataStruct;
@@ -23,6 +24,7 @@ namespace UABS.Assets.Script.Reader
 
         public void MakeMonoScriptNameTable(AssetsFileInstance fileInst)
         {
+            _currMonoScriptNames = new();
             List<AssetFileInfo> monoScriptAssets = fileInst.file.GetAssetsOfType(AssetClassID.MonoScript);
             foreach (AssetFileInfo monoScriptAsset in monoScriptAssets)
             {
@@ -42,7 +44,7 @@ namespace UABS.Assets.Script.Reader
             else
             {
                 var _name = baseField.Get("m_Name");
-                if (_name != null)
+                if (_name != null && !_name.IsDummy)
                 {
                     name = _name.AsString;
                 }

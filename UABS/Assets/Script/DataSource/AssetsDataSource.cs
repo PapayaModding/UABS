@@ -27,50 +27,16 @@ namespace UABS.Assets.Script.DataSource
             if (e is BundleRead4DependencyEvent br4d)
             {
                 OpenBundle(br4d.Bundle, br4d.RealFilPath);
-                // _currBunInst = br4d.Bundle;
-                // _entryInfos = new();
-                // List<AssetTextInfo> assetsTextInfo = _readTextInfoFromBundle.ReadAllBasicInfo(_currBunInst);
-                // foreach (AssetTextInfo assetTextInfo in assetsTextInfo)
-                // {
-                //     AssetTextInfo newAssetTextInfo = new()
-                //     {
-                //         path = string.IsNullOrWhiteSpace(br4d.RealFilPath) ? assetTextInfo.path : br4d.RealFilPath,
-                //         name = assetTextInfo.name,
-                //         pathID = assetTextInfo.pathID,
-                //         fileID = assetTextInfo.fileID,
-                //         uncompressedSize = assetTextInfo.uncompressedSize,
-                //         compressedSize = assetTextInfo.compressedSize,
-                //         type = assetTextInfo.type
-                //     };
-                //     _assetsDisplayInfo.Add(new()
-                //     {
-                //         assetTextInfo = newAssetTextInfo
-                //     });
-                // }
-                // _appEnvironment.Dispatcher.Dispatch(new GoBundleViewEvent(_assetEntryInfos));
             }
             else if (e is BundleReadEvent bre)
             {
                 OpenBundle(bre.Bundle, "");
-                // _currBunInst = bre.Bundle;
-                // _entryInfos = new();
-                // List<AssetTextInfo> assetsTextInfo = _readTextInfoFromBundle.ReadAllBasicInfo(_currBunInst);
-                // foreach (AssetTextInfo assetTextInfo in assetsTextInfo)
-                // {
-                //     _assetsDisplayInfo.Add(new()
-                //     {
-                //         assetTextInfo = assetTextInfo
-                //     });
-                // }
-                // _appEnvironment.Dispatcher.Dispatch(new GoBundleViewEvent(_assetEntryInfos));
             }
             else if (e is SortScrollViewEvent ssve)
             {
                 SortByType sortByType = ssve.SortProp.sortByType;
                 SortOrder sortOrder = ssve.SortProp.sortOrder;
-                // _assetsDisplayInfo = SortedAssetsDisplayInfo(sortByType, sortOrder);
                 _entryInfos = SortedEntryInfos(sortByType, sortOrder);
-                // _appEnvironment.Dispatcher.Dispatch(new AssetsDisplayInfoEvent(_assetsDisplayInfo));
                 _appEnvironment.Dispatcher.Dispatch(new GoBundleViewEvent(_entryInfos));
             }
             else if (e is ExportAssetsEvent eae)
@@ -78,7 +44,6 @@ namespace UABS.Assets.Script.DataSource
                 ExportMethod exportMethod = eae.ExportMethod;
                 if (exportMethod.exportType == ExportType.All)
                 {
-                    // _writeTextureAsImage2Path.ExportAllAssetsToPath(exportMethod, _assetsDisplayInfo, _currBunInst);
                     _writeTextureAsImage2Path.ExportAllAssetsToPath(exportMethod, _entryInfos);
                 }
             }
@@ -146,46 +111,6 @@ namespace UABS.Assets.Script.DataSource
             return _entryInfos;
         }
 
-        // private List<AssetDisplayInfo> SortedAssetsDisplayInfo(SortByType sortByType, SortOrder sortOrder)
-        // {
-        //     if (sortByType == SortByType.Name)
-        //     {
-        //         if (sortOrder == SortOrder.Down)
-        //         {
-        //             _assetsDisplayInfo.Sort((a, b) => NaturalCompare(a.assetTextInfo.name, b.assetTextInfo.name));
-        //             return _assetsDisplayInfo;
-        //         }
-        //         else if (sortOrder == SortOrder.Up)
-        //         {
-        //             _assetsDisplayInfo.Sort((b, a) => NaturalCompare(a.assetTextInfo.name, b.assetTextInfo.name));
-        //             return _assetsDisplayInfo;
-        //         }
-        //     }
-        //     else if (sortByType == SortByType.Type)
-        //     {
-        //         if (sortOrder == SortOrder.Down)
-        //         {
-        //             return _assetsDisplayInfo.OrderBy(x => x.assetTextInfo.type).ToList();
-        //         }
-        //         else if (sortOrder == SortOrder.Up)
-        //         {
-        //             return _assetsDisplayInfo.OrderByDescending(x => x.assetTextInfo.type).ToList();
-        //         }
-        //     }
-        //     else if (sortByType == SortByType.PathID)
-        //     {
-        //         if (sortOrder == SortOrder.Down)
-        //         {
-        //             return _assetsDisplayInfo.OrderBy(x => x.assetTextInfo.pathID).ToList();
-        //         }
-        //         else if (sortOrder == SortOrder.Up)
-        //         {
-        //             return _assetsDisplayInfo.OrderByDescending(x => x.assetTextInfo.pathID).ToList();
-        //         }
-        //     }
-        //     return _assetsDisplayInfo;
-        // }
-
         private static int NaturalCompare(string a, string b)
         {
             var regex = new Regex(@"\d+|\D+");
@@ -219,7 +144,6 @@ namespace UABS.Assets.Script.DataSource
         {
             _appEnvironment = appEnvironment;
             _assetParser = new(_appEnvironment.AssetsManager);
-            // _readTextInfoFromBundle = new(_appEnvironment.AssetsManager);
             _writeTextureAsImage2Path = new(_appEnvironment.AssetsManager);
         }
     }
