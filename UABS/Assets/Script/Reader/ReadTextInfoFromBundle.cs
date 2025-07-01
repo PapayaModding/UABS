@@ -2,10 +2,10 @@ using AssetsTools.NET;
 using AssetsTools.NET.Extra;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
+using UABS.Assets.Script.DataStruct;
 using UABS.Assets.Script.Misc;
 
 namespace UABS.Assets.Script.Reader
@@ -33,17 +33,22 @@ namespace UABS.Assets.Script.Reader
             return result;
         }
 
-        // public List<AssetTextInfo> ReadSpritesBasicInfo(BundleFileInstance bunInst)
-        // {
-        //     AssetsFileInstance fileInst = AssetsManager.LoadAssetsFileFromBundle(bunInst, 0, false);
-        //     return ReadBasicInfoOf(AssetClassID.Sprite, fileInst, AssetsManager);
-        // }
-
-        // public List<AssetTextInfo> ReadTexture2DBasicInfo(BundleFileInstance bunInst)
-        // {
-        //     AssetsFileInstance fileInst = AssetsManager.LoadAssetsFileFromBundle(bunInst, 0, false);
-        //     return ReadBasicInfoOf(AssetClassID.Texture2D, fileInst, AssetsManager);
-        // }
+        public List<ParsedAsset> ReadAssetOnly(BundleFileInstance bunInst)
+        {
+            List<ParsedAsset> result = new();
+            AssetsFileInstance fileInst = AssetsManager.LoadAssetsFileFromBundle(bunInst, 0, false);
+            foreach (AssetClassID classId in Enum.GetValues(typeof(AssetClassID)))
+            {
+                List<AssetFileInfo> assets = fileInst.file.GetAssetsOfType(classId);
+                result.AddRange(assets.Select(x => new ParsedAsset()
+                {
+                    fileInfo = x,
+                    assetType = classId,
+                    fileInst = fileInst
+                }).ToList());
+            }
+            return result;
+        }
 
         private static List<AssetTextInfo> ReadBasicInfoOf(AssetClassID assetType,
                                                                 AssetsFileInstance fileInst,
@@ -95,6 +100,7 @@ namespace UABS.Assets.Script.Reader
                     return (int)assetInfo.ByteSize;
                 }
             }
+
             bool HasField(AssetTypeValueField parent, string fieldName)
             {
                 return parent.Children.Any(child => child.FieldName == fieldName);
@@ -182,7 +188,5 @@ namespace UABS.Assets.Script.Reader
 
             return sb.ToString();
         }
-
-
     }
 }

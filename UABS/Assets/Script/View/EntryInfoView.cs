@@ -103,7 +103,6 @@ namespace UABS.Assets.Script.View
 
             _type.text = className;
             _pathID.text = pathID.ToString();
-            // Debug.Log($"{_name.text}");
         }
 
         public void OnEvent(AppEvent e)
@@ -112,29 +111,10 @@ namespace UABS.Assets.Script.View
             {
                 if (_storedAssetInfo.pathID == ase.AssetSelectionInfo.pathID)
                 {
-                    // if (_bg.color != _highlightColor)
-                    // {
-                    //     _bg.color = _highlightColor;
-                    //     Debug.Log($"Change bg color for {ase.AssetSelectionInfo.pathID}");
-                    // }
-                    // else
-                    // {
-                    //     _bg.color = _index % 2 == 0 ? _alternateColor1 : _alternateColor2;
-                    // }
                     if (ase.UseJump)
                         Jump2Me();
                     dispatcher.Dispatch(new AssetTextInfoEvent(_storedAssetInfo));
                 }
-                // else
-                // {
-                //     if (_bg != null)
-                //     {
-                //         if (_bg.color == _highlightColor)
-                //         {
-                //             _bg.color = _index % 2 == 0 ? _alternateColor1 : _alternateColor2;
-                //         }
-                //     }
-                // }
             }
         }
 
