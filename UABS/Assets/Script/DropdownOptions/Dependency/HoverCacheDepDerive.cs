@@ -48,7 +48,7 @@ namespace UABS.Assets.Script.DropdownOptions
             ClearAndRecreate();
         }
 
-        public void ClearAndRecreate()
+        private void ClearAndRecreate()
         {
             ClearContentChildren();
             // Search paths and create prefabs
@@ -71,8 +71,8 @@ namespace UABS.Assets.Script.DropdownOptions
         private GameObject CreateScrollEntry(string path, bool interactable)
         {
             GameObject entry = Instantiate(_entryPrefab);
-            IMenuScrollEntry menuScrollEntry = entry.GetComponentsInChildren<MonoBehaviour>(true)
-                                                .OfType<IMenuScrollEntry>()
+            IDepCacheScrollEntry menuScrollEntry = entry.GetComponentsInChildren<MonoBehaviour>(true)
+                                                .OfType<IDepCacheScrollEntry>()
                                                 .FirstOrDefault();
             menuScrollEntry.ShortPath = path;
             menuScrollEntry.AssignDispatcher(AppEnvironment.Dispatcher);
@@ -94,7 +94,7 @@ namespace UABS.Assets.Script.DropdownOptions
 
         public void OnEvent(AppEvent e)
         {
-            if (e is CacheRefreshEvent cre)
+            if (e is CacheRefreshEvent)
             {
                 ClearAndRecreate();
             }

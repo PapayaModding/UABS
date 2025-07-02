@@ -18,13 +18,13 @@ namespace UABS.Assets.Script.UI
             dropdownPanel.gameObject.SetActive(!_shouldHideDropDown);
         }
 
-        public void OnPointerEnter(PointerEventData eventData)
+        public virtual void OnPointerEnter(PointerEventData eventData)
         {
             _isPointerInside = true;
             dropdownPanel.gameObject.SetActive(true);
         }
 
-        public void OnPointerExit(PointerEventData eventData)
+        public virtual void OnPointerExit(PointerEventData eventData)
         {
             _isPointerInside = false;
             StartCoroutine(HideAfterDelay());

@@ -8,6 +8,8 @@ using UnityEngine.UI;
 using UABS.Assets.Script.DataStruct;
 using System.Collections;
 using System;
+using AssetsTools.NET.Extra;
+using System.Linq;
 
 namespace UABS.Assets.Script.Controller
 {
@@ -30,6 +32,7 @@ namespace UABS.Assets.Script.Controller
         private List<EntryInfoView> _entryPool = new();
         // private List<AssetTextInfo> _currAssetsTextInfo;
         private List<ParsedAssetAndEntry> _currEntryInfos;
+        private List<ParsedAssetAndEntry> _renderEntryInfos;
 
         private float _itemHeight = 80f;
         [SerializeField]
@@ -37,27 +40,36 @@ namespace UABS.Assets.Script.Controller
         [SerializeField]
         private float _paddingLeft = -10f;
 
+        private Dictionary<AssetClassID, bool> _isClassIDFiltered = new();
+
         private HashSet<long> _highlighted = new();
 
         public void OnScroll()
         {
             float scrollY = GetScrollAxisY();
-            int startIndex = GetStartIndex(scrollY, _currEntryInfos.Count, _maxNumOfEntryPerPage);
+            int startIndex = GetStartIndex(scrollY, _renderEntryInfos.Count, _maxNumOfEntryPerPage);
 
             for (int i = 0; i < _maxNumOfEntryPerPage; i++)
             {
                 int dataIndex = startIndex + i;
-                if (dataIndex >= _currEntryInfos.Count)
+                if (dataIndex >= _renderEntryInfos.Count)
                 {
                     _entryPool[i].Hide();
                     continue;
                 }
 
                 _entryPool[i].Show();
-                _entryPool[i].AssignStuff(dataIndex, _currEntryInfos.Count, _scrollbarRef);
-                _entryPool[i].Render(_currEntryInfos[dataIndex], _highlighted.Contains(_currEntryInfos[dataIndex].assetEntryInfo.pathID));
+                _entryPool[i].AssignStuff(dataIndex, _renderEntryInfos.Count, _scrollbarRef);
+                _entryPool[i].Render(_renderEntryInfos[dataIndex], _highlighted.Contains(_renderEntryInfos[dataIndex].assetEntryInfo.pathID));
                 _entryPool[i].SetPosition(new Vector2(_paddingLeft, -dataIndex * _itemHeight + _paddingTop));
             }
+        }
+
+        private List<ParsedAssetAndEntry> FilterEntryInfoByType(List<ParsedAssetAndEntry> entryInfos)
+        {
+            return entryInfos.Where(x => !_isClassIDFiltered.ContainsKey(x.assetEntryInfo.classID) ||
+                                            (_isClassIDFiltered.ContainsKey(x.assetEntryInfo.classID) &&
+                                            !_isClassIDFiltered[x.assetEntryInfo.classID])).ToList();
         }
 
         public void Refresh()
@@ -70,9 +82,10 @@ namespace UABS.Assets.Script.Controller
             if (e is GoBundleViewEvent gbve)
             {
                 _currEntryInfos = gbve.EntryInfos;
+                _renderEntryInfos = _currEntryInfos;
                 _content.sizeDelta = new Vector2(
                     _content.sizeDelta.x,
-                     _currEntryInfos.Count * _itemHeight
+                     _renderEntryInfos.Count * _itemHeight
                 );
                 Refresh();
 
@@ -84,6 +97,17 @@ namespace UABS.Assets.Script.Controller
             {
                 _highlighted = amse.SelectedPathIDs;
                 Refresh();
+            }
+            else if (e is FilterTypeEvent fte)
+            {
+                _isClassIDFiltered = fte.IsClassIDFiltered;
+                _renderEntryInfos = FilterEntryInfoByType(_currEntryInfos);
+                _content.sizeDelta = new Vector2(
+                    _content.sizeDelta.x,
+                     _renderEntryInfos.Count * _itemHeight
+                );
+                Refresh();
+                StartCoroutine(CallAfterDelay(0.3f, () => Refresh()));
             }
         }
 
