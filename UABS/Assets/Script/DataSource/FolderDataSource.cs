@@ -13,42 +13,28 @@ namespace UABS.Assets.Script.DataSource
     {
         private AppEnvironment _appEnvironment = null;
         public AppEnvironment AppEnvironment => _appEnvironment;
-
+        
+        private List<string> _paths = new();
+        
         private FolderDataPathManager _pathManager;
-        private List<List<DependencyInfo>> _recordDependencyInfosList = new();
+        private FolderGoBackManager _goBackManager;
 
         public void Initialize(AppEnvironment appEnvironment)
         {
             _appEnvironment = appEnvironment;
             _pathManager = new(_appEnvironment);
             _appEnvironment.Dispatcher.Register(_pathManager);
+            _pathManager.SetPathsCallBack = val => _paths = val;
+            _pathManager.GetPathsCallBack = () => _paths;
+
+            _goBackManager = new(_appEnvironment);
+            _appEnvironment.Dispatcher.Register(_goBackManager);
+            _goBackManager.GetBackDirectory = _pathManager.GetBackDirectory;
         }
 
         public void OnEvent(AppEvent e)
         {
-            if (e is FolderRead4DependencyEvent fr4d)
-            {
-                if (Directory.Exists(fr4d.FolderPath))
-                {
-                    _recordDependencyInfosList.Add(fr4d.DependencyInfos);
-                }
-            }
-            else if (e is GoBackEvent)
-            {
-                Debug.Log("Unloaded everything from assets manager.");
-                _appEnvironment.AssetsManager.UnloadAll();
-                
-                string backDir = _pathManager.GetBackDirectory();
-                if (_recordDependencyInfosList.Count == 0)
-                {
-                    _appEnvironment.Dispatcher.Dispatch(new FolderReadEvent(backDir));
-                }
-                else
-                {
-                    _appEnvironment.Dispatcher.Dispatch(new FolderRead4DependencyEvent(backDir, _recordDependencyInfosList[^1]));
-                    _recordDependencyInfosList.RemoveAt(_recordDependencyInfosList.Count - 1);
-                }
-            }
+            
         }
     }
 }

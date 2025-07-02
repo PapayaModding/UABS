@@ -58,17 +58,13 @@ namespace UABS.Assets.Script.Controller
             }
         }
 
+        public void Refresh()
+        {
+            OnScroll();
+        }
+
         public void OnEvent(AppEvent e)
         {
-            // if (e is AssetsDisplayInfoEvent adie)
-            // {
-            //     _currAssetsTextInfo = adie.AssetsDisplayInfo.Select(x => x.assetTextInfo).ToList();
-            //     _content.sizeDelta = new Vector2(
-            //         _content.sizeDelta.x,
-            //         _currAssetsTextInfo.Count * _itemHeight
-            //     );
-            //     OnScroll();
-            // }
             if (e is GoBundleViewEvent gbve)
             {
                 _currEntryInfos = gbve.EntryInfos;
@@ -76,12 +72,20 @@ namespace UABS.Assets.Script.Controller
                     _content.sizeDelta.x,
                      _currEntryInfos.Count * _itemHeight
                 );
-                OnScroll();
+                Refresh();
             }
             else if (e is AssetMultiSelectionEvent amse)
             {
                 _highlighted = amse.SelectedPathIDs;
-                OnScroll();
+                Refresh();
+            }
+            else if (e is BundleReadEvent)
+            {
+                Refresh();
+            }
+            else if (e is BundleRead4DependencyEvent)
+            {
+                Refresh();
             }
         }
 

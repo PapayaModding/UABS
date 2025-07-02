@@ -3,24 +3,23 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using AssetsTools.NET.Extra;
+using UABS.Assets.Script.DataSource.Manager;
 using UABS.Assets.Script.DataStruct;
 using UABS.Assets.Script.Event;
 using UABS.Assets.Script.EventListener;
 using UABS.Assets.Script.Misc;
 using UABS.Assets.Script.Reader;
-using UABS.Assets.Script.Writer;
 using UnityEngine;
 
 namespace UABS.Assets.Script.DataSource
 {
     public class AssetsDataSource : MonoBehaviour, IAppEventListener, IAppEnvironment
     {
-        private BundleFileInstance _currBunInst;
-        private WriteTextureAsImage2Path _writeTextureAsImage2Path;
         private AppEnvironment _appEnvironment = null;
         public AppEnvironment AppEnvironment => _appEnvironment;
         public List<ParsedAssetAndEntry> _entryInfos;
         public AssetParser _assetParser;
+        public AssetsDataExportManager _exportManager;
 
         public void OnEvent(AppEvent e)
         {
@@ -39,19 +38,10 @@ namespace UABS.Assets.Script.DataSource
                 _entryInfos = SortedEntryInfos(sortByType, sortOrder);
                 _appEnvironment.Dispatcher.Dispatch(new GoBundleViewEvent(_entryInfos));
             }
-            else if (e is ExportAssetsEvent eae)
-            {
-                ExportMethod exportMethod = eae.ExportMethod;
-                if (exportMethod.exportType == ExportType.All)
-                {
-                    _writeTextureAsImage2Path.ExportAllAssetsToPath(exportMethod, _entryInfos);
-                }
-            }
         }
 
         public void OpenBundle(BundleFileInstance bunInst, string brePath)
         {
-            _currBunInst = bunInst;
             (List<ParsedAsset> parsedAssets, AssetsFileInstance fileInst) = _assetParser.ReadAssetOnly(bunInst);
             if (fileInst == null)
             {
@@ -144,7 +134,11 @@ namespace UABS.Assets.Script.DataSource
         {
             _appEnvironment = appEnvironment;
             _assetParser = new(_appEnvironment.AssetsManager);
-            _writeTextureAsImage2Path = new(_appEnvironment.AssetsManager);
+            _exportManager = new(_appEnvironment.AssetsManager)
+            {
+                EntryInfosCallBack = () => _entryInfos
+            };
+            _appEnvironment.Dispatcher.Register(_exportManager);
         }
     }
 }

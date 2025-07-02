@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using UABS.Assets.Script.DataStruct;
@@ -11,9 +12,13 @@ namespace UABS.Assets.Script.DataSource.Manager
 {
     public class FolderDataPathManager : IAppEventListener
     {
-        private List<string> _recordPaths = new();
-        private ReadFolderContent _readFolderContent = new();
-        private AppEnvironment _appEnvironment;
+        public Action<List<string>> SetPathsCallBack;
+        public Func<List<string>> GetPathsCallBack;
+
+        private List<string> Paths => GetPathsCallBack != null ? GetPathsCallBack() : new();
+
+        private readonly ReadFolderContent _readFolderContent = new();
+        private readonly AppEnvironment _appEnvironment;
 
         public FolderDataPathManager(AppEnvironment appEnvironment)
         {
@@ -77,9 +82,9 @@ namespace UABS.Assets.Script.DataSource.Manager
 
         private void RecordPath(string newPath)
         {
-            if (_recordPaths.Count == 0)
+            if (Paths.Count == 0)
             {
-                _recordPaths.Add(newPath);
+                AddToPaths(newPath);
                 return;
             }
 
@@ -92,18 +97,18 @@ namespace UABS.Assets.Script.DataSource.Manager
 
             if (IsPathPrefix(last, newPath) || IsPathPrefix(newPath, last))
             {
-                _recordPaths[^1] = newPath;
+                ReplaceLastPath(newPath);
             }
             else
             {
-                _recordPaths.Add(newPath);
+                AddToPaths(newPath);
             }
             // PrintRecordedPaths();
         }
-        
+
         public string GetBackDirectory()
         {
-            if (_recordPaths.Count == 1) // This is the main path
+            if (Paths.Count == 1) // This is the main path
             {
                 return Path.GetDirectoryName(GetMainPath());
             }
@@ -115,7 +120,7 @@ namespace UABS.Assets.Script.DataSource.Manager
             if (ShouldPathBeRemoved(last))
             {
                 // Debug.Log($"REMOVED {_recordPaths[^1]}");
-                _recordPaths.RemoveAt(_recordPaths.Count - 1);
+                RemoveLastPath();
                 return GetLastRecordedPath();
             }
             else
@@ -126,7 +131,7 @@ namespace UABS.Assets.Script.DataSource.Manager
 
         private bool ShouldPathBeRemoved(string subPath)
         {
-            if (_recordPaths.Count == 1)
+            if (Paths.Count == 1)
                 return false;
             return ArePathsEqual(Path.GetDirectoryName(subPath), PredefinedPaths.ExternalSystemDepCache);
         }
@@ -136,41 +141,64 @@ namespace UABS.Assets.Script.DataSource.Manager
             string fullA = Path.GetFullPath(pathA).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
             string fullB = Path.GetFullPath(pathB).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
 
-        #if UNITY_EDITOR_WIN || UNITY_STANDALONE_WIN
+#if UNITY_EDITOR_WIN || UNITY_STANDALONE_WIN
             // Windows paths are case-insensitive
             return string.Equals(fullA, fullB, System.StringComparison.OrdinalIgnoreCase);
-        #else
+#else
             // macOS/Linux paths are case-sensitive
             return string.Equals(fullA, fullB, System.StringComparison.Ordinal);
-        #endif
+#endif
         }
 
         private string GetMainPath()
         {
-            return _recordPaths[0];
+            return Paths[0];
         }
 
         private string GetLastRecordedPath()
         {
-            return _recordPaths[^1];
+            return Paths[^1];
         }
 
-        private void PrintRecordedPaths()
-        {
-            string result = "Currently recorded paths: \n";
-            foreach (string path in _recordPaths)
-            {
-                result += $"\t - {path}\n";
-            }
-            Debug.Log(result);
-        }
-        
         private bool IsPathPrefix(string basePath, string targetPath)
         {
             string fullBase = Path.GetFullPath(basePath).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
             string fullTarget = Path.GetFullPath(targetPath).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
 
             return fullTarget.StartsWith(fullBase + Path.DirectorySeparatorChar);
+        }
+
+        private void AddToPaths(string newPath)
+        {
+            List<string> copy = new(Paths)
+            {
+                newPath
+            };
+            SetPathsCallBack(copy);
+        }
+
+        private void RemoveLastPath()
+        {
+            List<string> copy = new(Paths);
+            copy.RemoveAt(copy.Count - 1);
+            SetPathsCallBack(copy);
+        }
+
+        private void ReplaceLastPath(string newPath)
+        {
+            List<string> copy = new(Paths);
+            copy[^1] = newPath;
+            SetPathsCallBack(copy);
+        }
+
+        private void PrintRecordedPaths()
+        {
+            string result = "Currently recorded paths: \n";
+            foreach (string path in Paths)
+            {
+                result += $"\t - {path}\n";
+            }
+            Debug.Log(result);
         }
     }
 }

@@ -11,7 +11,9 @@ namespace UABS.Assets.Script.Event
 
         public string OverrideBundlePath { get; }
 
-        public FolderRead4DependencyEvent(string folderPath, List<DependencyInfo> dependencyInfos = null, string overrideBundlePath = "")
+        public FolderRead4DependencyEvent(string folderPath,
+                                            List<DependencyInfo> dependencyInfos = null,
+                                            string overrideBundlePath = "")
         {
             FolderPath = folderPath;
             DependencyInfos = dependencyInfos;
