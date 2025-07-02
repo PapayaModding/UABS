@@ -6,6 +6,8 @@ using UABS.Assets.Script.EventListener;
 using UABS.Assets.Script.Event;
 using UnityEngine.UI;
 using UABS.Assets.Script.DataStruct;
+using System.Collections;
+using System;
 
 namespace UABS.Assets.Script.Controller
 {
@@ -73,18 +75,14 @@ namespace UABS.Assets.Script.Controller
                      _currEntryInfos.Count * _itemHeight
                 );
                 Refresh();
+
+                // Some bundles might contain a lot assets, which can take time to load.
+                // Try refresh again after a short period of time.
+                StartCoroutine(CallAfterDelay(0.3f, () => Refresh()));
             }
             else if (e is AssetMultiSelectionEvent amse)
             {
                 _highlighted = amse.SelectedPathIDs;
-                Refresh();
-            }
-            else if (e is BundleReadEvent)
-            {
-                Refresh();
-            }
-            else if (e is BundleRead4DependencyEvent)
-            {
                 Refresh();
             }
         }
@@ -114,6 +112,12 @@ namespace UABS.Assets.Script.Controller
         {
             int maxStart = Mathf.Max(0, totalItems - visibleCount);
             return Mathf.Clamp(Mathf.FloorToInt(scrollY * maxStart), 0, maxStart);
+        }
+
+        private IEnumerator CallAfterDelay(float delay, Action callback)
+        {
+            yield return new WaitForSeconds(delay);
+            callback?.Invoke();
         }
     }
 }

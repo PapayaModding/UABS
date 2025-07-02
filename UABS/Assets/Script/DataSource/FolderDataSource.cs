@@ -1,15 +1,11 @@
 using System.Collections.Generic;
-using System.IO;
 using UABS.Assets.Script.DataSource.Manager;
-using UABS.Assets.Script.DataStruct;
-using UABS.Assets.Script.Event;
-using UABS.Assets.Script.EventListener;
 using UABS.Assets.Script.Misc;
 using UnityEngine;
 
 namespace UABS.Assets.Script.DataSource
 {
-    public class FolderDataSource : MonoBehaviour, IAppEventListener, IAppEnvironment
+    public class FolderDataSource : MonoBehaviour, IAppEnvironment
     {
         private AppEnvironment _appEnvironment = null;
         public AppEnvironment AppEnvironment => _appEnvironment;
@@ -30,11 +26,6 @@ namespace UABS.Assets.Script.DataSource
             _goBackManager = new(_appEnvironment);
             _appEnvironment.Dispatcher.Register(_goBackManager);
             _goBackManager.GetBackDirectory = _pathManager.GetBackDirectory;
-        }
-
-        public void OnEvent(AppEvent e)
-        {
-            
         }
     }
 }
