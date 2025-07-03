@@ -31,7 +31,7 @@ namespace UABS.Assets.Script.DataSource.Manager
                 SortByType sortByType = ssve.SortProp.sortByType;
                 SortOrder sortOrder = ssve.SortProp.sortOrder;
                 SetEntryInfosCallBack(SortedEntryInfos(sortByType, sortOrder));
-                _dispatcher.Dispatch(new GoBundleViewEvent(EntryInfos));
+                _dispatcher.Dispatch(new SortEntryEvent(EntryInfos));
             }
         }
 
