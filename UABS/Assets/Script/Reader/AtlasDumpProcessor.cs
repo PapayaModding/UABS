@@ -1,9 +1,8 @@
 using System.Collections.Generic;
 using System.Linq;
-using Newtonsoft.Json.Linq;
 using UABS.Assets.Script.DataStruct;
+using UABS.Assets.Script.Wrapper.Json;
 using UnityEngine;
-using static UABS.Assets.Script.Reader.DumpReader;
 
 namespace UABS.Assets.Script.Reader
 {
@@ -42,7 +41,7 @@ namespace UABS.Assets.Script.Reader
 
         public DumpInfo atlasDumpInfo;
         public List<DumpInfo> spriteDumpInfos;
-        public readonly JObject AtlasJson
+        public readonly IJsonObject AtlasJson
         {
             get => atlasDumpInfo.dumpJson;
         }
@@ -50,10 +49,12 @@ namespace UABS.Assets.Script.Reader
         public readonly Dictionary<int, long> GetIndex2PathID()
         {
             Dictionary<int, long> result = new();
-            var packedSpritesSource = AtlasJson["m_PackedSprites"]["Array"];
-            for (int i = 0; i < packedSpritesSource.ToList().Count; i++)
+            IJsonObject packedSprites = AtlasJson.GetObject("m_PackedSprites");
+            List<IJsonObject> array = packedSprites.GetArray("Array");
+            
+            for (int i = 0; i < array.ToList().Count; i++)
             {
-                var pathID = long.Parse(packedSpritesSource[i]["m_PathID"].ToString());
+                var pathID = long.Parse(array[i].GetObject("m_PathID").ToString());
                 result[i] = pathID;
             }
             return result;
@@ -71,14 +72,16 @@ namespace UABS.Assets.Script.Reader
             Dictionary<int, RenderDataKey> result = new();
             foreach (DumpInfo spriteDumpInfo in spriteDumpInfos)
             {
-                JObject spriteDumpJson = spriteDumpInfo.dumpJson;
+                IJsonObject spriteDumpJson = spriteDumpInfo.dumpJson;
                 long spritePathID = spriteDumpInfo.pathID;
-                var rdk = spriteDumpJson["m_RenderDataKey"];
-                uint firstData0 = uint.Parse(rdk["first"]["data[0]"].ToString());
-                uint firstData1 = uint.Parse(rdk["first"]["data[1]"].ToString());
-                uint firstData2 = uint.Parse(rdk["first"]["data[2]"].ToString());
-                uint firstData3 = uint.Parse(rdk["first"]["data[3]"].ToString());
-                long second = long.Parse(rdk["second"].ToString());
+                IJsonObject rdk = spriteDumpJson.GetObject("m_RenderDataKey");
+                IJsonObject first = rdk.GetObject("first");
+                uint firstData0 = first.GetUInt("data[0]");
+                uint firstData1 = first.GetUInt("data[1]");
+                uint firstData2 = first.GetUInt("data[2]");
+                uint firstData3 = first.GetUInt("data[3]");
+
+                long second = rdk.GetLong("second");
                 RenderDataKey renderDataKey = new(firstData0, firstData1, firstData2, firstData3, second);
                 result[pathID2Index[spritePathID]] = renderDataKey;
             }
@@ -86,7 +89,7 @@ namespace UABS.Assets.Script.Reader
             return result;
         }
 
-        public int SearchIndexOfRenderDataKey(List<RenderDataKey> lst, RenderDataKey target)
+        public readonly int SearchIndexOfRenderDataKey(List<RenderDataKey> lst, RenderDataKey target)
         {
             int counter = 0;
             foreach (RenderDataKey rdk in lst)
@@ -100,25 +103,39 @@ namespace UABS.Assets.Script.Reader
             return -1;
         }
 
-        public List<RenderDataKey> GetRenderDataKeysFromJObject(JObject jObject)
+        public readonly List<RenderDataKey> GetRenderDataKeysFromJObject(IJsonObject jObject)
         {
-            var renderDataMap = jObject["m_RenderDataMap"]["Array"];
+            IJsonObject renderDataMap = AtlasJson.GetObject("m_RenderDataMap");
+            List<IJsonObject> array = renderDataMap.GetArray("Array");
+
+            // var renderDataMap = jObject["m_RenderDataMap"]["Array"];
+            
             List<RenderDataKey> renderDataKeys = new();
-            for (int i = 0; i < renderDataMap.Count(); i++)
+            for (int i = 0; i < array.Count(); i++)
             {
-                var rdk = renderDataMap[i];
-                uint firstData0 = uint.Parse(rdk["first"]["first"]["data[0]"].ToString());
-                uint firstData1 = uint.Parse(rdk["first"]["first"]["data[1]"].ToString());
-                uint firstData2 = uint.Parse(rdk["first"]["first"]["data[2]"].ToString());
-                uint firstData3 = uint.Parse(rdk["first"]["first"]["data[3]"].ToString());
-                long second = long.Parse(rdk["first"]["second"].ToString());
+                var rdk = array[i];
+                IJsonObject outerFirst = rdk.GetObject("first");
+                IJsonObject innerFirst = outerFirst.GetObject("first");
+                uint firstData0 = innerFirst.GetUInt("data[0]");
+                uint firstData1 = innerFirst.GetUInt("data[1]");
+                uint firstData2 = innerFirst.GetUInt("data[2]");
+                uint firstData3 = innerFirst.GetUInt("data[3]");
+
+                long second = outerFirst.GetLong("second");
+
+                // var rdk = renderDataMap[i];
+                // uint firstData0 = uint.Parse(rdk["first"]["first"]["data[0]"].ToString());
+                // uint firstData1 = uint.Parse(rdk["first"]["first"]["data[1]"].ToString());
+                // uint firstData2 = uint.Parse(rdk["first"]["first"]["data[2]"].ToString());
+                // uint firstData3 = uint.Parse(rdk["first"]["first"]["data[3]"].ToString());
+                // long second = long.Parse(rdk["first"]["second"].ToString());
                 RenderDataKey renderDataKey = new(firstData0, firstData1, firstData2, firstData3, second);
                 renderDataKeys.Add(renderDataKey);
             }
             return renderDataKeys;
         }
 
-        public Dictionary<int, int> GetIndex2ActualRenderDataKeyIndex()
+        public readonly Dictionary<int, int> GetIndex2ActualRenderDataKeyIndex()
         {
             Dictionary<int, int> result = new();
             Dictionary<int, RenderDataKey> index2RenderDataKey = GetIndex2RenderDataKey();
@@ -135,15 +152,24 @@ namespace UABS.Assets.Script.Reader
             return result;
         }
 
-        public Rect GetRectAtActualIndex(int actualIndex)
+        public readonly Rect GetRectAtActualIndex(int actualIndex)
         {
-            var renderDataMap = AtlasJson["m_RenderDataMap"]["Array"];
-            var texRect = renderDataMap[actualIndex]["second"]["textureRect"];
+            IJsonObject renderDataMap = AtlasJson.GetObject("m_RenderDataMap");
+            List<IJsonObject> array = renderDataMap.GetArray("Array");
+            IJsonObject actual = array[actualIndex];
+            IJsonObject second = actual.GetObject("second");
+            IJsonObject textureRect = second.GetObject("textureRect");
+
+            // var texRect = array[actualIndex]["second"]["textureRect"];
             return new(
-                float.Parse(texRect["x"].ToString()),
-                float.Parse(texRect["y"].ToString()),
-                float.Parse(texRect["width"].ToString()),
-                float.Parse(texRect["height"].ToString())
+                textureRect.GetFloat("x"),
+                textureRect.GetFloat("y"),
+                textureRect.GetFloat("width"),
+                textureRect.GetFloat("height")
+                // float.Parse(texRect["x"].ToString()),
+                // float.Parse(texRect["y"].ToString()),
+                // float.Parse(texRect["width"].ToString()),
+                // float.Parse(texRect["height"].ToString())
             );
         }
 
@@ -157,8 +183,12 @@ namespace UABS.Assets.Script.Reader
                 List<DumpInfo> spriteDumpInfosInAtlas = new();
                 foreach (DumpInfo spriteDumpInfo in spriteDumpInfos)
                 {
-                    JObject spriteJson = spriteDumpInfo.dumpJson;
-                    long atlasPathIDInSprite = long.Parse(spriteJson["m_SpriteAtlas"]["m_PathID"].ToString());
+                    IJsonObject spriteJson = spriteDumpInfo.dumpJson;
+                    IJsonObject spriteAtlas = spriteJson.GetObject("m_SpriteAtlas");
+                    long pathID = spriteAtlas.GetLong("m_PathID");
+                    long atlasPathIDInSprite = pathID;
+                    
+                    // long atlasPathIDInSprite = long.Parse(spriteJson["m_SpriteAtlas"]["m_PathID"].ToString());
                     if (atlasPathIDInSprite == atlasPathID)
                     {
                         spriteDumpInfosInAtlas.Add(spriteDumpInfo);

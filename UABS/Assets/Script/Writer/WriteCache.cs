@@ -5,6 +5,7 @@ using System.Threading;
 using AssetsTools.NET.Extra;
 using UABS.Assets.Script.Misc;
 using UABS.Assets.Script.Reader;
+using UABS.Assets.Script.Wrapper.Json;
 using UnityEngine;
 
 
@@ -14,9 +15,9 @@ namespace UABS.Assets.Script.Writer
     {
         private ReadNewCache _readNewCache;
 
-        public WriteCache(AssetsManager assetsManager)
+        public WriteCache(AssetsManager assetsManager, IJsonSerializer jsonSerializer)
         {
-            _readNewCache = new(assetsManager);
+            _readNewCache = new(assetsManager, jsonSerializer);
         }
 
 #pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously

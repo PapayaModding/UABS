@@ -3,8 +3,8 @@ using System.IO;
 using System.Text;
 using AssetsTools.NET;
 using AssetsTools.NET.Extra;
-using Newtonsoft.Json;
 using UABS.Assets.Script.Misc;
+using UABS.Assets.Script.Wrapper.Json;
 using UnityEngine;
 
 namespace UABS.Assets.Script.Reader
@@ -26,10 +26,12 @@ namespace UABS.Assets.Script.Reader
         }
 
         private AssetsManager _assetsManager;
+        private IJsonSerializer _jsonSerializer;
 
-        public ReadNewCache(AssetsManager assetsManager)
+        public ReadNewCache(AssetsManager assetsManager, IJsonSerializer jsonSerializer)
         {
             _assetsManager = assetsManager;
+            _jsonSerializer = jsonSerializer;
         }
 
         public List<CacheInfo> BuildCache(string targetFolder, string cacheFolder)
@@ -67,7 +69,8 @@ namespace UABS.Assets.Script.Reader
                 result.Add(new()
                 {
                     path = indexFile,
-                    jsonContent = JsonConvert.SerializeObject(writeToIndex, Formatting.Indented)
+                    // jsonContent = JsonConvert.SerializeObject(writeToIndex, Formatting.Indented)
+                    jsonContent = _jsonSerializer.Serialize(writeToIndex, true)
                 });
             }
             return result;

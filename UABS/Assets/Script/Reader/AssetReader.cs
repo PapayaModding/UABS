@@ -39,7 +39,9 @@ namespace UABS.Assets.Script.Reader
             string name = "";
             if (parsedAsset.classID == AssetClassID.MonoBehaviour)
             {
-                name = _currMonoScriptNames[baseField["m_Script"]["m_PathID"].AsLong];
+                long pathID = baseField["m_Script"]["m_PathID"].AsLong;
+                if (_currMonoScriptNames.ContainsKey(pathID))
+                    name = _currMonoScriptNames[pathID];
             }
             else
             {

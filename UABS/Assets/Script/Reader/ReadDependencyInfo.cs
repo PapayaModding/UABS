@@ -4,8 +4,8 @@ using System.IO;
 using System.Text;
 using AssetsTools.NET;
 using AssetsTools.NET.Extra;
-using Newtonsoft.Json.Linq;
 using UABS.Assets.Script.DataStruct;
+using UABS.Assets.Script.Wrapper.Json;
 using UnityEngine;
 
 namespace UABS.Assets.Script.Reader
@@ -13,9 +13,11 @@ namespace UABS.Assets.Script.Reader
     public class ReadDependencyInfo
     {
         private AssetsManager _assetsManager;
-        public ReadDependencyInfo(AssetsManager assetsManager)
+        private IJsonSerializer _jsonSerializer;
+        public ReadDependencyInfo(AssetsManager assetsManager, IJsonSerializer jsonSerializer)
         {
             _assetsManager = assetsManager;
+            _jsonSerializer = jsonSerializer;
         }
 
         public List<DependencyInfo> ReadInfoFor(BundleFileInstance bunInst, string fromCache)
@@ -59,15 +61,17 @@ namespace UABS.Assets.Script.Reader
             {
                 try
                 {
-                    JArray arr = JArray.Parse(File.ReadAllText(filePath));
+                    string json = File.ReadAllText(filePath);
+                    List<IJsonObject> arr = _jsonSerializer.DeserializeToArray(json);
+                    // JArray arr = JArray.Parse(File.ReadAllText(filePath));
                     foreach (var item in arr)
                     {
-                        if (CompareCabCode(item["CabCode"].ToString(), cabCode))
+                        if (CompareCabCode(item.GetString("CabCode"), cabCode))
                         {
                             return new()
                             {
-                                name = item["Name"].ToString(),
-                                path = item["Path"].ToString(),
+                                name = item.GetString("Name"),
+                                path = item.GetString("Path"),
                                 cabCode = cabCode
                             };
                         }

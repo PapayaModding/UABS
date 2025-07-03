@@ -1,8 +1,8 @@
 using AssetsTools.NET;
-using Newtonsoft.Json.Linq;
 using System.Collections.Generic;
 using AssetsTools.NET.Extra;
 using UABS.Assets.Script.DataStruct;
+using UABS.Assets.Script.Wrapper.Json;
 
 namespace UABS.Assets.Script.Reader
 {
@@ -58,7 +58,7 @@ namespace UABS.Assets.Script.Reader
                 AssetTypeValueField assetBase = AssetsManager.GetBaseField(fileInst, assetInfo);
                 result.Add(new()
                 {
-                    dumpJson = (JObject)JsonDumper.RecurseJsonDump(assetBase, true),
+                    dumpJson = new NewtonsoftJsonObject(JsonDumper.RecurseJsonDump(assetBase, true)),
                     pathID=assetInfo.PathId
                 });
             }

@@ -21,19 +21,43 @@ namespace UABS.Assets.Script.Reader
 
         public (List<ParsedAsset>, AssetsFileInstance) ReadAssetOnly(BundleFileInstance bunInst)
         {
+            // List<ParsedAsset> parsedAssets = new();
+            // AssetsFileInstance fileInst = _assetsManager.LoadAssetsFileFromBundle(bunInst, 0, false);
+
+            // foreach (AssetClassID classId in Enum.GetValues(typeof(AssetClassID)))
+            // {
+            //     List<AssetFileInfo> assets = fileInst.file.GetAssetsOfType(classId);
+            //     if (assets == null || assets.Count == 0)
+            //         continue;
+
+            //     foreach (AssetFileInfo assetInfo in assets)
+            //     {
+            //         parsedAssets.Add(new ParsedAsset
+            //         {
+            //             fileInfo = assetInfo,
+            //             classID = classId,
+            //             fileInst = fileInst
+            //         });
+            //     }
+            // }
+
+            // return (parsedAssets, fileInst);
+
             List<ParsedAsset> parsedAssets = new();
             AssetsFileInstance fileInst = _assetsManager.LoadAssetsFileFromBundle(bunInst, 0, false);
-            foreach (AssetClassID classId in Enum.GetValues(typeof(AssetClassID)))
+
+            List<AssetFileInfo> allAssets = fileInst.file.AssetInfos;
+
+            foreach (var assetInfo in allAssets)
             {
-                List<AssetFileInfo> assets = fileInst.file.GetAssetsOfType(classId);
-                parsedAssets.AddRange(assets.Select(x => new ParsedAsset()
+                parsedAssets.Add(new ParsedAsset
                 {
-                    fileInfo = x,
-                    classID = classId,
+                    fileInfo = assetInfo,
+                    classID = (AssetClassID)assetInfo.TypeId,
                     fileInst = fileInst
-                }).ToList());
+                });
             }
-            // _assetsManager.UnloadBundleFile(bunInst);
+
             return (parsedAssets, fileInst);
         }
     }

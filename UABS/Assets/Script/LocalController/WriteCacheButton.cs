@@ -1,6 +1,5 @@
 using System.IO;
 using System.Threading.Tasks;
-using UABS.Assets.Script.Event;
 using UABS.Assets.Script.Misc;
 using UABS.Assets.Script.Writer;
 using UnityEngine;
@@ -17,7 +16,7 @@ namespace UABS.Assets.Script.LocalController
         public void Initialize(AppEnvironment appEnvironment)
         {
             _appEnvironment = appEnvironment;
-            _writeCache = new(AppEnvironment.AssetsManager);
+            _writeCache = new(AppEnvironment.AssetsManager, AppEnvironment.JsonSerializer);
         }
 
         public async void ClickButton()

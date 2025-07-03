@@ -14,7 +14,7 @@ namespace UABS.Assets.Script.Reader
 
             if (isArray)
             {
-                JArray jArray = new JArray();
+                JArray jArray = new();
 
                 if (template.ValueType != AssetValueType.ByteArray)
                 {

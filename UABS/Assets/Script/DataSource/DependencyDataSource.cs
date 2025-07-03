@@ -23,7 +23,7 @@ namespace UABS.Assets.Script.DataSource
         public void Initialize(AppEnvironment appEnvironment)
         {
             _appEnvironment = appEnvironment;
-            _readDependencyInfo = new(AppEnvironment.AssetsManager);
+            _readDependencyInfo = new(AppEnvironment.AssetsManager, AppEnvironment.JsonSerializer);
         }
 
         public void OnEvent(AppEvent e)
