@@ -46,7 +46,7 @@ namespace UABS.Assets.Script.Writer.Dependency
         private bool IsPathValidBundle(string path)
         {
             string pathFolder = Path.GetDirectoryName(path);
-            return Directory.Exists(pathFolder) && Path.GetFileName(path).EndsWith(".bundle");
+            return Directory.Exists(pathFolder) && (Path.GetFileName(path).EndsWith(".bundle") || Path.GetFileName(path).EndsWith(".ab"));
         }
     }
 }

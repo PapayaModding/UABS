@@ -94,7 +94,7 @@ namespace UABS.Assets.Script.Reader
 
             foreach (string file in allFiles)
             {
-                if (file.EndsWith(".bundle"))
+                if (file.EndsWith(".bundle") || file.EndsWith(".ab"))
                     result.Add(file);
             }
 

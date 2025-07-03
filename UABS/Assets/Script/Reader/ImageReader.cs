@@ -157,6 +157,12 @@ namespace UABS.Assets.Script.Reader
             int format = texBase["m_TextureFormat"].AsInt;
             byte[] imageBytes = GetImageData(texBase, _currFileInst, bunInst);
 
+            if (imageBytes == null || imageBytes.Length == 0)
+            {
+                Debug.LogWarning("imageBytes is null or empty!");
+                return null;
+            }
+
             AssetImageInfo LoadImage(byte[] bytes)
             {
                 Texture2D texture = new(width, height, TextureFormat.RGBA32, false);
@@ -191,6 +197,31 @@ namespace UABS.Assets.Script.Reader
                 ColorRgba32[] decoded = decoder.DecodeRaw(imageBytes, width, height, bcnFormat);
                 byte[] rgbaBytes = new byte[decoded.Length * 4];
                 MemoryMarshal.Cast<ColorRgba32, byte>(decoded.AsSpan()).CopyTo(rgbaBytes);
+
+                return LoadImage(rgbaBytes);
+            }
+            else if (IsAndroidFormat((TextureFormat)format))
+            {
+                Texture2D tex = new(width, height, (TextureFormat)format, false);
+                tex.LoadRawTextureData(imageBytes);
+                tex.Apply();
+                Color32[] pixels = tex.GetPixels32();
+                // Convert Color32[] to byte[] (RGBA)
+                byte[] rgbaBytes = new byte[pixels.Length * 4];
+                for (int i = 0; i < pixels.Length; i++)
+                {
+                    rgbaBytes[i * 4] = pixels[i].r;
+                    rgbaBytes[i * 4 + 1] = pixels[i].g;
+                    rgbaBytes[i * 4 + 2] = pixels[i].b;
+                    rgbaBytes[i * 4 + 3] = pixels[i].a;
+                }
+
+                if (rgbaBytes == null || rgbaBytes.Length == 0)
+                {
+                    Debug.LogWarning("rgbaBytes is null or empty!");
+                    return null;
+                }
+
                 return LoadImage(rgbaBytes);
             }
             else if (imageBytes.Length == width * height * format)
@@ -347,6 +378,16 @@ namespace UABS.Assets.Script.Reader
                     format = default;
                     return false;
             }
+        }
+
+        private bool IsAndroidFormat(TextureFormat unityFormat)
+        {
+            return unityFormat == TextureFormat.ETC2_RGB ||
+                    unityFormat == TextureFormat.ETC2_RGBA1 ||
+                    unityFormat == TextureFormat.ETC2_RGBA8 ||
+                    unityFormat == TextureFormat.ETC2_RGBA8Crunched ||
+                    unityFormat == TextureFormat.ETC_RGB4 ||
+                    unityFormat == TextureFormat.ETC_RGB4Crunched;
         }
 
         private Texture2D PadToSquare(Texture2D original)
