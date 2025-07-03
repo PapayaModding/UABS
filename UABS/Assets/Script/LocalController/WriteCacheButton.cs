@@ -38,7 +38,7 @@ namespace UABS.Assets.Script.LocalController
                 Directory.CreateDirectory(PredefinedPaths.ExternalCache);
             }
 
-            string[] newSavePaths = _appEnvironment.Wrapper.FileBrowser.OpenFolderPanel("Select Folder to Save New Cache", PredefinedPaths.ExternalCache, false);
+            string[] newSavePaths = _appEnvironment.Wrapper.FileBrowser.OpenFolderPanel("Create a new folder under UABS_Cache and select it, then continue.", PredefinedPaths.ExternalCache, false);
             string newSavePath = "";
             if (newSavePaths.Length <= 0)
             {
@@ -50,7 +50,7 @@ namespace UABS.Assets.Script.LocalController
                 newSavePath = newSavePaths[0];
             }
             
-            await Task.Run(() =>_writeCache.CreateAndSaveNewCache(gameDataPath, newSavePath, null));
+            await Task.Run(() => _writeCache.CreateAndSaveNewCache(gameDataPath, newSavePath, null));
         }
 
         private string GetDefaultName()

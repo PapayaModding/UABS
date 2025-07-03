@@ -52,15 +52,16 @@ namespace UABS.Assets.Script.Reader
                 // Create Bundle objects
                 foreach (string fileInPath in filesInPath)
                 {
+                    string filePath = @$"{fileInPath}";
                     Bundle bundle = new()
                     {
                         Path = fileInPath,
                         Name = Path.GetFileName(fileInPath),
-                        CabCode = ReadCABCode(fileInPath),
+                        CabCode = ReadCABCode(filePath),
 
                         // --- Sprites ---
                         // Debug.Log(fileInPath);
-                        SpriteInfos = GetSpriteInfoInBundle(fileInPath)
+                        SpriteInfos = GetSpriteInfoInBundle(filePath)
                     };
                     writeToIndex.Add(bundle);
                 }

@@ -1,4 +1,6 @@
+using System.Linq;
 using SFB;
+using Unity.Mathematics;
 
 namespace UABS.Assets.Script.Wrapper.FileBrowser
 {
@@ -11,17 +13,20 @@ namespace UABS.Assets.Script.Wrapper.FileBrowser
                 new ExtensionFilter("Supported Files", extensions)
             };
 
-            return StandaloneFileBrowser.OpenFilePanel(title, directory, sfbFilters, multiselect);
+            string[] result = StandaloneFileBrowser.OpenFilePanel(title, directory, sfbFilters, multiselect);
+            return result.Select(x => @$"\\?\{x}").ToArray();
         }
 
         public string[] OpenFolderPanel(string title, string directory, bool multiselect)
         {
-            return StandaloneFileBrowser.OpenFolderPanel(title, directory, multiselect);
+            string[] result = StandaloneFileBrowser.OpenFolderPanel(title, directory, multiselect);
+            return result.Select(x => @$"\\?\{x}").ToArray();
         }
 
         public string SaveFilePanel(string title, string directory, string defaultName, string extension)
         {
-            return StandaloneFileBrowser.SaveFilePanel(title, directory, defaultName, extension);
+            string result = StandaloneFileBrowser.SaveFilePanel(title, directory, defaultName, extension);
+            return @$"\\?\{result}";
         }
     }
 }
