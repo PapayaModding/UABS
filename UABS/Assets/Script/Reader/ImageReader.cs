@@ -1,13 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Runtime.InteropServices;
 using System.Text;
 using AssetsTools.NET;
 using AssetsTools.NET.Extra;
-using BCnEncoder.Decoder;
-using BCnEncoder.Shared;
 using UABS.Assets.Script.DataStruct;
+using UABS.Assets.Script.Wrapper.TextureDecoder;
 using UnityEngine;
 
 namespace UABS.Assets.Script.Reader
@@ -26,10 +24,13 @@ namespace UABS.Assets.Script.Reader
 
         private AssetsManager _assetsManager;
 
-        public ImageReader(AssetsManager assetsManager)
+        private ITextureDecoder _textureDecoder;
+
+        public ImageReader(AssetsManager assetsManager, ITextureDecoder textureDecoder)
         {
             _assetsManager = assetsManager;
             _dumpReader = new(assetsManager);
+            _textureDecoder = textureDecoder;
         }
 
         public AssetImageInfo? SpriteToImage(ParsedAssetAndEntry entryInfo)
@@ -191,12 +192,14 @@ namespace UABS.Assets.Script.Reader
                 }
             }
 
-            if (IsSupportedBCnFormat((TextureFormat)format, out CompressionFormat bcnFormat))
+            if (IsSupportedFormat((TextureFormat)format, out TextureCompressionFormat compressFormat))
             {
-                var decoder = new BcDecoder();
-                ColorRgba32[] decoded = decoder.DecodeRaw(imageBytes, width, height, bcnFormat);
-                byte[] rgbaBytes = new byte[decoded.Length * 4];
-                MemoryMarshal.Cast<ColorRgba32, byte>(decoded.AsSpan()).CopyTo(rgbaBytes);
+                byte[] rgbaBytes = _textureDecoder.DecodeToBytes(imageBytes, width, height, compressFormat);
+
+                // var decoder = new BcDecoder();
+                // ColorRgba32[] decoded = decoder.DecodeRaw(imageBytes, width, height, bcnFormat);
+                // byte[] rgbaBytes = new byte[decoded.Length * 4];
+                // MemoryMarshal.Cast<ColorRgba32, byte>(decoded.AsSpan()).CopyTo(rgbaBytes);
 
                 return LoadImage(rgbaBytes);
             }
@@ -324,7 +327,7 @@ namespace UABS.Assets.Script.Reader
             throw new FileNotFoundException($"File '{internalFileName}' not found in bundle '{bundle.path}'");
         }
 
-        private bool IsSupportedBCnFormat(TextureFormat unityFormat, out CompressionFormat format)
+        private bool IsSupportedFormat(TextureFormat unityFormat, out TextureCompressionFormat compressFormat)
         {
             switch (unityFormat)
             {
@@ -332,50 +335,50 @@ namespace UABS.Assets.Script.Reader
                 case TextureFormat.RGBA32:
                 case TextureFormat.ARGB32:
                 case TextureFormat.BGRA32:
-                    format = CompressionFormat.Rgba;
+                    compressFormat = TextureCompressionFormat.Rgba;
                     return true;
 
                 case TextureFormat.RGB24:
-                    format = CompressionFormat.Rgb;
+                    compressFormat = TextureCompressionFormat.Rgb;
                     return true;
 
                 case TextureFormat.Alpha8:
-                    format = CompressionFormat.Bc1WithAlpha;
+                    compressFormat = TextureCompressionFormat.Bc1WithAlpha;
                     return true;
 
                 case TextureFormat.R8:
-                    format = CompressionFormat.R;
+                    compressFormat = TextureCompressionFormat.R;
                     return true;
 
                 case TextureFormat.R16:
-                    format = CompressionFormat.Rg;
+                    compressFormat = TextureCompressionFormat.Rg;
                     return true;
 
                 // BCn (DXT) compressed formats
                 case TextureFormat.DXT1:
                 case TextureFormat.BC4:
-                    format = CompressionFormat.Bc1;
+                    compressFormat = TextureCompressionFormat.Bc1;
                     return true;
 
                 case TextureFormat.DXT5:
-                    format = CompressionFormat.Bc3;
+                    compressFormat = TextureCompressionFormat.Bc3;
                     return true;
 
                 case TextureFormat.BC5:
-                    format = CompressionFormat.Bc5;
+                    compressFormat = TextureCompressionFormat.Bc5;
                     return true;
 
                 case TextureFormat.BC6H:
-                    format = CompressionFormat.Bc6U;
+                    compressFormat = TextureCompressionFormat.Bc6U;
                     return true;
 
                 case TextureFormat.BC7:
-                    format = CompressionFormat.Bc7;
+                    compressFormat = TextureCompressionFormat.Bc7;
                     return true;
 
                 // Fallback/default
                 default:
-                    format = default;
+                    compressFormat = default;
                     return false;
             }
         }

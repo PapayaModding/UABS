@@ -24,7 +24,7 @@ namespace UABS.Assets.Script.Controller
         {
             _appEnvironment = appEnvironment;
             _textureView.dispatcher = appEnvironment.Dispatcher;
-            _imageReader = new(appEnvironment.AssetsManager);
+            _imageReader = new(appEnvironment.AssetsManager, appEnvironment.Wrapper.TextureDecoder);
         }
 
         public void OnEvent(AppEvent e)

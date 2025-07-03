@@ -16,7 +16,7 @@ namespace UABS.Assets.Script.LocalController
         public void Initialize(AppEnvironment appEnvironment)
         {
             _appEnvironment = appEnvironment;
-            _writeCache = new(AppEnvironment.AssetsManager, AppEnvironment.JsonSerializer);
+            _writeCache = new(AppEnvironment.AssetsManager, AppEnvironment.Wrapper.JsonSerializer);
         }
 
         public async void ClickButton()

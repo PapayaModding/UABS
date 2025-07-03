@@ -18,7 +18,7 @@ namespace UABS.Assets.Script.DataSource
         public void Initialize(AppEnvironment appEnvironment)
         {
             _appEnvironment = appEnvironment;
-            _exportManager = new(_appEnvironment.AssetsManager)
+            _exportManager = new(_appEnvironment)
             {
                 EntryInfosCallBack = () => _entryInfos
             };

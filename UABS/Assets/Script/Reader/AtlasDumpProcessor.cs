@@ -54,7 +54,8 @@ namespace UABS.Assets.Script.Reader
             
             for (int i = 0; i < array.ToList().Count; i++)
             {
-                var pathID = long.Parse(array[i].GetObject("m_PathID").ToString());
+                // var pathID = long.Parse(array[i].GetObject("m_PathID").ToString());
+                var pathID = array[i].GetLong("m_PathID");
                 result[i] = pathID;
             }
             return result;
@@ -187,7 +188,6 @@ namespace UABS.Assets.Script.Reader
                     IJsonObject spriteAtlas = spriteJson.GetObject("m_SpriteAtlas");
                     long pathID = spriteAtlas.GetLong("m_PathID");
                     long atlasPathIDInSprite = pathID;
-                    
                     // long atlasPathIDInSprite = long.Parse(spriteJson["m_SpriteAtlas"]["m_PathID"].ToString());
                     if (atlasPathIDInSprite == atlasPathID)
                     {

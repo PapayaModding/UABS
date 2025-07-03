@@ -4,6 +4,7 @@ using AssetsTools.NET.Extra;
 using UABS.Assets.Script.DataStruct;
 using UABS.Assets.Script.Event;
 using UABS.Assets.Script.EventListener;
+using UABS.Assets.Script.Misc;
 using UABS.Assets.Script.Writer;
 
 namespace UABS.Assets.Script.DataSource.Manager
@@ -16,9 +17,9 @@ namespace UABS.Assets.Script.DataSource.Manager
 
         private List<ParsedAssetAndEntry> EntryInfos => EntryInfosCallBack != null ? EntryInfosCallBack() : new();
 
-        public AssetsDataExportManager(AssetsManager assetsManager)
+        public AssetsDataExportManager(AppEnvironment appEnvironment)
         {
-            _writeTextureAsImage2Path = new(assetsManager);
+            _writeTextureAsImage2Path = new(appEnvironment.AssetsManager, appEnvironment.Wrapper.TextureDecoder);
         }
 
         public void OnEvent(AppEvent e)

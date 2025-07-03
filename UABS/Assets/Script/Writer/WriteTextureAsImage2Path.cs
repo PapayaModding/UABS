@@ -4,6 +4,7 @@ using AssetsTools.NET.Extra;
 using UABS.Assets.Script.DataStruct;
 using UABS.Assets.Script.Misc;
 using UABS.Assets.Script.Reader;
+using UABS.Assets.Script.Wrapper.TextureDecoder;
 using UnityEngine;
 
 namespace UABS.Assets.Script.Writer
@@ -13,10 +14,10 @@ namespace UABS.Assets.Script.Writer
         // private ReadTexturesFromBundle _readTexturesFromBundle;
         private ImageReader _imageReader;
 
-        public WriteTextureAsImage2Path(AssetsManager assetsManager)
+        public WriteTextureAsImage2Path(AssetsManager assetsManager, ITextureDecoder textureDecoder)
         {
             // _readTexturesFromBundle = new(assetsManager);
-            _imageReader = new(assetsManager);
+            _imageReader = new(assetsManager, textureDecoder);
         }
 
         public void ExportAllAssetsToPath(ExportMethod exportMethod,
