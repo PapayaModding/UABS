@@ -1,10 +1,9 @@
 using System.Collections.Generic;
 using System.Linq;
-using UABS.Assets.Script.DataStruct;
+using UnityEngine;
 using UABS.Assets.Script.Event;
 using UABS.Assets.Script.EventListener;
 using UABS.Assets.Script.Misc;
-using UnityEngine;
 
 namespace UABS.Assets.Script.DataSource
 {

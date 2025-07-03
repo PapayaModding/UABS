@@ -1,11 +1,11 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using UnityEngine;
 using AssetsTools.NET;
 using AssetsTools.NET.Extra;
 using UABS.Assets.Script.Misc;
 using UABS.Assets.Script.Wrapper.Json;
-using UnityEngine;
 
 namespace UABS.Assets.Script.Reader
 {

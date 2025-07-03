@@ -1,6 +1,6 @@
 using UnityEngine.UI;
-using UABS.Assets.Script.Dispatcher;
 using AssetsTools.NET.Extra;
+using UABS.Assets.Script.Dispatcher;
 
 namespace UABS.Assets.Script.DropdownOptions.Filter
 {

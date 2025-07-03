@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using UABS.Assets.Script.DataStruct;
 
 namespace UABS.Assets.Script.Event
 {

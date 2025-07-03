@@ -1,6 +1,6 @@
+using UnityEngine;
 using UABS.Assets.Script.Event;
 using UABS.Assets.Script.Misc;
-using UnityEngine;
 
 namespace UABS.Assets.Script.DropdownOptions
 {
@@ -17,7 +17,6 @@ namespace UABS.Assets.Script.DropdownOptions
         public void ClickButton()
         {
             string[] folderPaths = _appEnvironment.Wrapper.FileBrowser.OpenFolderPanel("Export asset(s) to...", "", false);
-            // string folderPath = _sfbManager.PickFolder("Export asset(s) to...");
             if (folderPaths.Length <= 0)
             {
                 Debug.Log("Couldn't find path to Folder.");

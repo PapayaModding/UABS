@@ -1,5 +1,3 @@
-using UABS.Assets.Script.DataStruct;
-
 namespace UABS.Assets.Script.Event
 {
     public class AssetSelectionEvent : AppEvent // On focus item's path id. (Only applicable in AssetBundle view)

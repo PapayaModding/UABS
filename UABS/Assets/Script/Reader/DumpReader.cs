@@ -1,5 +1,5 @@
-using AssetsTools.NET;
 using System.Collections.Generic;
+using AssetsTools.NET;
 using AssetsTools.NET.Extra;
 using UABS.Assets.Script.DataStruct;
 using UABS.Assets.Script.Wrapper.Json;

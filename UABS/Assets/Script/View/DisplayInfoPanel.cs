@@ -1,9 +1,9 @@
-using UnityEngine;
-using UABS.Assets.Script.Event;
-using TMPro;
 using System.IO;
-using UABS.Assets.Script.Misc;
+using UnityEngine;
+using TMPro;
 using UABS.Assets.Script.DataStruct;
+using UABS.Assets.Script.Event;
+using UABS.Assets.Script.Misc;
 
 namespace UABS.Assets.Script.EventListener
 {

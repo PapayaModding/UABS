@@ -1,8 +1,6 @@
+using System.Collections.Generic;
 using AssetsTools.NET;
 using AssetsTools.NET.Extra;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using UABS.Assets.Script.DataStruct;
 
 namespace UABS.Assets.Script.Reader

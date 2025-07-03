@@ -51,5 +51,17 @@
         "temp/": true,
         "Temp/": true
     },
-    "dotnet.defaultSolution": "UABS.sln"
+    "dotnet.defaultSolution": "UABS.sln",
+    "editor.formatOnSave": true,
+    "[csharp]": {
+        "editor.defaultFormatter": "gaoshan0621.csharp-format-usings"
+    },
+    "csharpFormatUsings.numEmptyLinesAfterUsings": 1,
+    "csharpFormatUsings.numEmptyLinesBeforeUsings": 0,
+    "csharpFormatUsings.removeUnnecessaryUsings": true,
+    "csharpFormatUsings.sortOrder": "System Microsoft UnityEngine",
+    "csharpFormatUsings.splitGroups": false,
+    "cSpell.words": [
+        "UABS"
+    ]
 }

@@ -1,6 +1,6 @@
+using UnityEngine;
 using UABS.Assets.Script.Event;
 using UABS.Assets.Script.Misc;
-using UnityEngine;
 
 namespace UABS.Assets.Script.View
 {

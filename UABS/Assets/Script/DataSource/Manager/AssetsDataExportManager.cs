@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using AssetsTools.NET.Extra;
 using UABS.Assets.Script.DataStruct;
 using UABS.Assets.Script.Event;
 using UABS.Assets.Script.EventListener;

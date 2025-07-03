@@ -1,11 +1,11 @@
 using System.Collections.Generic;
 using System.IO;
+using UnityEngine;
 using AssetsTools.NET.Extra;
 using UABS.Assets.Script.DataStruct;
 using UABS.Assets.Script.Misc;
 using UABS.Assets.Script.Reader;
 using UABS.Assets.Script.Wrapper.TextureDecoder;
-using UnityEngine;
 
 namespace UABS.Assets.Script.Writer
 {

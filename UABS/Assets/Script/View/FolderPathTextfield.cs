@@ -1,8 +1,8 @@
 using System.IO;
+using UnityEngine;
 using TMPro;
 using UABS.Assets.Script.Event;
 using UABS.Assets.Script.EventListener;
-using UnityEngine;
 
 namespace UABS.Assets.Script.View
 {

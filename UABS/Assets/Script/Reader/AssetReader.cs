@@ -1,10 +1,9 @@
-using AssetsTools.NET;
-using AssetsTools.NET.Extra;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Security.Cryptography;
 using System.Text;
+using AssetsTools.NET;
+using AssetsTools.NET.Extra;
 using UABS.Assets.Script.DataStruct;
 
 namespace UABS.Assets.Script.Reader

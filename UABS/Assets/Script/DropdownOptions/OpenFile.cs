@@ -1,6 +1,6 @@
+using UnityEngine;
 using UABS.Assets.Script.Misc;
 using UABS.Assets.Script.Reader;
-using UnityEngine;
 
 namespace UABS.Assets.Script.DropdownOptions
 {
@@ -17,7 +17,6 @@ namespace UABS.Assets.Script.DropdownOptions
         public void ClickButton()
         {
             string[] filePaths = _appEnvironment.Wrapper.FileBrowser.OpenFilePanel("Select .bundle File", "", new[] { "bundle", "ab" }, false);
-            // string filePath = _sfbManager.PickFile("Select .bundle File", "bundle");
             if (filePaths.Length <= 0)
             {
                 Debug.Log("Couldn't find path to File.");

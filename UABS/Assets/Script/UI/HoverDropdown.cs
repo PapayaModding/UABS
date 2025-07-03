@@ -1,7 +1,6 @@
 using UnityEngine;
 using UnityEngine.EventSystems;
 
-
 namespace UABS.Assets.Script.UI
 {
     public class HoverDropdown : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler

@@ -1,8 +1,8 @@
 using System.Collections.Generic;
 using System.Linq;
+using UnityEngine;
 using UABS.Assets.Script.DataStruct;
 using UABS.Assets.Script.Wrapper.Json;
-using UnityEngine;
 
 namespace UABS.Assets.Script.Reader
 {

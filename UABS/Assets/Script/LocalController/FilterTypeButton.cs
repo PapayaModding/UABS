@@ -1,10 +1,10 @@
+using UnityEngine;
+using UnityEngine.UI;
 using AssetsTools.NET.Extra;
 using TMPro;
 using UABS.Assets.Script.Dispatcher;
 using UABS.Assets.Script.DropdownOptions.Filter;
 using UABS.Assets.Script.Event;
-using UnityEngine;
-using UnityEngine.UI;
 
 namespace UABS.Assets.Script.LocalController
 {
