@@ -11,7 +11,6 @@ namespace UABS.Assets.Script.LocalController
         private AppEnvironment _appEnvironment = null;
         public AppEnvironment AppEnvironment => _appEnvironment;
         private WriteCache _writeCache;
-        private SfbManager _sfbManager = new();
 
         public void Initialize(AppEnvironment appEnvironment)
         {
@@ -21,9 +20,36 @@ namespace UABS.Assets.Script.LocalController
 
         public async void ClickButton()
         {
-            string gameDataPath = _sfbManager.PickFolder("Select the game data folder (such as StandaloneWindows64)");
+            string[] gameDataPaths = _appEnvironment.Wrapper.FileBrowser.OpenFolderPanel("Select the game data folder (such as StandaloneWindows64)", "", false);
+            string gameDataPath = "";
+            if (gameDataPaths.Length <= 0)
+            {
+                Debug.LogWarning("Path to game data not found, abort.");
+                return;
+            }
+            else
+            {
+                gameDataPath = gameDataPaths[0];
+            }
+
             Debug.Log(gameDataPath);
-            string newSavePath = _sfbManager.PickFolderSuggestion("Select Folder to Save New Cache", PredefinedPaths.ExternalCache, GetDefaultName());
+            if (!Directory.Exists(PredefinedPaths.ExternalCache))
+            {
+                Directory.CreateDirectory(PredefinedPaths.ExternalCache);
+            }
+
+            string[] newSavePaths = _appEnvironment.Wrapper.FileBrowser.OpenFolderPanel("Select Folder to Save New Cache", PredefinedPaths.ExternalCache, false);
+            string newSavePath = "";
+            if (newSavePaths.Length <= 0)
+            {
+                Debug.LogWarning("Path to new cache save not found, abort.");
+                return;
+            }
+            else
+            {
+                newSavePath = newSavePaths[0];
+            }
+            
             await Task.Run(() =>_writeCache.CreateAndSaveNewCache(gameDataPath, newSavePath, null));
         }
 

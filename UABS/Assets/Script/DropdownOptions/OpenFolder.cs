@@ -1,6 +1,5 @@
 using UABS.Assets.Script.Event;
 using UABS.Assets.Script.Misc;
-using UABS.Assets.Script.Writer;
 using UnityEngine;
 
 namespace UABS.Assets.Script.DropdownOptions
@@ -9,7 +8,6 @@ namespace UABS.Assets.Script.DropdownOptions
     {
         private AppEnvironment _appEnvironment = null;
         public AppEnvironment AppEnvironment => _appEnvironment;
-        private SfbManager _sfbManager = new();
 
         public void Initialize(AppEnvironment appEnvironment)
         {
@@ -18,14 +16,14 @@ namespace UABS.Assets.Script.DropdownOptions
 
         public void ClickButton()
         {
-            string folderPath = _sfbManager.PickFolder();
-            if (folderPath == "")
+            string[] folderPaths = _appEnvironment.Wrapper.FileBrowser.OpenFolderPanel("", "", false);
+            if (folderPaths.Length <= 0)
             {
                 Debug.Log("Couldn't find path to Folder.");
             }
             else
             {
-                AppEnvironment.Dispatcher.Dispatch(new FolderReadEvent(folderPath));
+                AppEnvironment.Dispatcher.Dispatch(new FolderReadEvent(folderPaths[0]));
             }
         }
     }
