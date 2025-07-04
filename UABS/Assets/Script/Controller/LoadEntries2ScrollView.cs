@@ -40,7 +40,7 @@ namespace UABS.Assets.Script.Controller
         [SerializeField]
         private float _paddingLeft = -10f;
 
-        private Dictionary<AssetClassID, bool> _isClassIDFiltered;
+        private Dictionary<AssetClassID, bool> _isClassIDFiltered = new();
 
         private HashSet<long> _highlighted = new();
 

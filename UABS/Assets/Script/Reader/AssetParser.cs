@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.IO;
 using AssetsTools.NET;
 using AssetsTools.NET.Extra;
 using UABS.Assets.Script.DataStruct;
@@ -40,6 +41,20 @@ namespace UABS.Assets.Script.Reader
             // }
 
             // return (parsedAssets, fileInst);
+
+            AssetBundleFile bundle = bunInst.file;
+            if (bunInst.file.DataIsCompressed)
+            {
+                MemoryStream bundleStream = new();
+                bundle.Unpack(new AssetsFileWriter(bundleStream));
+                bundleStream.Position = 0;
+
+                AssetBundleFile newBundle = new();
+                newBundle.Read(new AssetsFileReader(bundleStream));
+
+                bundle.Close();
+                bunInst.file = newBundle;
+            }
 
             List<ParsedAsset> parsedAssets = new();
             AssetsFileInstance fileInst = _assetsManager.LoadAssetsFileFromBundle(bunInst, 0, false);
