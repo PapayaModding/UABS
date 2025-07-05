@@ -5,8 +5,13 @@ using UABS.Assets.Script.DataStruct;
 
 namespace UABS.Assets.Script.DropdownOptions
 {
-    public class ExportAllAssets : MonoBehaviour, IAppEnvironment, IDropdownButton
+    public class ExportAssetsButton : MonoBehaviour, IAppEnvironment, IDropdownButton
     {
+        [SerializeField]
+        private ExportKind _exportKind;
+        [SerializeField]
+        private ExportType _exportType;
+
         private AppEnvironment _appEnvironment = null;
         public AppEnvironment AppEnvironment => _appEnvironment;
 
@@ -26,8 +31,8 @@ namespace UABS.Assets.Script.DropdownOptions
             {
                 AppEnvironment.Dispatcher.Dispatch(new ExportAssetsEvent(new()
                 {
-                    exportKind = ExportKind.Asset,
-                    exportType = ExportType.All,
+                    exportKind = _exportKind,
+                    exportType = _exportType,
                     destination = folderPaths[0]
                 }));
             }
