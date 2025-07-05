@@ -3,7 +3,7 @@ namespace UABS.Assets.Script.DataStruct
     public enum ExportType
     {
         All,
-        Filtered,
+        FilterByType,
         Selected
     }
 

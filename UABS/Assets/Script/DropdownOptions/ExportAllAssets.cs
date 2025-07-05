@@ -1,6 +1,7 @@
 using UnityEngine;
 using UABS.Assets.Script.Event;
 using UABS.Assets.Script.Misc;
+using UABS.Assets.Script.DataStruct;
 
 namespace UABS.Assets.Script.DropdownOptions
 {
@@ -25,7 +26,8 @@ namespace UABS.Assets.Script.DropdownOptions
             {
                 AppEnvironment.Dispatcher.Dispatch(new ExportAssetsEvent(new()
                 {
-                    exportType = DataStruct.ExportType.All,
+                    exportKind = ExportKind.Asset,
+                    exportType = ExportType.All,
                     destination = folderPaths[0]
                 }));
             }
