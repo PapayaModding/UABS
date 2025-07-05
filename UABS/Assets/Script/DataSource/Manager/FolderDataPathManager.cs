@@ -17,12 +17,13 @@ namespace UABS.Assets.Script.DataSource.Manager
 
         private List<string> Paths => GetPathsCallBack != null ? GetPathsCallBack() : new();
 
-        private readonly ReadFolderContent _readFolderContent = new();
+        private readonly ReadFolderContent _readFolderContent;
         private readonly AppEnvironment _appEnvironment;
 
         public FolderDataPathManager(AppEnvironment appEnvironment)
         {
             _appEnvironment = appEnvironment;
+            _readFolderContent = new(_appEnvironment.AssetsManager);
         }
 
         public void OnEvent(AppEvent e)

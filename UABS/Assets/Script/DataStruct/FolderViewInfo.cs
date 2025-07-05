@@ -10,6 +10,7 @@ namespace UABS.Assets.Script.DataStruct
     {
         public FolderViewType type;
         public string name;
+        public long size;
         public string path;
         private string _realPath = "";
         public string RealPath
