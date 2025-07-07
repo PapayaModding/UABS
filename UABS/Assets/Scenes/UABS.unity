@@ -8626,8 +8626,8 @@ MonoBehaviour:
   onLongPress:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 0}
-        m_TargetAssemblyTypeName: UABS.Assets.Script.DataSource.SelectionDataSource,
+      - m_Target: {fileID: 404023906}
+        m_TargetAssemblyTypeName: UABS.Assets.Script.DataSource.AssetsDataSource,
           Assembly-CSharp
         m_MethodName: Next
         m_Mode: 1
@@ -8642,8 +8642,8 @@ MonoBehaviour:
   onClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 0}
-        m_TargetAssemblyTypeName: UABS.Assets.Script.DataSource.SelectionDataSource,
+      - m_Target: {fileID: 404023906}
+        m_TargetAssemblyTypeName: UABS.Assets.Script.DataSource.AssetsDataSource,
           Assembly-CSharp
         m_MethodName: Next
         m_Mode: 1
@@ -9053,8 +9053,8 @@ MonoBehaviour:
   onLongPress:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 0}
-        m_TargetAssemblyTypeName: UABS.Assets.Script.DataSource.SelectionDataSource,
+      - m_Target: {fileID: 404023906}
+        m_TargetAssemblyTypeName: UABS.Assets.Script.DataSource.AssetsDataSource,
           Assembly-CSharp
         m_MethodName: Prev
         m_Mode: 1
@@ -9069,8 +9069,8 @@ MonoBehaviour:
   onClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 0}
-        m_TargetAssemblyTypeName: UABS.Assets.Script.DataSource.SelectionDataSource,
+      - m_Target: {fileID: 404023906}
+        m_TargetAssemblyTypeName: UABS.Assets.Script.DataSource.AssetsDataSource,
           Assembly-CSharp
         m_MethodName: Prev
         m_Mode: 1

@@ -12,15 +12,13 @@ namespace UABS.Assets.Script.DataSource.Manager
 {
     public class AssetsDataSelectionManager : IAppEventListener
     {
-        // private long _lastPathID;
-        // private List<long> _currBunPathIDs;
-        // private HashSet<long> _selections;
-
         public Func<List<ParsedAssetAndEntry>> GetEntryInfosCallBack;
 
         private List<ParsedAssetAndEntry> EntryInfos => GetEntryInfosCallBack != null ? GetEntryInfosCallBack() : new();
 
         private EventDispatcher _dispatcher;
+
+        private int _lastIndex;
 
         public AssetsDataSelectionManager(EventDispatcher dispatcher)
         {
@@ -31,8 +29,8 @@ namespace UABS.Assets.Script.DataSource.Manager
         {
             if (e is AssetSelectionEvent ase)
             {
-                // Debug.Log($"shift: {ase.IsHoldingShift}, control: {ase.IsHoldingCtrl}");
                 ParsedAssetAndEntry entryInfo = FindEntryInfo(ase.PathID);
+                _lastIndex = ase.Index;
                 if (ase.IsHoldingShift)
                 {
                     ShiftOperation(ase.PathID);
@@ -46,47 +44,41 @@ namespace UABS.Assets.Script.DataSource.Manager
                     UnhighlightAllEntryInfos();
                     entryInfo.isHighlighted = !entryInfo.isHighlighted;
                 }
-                _dispatcher.Dispatch(new AssetsRenderEvent(EntryInfos, -1));
+                if (ase.UseJump)
+                {
+                    _dispatcher.Dispatch(new AssetsRenderEvent(EntryInfos, ase.Index));
+                }
+                else
+                {
+                    _dispatcher.Dispatch(new AssetsRenderEvent(EntryInfos, -1));
+                }
             }
-            // if (e is AssetSelectionEvent ase)
-            // {
-            //     if (!ase.IsHoldingShift)
-            //     {
-            //         _selections = new();
-            //     }
-            //     long currPathID = ase.PathID;
-            //     if (_selections.Contains(currPathID))
-            //     {
-            //         _selections.Remove(currPathID);
-            //     }
-            //     else
-            //     {
-            //         _selections.Add(currPathID);
-            //     }
-            //     _lastPathID = currPathID;
-            //     AppEnvironment.Dispatcher.Dispatch(new AssetMultiSelectionEvent(_selections, FindIndexOfLastPathID()));
-            // }
-            // else if (e is GoBundleViewEvent gbve)
-            // {
-            //     _currBunPathIDs = gbve.EntryInfos.Select(x => x.assetEntryInfo.pathID).ToList();
-            //     Debug.Log(_currBunPathIDs.Count);
-            // }
-            // else if (e is OnAssetsDataChangeEvent dce)
-            // {
-            //     _currBunPathIDs = dce.RenderEntryInfos.Select(x => x.assetEntryInfo.pathID).ToList();
-            //     Debug.Log(_currBunPathIDs.Count);
-            // }
-
+            else if (e is GoBundleViewEvent)
+            {
+                _lastIndex = 0;
+            }
         }
 
         public void Prev()
         {
-
+            if (EntryInfos.Count == 0)
+            {
+                Debug.Log("This bundle has no item.");
+                return;
+            }
+            int index = StayInRange(_lastIndex - 1);
+            _dispatcher.Dispatch(new AssetSelectionEvent(EntryInfos[index].assetEntryInfo.pathID, index, EntryInfos.Count, false, false, true));
         }
 
         public void Next()
         {
-
+            if (EntryInfos.Count == 0)
+            {
+                Debug.Log("This bundle has no item.");
+                return;
+            }
+            int index = StayInRange(_lastIndex + 1);
+            _dispatcher.Dispatch(new AssetSelectionEvent(EntryInfos[index].assetEntryInfo.pathID, index, EntryInfos.Count, false, false, true));
         }
 
         private ParsedAssetAndEntry FindEntryInfo(long pathID)
@@ -157,63 +149,13 @@ namespace UABS.Assets.Script.DataSource.Manager
             return -1;
         }
 
-        // public void Prev()
-        // {
-        //     if (_currBunPathIDs.Count == 0)
-        //     {
-        //         Debug.Log("This bundle has no item.");
-        //         return;
-        //     }
-        //     int indexOfLastPathID = FindIndexOfLastPathID();
-        //     if (indexOfLastPathID == -1)
-        //     {
-        //         Debug.LogWarning("No index of last path id found");
-        //     }
-        //     int index = StayInRange(indexOfLastPathID - 1);
-        //     Debug.Log($"Prev index: {index}, id: {_currBunPathIDs[index]}");
-        //     // AppEnvironment.Dispatcher.Dispatch(new AssetSelectionEvent(_currBunPathIDs[index], index, _currBunPathIDs.Count, true));
-        // }
-
-        // public void Next()
-        // {
-        //     if (_currBunPathIDs.Count == 0)
-        //     {
-        //         Debug.Log("This bundle has no item.");
-        //         return;
-        //     }
-        //     int indexOfLastPathID = FindIndexOfLastPathID();
-        //     if (indexOfLastPathID == -1)
-        //     {
-        //         Debug.LogWarning("No index of last path id found");
-        //     }
-        //     int index = StayInRange(indexOfLastPathID + 1);
-        //     Debug.Log($"Next index: {index}, id: {_currBunPathIDs[index]}");
-        //     // AppEnvironment.Dispatcher.Dispatch(new AssetSelectionEvent(_currBunPathIDs[index], index, _currBunPathIDs.Count, true));
-        // }
-
-        // private int FindIndexOfLastPathID()
-        // {
-        //     if (_currBunPathIDs == null)
-        //     {
-        //         return -1;
-        //     }
-        //     for (int i = 0; i < _currBunPathIDs.Count; i++)
-        //     {
-        //         if (_currBunPathIDs[i] == _lastPathID)
-        //         {
-        //             return i;
-        //         }
-        //     }
-        //     return -1;
-        // }
-
-        // private int StayInRange(int input)
-        // {
-        //     if (input < 0)
-        //         return _currBunPathIDs.Count - 1;
-        //     else if (input >= _currBunPathIDs.Count)
-        //         return 0;
-        //     return input;
-        // }
+        private int StayInRange(int input)
+        {
+            if (input < 0)
+                return EntryInfos.Count - 1;
+            else if (input >= EntryInfos.Count)
+                return 0;
+            return input;
+        }
     }
 }

@@ -52,7 +52,7 @@ namespace UABS.Assets.Script.Controller
                 return;
             }
 
-            focusIndex = (int) Mathf.Clamp(focusIndex, 0, _renderEntryInfos.Count - _maxNumOfEntryPerPage);
+            focusIndex = Mathf.Clamp(focusIndex, 0, _renderEntryInfos.Count - _maxNumOfEntryPerPage);
 
             for (int i = 0; i < _maxNumOfEntryPerPage; i++)
             {
@@ -64,20 +64,16 @@ namespace UABS.Assets.Script.Controller
                 }
 
                 _entryPool[i].Show();
-                _entryPool[i].AssignStuff(dataIndex, _renderEntryInfos.Count, _scrollbarRef);
+                _entryPool[i].AssignStuff(dataIndex, _renderEntryInfos.Count);
                 _entryPool[i].Render(_renderEntryInfos[dataIndex]);
                 _entryPool[i].SetPosition(new Vector2(_paddingLeft, -dataIndex * _itemHeight + _paddingTop));
             }
         }
 
-        public void Refresh()
-        {
-            OnScroll();
-        }
-
         public void Refresh(int focusIndex)
         {
             OnScroll(focusIndex);
+            OnScroll();
         }
 
         public void OnEvent(AppEvent e)
@@ -89,21 +85,14 @@ namespace UABS.Assets.Script.Controller
                     _content.sizeDelta.x,
                         _renderEntryInfos.Count * _itemHeight
                 );
+                if (dce.FocusIndex != -1)
+                {
+                    JumpByIndex(dce.FocusIndex);
+                    FindEntryWithIndex(dce.FocusIndex)?.TriggerEvent();
+                }
                 Refresh(dce.FocusIndex);
                 // StartCoroutine(CallAfterDelay(0.3f, () => Refresh(dce.FocusIndex)));
             }
-            // else if (e is AssetMultiSelectionEvent amse)
-            // {
-            //     // ! Bug-fix: from first entry jump to last entry or last to first
-            //     if (amse.StartIndex == 0 || amse.StartIndex == _renderEntryInfos.Count - 1)
-            //     {
-            //         float newScrollbarValue = 1 - amse.StartIndex / (float)(_renderEntryInfos.Count - 1);
-            //         _scrollbarRef.value = newScrollbarValue;
-            //     }
-            //     Debug.Log($"Start index; {amse.StartIndex}");
-            //     Refresh(amse.StartIndex);
-            //     // StartCoroutine(CallAfterDelay(0.3f, () => Refresh(amse.StartIndex)));
-            // }
         }
 
         public void Initialize(AppEnvironment appEnvironment)
@@ -116,7 +105,6 @@ namespace UABS.Assets.Script.Controller
                 entryObj.transform.SetParent(_content.transform, worldPositionStays: false);
                 EntryInfoView entryInfoView = entryObj.GetComponentInChildren<EntryInfoView>();
                 entryInfoView.dispatcher = _appEnvironment.Dispatcher;
-                _appEnvironment.Dispatcher.Register(entryInfoView);
                 _entryPool.Add(entryInfoView);
             }
             _itemHeight = _entryPrefab.GetComponent<RectTransform>().rect.height;
@@ -137,6 +125,32 @@ namespace UABS.Assets.Script.Controller
         {
             yield return new WaitForSeconds(delay);
             callback?.Invoke();
+        }
+
+        private void JumpByIndex(int jumpToIndex)
+        {
+            if (_renderEntryInfos.Count <= 1)
+            {
+                _scrollbarRef.value = 1f;
+                return;
+            }
+
+            jumpToIndex = Mathf.Clamp(jumpToIndex, 0, _renderEntryInfos.Count - 1);
+            float newScrollbarValue = 1f - jumpToIndex / (float)(_renderEntryInfos.Count - 1);
+            newScrollbarValue = Mathf.Clamp01(newScrollbarValue);
+            _scrollbarRef.value = newScrollbarValue;
+        }
+
+        private EntryInfoView FindEntryWithIndex(int index)
+        {
+            foreach (EntryInfoView entryInfoView in _entryPool)
+            {
+                if (entryInfoView.Index == index)
+                {
+                    return entryInfoView;
+                }
+            }
+            return null;
         }
     }
 }

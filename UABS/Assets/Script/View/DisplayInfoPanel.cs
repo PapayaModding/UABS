@@ -36,6 +36,9 @@ namespace UABS.Assets.Script.EventListener
         {
             if (e is AssetDisplayInfoEvent adie)
             {
+                if (adie.EntryInfo == null)
+                    return;
+                
                 _nameField.text = adie.EntryInfo.assetEntryInfo.name;
                 _pathIDField.text = adie.EntryInfo.assetEntryInfo.pathID.ToString();
                 // _fileIDField.text = assetTextInfoEvent.Info.fileID.ToString();

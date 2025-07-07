@@ -66,5 +66,16 @@ namespace UABS.Assets.Script.DataSource
             };
             _appEnvironment.Dispatcher.Register(_selectionManager);
         }
+
+
+        public void Prev()
+        {
+            _selectionManager.Prev();
+        }
+
+        public void Next()
+        {
+            _selectionManager.Next();
+        }
     }
 }
