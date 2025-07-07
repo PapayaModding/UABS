@@ -12,8 +12,10 @@ namespace UABS.Assets.Script.Misc
     public class AssetsDataFilterManager : IAppEventListener
     {
         private Dictionary<AssetClassID, bool> _isClassIDFiltered = new();
-        
-        public List<ParsedAssetAndEntry> originalEntryInfos;
+
+        public Func<List<ParsedAssetAndEntry>> OriginalEntryInfosCallBack;
+
+        private List<ParsedAssetAndEntry> OriginalEntryInfos => OriginalEntryInfosCallBack != null ? OriginalEntryInfosCallBack() : new();
 
         public Action<List<ParsedAssetAndEntry>> SetEntryInfosCallBack;
 
@@ -29,7 +31,7 @@ namespace UABS.Assets.Script.Misc
             if (e is FilterTypeEvent fte)
             {
                 _isClassIDFiltered = fte.IsClassIDFiltered;
-                SetEntryInfosCallBack(FilterEntryInfoByType(originalEntryInfos));
+                SetEntryInfosCallBack(FilterEntryInfoByType(OriginalEntryInfos));
             }
         }
     }

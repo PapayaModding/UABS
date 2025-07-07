@@ -11,6 +11,7 @@ namespace UABS.Assets.Script.DataSource
     {
         private AppEnvironment _appEnvironment = null;
         public AppEnvironment AppEnvironment => _appEnvironment;
+        public List<ParsedAssetAndEntry> _originalEntryInfos;
         public List<ParsedAssetAndEntry> _entryInfos;
         private AssetsDataExportManager _exportManager;
         private AssetsDataSortManager _sortManager;
@@ -23,6 +24,7 @@ namespace UABS.Assets.Script.DataSource
             _appEnvironment = appEnvironment;
             _exportManager = new(_appEnvironment)
             {
+                OriginalEntryInfosCallBack = () => _originalEntryInfos,
                 EntryInfosCallBack = () => _entryInfos
             };
             _appEnvironment.Dispatcher.Register(_exportManager);
@@ -40,6 +42,7 @@ namespace UABS.Assets.Script.DataSource
 
             _filterManager = new()
             {
+                OriginalEntryInfosCallBack = () => _originalEntryInfos,
                 SetEntryInfosCallBack = val =>
                 {
                     _entryInfos = val;
@@ -54,8 +57,8 @@ namespace UABS.Assets.Script.DataSource
                 SetEntryInfosCallBack = val =>
                 {
                     _entryInfos = val;
+                    _originalEntryInfos = val;
                     appEnvironment.Dispatcher.Dispatch(new AssetsRenderEvent(_entryInfos, -1));
-                    _filterManager.originalEntryInfos = val;
                 }
             };
             _appEnvironment.Dispatcher.Register(_openBundleManager);

@@ -18,6 +18,10 @@ namespace UABS.Assets.Script.DataSource.Manager
 
         private List<ParsedAssetAndEntry> EntryInfos => EntryInfosCallBack != null ? EntryInfosCallBack() : new();
 
+        public Func<List<ParsedAssetAndEntry>> OriginalEntryInfosCallBack;
+
+        private List<ParsedAssetAndEntry> OriginalEntryInfos => OriginalEntryInfosCallBack != null ? OriginalEntryInfosCallBack() : new();
+
         private Dictionary<AssetClassID, bool> _isClassIDFiltered = new();
 
         public AssetsDataExportManager(AppEnvironment appEnvironment)
@@ -32,7 +36,7 @@ namespace UABS.Assets.Script.DataSource.Manager
                 ExportMethod exportMethod = eae.ExportMethod;
                 if (exportMethod.exportKind == ExportKind.Asset && exportMethod.exportType == ExportType.All)
                 {
-                    _writeTextureAsImage2Path.ExportAssetsToPath(exportMethod, EntryInfos);
+                    _writeTextureAsImage2Path.ExportAssetsToPath(exportMethod, OriginalEntryInfos);
                 }
                 else if (exportMethod.exportKind == ExportKind.Asset && exportMethod.exportType == ExportType.FilterByType)
                 {
