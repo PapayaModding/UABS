@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using UABS.Assets.Script.DataStruct;
-using UABS.Assets.Script.Dispatcher;
 using UABS.Assets.Script.Event;
 using UABS.Assets.Script.EventListener;
 
@@ -17,13 +16,6 @@ namespace UABS.Assets.Script.DataSource.Manager
 
         public Action<List<ParsedAssetAndEntry>> SetEntryInfosCallBack;
 
-        private readonly EventDispatcher _dispatcher;
-
-        public AssetsDataSortManager(EventDispatcher dispatcher)
-        {
-            _dispatcher = dispatcher;
-        }
-
         public void OnEvent(AppEvent e)
         {
             if (e is SortScrollViewEvent ssve)
@@ -31,7 +23,6 @@ namespace UABS.Assets.Script.DataSource.Manager
                 SortByType sortByType = ssve.SortProp.sortByType;
                 SortOrder sortOrder = ssve.SortProp.sortOrder;
                 SetEntryInfosCallBack(SortedEntryInfos(sortByType, sortOrder));
-                _dispatcher.Dispatch(new SortEntryEvent(EntryInfos));
             }
         }
 

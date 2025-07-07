@@ -4,23 +4,24 @@ namespace UABS.Assets.Script.Event
     {
         public long PathID { get; }
 
-        public int CurrIndex { get; }
+        public int Index { get; }
 
         public int TotalNumOfAssets { get; }
 
-        public bool UseJump { get; }
-
         public bool IsHoldingShift { get; }
 
-        public AssetSelectionEvent(long pathID, int currIndex = 0,
-                                    int totalNumOfAssets = 0, bool useJump = false,
-                                    bool isHoldingShift = false)
+        public bool IsHoldingCtrl { get; }
+
+        public AssetSelectionEvent(long pathID, int index = 0,
+                                    int totalNumOfAssets = 0,
+                                    bool isHoldingShift = false,
+                                    bool isHoldingCtrl = false)
         {
             PathID = pathID;
-            CurrIndex = currIndex;
+            Index = index;
             TotalNumOfAssets = totalNumOfAssets;
-            UseJump = useJump;
             IsHoldingShift = isHoldingShift;
+            IsHoldingCtrl = isHoldingCtrl;
         }
     }
 }

@@ -34,18 +34,18 @@ namespace UABS.Assets.Script.EventListener
 
         public void OnEvent(AppEvent e)
         {
-            if (e is ClickAssetEntryEvent caee)
+            if (e is AssetDisplayInfoEvent adie)
             {
-                _nameField.text = caee.EntryInfo.assetEntryInfo.name;
-                _pathIDField.text = caee.EntryInfo.assetEntryInfo.pathID.ToString();
+                _nameField.text = adie.EntryInfo.assetEntryInfo.name;
+                _pathIDField.text = adie.EntryInfo.assetEntryInfo.pathID.ToString();
                 // _fileIDField.text = assetTextInfoEvent.Info.fileID.ToString();
                 // _sizeField.text = $"{assetTextInfoEvent.Info.compressedSize} ({assetTextInfoEvent.Info.uncompressedSize})";
                 // _pathField.text = assetTextInfoEvent.Info.path;
                 // ! Lazy loading extra information about the asset.
-                AssetExtraInfo extraInfo = _appEnvironment.AssetReader.ReadExtraInfoFromAsset(caee.EntryInfo.parsedAsset);
+                AssetExtraInfo extraInfo = _appEnvironment.AssetReader.ReadExtraInfoFromAsset(adie.EntryInfo.parsedAsset);
                 _fileIDField.text = extraInfo.fileID.ToString();
                 _sizeField.text = $"{extraInfo.compressedSize} ({extraInfo.uncompressedSize})";
-                _pathField.text = !string.IsNullOrWhiteSpace(caee.EntryInfo.realBundlePath) ? caee.EntryInfo.realBundlePath : extraInfo.path;
+                _pathField.text = !string.IsNullOrWhiteSpace(adie.EntryInfo.realBundlePath) ? adie.EntryInfo.realBundlePath : extraInfo.path;
             }
             else if (e is FolderReadEvent fre)
             {

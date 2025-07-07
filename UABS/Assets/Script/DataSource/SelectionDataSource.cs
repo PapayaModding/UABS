@@ -39,11 +39,17 @@ namespace UABS.Assets.Script.DataSource
                     _selections.Add(currPathID);
                 }
                 _lastPathID = currPathID;
-                AppEnvironment.Dispatcher.Dispatch(new AssetMultiSelectionEvent(_selections));
+                AppEnvironment.Dispatcher.Dispatch(new AssetMultiSelectionEvent(_selections, FindIndexOfLastPathID()));
             }
             else if (e is GoBundleViewEvent gbve)
             {
                 _currBunPathIDs = gbve.EntryInfos.Select(x => x.assetEntryInfo.pathID).ToList();
+                Debug.Log(_currBunPathIDs.Count);
+            }
+            else if (e is OnAssetsDataChangeEvent dce)
+            {
+                _currBunPathIDs = dce.RenderEntryInfos.Select(x => x.assetEntryInfo.pathID).ToList();
+                Debug.Log(_currBunPathIDs.Count);
             }
         }
 
@@ -54,8 +60,14 @@ namespace UABS.Assets.Script.DataSource
                 Debug.Log("This bundle has no item.");
                 return;
             }
-            int index = StayInRange(FindIndexOfLastPathID() - 1);
-            AppEnvironment.Dispatcher.Dispatch(new AssetSelectionEvent(_currBunPathIDs[index], index, _currBunPathIDs.Count, true));
+            int indexOfLastPathID = FindIndexOfLastPathID();
+            if (indexOfLastPathID == -1)
+            {
+                Debug.LogWarning("No index of last path id found");
+            }
+            int index = StayInRange(indexOfLastPathID - 1);
+            Debug.Log($"Prev index: {index}, id: {_currBunPathIDs[index]}");
+            // AppEnvironment.Dispatcher.Dispatch(new AssetSelectionEvent(_currBunPathIDs[index], index, _currBunPathIDs.Count, true));
         }
 
         public void Next()
@@ -65,8 +77,14 @@ namespace UABS.Assets.Script.DataSource
                 Debug.Log("This bundle has no item.");
                 return;
             }
-            int index = StayInRange(FindIndexOfLastPathID() + 1);
-            AppEnvironment.Dispatcher.Dispatch(new AssetSelectionEvent(_currBunPathIDs[index], index, _currBunPathIDs.Count, true));
+            int indexOfLastPathID = FindIndexOfLastPathID();
+            if (indexOfLastPathID == -1)
+            {
+                Debug.LogWarning("No index of last path id found");
+            }
+            int index = StayInRange(indexOfLastPathID + 1);
+            Debug.Log($"Next index: {index}, id: {_currBunPathIDs[index]}");
+            // AppEnvironment.Dispatcher.Dispatch(new AssetSelectionEvent(_currBunPathIDs[index], index, _currBunPathIDs.Count, true));
         }
 
         private int FindIndexOfLastPathID()

@@ -34,7 +34,7 @@ namespace UABS.Assets.Script.Controller
                 AssetImageInfo textureWithMeta = GetTextureByPathID(ase.PathID);
                 _textureView.AssignSizeText($"{textureWithMeta.rect.width}x{textureWithMeta.rect.height} ({textureWithMeta.compressionFormat})");
                 _textureView.Render(textureWithMeta.texture2D);
-                _textureView.AssignIndexText($"{ase.CurrIndex + 1} / {ase.TotalNumOfAssets}");
+                _textureView.AssignIndexText($"{ase.Index + 1} / {ase.TotalNumOfAssets}");
             }
             else if (e is FolderReadEvent fre)
             {

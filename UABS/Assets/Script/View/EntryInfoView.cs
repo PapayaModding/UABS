@@ -54,8 +54,13 @@ namespace UABS.Assets.Script.View
             {
                 if (_assetType2IconData != null)
                 {
-                    dispatcher.Dispatch(new ClickAssetEntryEvent(_currEntryInfo));
-                    dispatcher.Dispatch(new AssetSelectionEvent(_currEntryInfo.assetEntryInfo.pathID, _index, _totalEntryNum, isHoldingShift: IsShiftHeld()));
+                    _currEntryInfo.isHighlighted = !_currEntryInfo.isHighlighted;
+                    dispatcher.Dispatch(new AssetDisplayInfoEvent(_currEntryInfo));
+                    dispatcher.Dispatch(new AssetSelectionEvent(_currEntryInfo.assetEntryInfo.pathID,
+                                                                _index,
+                                                                _totalEntryNum,
+                                                                IsShiftHeld(),
+                                                                IsCtrlHeld()));
                 }
             }
             else
@@ -71,12 +76,12 @@ namespace UABS.Assets.Script.View
             _scrollbarRef = scrollbar;
         }
 
-        public void Render(ParsedAssetAndEntry entryInfo, bool isHighlighted=false)
+        public void Render(ParsedAssetAndEntry entryInfo)
         {
             _currEntryInfo = entryInfo;
             AssetEntryInfo assetEntryInfo = entryInfo.assetEntryInfo;
-            
-            if (!isHighlighted)
+
+            if (!entryInfo.isHighlighted)
             {
                 _bg.color = _index % 2 == 0 ? _alternateColor1 : _alternateColor2;
             }
@@ -109,23 +114,55 @@ namespace UABS.Assets.Script.View
 
         public void OnEvent(AppEvent e)
         {
-            if (e is AssetSelectionEvent ase)
-            {
-                if (_currEntryInfo.assetEntryInfo.pathID == ase.PathID)
-                {
-                    if (ase.UseJump)
-                        Jump2Me();
-                    dispatcher.Dispatch(new ClickAssetEntryEvent(_currEntryInfo));
-                }
-            }
+            // if (e is AssetSelectionEvent ase)
+            // {
+            //     Debug.Log($"{ase.Index} vs {_index}");
+            //     if (ase.Index == _index)
+            //     {
+            //         Debug.Log($"Found match {ase.PathID}");
+            //         if (ase.UseJump)
+            //         {
+            //             Debug.Log("Use jump");
+            //             Jump2Me();
+            //         }
+            //         else
+            //         {
+            //             Debug.Log("Don't jump");
+            //         }
+            //         dispatcher.Dispatch(new ClickAssetEntryEvent(_currEntryInfo));
+            //     }
+            // }
+            // else if (e is AssetSelectionJumpEvent asje)
+            // {
+            //     if (asje.JumpToIndex == _index)
+            //     {
+            //         Jump2Me();
+            //     }
+            //     dispatcher.Dispatch(new ClickAssetEntryEvent(_currEntryInfo));
+            // }
         }
+
+        // private void Jump2Me()
+        // {
+        //     float newScrollbarValue = 1 - _index / (float)_totalEntryNum;
+        //     if (_index == _totalEntryNum - 1)
+        //         newScrollbarValue = 0;
+        //     _scrollbarRef.value = newScrollbarValue;
+        // }
 
         private void Jump2Me()
         {
-            float newScrollbarValue = 1 - _index / (float)_totalEntryNum;
-            if (_index == _totalEntryNum - 1)
-                newScrollbarValue = 0;
+            if (_totalEntryNum <= 1)  // Prevent divide by zero or meaningless values
+            {
+                _scrollbarRef.value = 1f; // Top position or whatever makes sense in your case
+                return;
+            }
+
+            _index = Mathf.Clamp(_index, 0, _totalEntryNum - 1);
+            float newScrollbarValue = 1f - _index / (float)(_totalEntryNum - 1);
+            newScrollbarValue = Mathf.Clamp01(newScrollbarValue);  // Ensures value is between 0 and 1
             _scrollbarRef.value = newScrollbarValue;
+            Debug.Log($"{_name.text} jump");
         }
 
         public void Hide()
@@ -146,6 +183,11 @@ namespace UABS.Assets.Script.View
         private static bool IsShiftHeld()
         {
             return Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
+        }
+        
+        private static bool IsCtrlHeld()
+        {
+            return Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl);
         }
     }
 }

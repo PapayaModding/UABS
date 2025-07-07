@@ -2,11 +2,11 @@ using UABS.Assets.Script.DataStruct;
 
 namespace UABS.Assets.Script.Event
 {
-    public class ClickAssetEntryEvent : AppEvent
+    public class AssetDisplayInfoEvent : AppEvent
     {
         public ParsedAssetAndEntry EntryInfo;
 
-        public ClickAssetEntryEvent(ParsedAssetAndEntry entryInfo)
+        public AssetDisplayInfoEvent(ParsedAssetAndEntry entryInfo)
         {
             EntryInfo = entryInfo;
         }
