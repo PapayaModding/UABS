@@ -12,7 +12,7 @@ namespace UABS.Assets.Script.DataSource.Manager
 {
     public class AssetsDataExportManager : IAppEventListener
     {
-        private WriteTextureAsImage2Path _writeTextureAsImage2Path;
+        private readonly WriteTextureAsImage2Path _writeTextureAsImage2Path;
 
         public Func<List<ParsedAssetAndEntry>> EntryInfosCallBack;
 
@@ -32,11 +32,15 @@ namespace UABS.Assets.Script.DataSource.Manager
                 ExportMethod exportMethod = eae.ExportMethod;
                 if (exportMethod.exportKind == ExportKind.Asset && exportMethod.exportType == ExportType.All)
                 {
-                    _writeTextureAsImage2Path.ExportAllAssetsToPath(exportMethod, EntryInfos);
+                    _writeTextureAsImage2Path.ExportAssetsToPath(exportMethod, EntryInfos);
                 }
                 else if (exportMethod.exportKind == ExportKind.Asset && exportMethod.exportType == ExportType.FilterByType)
                 {
-                    _writeTextureAsImage2Path.ExportAllAssetsToPath(exportMethod, FilterEntryInfoByType(EntryInfos));
+                    _writeTextureAsImage2Path.ExportAssetsToPath(exportMethod, FilterEntryInfoByType(EntryInfos));
+                }
+                else if (exportMethod.exportKind == ExportKind.Asset && exportMethod.exportType == ExportType.Selected)
+                {
+                    _writeTextureAsImage2Path.ExportAssetsToPath(exportMethod, FilterEntryInfoByHighlight(EntryInfos));
                 }
             }
             else if (e is FilterTypeEvent fte)
@@ -50,6 +54,11 @@ namespace UABS.Assets.Script.DataSource.Manager
             return entryInfos.Where(x => !_isClassIDFiltered.ContainsKey(x.assetEntryInfo.classID) ||
                                             (_isClassIDFiltered.ContainsKey(x.assetEntryInfo.classID) &&
                                             !_isClassIDFiltered[x.assetEntryInfo.classID])).ToList();
+        }
+
+        private List<ParsedAssetAndEntry> FilterEntryInfoByHighlight(List<ParsedAssetAndEntry> entryInfos)
+        {
+            return entryInfos.Where(x => x.isHighlighted).ToList();
         }
     }
 }

@@ -20,7 +20,7 @@ namespace UABS.Assets.Script.Writer
             _imageReader = new(assetsManager, textureDecoder);
         }
 
-        public void ExportAllAssetsToPath(ExportMethod exportMethod,
+        public void ExportAssetsToPath(ExportMethod exportMethod,
                                             List<ParsedAssetAndEntry> entryInfos)
         { 
             string path = exportMethod.destination;

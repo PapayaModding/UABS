@@ -44,7 +44,7 @@ namespace UABS.Assets.Script.DataSource
                 SetEntryInfosCallBack = val =>
                 {
                     _entryInfos = val;
-                    appEnvironment.Dispatcher.Dispatch(new AssetsRenderEvent(_entryInfos, 0));
+                    appEnvironment.Dispatcher.Dispatch(new AssetsRenderEvent(_entryInfos, -1));
                 }
             };
             _appEnvironment.Dispatcher.Register(_openBundleManager);

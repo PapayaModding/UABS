@@ -88,7 +88,7 @@ namespace UABS.Assets.Script.Controller
                 if (dce.FocusIndex != -1)
                 {
                     JumpByIndex(dce.FocusIndex);
-                    FindEntryWithIndex(dce.FocusIndex)?.TriggerEvent();
+                    FindEntryWithIndex(dce.FocusIndex).TriggerEvent();
                 }
                 Refresh(dce.FocusIndex);
                 // StartCoroutine(CallAfterDelay(0.3f, () => Refresh(dce.FocusIndex)));
