@@ -3,13 +3,15 @@ using UABS.Assets.Script.DataStruct;
 
 namespace UABS.Assets.Script.Event
 {
-    public class OnAssetsDataChangeEvent : AppEvent
+    public class AssetsRenderEvent : AppEvent
     {
         public List<ParsedAssetAndEntry> RenderEntryInfos;
+        public int FocusIndex;
 
-        public OnAssetsDataChangeEvent(List<ParsedAssetAndEntry> renderEntryInfos)
+        public AssetsRenderEvent(List<ParsedAssetAndEntry> renderEntryInfos, int focusIndex)
         {
             RenderEntryInfos = renderEntryInfos;
+            FocusIndex = focusIndex;
         }
     }
 }

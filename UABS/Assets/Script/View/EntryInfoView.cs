@@ -54,7 +54,6 @@ namespace UABS.Assets.Script.View
             {
                 if (_assetType2IconData != null)
                 {
-                    _currEntryInfo.isHighlighted = !_currEntryInfo.isHighlighted;
                     dispatcher.Dispatch(new AssetDisplayInfoEvent(_currEntryInfo));
                     dispatcher.Dispatch(new AssetSelectionEvent(_currEntryInfo.assetEntryInfo.pathID,
                                                                 _index,

@@ -44,13 +44,19 @@ namespace UABS.Assets.Script.Controller
             OnScroll(startIndex);
         }
 
-        public void OnScroll(int startIndex)
+        public void OnScroll(int focusIndex)
         {
-            startIndex = (int) Mathf.Clamp(startIndex, 0, _renderEntryInfos.Count - _maxNumOfEntryPerPage);
+            if (focusIndex == -1) // Don't change focus
+            {
+                OnScroll();
+                return;
+            }
+
+            focusIndex = (int) Mathf.Clamp(focusIndex, 0, _renderEntryInfos.Count - _maxNumOfEntryPerPage);
 
             for (int i = 0; i < _maxNumOfEntryPerPage; i++)
             {
-                int dataIndex = startIndex + i;
+                int dataIndex = focusIndex + i;
                 if (dataIndex >= _renderEntryInfos.Count)
                 {
                     _entryPool[i].Hide();
@@ -69,35 +75,35 @@ namespace UABS.Assets.Script.Controller
             OnScroll();
         }
 
-        public void Refresh(int startIndex)
+        public void Refresh(int focusIndex)
         {
-            OnScroll(startIndex);
+            OnScroll(focusIndex);
         }
 
         public void OnEvent(AppEvent e)
         {
-            if (e is OnAssetsDataChangeEvent dce)
+            if (e is AssetsRenderEvent dce)
             {
                 _renderEntryInfos = dce.RenderEntryInfos;
                 _content.sizeDelta = new Vector2(
                     _content.sizeDelta.x,
                         _renderEntryInfos.Count * _itemHeight
                 );
-                Refresh();
-                StartCoroutine(CallAfterDelay(0.3f, () => Refresh()));
+                Refresh(dce.FocusIndex);
+                // StartCoroutine(CallAfterDelay(0.3f, () => Refresh(dce.FocusIndex)));
             }
-            else if (e is AssetMultiSelectionEvent amse)
-            {
-                // ! Bug-fix: from first entry jump to last entry or last to first
-                if (amse.StartIndex == 0 || amse.StartIndex == _renderEntryInfos.Count - 1)
-                {
-                    float newScrollbarValue = 1 - amse.StartIndex / (float)(_renderEntryInfos.Count - 1);
-                    _scrollbarRef.value = newScrollbarValue;
-                }
-                Debug.Log($"Start index; {amse.StartIndex}");
-                Refresh(amse.StartIndex);
-                // StartCoroutine(CallAfterDelay(0.3f, () => Refresh(amse.StartIndex)));
-            }
+            // else if (e is AssetMultiSelectionEvent amse)
+            // {
+            //     // ! Bug-fix: from first entry jump to last entry or last to first
+            //     if (amse.StartIndex == 0 || amse.StartIndex == _renderEntryInfos.Count - 1)
+            //     {
+            //         float newScrollbarValue = 1 - amse.StartIndex / (float)(_renderEntryInfos.Count - 1);
+            //         _scrollbarRef.value = newScrollbarValue;
+            //     }
+            //     Debug.Log($"Start index; {amse.StartIndex}");
+            //     Refresh(amse.StartIndex);
+            //     // StartCoroutine(CallAfterDelay(0.3f, () => Refresh(amse.StartIndex)));
+            // }
         }
 
         public void Initialize(AppEnvironment appEnvironment)
