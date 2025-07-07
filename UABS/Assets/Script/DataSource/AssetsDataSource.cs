@@ -38,20 +38,8 @@ namespace UABS.Assets.Script.DataSource
             };
             _appEnvironment.Dispatcher.Register(_sortManager);
 
-            _openBundleManager = new(_appEnvironment)
-            {
-                GetEntryInfosCallBack = () => _entryInfos,
-                SetEntryInfosCallBack = val =>
-                {
-                    _entryInfos = val;
-                    appEnvironment.Dispatcher.Dispatch(new AssetsRenderEvent(_entryInfos, -1));
-                }
-            };
-            _appEnvironment.Dispatcher.Register(_openBundleManager);
-
             _filterManager = new()
             {
-                GetEntryInfosCallBack = () => _entryInfos,
                 SetEntryInfosCallBack = val =>
                 {
                     _entryInfos = val;
@@ -60,13 +48,24 @@ namespace UABS.Assets.Script.DataSource
             };
             _appEnvironment.Dispatcher.Register(_filterManager);
 
+            _openBundleManager = new(_appEnvironment)
+            {
+                GetEntryInfosCallBack = () => _entryInfos,
+                SetEntryInfosCallBack = val =>
+                {
+                    _entryInfos = val;
+                    appEnvironment.Dispatcher.Dispatch(new AssetsRenderEvent(_entryInfos, -1));
+                    _filterManager.originalEntryInfos = val;
+                }
+            };
+            _appEnvironment.Dispatcher.Register(_openBundleManager);
+
             _selectionManager = new(_appEnvironment.Dispatcher)
             {
                 GetEntryInfosCallBack = () => _entryInfos,
             };
             _appEnvironment.Dispatcher.Register(_selectionManager);
         }
-
 
         public void Prev()
         {

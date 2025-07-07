@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using AssetsTools.NET.Extra;
 using UABS.Assets.Script.DataStruct;
@@ -12,9 +13,7 @@ namespace UABS.Assets.Script.Misc
     {
         private Dictionary<AssetClassID, bool> _isClassIDFiltered = new();
         
-        public Func<List<ParsedAssetAndEntry>> GetEntryInfosCallBack;
-
-        private List<ParsedAssetAndEntry> EntryInfos => GetEntryInfosCallBack != null ? GetEntryInfosCallBack() : new();
+        public List<ParsedAssetAndEntry> originalEntryInfos;
 
         public Action<List<ParsedAssetAndEntry>> SetEntryInfosCallBack;
 
@@ -30,7 +29,7 @@ namespace UABS.Assets.Script.Misc
             if (e is FilterTypeEvent fte)
             {
                 _isClassIDFiltered = fte.IsClassIDFiltered;
-                SetEntryInfosCallBack(FilterEntryInfoByType(EntryInfos));
+                SetEntryInfosCallBack(FilterEntryInfoByType(originalEntryInfos));
             }
         }
     }

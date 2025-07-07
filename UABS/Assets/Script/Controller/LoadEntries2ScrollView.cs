@@ -46,13 +46,13 @@ namespace UABS.Assets.Script.Controller
 
         public void OnScroll(int focusIndex)
         {
-            if (focusIndex == -1) // Don't change focus
+            if (focusIndex < 0) // Don't change focus
             {
                 OnScroll();
                 return;
             }
 
-            focusIndex = Mathf.Clamp(focusIndex, 0, _renderEntryInfos.Count - _maxNumOfEntryPerPage);
+            focusIndex = Mathf.Clamp(focusIndex, 0, Mathf.Max(_renderEntryInfos.Count - _maxNumOfEntryPerPage, 0));
 
             for (int i = 0; i < _maxNumOfEntryPerPage; i++)
             {

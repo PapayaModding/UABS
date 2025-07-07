@@ -2303,8 +2303,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   parentDropdown: {fileID: 228089962}
-  _entryPrefab: {fileID: 272739934164719748, guid: 842153075840c8c4d88049643d7493a5, type: 3}
-  _content: {fileID: 2106873861}
+  _entryPrefab: {fileID: 8466634851879690006, guid: 1ea97d5324e5cb14fa3150eb811ef7e4, type: 3}
+  _content: {fileID: 1616098534}
   _hoverColor: {r: 0.88235295, g: 0.88235295, b: 0.88235295, a: 1}
   _normalColor: {r: 1, g: 1, b: 1, a: 1}
   _bgImage: {fileID: 528936367}
@@ -5925,7 +5925,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 1199761814}
   m_HandleRect: {fileID: 1199761813}
   m_Direction: 2
-  m_Value: 0
+  m_Value: 1
   m_Size: 1
   m_NumberOfSteps: 0
   m_OnValueChanged:
@@ -7878,6 +7878,11 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1581924999}
   m_CullTransparentMesh: 1
+--- !u!224 &1616098534 stripped
+RectTransform:
+  m_CorrespondingSourceObject: {fileID: 7786372517479247234, guid: 409b84c232da41b4abfefeac2b2a7179, type: 3}
+  m_PrefabInstance: {fileID: 283747524}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &1649884352
 PrefabInstance:
   m_ObjectHideFlags: 0
