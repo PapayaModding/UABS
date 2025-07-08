@@ -95,6 +95,9 @@ namespace UABS.Assets.Script.Reader
             string bundleName = item.GetString("Name");
             if (PassSearchOptions(bundleName, sKeys, eKeys)) return true;
 
+            string spriteInfosString = item.GetString("SpriteInfos");
+            if (string.IsNullOrWhiteSpace(spriteInfosString)) return false;
+
             List<IJsonObject> spriteInfos = item.GetArray("SpriteInfos");
             if (spriteInfos == null || spriteInfos.Count == 0)
                 return false;

@@ -24,11 +24,6 @@ namespace UABS.Assets.Script.View
             {
                 _pathTextfield.text = fre.FolderPath;
             }
-            else if (e is FolderRead4DeriveEvent fr4d)
-            {
-                _pathTextfield.text = $"You are viewing dependencies for [{Path.GetFileName(_lastBundlePath)}].";
-                // _pathTextfield.text = fr4d.FolderPath;
-            }
             else if (e is BundleReadEvent bre)
             {
                 _lastBundlePath = bre.FilePath;
@@ -36,6 +31,14 @@ namespace UABS.Assets.Script.View
             else if (e is BundleRead4DeriveEvent br4d)
             {
                 _lastBundlePath = br4d.FilePath;
+            }
+            else if (e is RequestDependencyEvent)
+            {
+                _pathTextfield.text = $"You are viewing dependencies for [{Path.GetFileName(_lastBundlePath)}].";
+            }
+            else if (e is RequestSearchEvent rse)
+            {
+                _pathTextfield.text = $"You are viewing search results for [{rse.SearchKeywords}], excluding [{rse.ExcludeKeywords}].";
             }
         }
     }
