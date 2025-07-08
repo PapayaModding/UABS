@@ -32,7 +32,7 @@ namespace UABS.Assets.Script.View
         {
             if (_dispatcher != null)
             {
-                _dispatcher.Dispatch(new DependencyRequestEvent(Path.Combine(PredefinedPaths.ExternalCache, ShortPath)));
+                _dispatcher.Dispatch(new RequestDependencyEvent(Path.Combine(PredefinedPaths.ExternalCache, ShortPath)));
             }
             else
             {

@@ -14,11 +14,11 @@ namespace UABS.Assets.Script.DataSource
 {
     public class DependencyDataSource : MonoBehaviour, IAppEventListener, IAppEnvironment
     {
-        private BundleFileInstance _currBunInst;
         private AppEnvironment _appEnvironment = null;
         public AppEnvironment AppEnvironment => _appEnvironment;
+        private BundleFileInstance _currBunInst;
         private ReadDependencyInfo _readDependencyInfo;
-        private CopyDepToSysFolder _copyDepToSysFolder = new();
+        private CopyDeriveToSysFolder _copyDeriveToSysFolder = new();
 
         public void Initialize(AppEnvironment appEnvironment)
         {
@@ -37,25 +37,6 @@ namespace UABS.Assets.Script.DataSource
             {
                 _currBunInst = br4d.Bundle;
             }
-            else if (e is DependencyRequestEvent dre)
-            {
-                if (_currBunInst == null)
-                {
-                    Debug.LogWarning($"This is called earlier than BundleReadEvent, inspect a bundle first.");
-                    return;
-                }
-                List<DeriveInfo> dependencyInfos = _readDependencyInfo.ReadInfoFor(_currBunInst, dre.ReadFromCachePath);
-                Debug.Log("DEPENDENCIES:");
-                foreach (DeriveInfo dependencyInfo in dependencyInfos)
-                {
-                    Debug.Log($"{dependencyInfo.name}, {dependencyInfo.cabCode}, {dependencyInfo.path}");
-                }
-
-                List<string> dependencyPaths = dependencyInfos.Select(x => x.path).ToList();
-                string previewFolderPath = _copyDepToSysFolder.CopyFromPaths(dependencyPaths);
-
-                AppEnvironment.Dispatcher.Dispatch(new FolderRead4DeriveEvent(previewFolderPath, dependencyInfos));
-            }
             else if (e is FolderReadEvent fre)
             {
                 if (Directory.Exists(fre.FolderPath))
@@ -69,6 +50,25 @@ namespace UABS.Assets.Script.DataSource
                 {
                     _currBunInst = null;
                 }
+            }
+            else if (e is RequestDependencyEvent rde)
+            {
+                if (_currBunInst == null)
+                {
+                    Debug.LogWarning($"This is called earlier than BundleReadEvent, inspect a bundle first.");
+                    return;
+                }
+                List<DeriveInfo> dependencyInfos = _readDependencyInfo.ReadInfoFor(_currBunInst, rde.ReadFromCachePath);
+                Debug.Log("DEPENDENCIES:");
+                foreach (DeriveInfo dependencyInfo in dependencyInfos)
+                {
+                    Debug.Log($"{dependencyInfo.name}, {dependencyInfo.cabCode}, {dependencyInfo.path}");
+                }
+
+                List<string> dependencyPaths = dependencyInfos.Select(x => x.path).ToList();
+                string previewFolderPath = _copyDeriveToSysFolder.CopyFromPaths(dependencyPaths);
+
+                AppEnvironment.Dispatcher.Dispatch(new FolderRead4DeriveEvent(previewFolderPath, dependencyInfos));
             }
         }
     }

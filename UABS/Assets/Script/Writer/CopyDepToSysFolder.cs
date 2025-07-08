@@ -4,7 +4,7 @@ using UABS.Assets.Script.Misc;
 
 namespace UABS.Assets.Script.Writer.Dependency
 {
-    public class CopyDepToSysFolder
+    public class CopyDeriveToSysFolder
     {
         public string CopyFromPaths(List<string> bundlePaths)
         {
