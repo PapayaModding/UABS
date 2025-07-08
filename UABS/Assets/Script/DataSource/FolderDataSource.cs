@@ -14,6 +14,7 @@ namespace UABS.Assets.Script.DataSource
         
         private FolderDataPathManager _pathManager;
         private FolderGoBackManager _goBackManager;
+        private FolderDataDeriveManager _deriveManager;
 
         public void Initialize(AppEnvironment appEnvironment)
         {
@@ -26,6 +27,9 @@ namespace UABS.Assets.Script.DataSource
             _goBackManager = new(_appEnvironment);
             _appEnvironment.Dispatcher.Register(_goBackManager);
             _goBackManager.GetBackDirectory = _pathManager.GetBackDirectory;
+
+            _deriveManager = new(_appEnvironment, _pathManager);
+            _appEnvironment.Dispatcher.Register(_deriveManager);
         }
     }
 }

@@ -20,9 +20,9 @@ namespace UABS.Assets.Script.Reader
             _jsonSerializer = jsonSerializer;
         }
 
-        public List<DependencyInfo> ReadInfoFor(BundleFileInstance bunInst, string fromCache)
+        public List<DeriveInfo> ReadInfoFor(BundleFileInstance bunInst, string fromCache)
         {
-            List<DependencyInfo> result = new();
+            List<DeriveInfo> result = new();
             AssetsFileInstance fileInst = _assetsManager.LoadAssetsFileFromBundle(bunInst, 0, false);
             List<AssetFileInfo> assets = fileInst.file.GetAssetsOfType(AssetClassID.AssetBundle);
             AssetFileInfo assetBundleInfo = assets[0];
@@ -39,10 +39,10 @@ namespace UABS.Assets.Script.Reader
                 string dependencyCabCode = dependenciesArray[i].Value.AsString;
                 Debug.Log($"Dependency {i}: {dependencyCabCode}");
 
-                DependencyInfo? _dependencyInfo = SearchInCache(fromCache, dependencyCabCode);
+                DeriveInfo? _dependencyInfo = SearchInCache(fromCache, dependencyCabCode);
                 if (_dependencyInfo != null)
                 {
-                    DependencyInfo dependencyInfo = (DependencyInfo)_dependencyInfo;
+                    DeriveInfo dependencyInfo = (DeriveInfo)_dependencyInfo;
                     result.Add(dependencyInfo);
                 }
                 else
@@ -54,7 +54,7 @@ namespace UABS.Assets.Script.Reader
             return result;
         }
 
-        private DependencyInfo? SearchInCache(string cachePath, string cabCode)
+        private DeriveInfo? SearchInCache(string cachePath, string cabCode)
         {
             string[] jsonFiles = Directory.GetFiles(cachePath, "*.json", SearchOption.AllDirectories);
             foreach (string filePath in jsonFiles)

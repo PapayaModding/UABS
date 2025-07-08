@@ -31,9 +31,9 @@ namespace UABS.Assets.Script.DataSource.Manager
 
         public void OnEvent(AppEvent e)
         {
-            if (e is BundleRead4DependencyEvent br4d)
+            if (e is BundleRead4DeriveEvent br4d)
             {
-                OpenBundle(br4d.Bundle, br4d.RealFilPath);
+                OpenBundle(br4d.Bundle, br4d.OverridePath);
             }
             else if (e is BundleReadEvent bre)
             {

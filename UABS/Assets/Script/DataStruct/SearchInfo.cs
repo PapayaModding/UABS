@@ -1,6 +1,6 @@
 namespace UABS.Assets.Script.DataStruct
 {
-    public struct DependencyInfo
+    public struct SearchInfo
     {
         public string path;
         public string name;

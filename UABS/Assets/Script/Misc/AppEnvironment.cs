@@ -10,10 +10,12 @@ namespace UABS.Assets.Script.Misc
         public AssetsManager AssetsManager { get; } = new();
         public AssetReader AssetReader { get; }
         public AppWrapper Wrapper { get; } = new();
+        public BundleReader BundleReader { get; }
 
         public AppEnvironment()
         {
             AssetReader = new(AssetsManager);
+            BundleReader = new(AssetsManager, Dispatcher);
         }
     }
 }

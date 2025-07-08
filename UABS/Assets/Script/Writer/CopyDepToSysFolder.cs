@@ -8,7 +8,7 @@ namespace UABS.Assets.Script.Writer.Dependency
     {
         public string CopyFromPaths(List<string> bundlePaths)
         {
-            string depSysFolderPath = Path.Combine(PredefinedPaths.ExternalSystemDepCache, GetPreviewFolderName());
+            string depSysFolderPath = Path.Combine(PredefinedPaths.ExternalSystemDeriveCache, GetPreviewFolderName());
             if (!Directory.Exists(depSysFolderPath))
             {
                 Directory.CreateDirectory(depSysFolderPath);
@@ -31,7 +31,7 @@ namespace UABS.Assets.Script.Writer.Dependency
         private string GetPreviewFolderName()
         {
             int counter = 0;
-            string sysPath = PredefinedPaths.ExternalSystemDepCache;
+            string sysPath = PredefinedPaths.ExternalSystemDeriveCache;
             string baseName = $"{counter}";
             string searchName = Path.Combine(sysPath, baseName);
             while (Directory.Exists(searchName))

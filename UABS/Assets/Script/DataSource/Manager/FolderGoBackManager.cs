@@ -13,7 +13,7 @@ namespace UABS.Assets.Script.DataSource.Manager
     {
         public Func<string> GetBackDirectory;
         private AppEnvironment _appEnvironment = null;
-        private List<List<DependencyInfo>> _recordDependencyInfosList = new();
+        private List<List<DeriveInfo>> _recordDeriveInfosList = new();
 
         public FolderGoBackManager(AppEnvironment appEnvironment)
         {
@@ -22,11 +22,11 @@ namespace UABS.Assets.Script.DataSource.Manager
 
         public void OnEvent(AppEvent e)
         {
-            if (e is FolderRead4DependencyEvent fr4d)
+            if (e is FolderRead4DeriveEvent fr4d)
             {
                 if (Directory.Exists(fr4d.FolderPath))
                 {
-                    _recordDependencyInfosList.Add(fr4d.DependencyInfos);
+                    _recordDeriveInfosList.Add(fr4d.DeriveInfos);
                 }
             }
             else if (e is GoBackEvent)
@@ -35,14 +35,14 @@ namespace UABS.Assets.Script.DataSource.Manager
                 _appEnvironment.AssetsManager.UnloadAll();
                 
                 string backDir = GetBackDirectory();
-                if (_recordDependencyInfosList.Count == 0)
+                if (_recordDeriveInfosList.Count == 0)
                 {
                     _appEnvironment.Dispatcher.Dispatch(new FolderReadEvent(backDir));
                 }
                 else
                 {
-                    _appEnvironment.Dispatcher.Dispatch(new FolderRead4DependencyEvent(backDir, _recordDependencyInfosList[^1]));
-                    _recordDependencyInfosList.RemoveAt(_recordDependencyInfosList.Count - 1);
+                    _appEnvironment.Dispatcher.Dispatch(new FolderRead4DeriveEvent(backDir, _recordDeriveInfosList[^1]));
+                    _recordDeriveInfosList.RemoveAt(_recordDeriveInfosList.Count - 1);
                 }
             }
         }

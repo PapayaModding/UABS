@@ -12,20 +12,8 @@ namespace UABS.Assets.Script.DataStruct
         public string name;
         public long size;
         public string path;
-        private string _realPath = "";
-        public string RealPath
-        {
-            get
-            {
-                if (string.IsNullOrWhiteSpace(_realPath))
-                    return path;
-                return _realPath;
-            }
-            set
-            {
-                _realPath = value;
-            }
-        }
-        public bool IsDependencyFolder => !string.IsNullOrEmpty(_realPath);
+
+        public string overrideDerivePath;
+        public bool IsDeriveFolder => !string.IsNullOrEmpty(overrideDerivePath);
     }
 }

@@ -24,7 +24,7 @@ namespace UABS.Assets.Script.View
             {
                 _pathTextfield.text = fre.FolderPath;
             }
-            else if (e is FolderRead4DependencyEvent fr4d)
+            else if (e is FolderRead4DeriveEvent fr4d)
             {
                 _pathTextfield.text = $"You are viewing dependencies for [{Path.GetFileName(_lastBundlePath)}].";
                 // _pathTextfield.text = fr4d.FolderPath;
@@ -33,7 +33,7 @@ namespace UABS.Assets.Script.View
             {
                 _lastBundlePath = bre.FilePath;
             }
-            else if (e is BundleRead4DependencyEvent br4d)
+            else if (e is BundleRead4DeriveEvent br4d)
             {
                 _lastBundlePath = br4d.FilePath;
             }

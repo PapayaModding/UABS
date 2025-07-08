@@ -28,35 +28,7 @@ namespace UABS.Assets.Script.DataSource.Manager
 
         public void OnEvent(AppEvent e)
         {
-            if (e is FolderRead4DependencyEvent fr4d)
-            {
-                if (Directory.Exists(fr4d.FolderPath))
-                {
-                    List<FolderViewInfo> allReadable = _readFolderContent.ReadAllReadable(fr4d.FolderPath);
-                    List<DependencyInfo> dependencyInfos = fr4d.DependencyInfos;
-                    // _recordDependencyInfosList.Add(dependencyInfos);
-                    foreach (FolderViewInfo readable in allReadable)
-                    {
-                        foreach (DependencyInfo dependencyInfo in dependencyInfos)
-                        {
-                            if (readable.name == dependencyInfo.name)
-                            {
-                                readable.RealPath = dependencyInfo.path;
-                                continue;
-                            }
-                        }
-                    }
-                    _appEnvironment.Dispatcher.Dispatch(new FolderViewInfosEvent(allReadable));
-                }
-                else
-                {
-                    Debug.Log($"{fr4d.FolderPath} is not a folder, attempt to read it as a bundle.");
-                    BundleReader bundleReader = new(_appEnvironment);
-                    bundleReader.ReadBundle4Dependency(fr4d.FolderPath, fr4d.OverrideBundlePath);
-                }
-                RecordPath(fr4d.FolderPath);
-            }
-            else if (e is FolderReadEvent fre)
+            if (e is FolderReadEvent fre)
             {
                 if (Directory.Exists(fre.FolderPath))
                 {
@@ -66,8 +38,7 @@ namespace UABS.Assets.Script.DataSource.Manager
                 else
                 {
                     Debug.Log($"{fre.FolderPath} is not a folder, attempt to read it as a bundle.");
-                    BundleReader bundleReader = new(_appEnvironment);
-                    bundleReader.ReadBundle(fre.FolderPath);
+                    _appEnvironment.BundleReader.ReadBundle(fre.FolderPath);
                 }
                 RecordPath(fre.FolderPath);
             }
@@ -75,13 +46,13 @@ namespace UABS.Assets.Script.DataSource.Manager
             {
                 RecordPath(bre.FilePath);
             }
-            else if (e is BundleRead4DependencyEvent br4d)
+            else if (e is BundleRead4DeriveEvent br4d)
             {
                 RecordPath(br4d.FilePath);
             }
         }
 
-        private void RecordPath(string newPath)
+        public void RecordPath(string newPath)
         {
             if (Paths.Count == 0)
             {
@@ -134,7 +105,7 @@ namespace UABS.Assets.Script.DataSource.Manager
         {
             if (Paths.Count == 1)
                 return false;
-            return ArePathsEqual(Path.GetDirectoryName(subPath), PredefinedPaths.ExternalSystemDepCache);
+            return ArePathsEqual(Path.GetDirectoryName(subPath), PredefinedPaths.ExternalSystemDeriveCache);
         }
 
         private bool ArePathsEqual(string pathA, string pathB)

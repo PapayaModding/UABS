@@ -45,7 +45,7 @@ namespace UABS.Assets.Script.Controller
                     _textureView.AssignIndexText("");
                 }
             }
-            else if (e is FolderRead4DependencyEvent fr4d)
+            else if (e is FolderRead4DeriveEvent fr4d)
             {
                 if (Directory.Exists(fr4d.FolderPath))
                 {

@@ -1,6 +1,5 @@
 using UnityEngine;
 using UABS.Assets.Script.Misc;
-using UABS.Assets.Script.Reader;
 
 namespace UABS.Assets.Script.DropdownOptions
 {
@@ -23,9 +22,8 @@ namespace UABS.Assets.Script.DropdownOptions
             }
             else
             {
-                BundleReader bundleReader = new(AppEnvironment);
                 // Debug.Log(filePath);
-                bundleReader.ReadBundle(PathUtils.GetLongPath(filePaths[0]));
+                AppEnvironment.BundleReader.ReadBundle(PathUtils.GetLongPath(filePaths[0]));
             }
         }
     }

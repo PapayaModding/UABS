@@ -46,7 +46,7 @@ namespace UABS.Assets.Script.View
         {
             if (dispatcher != null)
             {
-                if (!_storedFolderViewInfo.IsDependencyFolder)
+                if (!_storedFolderViewInfo.IsDeriveFolder)
                 {
                     string nextPath = _storedFolderViewInfo.path;
                     dispatcher.Dispatch(new FolderReadEvent(nextPath));
@@ -54,7 +54,7 @@ namespace UABS.Assets.Script.View
                 else
                 {
                     string nextPath = _storedFolderViewInfo.path;
-                    dispatcher.Dispatch(new FolderRead4DependencyEvent(nextPath, overrideBundlePath: _storedFolderViewInfo.RealPath));
+                    dispatcher.Dispatch(new FolderRead4DeriveEvent(nextPath, overrideBundlePath: _storedFolderViewInfo.overrideDerivePath));
                 }
             }
             else

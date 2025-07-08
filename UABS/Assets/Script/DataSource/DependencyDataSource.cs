@@ -33,7 +33,7 @@ namespace UABS.Assets.Script.DataSource
                 _currBunInst = bre.Bundle;
                 // Debug.Log($"Dependency data source: Received Bundle from {bre.FilePath}");
             }
-            else if (e is BundleRead4DependencyEvent br4d)
+            else if (e is BundleRead4DeriveEvent br4d)
             {
                 _currBunInst = br4d.Bundle;
             }
@@ -44,9 +44,9 @@ namespace UABS.Assets.Script.DataSource
                     Debug.LogWarning($"This is called earlier than BundleReadEvent, inspect a bundle first.");
                     return;
                 }
-                List<DependencyInfo> dependencyInfos = _readDependencyInfo.ReadInfoFor(_currBunInst, dre.ReadFromCachePath);
+                List<DeriveInfo> dependencyInfos = _readDependencyInfo.ReadInfoFor(_currBunInst, dre.ReadFromCachePath);
                 Debug.Log("DEPENDENCIES:");
-                foreach (DependencyInfo dependencyInfo in dependencyInfos)
+                foreach (DeriveInfo dependencyInfo in dependencyInfos)
                 {
                     Debug.Log($"{dependencyInfo.name}, {dependencyInfo.cabCode}, {dependencyInfo.path}");
                 }
@@ -54,7 +54,7 @@ namespace UABS.Assets.Script.DataSource
                 List<string> dependencyPaths = dependencyInfos.Select(x => x.path).ToList();
                 string previewFolderPath = _copyDepToSysFolder.CopyFromPaths(dependencyPaths);
 
-                AppEnvironment.Dispatcher.Dispatch(new FolderRead4DependencyEvent(previewFolderPath, dependencyInfos));
+                AppEnvironment.Dispatcher.Dispatch(new FolderRead4DeriveEvent(previewFolderPath, dependencyInfos));
             }
             else if (e is FolderReadEvent fre)
             {
@@ -63,7 +63,7 @@ namespace UABS.Assets.Script.DataSource
                     _currBunInst = null;
                 }
             }
-            else if (e is FolderRead4DependencyEvent fr4d)
+            else if (e is FolderRead4DeriveEvent fr4d)
             {
                 if (Directory.Exists(fr4d.FolderPath))
                 {

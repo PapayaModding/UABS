@@ -39,7 +39,7 @@ namespace UABS.Assets.Script.Controller
                     _folderPage.gameObject.SetActive(false);
                 }
             }
-            else if (e is FolderRead4DependencyEvent fr4d)
+            else if (e is FolderRead4DeriveEvent fr4d)
             {
                 if (Directory.Exists(fr4d.FolderPath))
                 {
@@ -47,7 +47,7 @@ namespace UABS.Assets.Script.Controller
                     _folderPage.gameObject.SetActive(true);
                 }
             }
-            else if (e is BundleRead4DependencyEvent br4d)
+            else if (e is BundleRead4DeriveEvent br4d)
             {
                 if (File.Exists(br4d.FilePath))
                 {
