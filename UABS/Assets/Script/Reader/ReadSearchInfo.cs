@@ -17,11 +17,12 @@ namespace UABS.Assets.Script.Reader
 
         public List<DeriveInfo> ReadInfoFor(string fromCache,
                                             string searchKeywords,
-                                            string excludeKeywords)
+                                            string excludeKeywords,
+                                            bool exactMatch=false)
         {
             List<string> sKeys = SplitByComma(searchKeywords);
             List<string> eKeys = SplitByComma(excludeKeywords);
-            return _findDeriveInfoInCache.FindInCacheBySearchOptions(fromCache, sKeys, eKeys);
+            return _findDeriveInfoInCache.FindInCacheBySearchOptions(fromCache, sKeys, eKeys, exactMatch);
         }
 
         public static List<string> SplitByComma(string input)

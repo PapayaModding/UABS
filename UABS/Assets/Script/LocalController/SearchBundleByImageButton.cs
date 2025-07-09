@@ -26,11 +26,14 @@ namespace UABS.Assets.Script.LocalController
 
         public void ClickButton()
         {
-            Debug.Log(GetImageNameFromField());
+            string imageName = GetImageNameFromField();
+            if (string.IsNullOrWhiteSpace(imageName))
+                return;
+            
             // ! Only matching by name, not the actual image
             foreach (string path in _fullIncludedPaths)
             {
-                AppEnvironment.Dispatcher.Dispatch(new RequestSearchEvent(path, GetImageNameFromField(), ""));
+                AppEnvironment.Dispatcher.Dispatch(new RequestSearchEvent(path, imageName, "", true));
             }
         }
 

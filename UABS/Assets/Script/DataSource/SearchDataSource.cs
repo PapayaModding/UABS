@@ -27,7 +27,7 @@ namespace UABS.Assets.Script.DataSource
         {
             if (e is RequestSearchEvent rse)
             {
-                List<DeriveInfo> searchInfos = _readSearchInfo.ReadInfoFor(rse.ReadFromCachePath, rse.SearchKeywords, rse.ExcludeKeywords);
+                List<DeriveInfo> searchInfos = _readSearchInfo.ReadInfoFor(rse.ReadFromCachePath, rse.SearchKeywords, rse.ExcludeKeywords, rse.ExactMatch);
                 Debug.Log("SEARCH FOUND:");
                 foreach (DeriveInfo searchInfo in searchInfos)
                 {

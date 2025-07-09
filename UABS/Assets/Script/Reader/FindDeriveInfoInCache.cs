@@ -55,7 +55,7 @@ namespace UABS.Assets.Script.Reader
             return cab1Low.StartsWith(cab2Low) || cab2Low.StartsWith(cab1Low);
         }
 
-        public List<DeriveInfo> FindInCacheBySearchOptions(string cachePath, List<string> sKeys, List<string> eKeys)
+        public List<DeriveInfo> FindInCacheBySearchOptions(string cachePath, List<string> sKeys, List<string> eKeys, bool exactMatch=false)
         {
             List<DeriveInfo> result = new();
             string[] jsonFiles = Directory.GetFiles(cachePath, "*.json", SearchOption.AllDirectories);
@@ -67,14 +67,29 @@ namespace UABS.Assets.Script.Reader
                     List<IJsonObject> arr = _jsonSerializer.DeserializeToArray(json);
                     foreach (var item in arr)
                     {
-                        if (ShouldInclude(item, sKeys, eKeys))
+                        if (exactMatch)
                         {
-                            result.Add(new()
+                            if (ShouldInclude(item, sKeys[0]))
                             {
-                                name = item.GetString("Name"),
-                                path = item.GetString("Path"),
-                                cabCode = item.GetString("CabCode")
-                            });
+                                result.Add(new()
+                                {
+                                    name = item.GetString("Name"),
+                                    path = item.GetString("Path"),
+                                    cabCode = item.GetString("CabCode")
+                                });
+                            }
+                        }
+                        else
+                        {
+                            if (ShouldInclude(item, sKeys, eKeys))
+                            {
+                                result.Add(new()
+                                {
+                                    name = item.GetString("Name"),
+                                    path = item.GetString("Path"),
+                                    cabCode = item.GetString("CabCode")
+                                });
+                            }
                         }
                     }
                 }
@@ -95,17 +110,37 @@ namespace UABS.Assets.Script.Reader
             string bundleName = item.GetString("Name");
             if (PassSearchOptions(bundleName, sKeys, eKeys)) return true;
 
-            string spriteInfosString = item.GetString("SpriteInfos");
-            if (string.IsNullOrWhiteSpace(spriteInfosString)) return false;
+            string assetInfosString = item.GetString("AssetInfos");
+            if (string.IsNullOrWhiteSpace(assetInfosString)) return false;
 
-            List<IJsonObject> spriteInfos = item.GetArray("SpriteInfos");
-            if (spriteInfos == null || spriteInfos.Count == 0)
+            List<IJsonObject> assetInfos = item.GetArray("AssetInfos");
+            if (assetInfos == null || assetInfos.Count == 0)
                 return false;
             
-            foreach (IJsonObject spriteInfo in spriteInfos)
+            foreach (IJsonObject assetInfo in assetInfos)
             {
-                string spriteName = spriteInfo.GetString("Name");
+                string spriteName = assetInfo.GetString("Name");
                 if (PassSearchOptions(spriteName, sKeys, eKeys)) return true;
+            }
+            return false;
+        }
+
+        private bool ShouldInclude(IJsonObject item, string sKey)
+        {
+            string bundleName = item.GetString("Name");
+            if (bundleName == sKey) return true;
+
+            string assetInfosString = item.GetString("AssetInfos");
+            if (string.IsNullOrWhiteSpace(assetInfosString)) return false;
+
+            List<IJsonObject> assetInfos = item.GetArray("AssetInfos");
+            if (assetInfos == null || assetInfos.Count == 0)
+                return false;
+
+            foreach (IJsonObject assetInfo in assetInfos)
+            {
+                string spriteName = assetInfo.GetString("Name");
+                if (spriteName == sKey) return true;
             }
             return false;
         }

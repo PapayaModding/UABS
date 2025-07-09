@@ -8,13 +8,17 @@ namespace UABS.Assets.Script.Event
 
         public string ExcludeKeywords { get; }
 
+        public bool ExactMatch { get; } // ! For image search only
+
         public RequestSearchEvent(string readFromCachePath,
                                     string searchKeywords,
-                                    string excludeKeywords)
+                                    string excludeKeywords,
+                                    bool exactMatch = false)
         {
             ReadFromCachePath = readFromCachePath;
             SearchKeywords = searchKeywords;
             ExcludeKeywords = excludeKeywords;
+            ExactMatch = exactMatch;
         }
     }
 }

@@ -1,7 +1,7 @@
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Text;
-using UnityEngine;
 using AssetsTools.NET;
 using AssetsTools.NET.Extra;
 using UABS.Assets.Script.Misc;
@@ -11,7 +11,7 @@ namespace UABS.Assets.Script.Reader
 {
     public class ReadNewCache
     {
-        public class SpriteInfo
+        public class AssetInfo
         {
             public string Name { get; set; }
             public long PathId { get; set; }
@@ -22,7 +22,7 @@ namespace UABS.Assets.Script.Reader
             public string Name { get; set; }
             public string Path { get; set; }
             public string CabCode { get; set; }
-            public List<SpriteInfo> SpriteInfos { get; set; }
+            public List<AssetInfo> AssetInfos { get; set; }
         }
 
         private AssetsManager _assetsManager;
@@ -61,7 +61,7 @@ namespace UABS.Assets.Script.Reader
 
                         // --- Sprites ---
                         // Debug.Log(fileInPath);
-                        SpriteInfos = GetSpriteInfoInBundle(filePath)
+                        AssetInfos = GetAssetInfoOfImageAssets(filePath)
                     };
                     writeToIndex.Add(bundle);
                 }
@@ -105,29 +105,92 @@ namespace UABS.Assets.Script.Reader
             return result;
         }
 
-        private List<SpriteInfo> GetSpriteInfoInBundle(string bundlePath)
+        private List<AssetInfo> GetAssetInfoOfImageAssets(string bundlePath)
         {
-            List<SpriteInfo> result = new();
+            BundleFileInstance bunInst = _assetsManager.LoadBundleFile(bundlePath, true);
+            AssetsFileInstance fileInst = _assetsManager.LoadAssetsFileFromBundle(bunInst, 0, false);
+            return GetAssetInfoInBundle(fileInst, new[] { AssetClassID.Sprite, AssetClassID.Texture2D });
+        }
+
+        private List<AssetInfo> GetAssetInfoInBundle(AssetsFileInstance fileInst, AssetClassID[] classIDs)
+        {
+            List<AssetInfo> result = new();
+            AssetsFile afile = fileInst.file;
+            foreach (AssetClassID classID in classIDs)
+            {
+                List<AssetFileInfo> assets = afile.GetAssetsOfType(classID);
+                if (assets.Count == 0)
+                {
+                    UnityEngine.Debug.Log("No Sprite found.");
+                    return null;
+                }
+
+                foreach (AssetFileInfo asset in assets)
+                {
+                    AssetTypeValueField baseField = _assetsManager.GetBaseField(fileInst, asset);
+
+                    string assetName = "Unnamed asset";
+
+                    if (baseField != null)
+                    {
+                        var nameField = baseField.Get("m_Name");
+                        if (nameField != null && !nameField.IsDummy)
+                        {
+                            try
+                            {
+                                assetName = nameField.AsString;
+                            }
+                            catch
+                            {
+                                UnityEngine.Debug.Log(GetAssetTypeValueFieldString(nameField));
+                            }
+                        }
+                    }
+                    result.Add(new()
+                    {
+                        Name = assetName,
+                        PathId = asset.PathId
+                    });
+                }
+            }
+
+            return result;
+        }
+
+        private List<AssetInfo> GetAssetInfoInBundle(string bundlePath)
+        {
+            List<AssetInfo> result = new();
             BundleFileInstance bunInst = _assetsManager.LoadBundleFile(bundlePath, true);
             AssetsFileInstance fileInst = _assetsManager.LoadAssetsFileFromBundle(bunInst, 0, false);
 
-            AssetsFile afile = fileInst.file;
-            List<AssetFileInfo> spriteAssets = afile.GetAssetsOfType(AssetClassID.Sprite);
-
-            if (spriteAssets.Count == 0)
+            List<AssetFileInfo> allAssets = fileInst.file.AssetInfos;
+            foreach (var assetInfo in allAssets)
             {
-                Debug.Log("No Sprite found.");
-                return null;
-            }
+                AssetTypeValueField baseField = _assetsManager.GetBaseField(fileInst, assetInfo);
 
-            foreach (AssetFileInfo targetAsset in spriteAssets)
-            {
-                AssetTypeValueField spriteBase = _assetsManager.GetBaseField(fileInst, targetAsset);
-                long pathId = long.Parse(targetAsset.PathId.ToString());
-                string name = spriteBase["m_Name"].AsString;
-                result.Add(new() {Name=name, PathId=pathId});
-            }
+                string assetName = "Unnamed asset";
 
+                if (baseField != null)
+                {
+                    var nameField = baseField.Get("m_Name");
+                    if (nameField != null && !nameField.IsDummy)
+                    {
+                        try
+                        {
+                            assetName = nameField.AsString;
+                        }
+                        catch
+                        {
+                            UnityEngine.Debug.Log(GetAssetTypeValueFieldString(nameField));
+                        }
+                    }
+                }
+                result.Add(new()
+                {
+                    Name = assetName,
+                    PathId = assetInfo.PathId
+                });
+            }
             return result;
         }
 
@@ -173,6 +236,41 @@ namespace UABS.Assets.Script.Reader
             }
 
             return "";
+        }
+
+        // ! For debug
+        public static string GetAssetTypeValueFieldString(AssetTypeValueField field, int indentLevel = 0)
+        {
+            if (field == null) return "<null>";
+
+            StringBuilder sb = new();
+            string indent = new(' ', indentLevel * 2);
+
+            // Field name and type
+            sb.Append(indent);
+            sb.Append(field.FieldName);
+            sb.Append(" (");
+            sb.Append(field.TypeName);
+            sb.Append(")");
+
+            // Field value (if any)
+            if (field.Value != null)
+            {
+                sb.Append(" : ");
+                sb.Append(field.Value);
+            }
+            sb.AppendLine();
+
+            // Recursively append children
+            if (field.Children != null)
+            {
+                foreach (var child in field.Children)
+                {
+                    sb.Append(GetAssetTypeValueFieldString(child, indentLevel + 1));
+                }
+            }
+
+            return sb.ToString();
         }
     }
 }
