@@ -4,17 +4,15 @@ using System.Linq;
 using UnityEngine;
 using TMPro;
 using UABS.Assets.Script.Event;
-using UABS.Assets.Script.EventListener;
 using UABS.Assets.Script.Misc;
+using UABS.Assets.Script.EventListener;
 
 namespace UABS.Assets.Script.LocalController
 {
-    public class SearchBundleByKeywordsButton : MonoBehaviour, IAppEnvironment, IAppEventListener
+    public class SearchBundleByImageButton : MonoBehaviour, IAppEnvironment, IAppEventListener
     {
         [SerializeField]
-        private TMP_InputField _searchKeywordsField;
-        [SerializeField]
-        private TMP_InputField _excludeKeywordsField;
+        private TMP_InputField _imagePathField;
 
         private AppEnvironment _appEnvironment = null;
         public AppEnvironment AppEnvironment => _appEnvironment;
@@ -28,14 +26,18 @@ namespace UABS.Assets.Script.LocalController
 
         public void ClickButton()
         {
-            // Debug.Log(_searchKeywordsField.text);
-            // Debug.Log(_excludeKeywordsField.text);
+            Debug.Log(GetImageNameFromField());
+            // ! Only matching by name, not the actual image
             foreach (string path in _fullIncludedPaths)
             {
-                AppEnvironment.Dispatcher.Dispatch(new RequestSearchEvent(path,
-                                                                        _searchKeywordsField.text,
-                                                                        _excludeKeywordsField.text));
+                AppEnvironment.Dispatcher.Dispatch(new RequestSearchEvent(path, GetImageNameFromField(), ""));
             }
+        }
+
+        private string GetImageNameFromField()
+        {
+            string path = _imagePathField.text;
+            return Path.GetFileNameWithoutExtension(path);
         }
 
         public void OnEvent(AppEvent e)

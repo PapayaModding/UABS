@@ -12,7 +12,7 @@ using UABS.Assets.Script.UI;
 
 namespace UABS.Assets.Script.DropdownOptions.Search
 {
-    public class HoverSearchCacheDerive : HoverDropdown, IAppEnvironment, IAppEventListener
+    public class HoverSearchCacheDerive : HoverArea, IAppEnvironment, IAppEventListener
     {
         private AppEnvironment _appEnvironment = null;
         public AppEnvironment AppEnvironment => _appEnvironment;
