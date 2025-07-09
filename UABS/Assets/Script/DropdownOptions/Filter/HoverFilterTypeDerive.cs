@@ -25,13 +25,7 @@ namespace UABS.Assets.Script.Controller
         private RectTransform _content;
 
         [SerializeField]
-        private Color _hoverColor;
-
-        [SerializeField]
-        private Color _normalColor;
-
-        [SerializeField]
-        private Image _bgImage;
+        private Button _button;
 
         private List<AssetClassID> _currClassIDs = new();
 
@@ -63,7 +57,7 @@ namespace UABS.Assets.Script.Controller
         public override void OnPointerEnter(PointerEventData eventData)
         {
             base.OnPointerEnter(eventData);
-            _bgImage.color = _hoverColor;
+            _button.targetGraphic.color = _button.colors.selectedColor;
             ClearAndRecreate();
         }
 
@@ -95,7 +89,7 @@ namespace UABS.Assets.Script.Controller
         public override void OnPointerExit(PointerEventData eventData)
         {
             base.OnPointerExit(eventData);
-            _bgImage.color = _normalColor;
+            _button.targetGraphic.color = _button.colors.normalColor;
         }
 
         private void ClearContentChildren()
