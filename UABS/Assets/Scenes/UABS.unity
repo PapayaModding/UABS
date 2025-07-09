@@ -2515,11 +2515,14 @@ MonoBehaviour:
   m_GameObject: {fileID: 401498830}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 02319736e4d4b224981218851e3f4700, type: 3}
+  m_Script: {fileID: 11500000, guid: 325258769206ca44789d5227e2d12fff, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   dropdownPanel: {fileID: 978768594}
   _shouldHideDropDown: 1
+  _entryPrefab: {fileID: 8466634851879690006, guid: 1389a7b0d51f9494c8a4cfcdb50e51c1, type: 3}
+  _content: {fileID: 2014932803}
+  _button: {fileID: 401498832}
 --- !u!1 &404023904
 GameObject:
   m_ObjectHideFlags: 0
@@ -7951,7 +7954,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 1357588552}
   m_HandleRect: {fileID: 1357588551}
   m_Direction: 2
-  m_Value: 1
+  m_Value: 0
   m_Size: 1
   m_NumberOfSteps: 0
   m_OnValueChanged:

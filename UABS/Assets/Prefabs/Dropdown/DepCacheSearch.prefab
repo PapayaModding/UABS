@@ -10,6 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1665749154416389548}
   - component: {fileID: 2406377977591897418}
+  - component: {fileID: 2520221636170891755}
   m_Layer: 5
   m_Name: Script
   m_TagString: Untagged
@@ -51,6 +52,19 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _button: {fileID: 3581500426204341593}
   _text: {fileID: 1539230774637575624}
+--- !u!114 &2520221636170891755
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 48722272088202439}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 718b0d6501b34344b907382b7192d819, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _button: {fileID: 3581500426204341593}
 --- !u!1 &5399496955651609002
 GameObject:
   m_ObjectHideFlags: 0
@@ -313,6 +327,19 @@ MonoBehaviour:
         m_TargetAssemblyTypeName: UABS.Assets.Script.View.MenuScrollEntrySearch,
           Assembly-CSharp
         m_MethodName: ClickButton
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+      - m_Target: {fileID: 2520221636170891755}
+        m_TargetAssemblyTypeName: UABS.Assets.Script.UI.ForceToNormalStateAfterClick,
+          Assembly-CSharp
+        m_MethodName: ResetButtonVisuals
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}

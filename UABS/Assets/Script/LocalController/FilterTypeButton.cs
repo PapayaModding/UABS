@@ -67,11 +67,18 @@ namespace UABS.Assets.Script.LocalController
 
         public void ClickButton()
         {
-            // Toggle the filtering state
-            IsFiltered = !IsFiltered;
+            if (_dispatcher != null)
+            {
+                // Toggle the filtering state
+                IsFiltered = !IsFiltered;
 
-            // Send a new to notify others
-            _dispatcher.Dispatch(new ClickFilterTypeEvent(ClassID, IsFiltered));
+                // Send a new to notify others
+                _dispatcher.Dispatch(new ClickFilterTypeEvent(ClassID, IsFiltered));
+            }
+            else
+            {
+                Debug.LogWarning("Event dispatcher not found. Please assign one first.");
+            }
         }
     }
 }

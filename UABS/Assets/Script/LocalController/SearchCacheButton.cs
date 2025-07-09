@@ -1,16 +1,13 @@
-using System.IO;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using UABS.Assets.Script.Dispatcher;
-using UABS.Assets.Script.DropdownOptions.Dependency;
+using UABS.Assets.Script.DropdownOptions.Search;
 using UABS.Assets.Script.Event;
-using UABS.Assets.Script.Misc;
 
-namespace UABS.Assets.Script.View
+namespace UABS.Assets.Script.LocalController
 {
-    // Purely visual, do not interact
-    public class DepCacheBuild : MonoBehaviour, IDepCacheScrollEntry
+    public class SearchCacheButton : MonoBehaviour, ISearchCacheScrollEntry
     {
         private EventDispatcher _dispatcher;
         private string _shortPath;
@@ -30,20 +27,42 @@ namespace UABS.Assets.Script.View
         public Button ManagedButton => _button;
 
         [SerializeField]
+        private Image _bgImage;
+
+        [SerializeField]
+        private Color _notIncludeColor;
+
+        [SerializeField]
+        private Color _includedColor;
+
+        [SerializeField]
         private TextMeshProUGUI _text;
+
+        private bool _isIncluded = false;
+        public bool IsIncluded
+        {
+            get => _isIncluded;
+            set
+            {
+                _isIncluded = value;
+                _bgImage.color = _isIncluded ? _includedColor : _notIncludeColor;
+            }
+        }
 
         public void ClickButton()
         {
             if (_dispatcher != null)
             {
-                // Do nothing, display only
+                IsIncluded = !IsIncluded;
+
+                _dispatcher.Dispatch(new ClickSearchCacheEvent(ShortPath, IsIncluded));
             }
             else
             {
                 Debug.LogWarning("Event dispatcher not found. Please assign one first.");
             }
         }
-
+        
         public void AssignDispatcher(EventDispatcher dispatcher)
         {
             _dispatcher = dispatcher;
