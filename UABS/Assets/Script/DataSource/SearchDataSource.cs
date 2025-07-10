@@ -35,9 +35,12 @@ namespace UABS.Assets.Script.DataSource
                 }
 
                 List<string> searchPaths = searchInfos.Select(x => x.path).ToList();
-                string previewFolderPath = _copyDeriveToSysFolder.CopyFromPaths(searchPaths);
+                string previewFolderPath = _copyDeriveToSysFolder.CopyFromPaths(searchPaths, PredefinedPaths.ExternalSystemSearchCache);
 
-                AppEnvironment.Dispatcher.Dispatch(new FolderRead4DeriveEvent(previewFolderPath, searchInfos));
+                AppEnvironment.Dispatcher.Dispatch(new FolderRead4DeriveEvent(previewFolderPath, searchInfos, "")
+                {
+                    from="SearchDataSource"
+                });
             }
         }
     }

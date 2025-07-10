@@ -56,6 +56,9 @@ namespace UABS.Assets.Script.LocalController
                 IsIncluded = !IsIncluded;
 
                 _dispatcher.Dispatch(new ClickSearchCacheEvent(ShortPath, IsIncluded));
+
+                // * Disable go back so that the user won't go to Cache folder
+                _dispatcher.Dispatch(new ControlGoBackButtonEvent(false));
             }
             else
             {

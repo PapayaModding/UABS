@@ -1,17 +1,16 @@
 using System.Collections.Generic;
 using System.IO;
-using UABS.Assets.Script.Misc;
 
 namespace UABS.Assets.Script.Writer.Dependency
 {
     public class CopyDeriveToSysFolder
     {
-        public string CopyFromPaths(List<string> bundlePaths)
+        public string CopyFromPaths(List<string> bundlePaths, string systemCacheFolder)
         {
-            string depSysFolderPath = Path.Combine(PredefinedPaths.ExternalSystemDeriveCache, GetPreviewFolderName());
-            if (!Directory.Exists(depSysFolderPath))
+            string deriveSysFolderPath = Path.Combine(systemCacheFolder, GetPreviewFolderName(systemCacheFolder));
+            if (!Directory.Exists(deriveSysFolderPath))
             {
-                Directory.CreateDirectory(depSysFolderPath);
+                Directory.CreateDirectory(deriveSysFolderPath);
             }
 
             foreach (string bundlePath in bundlePaths)
@@ -20,18 +19,18 @@ namespace UABS.Assets.Script.Writer.Dependency
                     continue;
 
                 string fileName = Path.GetFileName(bundlePath);
-                string targetFile = Path.Combine(depSysFolderPath, fileName);
+                string targetFile = Path.Combine(deriveSysFolderPath, fileName);
                 File.Copy(bundlePath, targetFile, true);
-                UnityEngine.Debug.Log($"Copied {bundlePath} to dependency preview folder in UABS system folder.");
+                // UnityEngine.Debug.Log($"Copied {bundlePath} to dependency preview folder in UABS system folder.");
             }
 
-            return depSysFolderPath;
+            return deriveSysFolderPath;
         }
 
-        private string GetPreviewFolderName()
+        private string GetPreviewFolderName(string systemCacheFolder)
         {
             int counter = 0;
-            string sysPath = PredefinedPaths.ExternalSystemDeriveCache;
+            string sysPath = systemCacheFolder;
             string baseName = $"{counter}";
             string searchName = Path.Combine(sysPath, baseName);
             while (Directory.Exists(searchName))

@@ -54,7 +54,10 @@ namespace UABS.Assets.Script.View
                 else
                 {
                     string nextPath = _storedFolderViewInfo.path;
-                    dispatcher.Dispatch(new FolderRead4DeriveEvent(nextPath, overrideBundlePath: _storedFolderViewInfo.overrideDerivePath));
+                    dispatcher.Dispatch(new FolderRead4DeriveEvent(nextPath, overrideBundlePath: _storedFolderViewInfo.overrideDerivePath)
+                    {
+                        from="EntryFolderInfoView"
+                    });
                 }
             }
             else

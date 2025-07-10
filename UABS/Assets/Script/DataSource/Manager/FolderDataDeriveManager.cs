@@ -26,6 +26,7 @@ namespace UABS.Assets.Script.DataSource.Manager
         {
             if (e is FolderRead4DeriveEvent fr4d)
             {
+                // Debug.Log($"Fr4d came from {fr4d.from}");
                 if (Directory.Exists(fr4d.FolderPath))
                 {
                     List<FolderViewInfo> allReadable = _readFolderContent.ReadAllReadable(fr4d.FolderPath);
@@ -41,6 +42,7 @@ namespace UABS.Assets.Script.DataSource.Manager
                             }
                         }
                     }
+                    _folderDataPathManager.RecordPath(fr4d.FolderPath, "fr4d");
                     _appEnvironment.Dispatcher.Dispatch(new FolderViewInfosEvent(allReadable));
                 }
                 else
@@ -48,7 +50,6 @@ namespace UABS.Assets.Script.DataSource.Manager
                     Debug.Log($"{fr4d.FolderPath} is not a folder, attempt to read it as a bundle.");
                     _appEnvironment.BundleReader.ReadBundle4Derive(fr4d.FolderPath, fr4d.OverrideBundlePath);
                 }
-                _folderDataPathManager.RecordPath(fr4d.FolderPath);
             }
         }
     }
