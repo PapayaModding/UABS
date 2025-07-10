@@ -1,8 +1,9 @@
+using System.IO;
 using UnityEngine;
+using UnityEngine.Events;
 using TMPro;
 using UABS.Assets.Script.Event;
 using UABS.Assets.Script.EventListener;
-using System.IO;
 using UABS.Assets.Script.Misc;
 
 namespace UABS.Assets.Script.Debugger
@@ -20,6 +21,32 @@ namespace UABS.Assets.Script.Debugger
 
         [SerializeField]
         private TextMeshProUGUI _appStateText;
+
+        [SerializeField]
+        private UnityEvent _onAppStart;
+
+        [SerializeField]
+        private UnityEvent _onBundleView;
+
+        [SerializeField]
+        private UnityEvent _onFolderView;
+
+        [SerializeField]
+        private UnityEvent _onDependencyView;
+
+        [SerializeField]
+        private UnityEvent _onSearchView;
+
+        [SerializeField]
+        private UnityEvent _disableSearchCacheGoBack;
+
+        [SerializeField]
+        private UnityEvent _enableSearchCacheGoBack;
+
+        private void Start()
+        {
+            _onAppStart.Invoke();
+        }
 
         private void ChangeState(AppState appState)
         {
@@ -40,6 +67,7 @@ namespace UABS.Assets.Script.Debugger
                 else
                 {
                     ChangeState(AppState.BundleView);
+                    _onBundleView.Invoke();
                 }
             }
             else if (e is BundleRead4DeriveEvent br4d)
@@ -51,6 +79,7 @@ namespace UABS.Assets.Script.Debugger
                 else
                 {
                     ChangeState(AppState.BundleViewDerive);
+                    _onBundleView.Invoke();
                 }
             }
             else if (e is FolderReadEvent fre)
@@ -62,6 +91,7 @@ namespace UABS.Assets.Script.Debugger
                 else
                 {
                     ChangeState(AppState.BundleView);
+                    _onBundleView.Invoke();
                 }
             }
             else if (e is FolderRead4DeriveEvent fr4d)
@@ -73,7 +103,15 @@ namespace UABS.Assets.Script.Debugger
                 else
                 {
                     ChangeState(AppState.BundleViewDerive);
+                    _onBundleView.Invoke();
                 }
+            }
+            else if (e is ControlSearchCacheGoBackEvent csc)
+            {
+                if (!csc.Enable)
+                    _disableSearchCacheGoBack.Invoke();
+                else
+                    _enableSearchCacheGoBack.Invoke();
             }
         }
 
@@ -82,14 +120,17 @@ namespace UABS.Assets.Script.Debugger
             if (PathUtils.PathStartsWith(path, PredefinedPaths.ExternalSystemDependenceCache))
             {
                 ChangeState(AppState.Dependency);
+                _onDependencyView.Invoke();
             }
             else if (PathUtils.PathStartsWith(path, PredefinedPaths.ExternalSystemSearchCache))
             {
                 ChangeState(AppState.Search);
+                _onSearchView.Invoke();
             }
             else
             {
                 ChangeState(AppState.FolderView);
+                _onFolderView.Invoke();
             }
         }
     }

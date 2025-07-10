@@ -24,11 +24,17 @@ namespace UABS.Assets.Script.DataSource
             _pathManager.SetPathsCallBack = val => _paths = val;
             _pathManager.GetPathsCallBack = () => _paths;
 
-            _goBackManager = new(_appEnvironment);
+            _goBackManager = new(_appEnvironment)
+            {
+                GetPaths = () => _paths
+            };
             _appEnvironment.Dispatcher.Register(_goBackManager);
             _goBackManager.GetBackDirectory = _pathManager.GetBackDirectory;
 
-            _deriveManager = new(_appEnvironment, _pathManager);
+            _deriveManager = new(_appEnvironment, _pathManager)
+            {
+                GetPaths = () => _paths
+            };
             _appEnvironment.Dispatcher.Register(_deriveManager);
         }
     }

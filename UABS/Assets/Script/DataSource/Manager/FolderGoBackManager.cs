@@ -12,6 +12,8 @@ namespace UABS.Assets.Script.DataSource.Manager
     public class FolderGoBackManager : IAppEventListener
     {
         public Func<string> GetBackDirectory;
+        public Func<List<string>> GetPaths;
+        private List<string> Paths => GetPaths != null ? GetPaths() : new();
         private AppEnvironment _appEnvironment = null;
         private List<List<DeriveInfo>> _recordDeriveInfosList = new();
 
@@ -42,27 +44,23 @@ namespace UABS.Assets.Script.DataSource.Manager
                 else
                 {
                     _appEnvironment.Dispatcher.Dispatch(new FolderRead4DeriveEvent(backDir, _recordDeriveInfosList[^1], "")
-                                                                                    {
-                                                                                        from="FolderGoBackManager"
-                                                                                    });
+                    {
+                        from = "FolderGoBackManager"
+                    });
                     _recordDeriveInfosList.RemoveAt(_recordDeriveInfosList.Count - 1);
                 }
-            }
-        }
 
-        private DeriveType GetLastPathDeriveType(string lastPath)
-        {
-            if (PathUtils.PathStartsWith(lastPath, PredefinedPaths.ExternalSystemDependenceCache))
-            {
-                return DeriveType.Dependency;
-            }
-            else if (PathUtils.PathStartsWith(lastPath, PredefinedPaths.ExternalSystemSearchCache))
-            {
-                return DeriveType.Search;
-            }
-            else
-            {
-                return DeriveType.None;
+                if (Paths.Count == 1)
+                {
+                    if (PathUtils.ArePathsEqual(Path.GetDirectoryName(Paths[0]), PredefinedPaths.ExternalSystemSearchCache))
+                    {
+                        _appEnvironment.Dispatcher.Dispatch(new ControlSearchCacheGoBackEvent(false));
+                    }
+                }
+                else
+                {
+                    _appEnvironment.Dispatcher.Dispatch(new ControlSearchCacheGoBackEvent(true));
+                }
             }
         }
     }

@@ -1,17 +1,20 @@
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using UABS.Assets.Script.UI;
 
 namespace UABS.Assets.Script.LocalController.OptionController
 {
-    // * Can't go back when the only record path to go to is system search cache
-    public class GoBackButtonController : MonoBehaviour
+    public class OptionButtonController : MonoBehaviour
     {
         [SerializeField]
         private Button _button;
 
         [SerializeField]
         private TextMeshProUGUI _buttonText;
+
+        [SerializeField]
+        private HoverDropdown _hoverDropdown;
 
         [SerializeField]
         private Color _enableTextColor;
@@ -25,6 +28,8 @@ namespace UABS.Assets.Script.LocalController.OptionController
                 _button.interactable = false;
             if (_buttonText != null)
                 _buttonText.color = _disableTextColor;
+            if (_hoverDropdown != null)
+                _hoverDropdown.enabled = false;
         }
 
         private void OnEnable()
@@ -33,6 +38,8 @@ namespace UABS.Assets.Script.LocalController.OptionController
                 _button.interactable = true;
             if (_buttonText != null)
                 _buttonText.color = _enableTextColor;
+            if (_hoverDropdown != null)
+                _hoverDropdown.enabled = true;
         }
     }
 }

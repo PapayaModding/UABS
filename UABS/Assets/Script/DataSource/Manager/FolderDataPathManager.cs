@@ -14,7 +14,6 @@ namespace UABS.Assets.Script.DataSource.Manager
     {
         public Action<List<string>> SetPathsCallBack;
         public Func<List<string>> GetPathsCallBack;
-
         private List<string> Paths => GetPathsCallBack != null ? GetPathsCallBack() : new();
 
         private readonly ReadFolderContent _readFolderContent;
@@ -44,8 +43,7 @@ namespace UABS.Assets.Script.DataSource.Manager
                     Debug.Log($"{fre.FolderPath} is not a folder, attempt to read it as a bundle.");
                     _appEnvironment.BundleReader.ReadBundle(fre.FolderPath);
                 }
-
-                _appEnvironment.Dispatcher.Dispatch(new ControlGoBackButtonEvent(true));
+                _appEnvironment.Dispatcher.Dispatch(new ControlSearchCacheGoBackEvent(true));
             }
             else if (e is BundleReadEvent bre)
             {
@@ -53,14 +51,12 @@ namespace UABS.Assets.Script.DataSource.Manager
                     return;
 
                 RecordPath(bre.FilePath, "bre");
-
-                _appEnvironment.Dispatcher.Dispatch(new ControlGoBackButtonEvent(true));
+                _appEnvironment.Dispatcher.Dispatch(new ControlSearchCacheGoBackEvent(true));
             }
             else if (e is BundleRead4DeriveEvent br4d)
             {
                 RecordPath(br4d.FilePath, "br4d");
-
-                _appEnvironment.Dispatcher.Dispatch(new ControlGoBackButtonEvent(true));
+                _appEnvironment.Dispatcher.Dispatch(new ControlSearchCacheGoBackEvent(true));
             }
         }
 

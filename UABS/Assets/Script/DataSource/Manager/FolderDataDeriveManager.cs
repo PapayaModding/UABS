@@ -6,6 +6,7 @@ using UABS.Assets.Script.Event;
 using UABS.Assets.Script.EventListener;
 using UABS.Assets.Script.Reader;
 using UABS.Assets.Script.Misc;
+using System;
 
 namespace UABS.Assets.Script.DataSource.Manager
 {
@@ -14,6 +15,8 @@ namespace UABS.Assets.Script.DataSource.Manager
         private readonly ReadFolderContent _readFolderContent;
         private readonly AppEnvironment _appEnvironment;
         private readonly FolderDataPathManager _folderDataPathManager;
+        public Func<List<string>> GetPaths;
+        private List<string> Paths => GetPaths != null ? GetPaths() : new();
 
         public FolderDataDeriveManager(AppEnvironment appEnvironment, FolderDataPathManager folderDataPathManager)
         {
@@ -49,6 +52,17 @@ namespace UABS.Assets.Script.DataSource.Manager
                 {
                     Debug.Log($"{fr4d.FolderPath} is not a folder, attempt to read it as a bundle.");
                     _appEnvironment.BundleReader.ReadBundle4Derive(fr4d.FolderPath, fr4d.OverrideBundlePath);
+                }
+                if (Paths.Count == 1)
+                {
+                    if (PathUtils.ArePathsEqual(Paths[0], PredefinedPaths.ExternalSystemSearchCache))
+                    {
+                        _appEnvironment.Dispatcher.Dispatch(new ControlSearchCacheGoBackEvent(false));
+                    }
+                }
+                else
+                {
+                    _appEnvironment.Dispatcher.Dispatch(new ControlSearchCacheGoBackEvent(true));
                 }
             }
         }
