@@ -4159,6 +4159,7 @@ Transform:
   - {fileID: 2080978690}
   - {fileID: 1974088816}
   - {fileID: 1529900143}
+  - {fileID: 1772705244}
   m_Father: {fileID: 0}
   m_RootOrder: 3
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -14759,8 +14760,24 @@ PrefabInstance:
     m_TransformParent: {fileID: 1067688299}
     m_Modifications:
     - target: {fileID: 7786372515760568874, guid: 409b84c232da41b4abfefeac2b2a7179, type: 3}
+      propertyPath: m_SizeDelta.x
+      value: 357.72
+      objectReference: {fileID: 0}
+    - target: {fileID: 7786372515760568874, guid: 409b84c232da41b4abfefeac2b2a7179, type: 3}
+      propertyPath: m_SizeDelta.y
+      value: 30.305
+      objectReference: {fileID: 0}
+    - target: {fileID: 7786372515760568874, guid: 409b84c232da41b4abfefeac2b2a7179, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: -1.14
+      objectReference: {fileID: 0}
+    - target: {fileID: 7786372515760568874, guid: 409b84c232da41b4abfefeac2b2a7179, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: 75
+      value: 79.848
+      objectReference: {fileID: 0}
+    - target: {fileID: 7786372515760568875, guid: 409b84c232da41b4abfefeac2b2a7179, type: 3}
+      propertyPath: m_text
+      value: Found Caches (View only)
       objectReference: {fileID: 0}
     - target: {fileID: 7786372515760569813, guid: 409b84c232da41b4abfefeac2b2a7179, type: 3}
       propertyPath: m_IsActive
@@ -15962,6 +15979,50 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _exportKind: 0
   _exportType: 0
+--- !u!1 &1772705243
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1772705244}
+  - component: {fileID: 1772705245}
+  m_Layer: 0
+  m_Name: CleanCache
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1772705244
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1772705243}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 522017391}
+  m_RootOrder: 11
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1772705245
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1772705243}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 37c6477d8b90fa64fb80a87f931de18a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &1777278919
 GameObject:
   m_ObjectHideFlags: 0
@@ -17767,6 +17828,18 @@ MonoBehaviour:
         m_TargetAssemblyTypeName: UnityEngine.Behaviour, UnityEngine
         m_MethodName: set_enabled
         m_Mode: 6
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+      - m_Target: {fileID: 1772705245}
+        m_TargetAssemblyTypeName: UABS.Assets.Script.Misc.CacheCleaner, Assembly-CSharp
+        m_MethodName: Clear
+        m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
           m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine

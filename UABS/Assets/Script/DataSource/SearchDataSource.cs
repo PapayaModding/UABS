@@ -6,7 +6,7 @@ using UABS.Assets.Script.Event;
 using UABS.Assets.Script.EventListener;
 using UABS.Assets.Script.Misc;
 using UABS.Assets.Script.Reader;
-using UABS.Assets.Script.Writer.Dependency;
+using UABS.Assets.Script.Writer;
 
 namespace UABS.Assets.Script.DataSource
 {

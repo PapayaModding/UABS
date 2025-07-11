@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.IO;
 
-namespace UABS.Assets.Script.Writer.Dependency
+namespace UABS.Assets.Script.Writer
 {
     public class CopyDeriveToSysFolder
     {
