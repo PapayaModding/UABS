@@ -10,6 +10,7 @@ using UABS.Assets.Script.Event;
 using UABS.Assets.Script.EventListener;
 using UABS.Assets.Script.Misc;
 using UABS.Assets.Script.UI;
+using UABS.Assets.Script.LocalController;
 
 namespace UABS.Assets.Script.Controller
 {
@@ -30,6 +31,8 @@ namespace UABS.Assets.Script.Controller
         private List<AssetClassID> _currClassIDs = new();
 
         private Dictionary<AssetClassID, bool> _isClassIDFiltered = new();
+
+        private List<IFilterTypeScrollEntry> _menuScrollEntries = new();
 
         public void Initialize(AppEnvironment appEnvironment)
         {
@@ -86,6 +89,11 @@ namespace UABS.Assets.Script.Controller
             menuScrollEntry.ClassID = classID;
             menuScrollEntry.IsFiltered = isFiltered;
             menuScrollEntry.AssignDispatcher(_appEnvironment.Dispatcher);
+            if (menuScrollEntry is FilterTypeButton button)
+            {
+                _appEnvironment.Dispatcher.Register(button);
+                _menuScrollEntries.Add(button);
+            }
 
             return entry;
         }
@@ -100,12 +108,20 @@ namespace UABS.Assets.Script.Controller
         {
             Transform parentTransform = _content.transform;
 
-            for (int i = parentTransform.childCount - 1; i >= 0; i--)
+            foreach (var item in _menuScrollEntries)
             {
-                GameObject child = parentTransform.GetChild(i).gameObject;
-                Destroy(child);
-                child = null;
+                if (item is FilterTypeButton button)
+                {
+                    _appEnvironment.Dispatcher.Unregister(button);
+                }
             }
+
+            for (int i = parentTransform.childCount - 1; i >= 0; i--)
+                {
+                    GameObject child = parentTransform.GetChild(i).gameObject;
+                    Destroy(child);
+                    child = null;
+                }
         }
 
         private List<AssetClassID> GetAssetClassIDsFrom(List<ParsedAssetAndEntry> entryInfos)

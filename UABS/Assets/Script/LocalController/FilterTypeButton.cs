@@ -5,10 +5,11 @@ using TMPro;
 using UABS.Assets.Script.Dispatcher;
 using UABS.Assets.Script.DropdownOptions.Filter;
 using UABS.Assets.Script.Event;
+using UABS.Assets.Script.EventListener;
 
 namespace UABS.Assets.Script.LocalController
 {
-    public class FilterTypeButton : MonoBehaviour, IFilterTypeScrollEntry
+    public class FilterTypeButton : MonoBehaviour, IFilterTypeScrollEntry, IAppEventListener
     {
         [SerializeField]
         private Button _button;
@@ -78,6 +79,15 @@ namespace UABS.Assets.Script.LocalController
             else
             {
                 Debug.LogWarning("Event dispatcher not found. Please assign one first.");
+            }
+        }
+
+        public void OnEvent(AppEvent e)
+        {
+            if (e is FilterAllEvent fae)
+            {
+                IsFiltered = fae.Config;
+                _dispatcher.Dispatch(new ClickFilterTypeEvent(ClassID, IsFiltered));
             }
         }
     }
