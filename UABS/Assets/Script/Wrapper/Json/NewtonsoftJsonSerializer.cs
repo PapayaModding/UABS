@@ -18,6 +18,23 @@ namespace UABS.Assets.Script.Wrapper.Json
             return JsonConvert.SerializeObject(obj, prettyPrint ? Formatting.Indented : Formatting.None);
         }
 
+        public string Serialize(List<IJsonObject> obj)
+        {
+            return Serialize(obj, false);
+        }
+
+        public string Serialize(List<IJsonObject> obj, bool prettyPrint)
+        {
+            var jArray = new JArray(
+                obj.Select(o =>
+                    o is NewtonsoftJsonObject njo ? njo.InnerJObject : null
+                )
+            );
+
+            return JsonConvert.SerializeObject(jArray,
+                prettyPrint ? Formatting.Indented : Formatting.None);
+        }
+
         public T Deserialize<T>(string json)
         {
             return JsonConvert.DeserializeObject<T>(json);

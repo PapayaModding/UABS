@@ -7,6 +7,7 @@ namespace UABS.Assets.Script.Wrapper.Json
     public class NewtonsoftJsonObject : IJsonObject
     {
         private readonly JObject _jObject;
+        public JObject InnerJObject => _jObject;
 
         public NewtonsoftJsonObject(JObject jObject)
         {
@@ -15,7 +16,7 @@ namespace UABS.Assets.Script.Wrapper.Json
 
         public NewtonsoftJsonObject(JToken jToken)
         {
-            _jObject = (JObject) jToken;
+            _jObject = (JObject)jToken;
         }
 
         public string GetString(string key) => _jObject[key]?.ToString();
@@ -24,6 +25,19 @@ namespace UABS.Assets.Script.Wrapper.Json
         public long GetLong(string key) => _jObject[key]?.ToObject<long>() ?? 0;
         public float GetFloat(string key) => _jObject[key]?.ToObject<float>() ?? 0;
         public bool ContainsKey(string key) => _jObject.ContainsKey(key);
+
+        public bool SetString(string key, string val)
+        {
+            try
+            {
+                _jObject[key] = val;
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
 
         public IJsonObject GetObject(string key)
         {
@@ -38,6 +52,26 @@ namespace UABS.Assets.Script.Wrapper.Json
                 .OfType<JObject>()
                 .Select(jObj => (IJsonObject)new NewtonsoftJsonObject(jObj))
                 .ToList();
+        }
+
+        public bool SetArray(string key, List<IJsonObject> values)
+        {
+            try
+            {
+                // Convert each IJsonObject to JObject
+                var jArray = new JArray(
+                    values.Select(val =>
+                        (val is NewtonsoftJsonObject njo) ? njo._jObject : null
+                    )
+                );
+
+                _jObject[key] = jArray;
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
         }
 
         public List<int> GetIntArray(string key)

@@ -16,5 +16,7 @@ namespace UABS.Assets.Script.Wrapper.Json
         public List<uint> GetUIntArray(string key);
         public List<long> GetLongArray(string key);
         public List<string> GetStringArray(string key);
+        public bool SetString(string key, string val);
+        public bool SetArray(string key, List<IJsonObject> values);
     }
 }
