@@ -49,7 +49,7 @@ namespace UABS.Assets.Script.Writer
             string jsonContent = _appEnvironment.Wrapper.JsonSerializer.Serialize(arr, true);
             File.WriteAllText(targetJson, jsonContent, Encoding.UTF8);
 
-            UnityEngine.Debug.Log($"Success: wrote {memo} to {targetJson}");
+            UnityEngine.Debug.Log($"Success: read {memo} from {targetJson}");
         }
 
         private int FindIndexOfAssetInfoWithTargetName(List<IJsonObject> assetInfos, string targetName)
