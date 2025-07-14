@@ -8,6 +8,7 @@ using UABS.Assets.Script.Event;
 using UABS.Assets.Script.EventListener;
 using UABS.Assets.Script.Misc;
 using UABS.Assets.Script.Reader;
+using System.IO;
 
 namespace UABS.Assets.Script.DataSource.Manager
 {
@@ -43,6 +44,7 @@ namespace UABS.Assets.Script.DataSource.Manager
 
         public void OpenBundle(AssetsFileInstance assetsInst, string brePath)
         {
+            bool shouldLoadDatabase = Path.GetExtension(brePath).Equals(".assets", StringComparison.OrdinalIgnoreCase);
             (List<ParsedAsset> parsedAssets, AssetsFileInstance fileInst) = _assetParser.ReadAssetOnly(assetsInst);
             if (fileInst == null)
             {
@@ -50,12 +52,12 @@ namespace UABS.Assets.Script.DataSource.Manager
                 return;
             }
             AssetReader assetReader = _appEnvironment.AssetReader;
-            assetReader.MakeMonoScriptNameTable(fileInst);
+            assetReader.MakeMonoScriptNameTable(fileInst, shouldLoadDatabase);
             SetEntryInfosCallBack(parsedAssets.Select(x =>
                 new ParsedAssetAndEntry()
                 {
                     parsedAsset = x,
-                    assetEntryInfo = assetReader.ReadEntryInfoFromAsset(x),
+                    assetEntryInfo = assetReader.ReadEntryInfoFromAsset(x, shouldLoadDatabase),
                     realBundlePath = brePath
                 }
             ).ToList());

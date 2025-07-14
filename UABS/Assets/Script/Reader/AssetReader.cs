@@ -22,11 +22,14 @@ namespace UABS.Assets.Script.Reader
             _assetsManager = am;
         }
 
-        public void MakeMonoScriptNameTable(AssetsFileInstance fileInst)
+        public void MakeMonoScriptNameTable(AssetsFileInstance fileInst, bool loadDatabase=false)
         {
             _currMonoScriptNames = new();
-            string uVer = fileInst.file.Metadata.UnityVersion;
-            _assetsManager.LoadClassDatabaseFromPackage(uVer);
+            if (loadDatabase)
+            {
+                string uVer = fileInst.file.Metadata.UnityVersion;
+                _assetsManager.LoadClassDatabaseFromPackage(uVer);
+            }
             List<AssetFileInfo> monoScriptAssets = fileInst.file.GetAssetsOfType(AssetClassID.MonoScript);
             foreach (AssetFileInfo monoScriptAsset in monoScriptAssets)
             {
@@ -35,11 +38,14 @@ namespace UABS.Assets.Script.Reader
             }
         }
 
-        public AssetEntryInfo ReadEntryInfoFromAsset(ParsedAsset parsedAsset)
+        public AssetEntryInfo ReadEntryInfoFromAsset(ParsedAsset parsedAsset, bool loadDatabase=false)
         {
             AssetTypeValueField baseField = _assetsManager.GetBaseField(parsedAsset.fileInst, parsedAsset.fileInfo);
-            string uVer = parsedAsset.fileInst.file.Metadata.UnityVersion;
-            _assetsManager.LoadClassDatabaseFromPackage(uVer);
+            if (loadDatabase)
+            {
+                string uVer = parsedAsset.fileInst.file.Metadata.UnityVersion;
+                _assetsManager.LoadClassDatabaseFromPackage(uVer);
+            }
 
             string name = "";
             if (parsedAsset.classID == AssetClassID.MonoBehaviour)
