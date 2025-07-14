@@ -6,5 +6,6 @@ namespace UABS.Assets.Script.Misc
         public const string ExternalSystemDependenceCache = "External/UABS_System_Cache/Dependency";
         public const string ExternalSystemSearchCache = "External/UABS_System_Cache/Search";
         public const string ExportFolderName = "UABS_Exported";
+        public const string ClassDataPath = "Assets/Package/classdata.tpk";
     }
 }

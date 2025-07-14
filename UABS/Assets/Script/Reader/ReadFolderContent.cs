@@ -48,7 +48,7 @@ namespace UABS.Assets.Script.Reader
 
             foreach (string file in allFiles)
             {
-                if (IsExtension(file, ".bundle") || IsExtension(file, ".ab"))
+                if (IsExtension(file, ".bundle") || IsExtension(file, ".ab") || IsExtension(file, ".assets"))
                     result.Add(new()
                     {
                         name = Path.GetFileName(file),

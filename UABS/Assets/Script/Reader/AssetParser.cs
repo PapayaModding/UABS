@@ -18,48 +18,10 @@ namespace UABS.Assets.Script.Reader
             _assetsManager = am;
         }
 
-        public (List<ParsedAsset>, AssetsFileInstance) ReadAssetOnly(BundleFileInstance bunInst)
+        public (List<ParsedAsset>, AssetsFileInstance) ReadAssetOnly(AssetsFileInstance assetsInst)
         {
-            // List<ParsedAsset> parsedAssets = new();
-            // AssetsFileInstance fileInst = _assetsManager.LoadAssetsFileFromBundle(bunInst, 0, false);
-
-            // foreach (AssetClassID classId in Enum.GetValues(typeof(AssetClassID)))
-            // {
-            //     List<AssetFileInfo> assets = fileInst.file.GetAssetsOfType(classId);
-            //     if (assets == null || assets.Count == 0)
-            //         continue;
-
-            //     foreach (AssetFileInfo assetInfo in assets)
-            //     {
-            //         parsedAssets.Add(new ParsedAsset
-            //         {
-            //             fileInfo = assetInfo,
-            //             classID = classId,
-            //             fileInst = fileInst
-            //         });
-            //     }
-            // }
-
-            // return (parsedAssets, fileInst);
-
-            AssetBundleFile bundle = bunInst.file;
-            if (bunInst.file.DataIsCompressed)
-            {
-                MemoryStream bundleStream = new();
-                bundle.Unpack(new AssetsFileWriter(bundleStream));
-                bundleStream.Position = 0;
-
-                AssetBundleFile newBundle = new();
-                newBundle.Read(new AssetsFileReader(bundleStream));
-
-                bundle.Close();
-                bunInst.file = newBundle;
-            }
-
             List<ParsedAsset> parsedAssets = new();
-            AssetsFileInstance fileInst = _assetsManager.LoadAssetsFileFromBundle(bunInst, 0, false);
-
-            List<AssetFileInfo> allAssets = fileInst.file.AssetInfos;
+            List<AssetFileInfo> allAssets = assetsInst.file.AssetInfos;
 
             foreach (var assetInfo in allAssets)
             {
@@ -67,11 +29,11 @@ namespace UABS.Assets.Script.Reader
                 {
                     fileInfo = assetInfo,
                     classID = (AssetClassID)assetInfo.TypeId,
-                    fileInst = fileInst
+                    fileInst = assetsInst
                 });
             }
 
-            return (parsedAssets, fileInst);
+            return (parsedAssets, assetsInst);
         }
     }
 }

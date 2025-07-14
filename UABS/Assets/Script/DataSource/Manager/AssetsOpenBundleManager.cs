@@ -33,17 +33,17 @@ namespace UABS.Assets.Script.DataSource.Manager
         {
             if (e is BundleRead4DeriveEvent br4d)
             {
-                OpenBundle(br4d.Bundle, br4d.OverridePath);
+                OpenBundle(br4d.AssetsInst, br4d.OverridePath);
             }
             else if (e is BundleReadEvent bre)
             {
-                OpenBundle(bre.Bundle, "");
+                OpenBundle(bre.AssetsInst, "");
             }
         }
-        
-        public void OpenBundle(BundleFileInstance bunInst, string brePath)
+
+        public void OpenBundle(AssetsFileInstance assetsInst, string brePath)
         {
-            (List<ParsedAsset> parsedAssets, AssetsFileInstance fileInst) = _assetParser.ReadAssetOnly(bunInst);
+            (List<ParsedAsset> parsedAssets, AssetsFileInstance fileInst) = _assetParser.ReadAssetOnly(assetsInst);
             if (fileInst == null)
             {
                 Debug.LogError($"Cannot open bundle in {brePath}");

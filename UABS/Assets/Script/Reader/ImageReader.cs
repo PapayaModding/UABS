@@ -164,9 +164,9 @@ namespace UABS.Assets.Script.Reader
                 return null;
             }
 
-            AssetImageInfo LoadImage(byte[] bytes)
+            AssetImageInfo LoadImage(byte[] bytes, TextureFormat targetFormat)
             {
-                Texture2D texture = new(width, height, TextureFormat.RGBA32, false);
+                Texture2D texture = new(width, height, targetFormat, false);
                 texture.LoadRawTextureData(bytes);
                 texture.filterMode = FilterMode.Point;
                 texture.Apply();
@@ -201,7 +201,7 @@ namespace UABS.Assets.Script.Reader
                 // byte[] rgbaBytes = new byte[decoded.Length * 4];
                 // MemoryMarshal.Cast<ColorRgba32, byte>(decoded.AsSpan()).CopyTo(rgbaBytes);
 
-                return LoadImage(rgbaBytes);
+                return LoadImage(rgbaBytes, TextureFormat.RGBA32);
             }
             else if (IsAndroidFormat((TextureFormat)format))
             {
@@ -225,7 +225,7 @@ namespace UABS.Assets.Script.Reader
                     return null;
                 }
 
-                return LoadImage(rgbaBytes);
+                return LoadImage(rgbaBytes, TextureFormat.RGBA32);
             }
             else if (IsAstcFormat((TextureFormat)format))
             {
@@ -242,7 +242,7 @@ namespace UABS.Assets.Script.Reader
                     if (result) // assuming 0 means success
                     {
                         Debug.Log("ASTC decode succeeded and texture applied.");
-                        return LoadImage(rgbaBytes);
+                        return LoadImage(rgbaBytes, TextureFormat.RGBA32);
                     }
                     else
                     {
@@ -256,9 +256,23 @@ namespace UABS.Assets.Script.Reader
                     return null;
                 }
             }
+            else if ((TextureFormat)format == TextureFormat.Alpha8)
+            {
+                int pixels = width * height;
+                byte[] rgbaBytes = new byte[pixels * 4];
+                for (int i = 0; i < pixels; i++)
+                {
+                    byte alpha = imageBytes[i];
+                    rgbaBytes[i * 4 + 0] = 0; // R
+                    rgbaBytes[i * 4 + 1] = 0; // G
+                    rgbaBytes[i * 4 + 2] = 0; // B
+                    rgbaBytes[i * 4 + 3] = alpha; // A
+                }
+                return LoadImage(rgbaBytes, TextureFormat.RGBA32);
+            }
             else if (imageBytes.Length == width * height * format)
             {
-                return LoadImage(imageBytes);
+                return LoadImage(imageBytes, (TextureFormat)format);
             }
             else
             {
@@ -369,10 +383,6 @@ namespace UABS.Assets.Script.Reader
 
                 case TextureFormat.RGB24:
                     compressFormat = TextureCompressionFormat.Rgb;
-                    return true;
-
-                case TextureFormat.Alpha8:
-                    compressFormat = TextureCompressionFormat.Bc1WithAlpha;
                     return true;
 
                 case TextureFormat.R8:

@@ -14,6 +14,7 @@ namespace UABS.Assets.Script.Misc
 
         public AppEnvironment()
         {
+            AssetsManager.LoadClassPackage(PredefinedPaths.ClassDataPath);
             AssetReader = new(AssetsManager);
             BundleReader = new(AssetsManager, Dispatcher);
         }

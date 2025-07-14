@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Security.Cryptography;
 using System.Text;
 using AssetsTools.NET;
@@ -24,6 +25,8 @@ namespace UABS.Assets.Script.Reader
         public void MakeMonoScriptNameTable(AssetsFileInstance fileInst)
         {
             _currMonoScriptNames = new();
+            string uVer = fileInst.file.Metadata.UnityVersion;
+            _assetsManager.LoadClassDatabaseFromPackage(uVer);
             List<AssetFileInfo> monoScriptAssets = fileInst.file.GetAssetsOfType(AssetClassID.MonoScript);
             foreach (AssetFileInfo monoScriptAsset in monoScriptAssets)
             {
@@ -35,6 +38,9 @@ namespace UABS.Assets.Script.Reader
         public AssetEntryInfo ReadEntryInfoFromAsset(ParsedAsset parsedAsset)
         {
             AssetTypeValueField baseField = _assetsManager.GetBaseField(parsedAsset.fileInst, parsedAsset.fileInfo);
+            string uVer = parsedAsset.fileInst.file.Metadata.UnityVersion;
+            _assetsManager.LoadClassDatabaseFromPackage(uVer);
+
             string name = "";
             if (parsedAsset.classID == AssetClassID.MonoBehaviour)
             {
