@@ -19,3 +19,22 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+
+<br>
+<br>
+
+
+This Unity project is licensed under the MIT License.
+
+Third-party components used in this project:
+
+---
+
+**ARM ASTC Decoder**
+https://github.com/ARM-software/astc-encoder  
+Licensed under the Apache License 2.0
+
+The decoder is used as a native plugin to decompress ASTC image data at runtime.
+
+See LICENSE-ASTC.txt for the full license text.

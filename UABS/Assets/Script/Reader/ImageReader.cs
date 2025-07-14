@@ -227,6 +227,35 @@ namespace UABS.Assets.Script.Reader
 
                 return LoadImage(rgbaBytes);
             }
+            else if (IsAstcFormat((TextureFormat)format))
+            {
+                byte[] rgbaBytes = new byte[width * height * 4];
+                try
+                {
+                    (int blockX, int blockY) = GetBlock((TextureFormat)format);
+                    if (blockX == -1)
+                    {
+                        Debug.LogError($"Unsupported ASTC format: {(TextureFormat)format}");
+                        return null;
+                    }
+                    bool result = AstcDecoderNative.DecodeASTC(imageBytes, imageBytes.Length, width, height, rgbaBytes, blockX, blockY);
+                    if (result) // assuming 0 means success
+                    {
+                        Debug.Log("ASTC decode succeeded and texture applied.");
+                        return LoadImage(rgbaBytes);
+                    }
+                    else
+                    {
+                        Debug.LogError("ASTC decode failed with error code " + result);
+                        return null;
+                    }
+                }
+                catch
+                {
+                    Debug.LogError("Something went wrong with ASTC decoder dll. Make sure your build work.");
+                    return null;
+                }
+            }
             else if (imageBytes.Length == width * height * format)
             {
                 return LoadImage(imageBytes);
@@ -390,7 +419,38 @@ namespace UABS.Assets.Script.Reader
                     unityFormat == TextureFormat.ETC2_RGBA8 ||
                     unityFormat == TextureFormat.ETC2_RGBA8Crunched ||
                     unityFormat == TextureFormat.ETC_RGB4 ||
-                    unityFormat == TextureFormat.ETC_RGB4Crunched;
+                    unityFormat == TextureFormat.ETC_RGB4Crunched ||
+                    unityFormat == TextureFormat.RGBA4444;
+        }
+
+        private bool IsAstcFormat(TextureFormat unityFormat)
+        {
+            return unityFormat == TextureFormat.ASTC_4x4 ||
+                    unityFormat == TextureFormat.ASTC_5x5 ||
+                    unityFormat == TextureFormat.ASTC_6x6 ||
+                    unityFormat == TextureFormat.ASTC_8x8 ||
+                    unityFormat == TextureFormat.ASTC_10x10 ||
+                    unityFormat == TextureFormat.ASTC_12x12 ||
+                    unityFormat == TextureFormat.ASTC_HDR_4x4 ||
+                    unityFormat == TextureFormat.ASTC_HDR_5x5 ||
+                    unityFormat == TextureFormat.ASTC_HDR_6x6 ||
+                    unityFormat == TextureFormat.ASTC_HDR_8x8 ||
+                    unityFormat == TextureFormat.ASTC_10x10 ||
+                    unityFormat == TextureFormat.ASTC_12x12;
+        }
+
+        private (int, int) GetBlock(TextureFormat astcFormat)
+        {
+            return astcFormat switch
+            {
+                TextureFormat.ASTC_4x4 or TextureFormat.ASTC_HDR_4x4 => (4, 4),
+                TextureFormat.ASTC_5x5 or TextureFormat.ASTC_HDR_5x5 => (5, 5),
+                TextureFormat.ASTC_6x6 or TextureFormat.ASTC_HDR_6x6 => (6, 6),
+                TextureFormat.ASTC_8x8 or TextureFormat.ASTC_HDR_8x8 => (8, 8),
+                TextureFormat.ASTC_10x10 or TextureFormat.ASTC_HDR_10x10 => (10, 10),
+                TextureFormat.ASTC_12x12 or TextureFormat.ASTC_HDR_12x12 => (12, 12),
+                _ => (-1, -1),
+            };
         }
 
         private Texture2D PadToSquare(Texture2D original)

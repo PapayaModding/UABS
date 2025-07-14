@@ -98,3 +98,5 @@ Packages/*
 !Packages/packages-lock.json
 
 .idea
+
+External
