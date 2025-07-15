@@ -1,11 +1,13 @@
+using System.Collections;
 using System.IO;
 using UnityEngine;
+using AssetsTools.NET.Extra;
 using TMPro;
 using UABS.Assets.Script.Event;
 using UABS.Assets.Script.EventListener;
 using UABS.Assets.Script.Misc;
 using UABS.Assets.Script.Reader;
-using AssetsTools.NET.Extra;
+using UABS.Assets.Script.Writer;
 
 namespace UABS.Assets.Script.UI
 {
@@ -34,9 +36,16 @@ namespace UABS.Assets.Script.UI
         private string _storedAssetName = "";
         private AssetClassID _storedClassID = AssetClassID.@void;
 
+        // For writer
+        private MemoWriter _memoWriter;
+        private Coroutine _debounceCoroutine;
+        [SerializeField]
+        private float _debounceDelay = 0.4f;
+
         private void Start()
         {
             DisableField();
+            _field.onValueChanged.AddListener(input => ManualEnterMemo(input));
         }
 
         public void OnEvent(AppEvent e)
@@ -51,7 +60,7 @@ namespace UABS.Assets.Script.UI
                     if (_storedBundlePath != "" && _storedAssetName != "")
                     {
                         GetMemoAndSet(_storedBundlePath, _storedAssetName, _storedClassID);
-                        Debug.Log($"Set memo with {_storedBundlePath} ---- {_storedAssetName}");
+                        // Debug.Log($"Set memo with {_storedBundlePath} ---- {_storedAssetName}");
                     }
                 }
                 else
@@ -67,9 +76,44 @@ namespace UABS.Assets.Script.UI
             }
         }
 
-        public void ManualEnterMemo(string text)
+        private void ManualEnterMemo(string text)
         {
+            Debounce(() =>
+            {
+                string memoCacheShortPath = _memoCacheShortPath;
+                string storedBundlePath = _storedBundlePath;
+                string storedAssetName = _storedAssetName;
+                HandleDebouncedInput(memoCacheShortPath, storedBundlePath, storedAssetName, text);
+            });
+        }
 
+        private void Debounce(System.Action action)
+        {
+            if (_debounceCoroutine != null)
+            {
+                StopCoroutine(_debounceCoroutine);
+            }
+            _debounceCoroutine = StartCoroutine(DebounceRoutine(action));
+        }
+
+        private IEnumerator DebounceRoutine(System.Action action)
+        {
+            yield return new WaitForSeconds(_debounceDelay);
+            action?.Invoke();
+        }
+
+        private void HandleDebouncedInput(string memoCacheShortPath,
+                                            string storedBundlePath,
+                                            string storedAssetName,
+                                            string text)
+        {
+            if (!_field.isFocused)
+                return;
+            
+            _memoWriter.WriteMemo(Path.Combine(PredefinedPaths.ExternalCache, memoCacheShortPath),
+                                    storedBundlePath,
+                                    storedAssetName,
+                                    text);
         }
 
         // Read from cache
@@ -82,17 +126,18 @@ namespace UABS.Assets.Script.UI
             if (!ShouldUseMemoField(classID))
             {
                 DisableField();
+                SetTextToEmpty();
                 return;
             }
             else
             {
                 EnableField();
             }
-            
+
             if (!_field.interactable)
                 return;
 
-            string memo = GetRecordedMemo(Path.GetDirectoryName(bundlePath), name);
+            string memo = GetRecordedMemo(bundlePath, name);
             _field.text = memo;
         }
 
@@ -104,7 +149,8 @@ namespace UABS.Assets.Script.UI
         private string GetRecordedMemo(string bundlePath, string name)
         {
             string cachePath = GetMemoCacheCompletePath();
-            return _memoReader.ReadAssetMemo(cachePath, bundlePath, name);
+            string result = _memoReader.ReadAssetMemo(cachePath, bundlePath, name);
+            return !string.IsNullOrEmpty(result) ? result : "";
         }
 
         private string GetMemoCacheCompletePath()
@@ -116,6 +162,7 @@ namespace UABS.Assets.Script.UI
         {
             _appEnvironment = appEnvironment;
             _memoReader = new(_appEnvironment);
+            _memoWriter = new(_appEnvironment);
         }
 
         public void EnableField()
@@ -130,6 +177,7 @@ namespace UABS.Assets.Script.UI
             _fieldDescription.color = _descriptionDisableColor;
         }
         
+        // ! Memo only work for specific assets
         private bool ShouldUseMemoField(AssetClassID classID)
         {
             return _memoCacheShortPath != "" &&

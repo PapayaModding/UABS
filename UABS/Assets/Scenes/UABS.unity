@@ -7522,6 +7522,7 @@ MonoBehaviour:
   _fieldDescription: {fileID: 1783879066}
   _descriptionEnableColor: {r: 0, g: 0, b: 0, a: 1}
   _descriptionDisableColor: {r: 0.5019608, g: 0.5019608, b: 0.5019608, a: 1}
+  _debounceDelay: 0.4
 --- !u!1 &769015428
 GameObject:
   m_ObjectHideFlags: 0

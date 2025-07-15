@@ -38,7 +38,7 @@ namespace UABS.Assets.Script.DataSource.Manager
             }
             else if (e is BundleReadEvent bre)
             {
-                OpenBundle(bre.AssetsInst, "");
+                OpenBundle(bre.AssetsInst, bre.FilePath);
             }
         }
 
