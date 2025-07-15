@@ -55,7 +55,11 @@ namespace UABS.Assets.Script.Reader
             return cab1Low.StartsWith(cab2Low) || cab2Low.StartsWith(cab1Low);
         }
 
-        public List<DeriveInfo> FindInCacheBySearchOptions(string cachePath, List<string> sKeys, List<string> eKeys, bool exactMatch=false)
+        public List<DeriveInfo> FindInCacheBySearchOptions(string cachePath,
+                                                            List<string> sKeys,
+                                                            List<string> eKeys,
+                                                            bool exactMatch=false,
+                                                            bool searchMemo=false)
         {
             List<DeriveInfo> result = new();
             string[] jsonFiles = Directory.GetFiles(cachePath, "*.json", SearchOption.AllDirectories);
@@ -81,7 +85,7 @@ namespace UABS.Assets.Script.Reader
                         }
                         else
                         {
-                            if (ShouldInclude(item, sKeys, eKeys))
+                            if (ShouldInclude(item, sKeys, eKeys, searchMemo))
                             {
                                 result.Add(new()
                                 {
@@ -105,7 +109,7 @@ namespace UABS.Assets.Script.Reader
         // eKeys have higher priority; if a name contains eKeys, even if it contains sKeys it won't be included
         // searching based on OR rather than AND
         // searching bundle name & assets name in bundle (but will return bundle in the end, a.k.a name, path, cabCode)
-        private bool ShouldInclude(IJsonObject item, List<string> sKeys, List<string> eKeys)
+        private bool ShouldInclude(IJsonObject item, List<string> sKeys, List<string> eKeys, bool searchMemo)
         {
             string bundleName = item.GetString("Name");
             if (PassSearchOptions(bundleName, sKeys, eKeys)) return true;
@@ -116,11 +120,16 @@ namespace UABS.Assets.Script.Reader
             List<IJsonObject> assetInfos = item.GetArray("AssetInfos");
             if (assetInfos == null || assetInfos.Count == 0)
                 return false;
-            
+
             foreach (IJsonObject assetInfo in assetInfos)
             {
                 string spriteName = assetInfo.GetString("Name");
                 if (PassSearchOptions(spriteName, sKeys, eKeys)) return true;
+                if (searchMemo)
+                {
+                    string memo = assetInfo.GetString("Memo");
+                    if (PassSearchOptions(memo, sKeys, eKeys)) return true;
+                }
             }
             return false;
         }
