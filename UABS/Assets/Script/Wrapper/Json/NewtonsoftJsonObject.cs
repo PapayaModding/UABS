@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using Newtonsoft.Json.Linq;
 
@@ -19,7 +20,18 @@ namespace UABS.Assets.Script.Wrapper.Json
             _jObject = (JObject)jToken;
         }
 
-        public string GetString(string key) => _jObject[key]?.ToString();
+        public string GetString(string key)
+        {
+            if (string.IsNullOrEmpty(key))
+                return null;
+
+            JToken token = _jObject[key];
+
+            if (token == null || token.Type == JTokenType.Null)
+                return null;
+
+            return token.ToString();
+        }
         public int GetInt(string key) => _jObject[key]?.ToObject<int>() ?? 0;
         public uint GetUInt(string key) => _jObject[key]?.ToObject<uint>() ?? 0;
         public long GetLong(string key) => _jObject[key]?.ToObject<long>() ?? 0;
@@ -46,7 +58,13 @@ namespace UABS.Assets.Script.Wrapper.Json
 
         public List<IJsonObject> GetArray(string key)
         {
-            var array = _jObject[key] as JArray;
+            if (_jObject == null || key == null)
+                return new List<IJsonObject>();
+
+            if (!_jObject.TryGetValue(key, out JToken token) || token.Type != JTokenType.Array)
+                return new List<IJsonObject>();
+
+            var array = (JArray)token;
 
             return array
                 .OfType<JObject>()

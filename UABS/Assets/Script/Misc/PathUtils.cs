@@ -12,13 +12,13 @@ namespace UABS.Assets.Script.Misc
 
         public static string GetLongPath(string shortPath)
         {
-            if (!System.IO.Directory.Exists(shortPath) && !System.IO.File.Exists(shortPath))
+            if (!Directory.Exists(shortPath) && !File.Exists(shortPath))
             {
                 Debug.LogWarning("Path does not exist: " + shortPath);
                 return shortPath;
             }
 
-            StringBuilder sb = new StringBuilder(1024);
+            StringBuilder sb = new(1024);
             uint result = GetLongPathName(shortPath, sb, (uint)sb.Capacity);
 
             if (result == 0)
@@ -50,6 +50,24 @@ namespace UABS.Assets.Script.Misc
         {
             return PathStartsWith(path, PredefinedPaths.ExternalSystemDependenceCache)
                     || PathStartsWith(path, PredefinedPaths.ExternalSystemSearchCache);
+        }
+
+        public static string RemovePrefix(string path, string prefix)
+        {
+            if (!prefix.EndsWith(Path.DirectorySeparatorChar.ToString()))
+            {
+                prefix += Path.DirectorySeparatorChar;
+            }
+            if (path.StartsWith(prefix, System.StringComparison.OrdinalIgnoreCase))
+            {
+                string relativePath = path.Substring(prefix.Length);
+                return relativePath;
+            }
+            else
+            {
+                Debug.LogError($"{path} doesn't start with {prefix}");
+                return null;
+            }
         }
     }
 }
