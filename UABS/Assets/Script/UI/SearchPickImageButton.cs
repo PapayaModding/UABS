@@ -1,8 +1,8 @@
 using System.IO;
-using TMPro;
-using UABS.Assets.Script.Misc;
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
+using UABS.Assets.Script.Misc;
 
 namespace UABS.Assets.Script.UI
 {

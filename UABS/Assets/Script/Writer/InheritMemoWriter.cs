@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using UABS.Assets.Script.DataStruct;
 using UABS.Assets.Script.Misc;
 using UABS.Assets.Script.Wrapper.Json;
 
@@ -17,9 +18,10 @@ namespace UABS.Assets.Script.Writer
             _appEnvironment = appEnvironment;
         }
 
-        public void InheritMemoCache(string from, string to, bool safeCopy=true)
+        public void InheritMemoCache(string from, string to, MemoInheritMode mode)
         {
             string[] fromJsonFiles = Directory.GetFiles(from, "*.json", SearchOption.AllDirectories);
+            int totalChanges = 0;
             foreach (string fromJsonFile in fromJsonFiles)
             {
                 string excludePrefixPath = PathUtils.RemovePrefix(fromJsonFile, from);
@@ -27,11 +29,13 @@ namespace UABS.Assets.Script.Writer
                 if (!File.Exists(toJsonFile))
                     continue;
 
-                CopyTo(fromJsonFile, toJsonFile, safeCopy);
+                totalChanges += CopyTo(fromJsonFile, toJsonFile, mode);
             }
+            
+            UnityEngine.Debug.Log($"Successfully inherited {totalChanges} changes from [{from}] to [{to}].");
         }
 
-        private void CopyTo(string fromJsonFile, string toJsonFile, bool safeCopy)
+        private int CopyTo(string fromJsonFile, string toJsonFile, MemoInheritMode mode)
         {
             string fromJsonContents = File.ReadAllText(fromJsonFile);
             string toJsonContents = File.ReadAllText(toJsonFile);
@@ -74,7 +78,14 @@ namespace UABS.Assets.Script.Writer
                     string fromMemo = fromAssetInfos[j].GetString("Memo");
                     string toMemo = toAssetInfos[indexInTo].GetString("Memo");
 
-                    string memo = safeCopy ? SafeCopyMemo(fromMemo, toMemo) : OverrideCopyMemo(fromMemo);
+                    string memo = "";
+                    memo = mode switch
+                    {
+                        MemoInheritMode.Safe => SafeCopyMemo(fromMemo, toMemo),
+                        MemoInheritMode.Overwrite => OverwriteCopyMemo(fromMemo),
+                        MemoInheritMode.Force => ForceCopyMode(fromMemo),
+                        _ => SafeCopyMemo(fromMemo, toMemo),
+                    };
                     if (memo != null)
                         changeInToArr.Add((i, indexInTo, memo));
                 }
@@ -82,6 +93,9 @@ namespace UABS.Assets.Script.Writer
             ApplyChangeToArr(toArr, changeInToArr);
             string jsonContent = _appEnvironment.Wrapper.JsonSerializer.Serialize(toArr, true);
             File.WriteAllText(toJsonFile, jsonContent, Encoding.UTF8);
+
+            // UnityEngine.Debug.Log($"Successfully inherited {changeInToArr.Count} changes.");
+            return changeInToArr.Count;
         }
 
         private void ApplyChangeToArr(List<IJsonObject> toArr, List<(int, int, string)> changeInToArr)
@@ -114,10 +128,15 @@ namespace UABS.Assets.Script.Writer
         }
 
         // Doesn't consider if there is memo in 'to'
-        private string OverrideCopyMemo(string fromMemo)
+        private string OverwriteCopyMemo(string fromMemo)
         {
             if (string.IsNullOrWhiteSpace(fromMemo))
                 return null;  // Null means don't copy
+            return fromMemo;
+        }
+
+        private string ForceCopyMode(string fromMemo)
+        {
             return fromMemo;
         }
 
