@@ -48,7 +48,7 @@ namespace UABS.Assets.Script.Reader
 
             foreach (string file in allFiles)
             {
-                if (IsExtension(file, ".bundle") || IsExtension(file, ".ab") || IsExtension(file, ".assets"))
+                if (IsExtension(file, ".bundle") || IsExtension(file, ".ab"))
                     result.Add(new()
                     {
                         name = Path.GetFileName(file),
@@ -56,9 +56,30 @@ namespace UABS.Assets.Script.Reader
                         type = FolderViewType.Bundle,
                         size = GetBundleSize(file)
                     });
+                else if (IsExtension(file, ".assets"))
+                    result.Add(new()
+                    {
+                        name = Path.GetFileName(file),
+                        path = file,
+                        type = FolderViewType.Bundle,
+                        size = GetAssetsSize(file)
+                    });
             }
 
             return result;
+        }
+
+        private long GetAssetsSize(string filePath)
+        {
+            if (File.Exists(filePath))
+            {
+                FileInfo fileInfo = new(filePath);
+                return fileInfo.Length;
+            }
+            else
+            {
+                return 0;
+            }
         }
 
         private long GetBundleSize(string filePath)
