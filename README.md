@@ -77,7 +77,7 @@ A: That’s expected if the file is large.
 Currently, UABS is not fully optimized for reading large asset bundles, so performance may be poor in those cases.
 If the file is under 10MB but still takes several minutes to open, please file an issue and I’ll investigate.
 
-## Special Notice
+## Special Note
 1. I made the logo. The font used is [HE'S DEAD Jim](https://www.dafont.com/hes-dead-jim.font). BTW I like Star Trek series.
 2. If you plan to redistribute this tool, please credit the author (me) or include a link to this repository.
 Thank you very much for your support!
