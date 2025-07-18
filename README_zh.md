@@ -34,6 +34,8 @@ UABS (Unity Asset Bundle Seeker或者‘Unity资源包查找工具’) 是一款
 
 [Newtonsoft.Json-for-Unity](https://github.com/applejag/Newtonsoft.Json-for-Unity) (MIT) - 最好的Json代码库。
 
+[astc-encoder](https://github.com/ARM-software/astc-encoder) (Apache-2.0) - ASTC图像文件解压。安卓，苹果游戏常见图像样式。
+
 [Noto Sans Simplified Chinese](https://fonts.google.com/noto/specimen/Noto+Sans+SC/license?lang=zh_Hans) (SIL Open Font License, Version 1.1)  - 中文字体。
 
 
