@@ -1,71 +1,84 @@
 # UABS
-UABS (Unity Asset Bundle Seeker或者‘Unity资源包查找工具’) 是一款专门应用于Unity引擎的辅助模组工具。目前市面上已经热门的工具像是有
-[UABEA](https://github.com/nesrak1/UABEA), [AssetStudio](https://github.com/Perfare/AssetStudio),
-[AssetRipper](https://github.com/AssetRipper/AssetRipper) 等等。它们都有各自的特点，该工具也是如此。
-在这个项目里，我的目的是要让文件索取变得更方便快捷以及缩短模组的制作流程。其次我个人也是模组制作者，你可以在[B站](https://space.bilibili.com/31525265)找到我。我会不定期发布一些制作模组的原创教程。
 
+👉中文版在[这里](./README_zh.md)
+
+UABS (Unity Asset Bundle Seeker) is a modding tool for the Unity Game Engine. Tools like [UABEA](https://github.com/nesrak1/UABEA), [AssetStudio](https://github.com/Perfare/AssetStudio),
+[AssetRipper](https://github.com/AssetRipper/AssetRipper) etc. are popular modding tools, each with their own strength-and the same goes for UABS. The goal of this project is to make searching game assets faster and to streamline the process of mod-making. I am also a mod maker! You can watch my videos on [Bilibili](https://space.bilibili.com/31525265) (Mandarin). I post original modding tutorials from time to time.
 
 <p align="center">
-    <img src="/readme_img/logo.png" width="300"/>
+    <img src="./readme_img/logo.png" width="300"/>
 </p>
 
-## 工具特点
-1. 和AssetStudio一样可以预先查看图像文件，而且不需要事先加载 - 只有当你需要的时候才会读取文件。
-2. 软件内的可管理缓存系统。仅需下载一次即可为部分功能大幅度增速。
-3. 比其他工具更注重文件的查询。
-4. 你从未见过的进阶模组教程，尽在我的[B站空间](https://space.bilibili.com/31525265)。
+## Tool Features
+1. Built-in folder-style browsing.
+2. Manageable cache system within the software.
+3. Puts more emphasis on file searching compared to other tools.
 
-## 功能
-该工具目前还处在建设阶段，所以功能尚不完全。
+## Features
+This tool is still under development, so not all features are complete yet.
 
-1. 显示图像材质，听取音频文件等（效果同AssetStudio）- 目前可以显示图像材质
-2. 导出图像材质，音频文件等（效果同AssetStudio）- 目前可以导出图像材质
-3. 改写材质文件（效果同UABEA）
-4. 寻找资源包的依赖项并快速引导 - 目前可以找到依赖项但是不能跳转
-5. 标记，备注资源文件
-6. 快速寻找资源包中的文件
-7. 尽可能把我在B站发布过的小工具加进来并实现自动化
+1. Display image textures and play audio files (similar to AssetStudio) – currently supports images only
+2. Export image textures, audio files, etc. (similar to AssetStudio) – currently supports images only
+3. Modify Texture2D files (similar to UABEA) – not implemented yet
+4. Find asset bundle dependencies and provide quick navigation ✅
+5. Tag and annotate asset files ✅
+6. Quickly search for files within asset bundles ✅
+7. Integrate and automate small tools I’ve previously released on Bilibili, as much as possible
 
-## 使用库
-[UABEA](https://github.com/nesrak1/UABEA) (MIT) - AssetsTools.Net & AssetsTools.Net.Extra 以及导出文件Json化。很多UI也都是参考的UABEA。
+## Used Libraries
+[UABEA](https://github.com/nesrak1/UABEA) (MIT) - AssetsTools.Net & AssetsTools.Net.Extra as well as dump file to UABEA Json format. Many UI designs were referenced from UABEA too.
 
-[AddressablesTools](https://github.com/nesrak1/AddressablesTools/releases) (MIT) - 做模组必要工具。
+[AddressablesTools](https://github.com/nesrak1/AddressablesTools/releases) (MIT) - Necessary for modding.
 
-[BCnEncoder.NET](https://github.com/Nominom/BCnEncoder.NET) (MIT) - 处理部分棘手的图像格式。
+[BCnEncoder.NET](https://github.com/Nominom/BCnEncoder.NET) (MIT) - For image decoding.
 
-[Newtonsoft.Json-for-Unity](https://github.com/applejag/Newtonsoft.Json-for-Unity) (MIT) - 最好的Json代码库。
+[Newtonsoft.Json-for-Unity](https://github.com/applejag/Newtonsoft.Json-for-Unity) (MIT) - Best Json library for Unity ever existed.
 
-[Noto Sans Simplified Chinese](https://fonts.google.com/noto/specimen/Noto+Sans+SC/license?lang=zh_Hans) (SIL Open Font License, Version 1.1)  - 中文字体。
+[astc-encoder](https://github.com/ARM-software/astc-encoder) (Apache-2.0) - ASTC image decompression. Common image format for Android, iOS games.
 
+[Noto Sans Simplified Chinese](https://fonts.google.com/noto/specimen/Noto+Sans+SC/license?lang=zh_Hans) (SIL Open Font License, Version 1.1)  - Chinese font.
 
-## 安装
-敬请期待
+## Installation
+Standalone software:
+To install software, go to [Releases](https://github.com/Kolyn090/UABS/releases). Download the zip file and unzip it. Open UABS executable file to run the software.
 
+Developmental environment:
+Download Unity (recommend 2021.3.33f1). Clone or Fork this repo and open the folder 'UABS' in Unity. After that (in Unity) from the folder 'Scenes' open scene 'UABS'. I highly recommend you to use 2D view + do not apply Skybox.
 
-## 问题
-该工具使用Unity引擎建造。我知道这会带来很多问题不过也有些显而易见的好处。
-
----
-
-问题一：Unity有很多个版本，怎么知道该工具可以适用于其他Unity版本的游戏？
-
-答：我认为游戏的版本不是很大的问题，该工具很多地方都是参考了UABEA，如果UABEA都没有问题那理论上来说该工具也没有问题。如果你遇到了与版本相关的问题，可以发issue我可以帮忙看看。
-（该工具的建造版本为Unity 2021.3.33f1，你如果下载的话请确保是用的这个Unity版本）
+## Issues
+This tool is built with Unity. I understand that it can bring problems but there are obvious benefits.
 
 ---
 
-问题二：你会把这个工具做成一个独立软件吗？
+Q1: Unity has many different versions. How can I know if this tool works with other Unity game versions?
 
-答：可能性不高。有些代码可能在编辑器里可以运作但是被做成软件就不能跑了，而且如果是认真做模组的话下载Unity还是很有必要的。
-
----
-
-问题三：我看见你发的内容都是讲2D的，有3D的教程吗？
-
-答：不好意思，3D个人没什么研究，只能说有空的话会看看。如果你有想做的游戏可以在issue发问。
+A: I don’t think the Unity version is a major issue. This tool is heavily based on UABEA—if UABEA works for your game, then in theory, this tool should work too. If you run into version-related issues, feel free to open an issue and I’ll take a look.
 
 ---
 
-## 特注
-1. 工具的logo由本人绘制，使用字体是[HE'S DEAD Jim](https://www.dafont.com/hes-dead-jim.font)。顺便一提我很爱看星际迷航系列。
-2. 如果你要二次发布该工具的话请标注一下作者（我）- Kolyn090，或者附上这篇repo的链接。非常感谢你的支持！
+Q2: Will you release this as a standalone app?
+
+A: Yes, a standalone version is available on the [Releases page](https://github.com/Kolyn090/UABS/releases).
+However, please note that some features require the Unity development environment.
+If you're only using the tool for asset browsing, the standalone app is sufficient.
+
+---
+
+Q3: I noticed your tutorials are all about 2D. Will you make any 3D tutorials?
+
+A: Sorry, I don’t have much experience with 3D. I might look into it when I have time.
+If there's a specific game you're interested in, feel free to ask via an issue.
+
+---
+
+Q4: Some files take a long time to open. Why is that?
+
+A: That’s expected if the file is large.
+Currently, UABS is not fully optimized for reading large asset bundles, so performance may be poor in those cases.
+If the file is under 10MB but still takes several minutes to open, please file an issue and I’ll investigate.
+
+## Special Notice
+1. I made the logo. The font used is [HE'S DEAD Jim](https://www.dafont.com/hes-dead-jim.font). BTW I like Star Trek series.
+2. If you plan to redistribute this tool, please credit the author (me) or include a link to this repository.
+Thank you very much for your support!
+

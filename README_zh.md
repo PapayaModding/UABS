@@ -45,7 +45,7 @@ UABS (Unity Asset Bundle Seeker或者‘Unity资源包查找工具’) 是一款
 下载zip文件后使用解压工具进行解压。打开UABS可执行文件即可运行。
 
 开发环境：
-下载Unity，推荐版本2021.3.33f1。Clone或者Fork该repo并在Unity中打开里面的名称为UABS的文件夹，接着去Scenes文件夹打开UABS就可以了。十分推荐切换成2D视角+不适用Skybox。
+下载Unity，推荐版本2021.3.33f1。Clone或者Fork该repo并在Unity中打开里面的名称为UABS的文件夹，接着去Scenes文件夹打开UABS就可以了。十分推荐切换成2D视角+不使用Skybox。
 
 
 ## 问题
@@ -56,7 +56,6 @@ UABS (Unity Asset Bundle Seeker或者‘Unity资源包查找工具’) 是一款
 问题一：Unity有很多个版本，怎么知道该工具可以适用于其他Unity版本的游戏？
 
 答：我认为游戏的版本不是很大的问题，该工具很多地方都是参考了UABEA，如果UABEA都没有问题那理论上来说该工具也没有问题。如果你遇到了与版本相关的问题，可以发issue我可以帮忙看看。
-（该工具的建造版本为Unity 2021.3.33f1，你如果下载的话请确保是用的这个Unity版本）
 
 ---
 
