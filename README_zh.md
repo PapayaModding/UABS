@@ -9,7 +9,7 @@ UABS (Unity Asset Bundle Seeker或者‘Unity资源包查找工具’) 是一款
     <img src="./readme_img/logo.png" width="300"/>
 </p>
 
-**该项目有维基页面，点击[这里](https://github.com/Kolyn090/UABS/wiki)来查看。**
+**该项目有维基页面，点击[这里](https://github.com/Kolyn090/UABS/wiki/%E4%B8%BB%E7%95%8C%E9%9D%A2)来查看。**
 
 ## 工具特点
 1. 内置文件夹式浏览。
