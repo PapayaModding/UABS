@@ -1,6 +1,8 @@
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Text;
 using AssetsTools.NET;
 using AssetsTools.NET.Extra;
@@ -23,6 +25,7 @@ namespace UABS.Assets.Script.Reader
             public string Path { get; set; }
             public string CabCode { get; set; }
             public List<AssetInfo> AssetInfos { get; set; }
+            public List<string> Dependencies { get; set; }
         }
 
         private AssetsManager _assetsManager;
@@ -53,6 +56,8 @@ namespace UABS.Assets.Script.Reader
                 foreach (string fileInPath in filesInPath)
                 {
                     string filePath = @$"{fileInPath}";
+                    BundleFileInstance bunInst = _assetsManager.LoadBundleFile(fileInPath, true);
+                    AssetsFileInstance fileInst = _assetsManager.LoadAssetsFileFromBundle(bunInst, 0, false);
                     Bundle bundle = new()
                     {
                         Path = fileInPath,
@@ -61,7 +66,8 @@ namespace UABS.Assets.Script.Reader
 
                         // --- Sprites ---
                         // Debug.Log(fileInPath);
-                        AssetInfos = GetAssetInfoOfImageAssets(filePath)
+                        AssetInfos = GetAssetInfoOfImageAssets(fileInst),
+                        Dependencies = GetDependencies(fileInst)
                     };
                     writeToIndex.Add(bundle);
                 }
@@ -73,6 +79,25 @@ namespace UABS.Assets.Script.Reader
                     // jsonContent = JsonConvert.SerializeObject(writeToIndex, Formatting.Indented)
                     jsonContent = _jsonSerializer.Serialize(writeToIndex, true)
                 });
+            }
+            return result;
+        }
+
+        private List<string> GetDependencies(AssetsFileInstance fileInst)
+        {
+            List<string> result = new();
+            List<AssetFileInfo> assets = fileInst.file.GetAssetsOfType(AssetClassID.AssetBundle);
+            AssetFileInfo assetBundleInfo = assets[0];
+            // Get the base field of the AssetBundle
+            AssetTypeValueField baseField = _assetsManager.GetBaseField(fileInst, assetBundleInfo);
+
+            // Navigate to m_Dependencies array
+            AssetTypeValueField dependenciesArray = baseField["m_Dependencies"][0];
+            int depCount = dependenciesArray.Children.Count;
+            for (int i = 0; i < depCount; i++)
+            {
+                string dependencyCabCode = dependenciesArray[i].Value.AsString;
+                result.Add(dependencyCabCode);
             }
             return result;
         }
@@ -105,24 +130,28 @@ namespace UABS.Assets.Script.Reader
             return result;
         }
 
-        private List<AssetInfo> GetAssetInfoOfImageAssets(string bundlePath)
+        private List<AssetInfo> GetAssetInfoOfImageAssets(AssetsFileInstance fileInst)
         {
-            BundleFileInstance bunInst = _assetsManager.LoadBundleFile(bundlePath, true);
-            AssetsFileInstance fileInst = _assetsManager.LoadAssetsFileFromBundle(bunInst, 0, false);
+            // var allAssetClassIDs = Enum.GetValues(typeof(AssetClassID)).Cast<AssetClassID>().ToArray();
+            // UnityEngine.Debug.Log(allAssetClassIDs.Length);
             return GetAssetInfoInBundle(fileInst, new[] { AssetClassID.Sprite, AssetClassID.Texture2D });
+            // return GetAssetInfoInBundle(fileInst, allAssetClassIDs);
         }
 
         private List<AssetInfo> GetAssetInfoInBundle(AssetsFileInstance fileInst, AssetClassID[] classIDs)
         {
             List<AssetInfo> result = new();
             AssetsFile afile = fileInst.file;
-            foreach (AssetClassID classID in classIDs)
+
+            // !!! Testing purpose only, remember to change back
+
+            foreach (AssetClassID classID in Enum.GetValues(typeof(AssetClassID)))
             {
                 List<AssetFileInfo> assets = afile.GetAssetsOfType(classID);
                 if (assets.Count == 0)
                 {
-                    UnityEngine.Debug.Log("No Sprite found.");
-                    return null;
+                    UnityEngine.Debug.Log($"No {classID} found.");
+                    continue;
                 }
 
                 foreach (AssetFileInfo asset in assets)
