@@ -11,7 +11,7 @@ using UABS.Assets.Script.Wrapper.Json;
 
 namespace UABS.Assets.Script.Reader
 {
-    public class ReadNewCache
+    public class ManualCacheBuilder
     {
         public class AssetInfo
         {
@@ -31,7 +31,7 @@ namespace UABS.Assets.Script.Reader
         private AssetsManager _assetsManager;
         private IJsonSerializer _jsonSerializer;
 
-        public ReadNewCache(AssetsManager assetsManager, IJsonSerializer jsonSerializer)
+        public ManualCacheBuilder(AssetsManager assetsManager, IJsonSerializer jsonSerializer)
         {
             _assetsManager = assetsManager;
             _jsonSerializer = jsonSerializer;

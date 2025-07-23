@@ -12,11 +12,11 @@ namespace UABS.Assets.Script.Writer
 {
     public class WriteCache
     {
-        private ReadNewCache _readNewCache;
+        private ManualCacheBuilder _manualCacheBuilder;
 
         public WriteCache(AssetsManager assetsManager, IJsonSerializer jsonSerializer)
         {
-            _readNewCache = new(assetsManager, jsonSerializer);
+            _manualCacheBuilder = new(assetsManager, jsonSerializer);
         }
 
 #pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously
@@ -56,7 +56,7 @@ namespace UABS.Assets.Script.Writer
                 Directory.CreateDirectory(savePath);
             }
 
-            List<CacheInfo> cache = _readNewCache.BuildCache(dataPath, savePath);
+            List<CacheInfo> cache = _manualCacheBuilder.BuildCache(dataPath, savePath);
             foreach (CacheInfo cacheInfo in cache)
             {
                 string path = cacheInfo.path;
