@@ -6,7 +6,7 @@ using AssetsTools.NET.Extra;
 using UABS.Assets.Script.Misc.AppCore;
 using UABS.Assets.Script.Misc.Paths;
 
-namespace UABS.Assets.Script.__Test__
+namespace UABS.Assets.Script.__Test__.FileRead
 {
     public class ReadDotAssets : MonoBehaviour
     {
