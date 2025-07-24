@@ -3,9 +3,9 @@ using UABS.Assets.Script.Event;
 using UABS.Assets.Script.DataStruct;
 using UABS.Assets.Script.Misc.AppCore;
 
-namespace UABS.Assets.Script.DropdownOptions
+namespace UABS.Assets.Script.DropdownOptions.Exporter
 {
-    public class ExportAssetsButton : MonoBehaviour, IAppEnvironment, IDropdownButton
+    public class ExportAssetsButton : MonoBehaviour, IAppEnvironment
     {
         [SerializeField]
         private ExportKind _exportKind;

@@ -11,7 +11,7 @@ using UABS.Assets.Script.Reader.UserPackage;
 using UABS.Assets.Script.Misc.AppCore;
 using UABS.Assets.Script.DropdownOptions.UserPackage;
 
-namespace UABS.Assets.Script.DropdownOptions
+namespace UABS.Assets.Script.DropdownOptions.Dependency
 {
     public class HoverDepDeriveDropdown : HoverDropdown, IAppEnvironment, IAppEventListener
     {

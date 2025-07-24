@@ -12,7 +12,7 @@ using UABS.Assets.Script.UI.OptionPanel;
 using UABS.Assets.Script.Misc.AppCore;
 using UABS.Assets.Script.LocalController.Filter;
 
-namespace UABS.Assets.Script.Controller
+namespace UABS.Assets.Script.Controller.Filter
 {
     public class HoverFilterTypeDerive : HoverDropdown, IAppEnvironment, IAppEventListener
     {

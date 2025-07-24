@@ -2,9 +2,9 @@ using UnityEngine;
 using UABS.Assets.Script.Event;
 using UABS.Assets.Script.Misc.AppCore;
 
-namespace UABS.Assets.Script.DropdownOptions
+namespace UABS.Assets.Script.DropdownOptions.Opener
 {
-    public class OpenFolder : MonoBehaviour, IAppEnvironment, IDropdownButton
+    public class OpenFolder : MonoBehaviour, IAppEnvironment
     {
         private AppEnvironment _appEnvironment = null;
         public AppEnvironment AppEnvironment => _appEnvironment;
