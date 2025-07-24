@@ -3,7 +3,7 @@ using UnityEngine.UI;
 using TMPro;
 using UABS.Assets.Script.Dispatcher;
 
-namespace UABS.Assets.Script.View
+namespace UABS.Assets.Script.View.BundleView
 {
     public class TextureView : MonoBehaviour
     {

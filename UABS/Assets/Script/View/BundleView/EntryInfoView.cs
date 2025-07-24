@@ -7,7 +7,7 @@ using UABS.Assets.Script.Dispatcher;
 using UABS.Assets.Script.Event;
 using UABS.Assets.Script.ScriptableObjects;
 
-namespace UABS.Assets.Script.View
+namespace UABS.Assets.Script.View.BundleView
 {
     public class EntryInfoView : MonoBehaviour
     {

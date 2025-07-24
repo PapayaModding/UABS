@@ -1,13 +1,13 @@
 using System.IO;
 using UnityEngine;
-using AssetsTools.NET.Extra;
 using TMPro;
 using UABS.Assets.Script.DataStruct;
 using UABS.Assets.Script.Event;
 using UABS.Assets.Script.Misc;
 using UABS.Assets.Script.UI;
+using UABS.Assets.Script.EventListener;
 
-namespace UABS.Assets.Script.EventListener
+namespace UABS.Assets.Script.View.BundleView
 {
     public class DisplayInfoPanel : MonoBehaviour, IAppEventListener, IAppEnvironment
     {
@@ -46,9 +46,6 @@ namespace UABS.Assets.Script.EventListener
 
                 _nameField.text = adie.EntryInfo.assetEntryInfo.name;
                 _pathIDField.text = adie.EntryInfo.assetEntryInfo.pathID.ToString();
-                // _fileIDField.text = assetTextInfoEvent.Info.fileID.ToString();
-                // _sizeField.text = $"{assetTextInfoEvent.Info.compressedSize} ({assetTextInfoEvent.Info.uncompressedSize})";
-                // _pathField.text = assetTextInfoEvent.Info.path;
                 // ! Lazy loading extra information about the asset.
                 AssetExtraInfo extraInfo = _appEnvironment.AssetReader.ReadExtraInfoFromAsset(adie.EntryInfo.parsedAsset);
                 _fileIDField.text = extraInfo.fileID.ToString();

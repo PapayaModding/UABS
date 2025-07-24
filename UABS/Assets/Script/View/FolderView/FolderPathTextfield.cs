@@ -4,7 +4,7 @@ using TMPro;
 using UABS.Assets.Script.Event;
 using UABS.Assets.Script.EventListener;
 
-namespace UABS.Assets.Script.View
+namespace UABS.Assets.Script.View.FolderView
 {
     public class FolderPathTextfield : MonoBehaviour, IAppEventListener
     {

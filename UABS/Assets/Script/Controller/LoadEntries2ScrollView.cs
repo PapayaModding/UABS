@@ -7,7 +7,7 @@ using UABS.Assets.Script.DataStruct;
 using UABS.Assets.Script.Event;
 using UABS.Assets.Script.EventListener;
 using UABS.Assets.Script.Misc;
-using UABS.Assets.Script.View;
+using UABS.Assets.Script.View.BundleView;
 
 namespace UABS.Assets.Script.Controller
 {

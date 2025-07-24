@@ -7,7 +7,7 @@ using UABS.Assets.Script.Event;
 using UABS.Assets.Script.ScriptableObjects;
 using UABS.Assets.Script.Misc;
 
-namespace UABS.Assets.Script.View
+namespace UABS.Assets.Script.View.FolderView
 {
     public class EntryFolderInfoView : MonoBehaviour
     {
