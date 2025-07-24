@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEngine.EventSystems;
 
-namespace UABS.Assets.Script.UI
+namespace UABS.Assets.Script.UI.OptionPanel
 {
     public class HoverArea : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
     {

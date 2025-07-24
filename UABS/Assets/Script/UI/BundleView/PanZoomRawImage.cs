@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEngine.EventSystems;
 
-namespace UABS.Assets.Script.View
+namespace UABS.Assets.Script.View.BundleView
 {
     public class PanZoomRawImage : MonoBehaviour, IPointerDownHandler, IDragHandler, IScrollHandler
     {

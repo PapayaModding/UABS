@@ -9,7 +9,7 @@ using UABS.Assets.Script.Misc;
 using UABS.Assets.Script.Reader;
 using UABS.Assets.Script.Writer.UserPackage;
 
-namespace UABS.Assets.Script.UI
+namespace UABS.Assets.Script.UI.BundleView
 {
     public class MemoField : MonoBehaviour, IAppEventListener, IAppEnvironment
     {
@@ -176,8 +176,9 @@ namespace UABS.Assets.Script.UI
             _field.interactable = false;
             _fieldDescription.color = _descriptionDisableColor;
         }
-        
+
         // ! Memo only work for specific assets
+        // !!! TODO: change this for dynamic type inclusion
         private bool ShouldUseMemoField(AssetClassID classID)
         {
             return _memoPackageShortPath != "" &&

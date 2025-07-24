@@ -9,7 +9,7 @@ using UABS.Assets.Script.Event;
 using UABS.Assets.Script.EventListener;
 using UABS.Assets.Script.LocalController;
 using UABS.Assets.Script.Misc;
-using UABS.Assets.Script.UI;
+using UABS.Assets.Script.UI.OptionPanel;
 
 namespace UABS.Assets.Script.DropdownOptions.Memo
 {

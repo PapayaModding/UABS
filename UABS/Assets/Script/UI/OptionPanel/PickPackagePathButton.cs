@@ -2,7 +2,7 @@ using UnityEngine;
 using TMPro;
 using UABS.Assets.Script.Misc;
 
-namespace UABS.Assets.Script.UI
+namespace UABS.Assets.Script.UI.OptionPanel
 {
     public class PickPackagePathButton : MonoBehaviour, IAppEnvironment
     {

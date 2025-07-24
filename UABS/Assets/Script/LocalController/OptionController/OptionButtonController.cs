@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
-using UABS.Assets.Script.UI;
+using UABS.Assets.Script.UI.OptionPanel;
 
 namespace UABS.Assets.Script.LocalController.OptionController
 {

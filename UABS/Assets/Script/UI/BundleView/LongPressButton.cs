@@ -2,7 +2,7 @@ using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.EventSystems;
 
-namespace UABS.Assets.Script.UI
+namespace UABS.Assets.Script.UI.BundleView
 {
     public class LongPressButton : MonoBehaviour, IPointerDownHandler, IPointerUpHandler, IPointerExitHandler
     {
@@ -11,22 +11,22 @@ namespace UABS.Assets.Script.UI
         public UnityEvent onLongPress;
         public UnityEvent onClick;
 
-        private bool isPointerDown = false;
-        private float pointerDownTimer = 0f;
+        private bool _isPointerDown = false;
+        private float _pointerDownTimer = 0f;
 
-        private float holdTime = 0f;
-        private float nextInvokeTime = 0f;
-        private bool repeating = false;
+        private float _holdTime = 0f;
+        private float _nextInvokeTime = 0f;
+        private bool _repeating = false;
 
         public void OnPointerDown(PointerEventData eventData)
         {
-            isPointerDown = true;
-            pointerDownTimer = 0f;
+            _isPointerDown = true;
+            _pointerDownTimer = 0f;
         }
 
         public void OnPointerUp(PointerEventData eventData)
         {
-            if (isPointerDown && pointerDownTimer > triggeringDelay)
+            if (_isPointerDown && _pointerDownTimer > triggeringDelay)
             {
                 onClick?.Invoke(); // If released before duration, treat as normal click
             }
@@ -40,34 +40,34 @@ namespace UABS.Assets.Script.UI
 
         private void Update()
         {
-            if (!isPointerDown)
+            if (!_isPointerDown)
             return;
 
-            holdTime += Time.deltaTime;
-            pointerDownTimer += Time.deltaTime;
+            _holdTime += Time.deltaTime;
+            _pointerDownTimer += Time.deltaTime;
 
-            if (holdTime >= nextInvokeTime)
+            if (_holdTime >= _nextInvokeTime)
             {
                 onLongPress?.Invoke();
 
-                if (!repeating)
+                if (!_repeating)
                 {
                     // First time triggered
-                    repeating = true;
-                    nextInvokeTime = holdTime + repeatRate;
+                    _repeating = true;
+                    _nextInvokeTime = _holdTime + repeatRate;
                 }
                 else
                 {
                     // Continue repeating
-                    nextInvokeTime += repeatRate;
+                    _nextInvokeTime += repeatRate;
                 }
             }
         }
 
         private void Reset()
         {
-            isPointerDown = false;
-            pointerDownTimer = 0f;
+            _isPointerDown = false;
+            _pointerDownTimer = 0f;
         }
     }
 }

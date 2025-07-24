@@ -2,7 +2,7 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
-namespace UABS.Assets.Script.UI
+namespace UABS.Assets.Script.UI.Universal
 {
     public class ForceToNormalStateAfterClick : MonoBehaviour
     {

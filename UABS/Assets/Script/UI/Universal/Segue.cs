@@ -4,7 +4,7 @@ using UABS.Assets.Script.Event;
 using UABS.Assets.Script.EventListener;
 using UABS.Assets.Script.Misc;
 
-namespace UABS.Assets.Script.Controller
+namespace UABS.Assets.Script.UI.Universal
 {
     public class Segue : MonoBehaviour, IAppEnvironment, IAppEventListener
     {

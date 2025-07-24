@@ -1,12 +1,13 @@
 using UnityEngine;
 using UnityEngine.EventSystems;
 
-namespace UABS.Assets.Script.UI
+namespace UABS.Assets.Script.UI.OptionPanel
 {
     public class HoverDropdown : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
     {
         [SerializeField]
         public RectTransform dropdownPanel;
+        
         private bool _isPointerInside = false;
 
         [SerializeField]
