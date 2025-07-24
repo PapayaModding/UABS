@@ -1,5 +1,5 @@
 using UnityEngine;
-using UABS.Assets.Script.Writer;
+using UABS.Assets.Script.Writer.SystemCache;
 
 namespace UABS.Assets.Script.Misc
 {

@@ -7,11 +7,11 @@ using UABS.Assets.Script.DataStruct;
 using UABS.Assets.Script.Misc;
 using UABS.Assets.Script.Wrapper.Json;
 
-namespace UABS.Assets.Script.Writer
+namespace UABS.Assets.Script.Writer.UserPackage
 {
     public class InheritMemoWriter
     {
-        private AppEnvironment _appEnvironment;
+        private readonly AppEnvironment _appEnvironment;
 
         public InheritMemoWriter(AppEnvironment appEnvironment)
         {

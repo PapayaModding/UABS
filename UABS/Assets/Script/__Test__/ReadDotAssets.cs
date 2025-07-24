@@ -1,9 +1,9 @@
 using System.Collections.Generic;
 using System.Text;
+using UnityEngine;
 using AssetsTools.NET;
 using AssetsTools.NET.Extra;
 using UABS.Assets.Script.Misc;
-using UnityEngine;
 
 namespace UABS.Assets.Script.__Test__
 {

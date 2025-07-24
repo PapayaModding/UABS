@@ -1,14 +1,9 @@
-using System.Collections.Generic;
-using UnityEngine;
-using AssetsTools.NET.Extra;
-using UABS.Assets.Script.DataStruct;
-using UABS.Assets.Script.Misc;
-using UABS.Assets.Script.Reader;
-using AssetsTools.NET;
-using System.IO;
 using System;
 using System.Threading.Tasks;
-using AssetsTools.NET.Extra.Decompressors.LZ4;
+using UnityEngine;
+using AssetsTools.NET;
+using AssetsTools.NET.Extra;
+using UABS.Assets.Script.Misc;
 
 namespace UABS.Assets.Script.__Test__
 {

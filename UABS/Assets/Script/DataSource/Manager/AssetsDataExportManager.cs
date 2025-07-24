@@ -6,13 +6,13 @@ using UABS.Assets.Script.DataStruct;
 using UABS.Assets.Script.Event;
 using UABS.Assets.Script.EventListener;
 using UABS.Assets.Script.Misc;
-using UABS.Assets.Script.Writer;
+using UABS.Assets.Script.Writer.Exporter;
 
 namespace UABS.Assets.Script.DataSource.Manager
 {
     public class AssetsDataExportManager : IAppEventListener
     {
-        private readonly WriteTextureAsImage2Path _writeTextureAsImage2Path;
+        private readonly ExportTextureAsImage2Path _writeTextureAsImage2Path;
 
         public Func<List<ParsedAssetAndEntry>> EntryInfosCallBack;
 

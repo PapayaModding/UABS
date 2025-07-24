@@ -7,7 +7,7 @@ using UABS.Assets.Script.Event;
 using UABS.Assets.Script.EventListener;
 using UABS.Assets.Script.Misc;
 using UABS.Assets.Script.Reader;
-using UABS.Assets.Script.Writer;
+using UABS.Assets.Script.Writer.UserPackage;
 
 namespace UABS.Assets.Script.UI
 {

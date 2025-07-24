@@ -8,11 +8,11 @@ using UABS.Assets.Script.Misc;
 using UABS.Assets.Script.Reader;
 using UABS.Assets.Script.Wrapper.Json;
 
-namespace UABS.Assets.Script.Writer
+namespace UABS.Assets.Script.Writer.UserPackage
 {
     public class WriteUserPackage
     {
-        private UserPackageBuilder _packageBuilder;
+        private readonly UserPackageBuilder _packageBuilder;
 
         public WriteUserPackage(AssetsManager assetsManager, IJsonSerializer jsonSerializer)
         {

@@ -7,16 +7,14 @@ using UABS.Assets.Script.Misc;
 using UABS.Assets.Script.Reader;
 using UABS.Assets.Script.Wrapper.TextureDecoder;
 
-namespace UABS.Assets.Script.Writer
+namespace UABS.Assets.Script.Writer.Exporter
 {
-    public class WriteTextureAsImage2Path
+    public class ExportTextureAsImage2Path
     {
-        // private ReadTexturesFromBundle _readTexturesFromBundle;
-        private ImageReader _imageReader;
+        private readonly ImageReader _imageReader;
 
-        public WriteTextureAsImage2Path(AssetsManager assetsManager, ITextureDecoder textureDecoder)
+        public ExportTextureAsImage2Path(AssetsManager assetsManager, ITextureDecoder textureDecoder)
         {
-            // _readTexturesFromBundle = new(assetsManager);
             _imageReader = new(assetsManager, textureDecoder);
         }
 
