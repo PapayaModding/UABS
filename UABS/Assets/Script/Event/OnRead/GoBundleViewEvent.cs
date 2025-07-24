@@ -3,6 +3,7 @@ using UABS.Assets.Script.DataStruct;
 
 namespace UABS.Assets.Script.Event
 {
+    // Should be called when user transits from Folder View to Bundle View
     public class GoBundleViewEvent : AppEvent
     {
         public List<ParsedAssetAndEntry> EntryInfos { get; }

@@ -3,6 +3,7 @@ using UABS.Assets.Script.DataStruct;
 
 namespace UABS.Assets.Script.Event
 {
+    // Inform the loader to load and render assets entries in Bundle View
     public class AssetsRenderEvent : AppEvent
     {
         public List<ParsedAssetAndEntry> RenderEntryInfos;

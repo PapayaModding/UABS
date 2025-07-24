@@ -55,7 +55,7 @@ namespace UABS.Assets.Script.Controller
                 // Send the dictionary to somewhere else
                 _appEnvironment.Dispatcher.Dispatch(new FilterTypeEvent(_isClassIDFiltered));
             }
-            else if (e is PackageRefreshEvent)
+            else if (e is PackageRemoveEvent)
             {
                 ClearAndRecreate();
             }

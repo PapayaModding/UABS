@@ -96,7 +96,7 @@ namespace UABS.Assets.Script.DropdownOptions.Memo
 
         public void OnEvent(AppEvent e)
         {
-            if (e is PackageRefreshEvent)
+            if (e is PackageRemoveEvent)
             {
                 ClearAndRecreate();
             }

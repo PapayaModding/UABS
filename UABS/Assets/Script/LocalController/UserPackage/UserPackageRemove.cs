@@ -33,7 +33,7 @@ namespace UABS.Assets.Script.LocalController.UserPackage
             string fullRelPath = Path.Combine(PredefinedPaths.ExternalUserPackages, ShortPath);
             Debug.Log($"Removed cache folder '{fullRelPath}'");
             Directory.Delete(fullRelPath, true);
-            _dispatcher.Dispatch(new PackageRefreshEvent());
+            _dispatcher.Dispatch(new PackageRemoveEvent());
         }
 
         public void AssignDispatcher(EventDispatcher dispatcher)
