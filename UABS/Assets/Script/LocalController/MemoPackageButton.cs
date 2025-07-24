@@ -7,7 +7,7 @@ using UABS.Assets.Script.Event;
 
 namespace UABS.Assets.Script.LocalController
 {
-    public class MemoCacheButton : MonoBehaviour, IMemoCacheScrollEntry
+    public class MemoPackageButton : MonoBehaviour, IMemoPackageScrollEntry
     {
         private EventDispatcher _dispatcher;
         private string _shortPath;
@@ -55,7 +55,7 @@ namespace UABS.Assets.Script.LocalController
             {
                 IsSelected = !IsSelected;
 
-                _dispatcher.Dispatch(new ClickMemoCacheEvent(ShortPath, IsSelected));
+                _dispatcher.Dispatch(new ClickMemoPackageEvent(ShortPath, IsSelected));
             }
             else
             {

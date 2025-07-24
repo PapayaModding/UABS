@@ -66,7 +66,7 @@ namespace UABS.Assets.Script.DataSource
                 }
 
                 List<string> dependencyPaths = dependencyInfos.Select(x => x.path).ToList();
-                string previewFolderPath = _copyDeriveToSysFolder.CopyFromPaths(dependencyPaths, PredefinedPaths.ExternalSystemDependenceCache);
+                string previewFolderPath = _copyDeriveToSysFolder.CopyFromPaths(dependencyPaths, PredefinedPaths.ExternalSystemDependencyCache);
 
                 AppEnvironment.Dispatcher.Dispatch(new FolderRead4DeriveEvent(previewFolderPath, dependencyInfos, "")
                 {

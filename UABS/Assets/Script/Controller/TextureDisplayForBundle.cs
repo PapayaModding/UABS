@@ -15,7 +15,7 @@ namespace UABS.Assets.Script.Controller
         [SerializeField]
         private TextureView _textureView;
         private ImageReader _imageReader;
-        private Dictionary<long, AssetImageInfo> _cacheTextureByPathID = new();
+        private Dictionary<long, AssetImageInfo> _storedTextureByPathID = new();
         private Dictionary<long, ParsedAssetAndEntry> _pathID2EntryInfo;
         private AppEnvironment _appEnvironment = null;
         public AppEnvironment AppEnvironment => _appEnvironment;
@@ -57,7 +57,7 @@ namespace UABS.Assets.Script.Controller
             else if (e is GoBundleViewEvent gbve)
             {
                 _pathID2EntryInfo = gbve.PathID2EntryInfo;
-                _cacheTextureByPathID = new();
+                _storedTextureByPathID = new();
                 _textureView.AssignSizeText("");
                 _textureView.Render(null);
                 _textureView.AssignIndexText("");
@@ -66,7 +66,7 @@ namespace UABS.Assets.Script.Controller
 
         private AssetImageInfo GetTextureByPathID(long pathID)
         {
-            if (!_cacheTextureByPathID.ContainsKey(pathID))
+            if (!_storedTextureByPathID.ContainsKey(pathID))
             {
                 AssetImageInfo? _textureWithMeta = _imageReader.SpriteToImage(_pathID2EntryInfo[pathID]);
                 _textureWithMeta ??= _imageReader.Texture2DToImage(_pathID2EntryInfo[pathID]);
@@ -75,9 +75,9 @@ namespace UABS.Assets.Script.Controller
                     Debug.LogWarning($"The given path id {pathID} is neither Texture2D nor Sprite.");
                     return new();
                 }
-                _cacheTextureByPathID[pathID] = (AssetImageInfo)_textureWithMeta;
+                _storedTextureByPathID[pathID] = (AssetImageInfo)_textureWithMeta;
             }
-            return _cacheTextureByPathID[pathID];
+            return _storedTextureByPathID[pathID];
         }
     }
 }

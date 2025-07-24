@@ -18,7 +18,7 @@ namespace UABS.Assets.Script.Writer
             _appEnvironment = appEnvironment;
         }
 
-        public void InheritMemoCache(string from, string to, MemoInheritMode mode)
+        public void InheritMemoPackage(string from, string to, MemoInheritMode mode)
         {
             string[] fromJsonFiles = Directory.GetFiles(from, "*.json", SearchOption.AllDirectories);
             int totalChanges = 0;

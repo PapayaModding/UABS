@@ -12,7 +12,7 @@ using UABS.Assets.Script.UI;
 
 namespace UABS.Assets.Script.DropdownOptions.Search
 {
-    public class HoverSearchCacheDerive : HoverArea, IAppEnvironment, IAppEventListener
+    public class HoverSearchDerive : HoverArea, IAppEnvironment, IAppEventListener
     {
         private AppEnvironment _appEnvironment = null;
         public AppEnvironment AppEnvironment => _appEnvironment;
@@ -23,7 +23,7 @@ namespace UABS.Assets.Script.DropdownOptions.Search
         [SerializeField]
         private RectTransform _content;
 
-        private ReadExternalCache _readExternalCache;
+        private ReadUserPackage _readUserPackage;
 
         [SerializeField]
         private Button _button;
@@ -33,7 +33,7 @@ namespace UABS.Assets.Script.DropdownOptions.Search
         public void Initialize(AppEnvironment appEnvironment)
         {
             _appEnvironment = appEnvironment;
-            _readExternalCache = new();
+            _readUserPackage = new();
         }
 
         public override void OnPointerEnter(PointerEventData eventData)
@@ -47,7 +47,7 @@ namespace UABS.Assets.Script.DropdownOptions.Search
         {
             ClearContentChildren();
             // Search paths and create prefabs
-            List<string> paths = _readExternalCache.GetCacheFoldersInExternal();
+            List<string> paths = _readUserPackage.GetPackagesInExternal();
             foreach (string path in paths)
             {
                 string validationFilePath = Path.Combine(path, "Validation.txt");
@@ -66,8 +66,8 @@ namespace UABS.Assets.Script.DropdownOptions.Search
         private GameObject CreateScrollEntry(string path, bool interactable)
         {
             GameObject entry = Instantiate(_entryPrefab);
-            ISearchCacheScrollEntry menuScrollEntry = entry.GetComponentsInChildren<MonoBehaviour>(true)
-                                                .OfType<ISearchCacheScrollEntry>()
+            ISearchScrollEntry menuScrollEntry = entry.GetComponentsInChildren<MonoBehaviour>(true)
+                                                .OfType<ISearchScrollEntry>()
                                                 .FirstOrDefault();
             menuScrollEntry.ShortPath = path;
             menuScrollEntry.AssignDispatcher(AppEnvironment.Dispatcher);
@@ -90,11 +90,11 @@ namespace UABS.Assets.Script.DropdownOptions.Search
 
         public void OnEvent(AppEvent e)
         {
-            if (e is CacheRefreshEvent)
+            if (e is PackageRefreshEvent)
             {
                 ClearAndRecreate();
             }
-            else if (e is ClickSearchCacheEvent csce)
+            else if (e is ClickSearchEvent csce)
             {
                 if (csce.IsIncluded)
                 {
@@ -108,7 +108,7 @@ namespace UABS.Assets.Script.DropdownOptions.Search
                     }
                 }
                 // Send the hashset to somewhere else
-                _appEnvironment.Dispatcher.Dispatch(new SearchCacheEvent(_includedPaths));
+                _appEnvironment.Dispatcher.Dispatch(new SearchBundleEvent(_includedPaths));
             }
         }
     }

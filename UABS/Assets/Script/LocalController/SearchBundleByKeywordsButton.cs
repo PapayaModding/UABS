@@ -40,21 +40,21 @@ namespace UABS.Assets.Script.LocalController
 
         public void OnEvent(AppEvent e)
         {
-            if (e is SearchCacheEvent sce)
+            if (e is SearchBundleEvent sce)
             {
-                Debug.Log($"Current searching cache paths ({sce.IncludePaths.Count}):");
+                Debug.Log($"Current searching package paths ({sce.IncludePaths.Count}):");
                 foreach (string path in sce.IncludePaths)
                 {
                     Debug.Log(path);
                 }
-                List<string> fullIncludedPaths = sce.IncludePaths.Select(x => GetFullCachePath(x)).ToList();
+                List<string> fullIncludedPaths = sce.IncludePaths.Select(x => GetFullPackagePath(x)).ToList();
                 _fullIncludedPaths = fullIncludedPaths;
             }
         }
 
-        private string GetFullCachePath(string shortPath)
+        private string GetFullPackagePath(string shortPath)
         {
-            return Path.Combine(PredefinedPaths.ExternalCache, shortPath);
+            return Path.Combine(PredefinedPaths.ExternalUserPackages, shortPath);
         }
     }
 }

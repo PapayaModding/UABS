@@ -6,11 +6,11 @@ using UABS.Assets.Script.Writer;
 
 namespace UABS.Assets.Script.LocalController
 {
-    public class WriteCacheButton : MonoBehaviour, IAppEnvironment
+    public class WriteUserPackageButton : MonoBehaviour, IAppEnvironment
     {
         private AppEnvironment _appEnvironment = null;
         public AppEnvironment AppEnvironment => _appEnvironment;
-        private WriteCache _writeCache;
+        private WriteUserPackage _writeCache;
 
         public void Initialize(AppEnvironment appEnvironment)
         {
@@ -33,12 +33,12 @@ namespace UABS.Assets.Script.LocalController
             }
 
             Debug.Log(gameDataPath);
-            if (!Directory.Exists(PredefinedPaths.ExternalCache))
+            if (!Directory.Exists(PredefinedPaths.ExternalUserPackages))
             {
-                Directory.CreateDirectory(PredefinedPaths.ExternalCache);
+                Directory.CreateDirectory(PredefinedPaths.ExternalUserPackages);
             }
 
-            string[] newSavePaths = _appEnvironment.Wrapper.FileBrowser.OpenFolderPanel("Create a new folder under UABS_Cache and select it, then continue.", PredefinedPaths.ExternalCache, false);
+            string[] newSavePaths = _appEnvironment.Wrapper.FileBrowser.OpenFolderPanel("Create a new folder under UABS_Cache and select it, then continue.", PredefinedPaths.ExternalUserPackages, false);
             string newSavePath = "";
             if (newSavePaths.Length <= 0)
             {
@@ -50,7 +50,7 @@ namespace UABS.Assets.Script.LocalController
                 newSavePath = newSavePaths[0];
             }
             
-            await Task.Run(() => _writeCache.CreateAndSaveNewCache(gameDataPath, newSavePath, null));
+            await Task.Run(() => _writeCache.CreateAndSaveNewPackage(gameDataPath, newSavePath, null));
         }
 
         private string GetDefaultName()
@@ -58,7 +58,7 @@ namespace UABS.Assets.Script.LocalController
             int counter = 0;
             string baseName = "Default";
             string newName = baseName;
-            while (Directory.Exists(Path.Combine(PredefinedPaths.ExternalCache, newName)))
+            while (Directory.Exists(Path.Combine(PredefinedPaths.ExternalUserPackages, newName)))
             {
                 counter++;
                 newName = $"{baseName}_{counter}";

@@ -4,16 +4,15 @@ using System.Linq;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
-using UABS.Assets.Script.DropdownOptions.Dependency;
 using UABS.Assets.Script.Event;
 using UABS.Assets.Script.EventListener;
 using UABS.Assets.Script.Misc;
 using UABS.Assets.Script.Reader;
 using UABS.Assets.Script.UI;
 
-namespace UABS.Assets.Script.DropdownOptions
+namespace UABS.Assets.Script.DropdownOptions.Memo
 {
-    public class HoverCacheDepDeriveArea : HoverArea, IAppEnvironment, IAppEventListener
+    public class HoverMemoPackageDerive : HoverArea, IAppEnvironment, IAppEventListener
     {
         private AppEnvironment _appEnvironment = null;
         public AppEnvironment AppEnvironment => _appEnvironment;
@@ -24,27 +23,25 @@ namespace UABS.Assets.Script.DropdownOptions
         [SerializeField]
         private RectTransform _content;
 
-        private ReadExternalCache _readExternalCache;
+        private ReadUserPackage _readUserPackage;
 
         [SerializeField]
-        private Color _hoverColor;
+        private Button _button;
 
-        [SerializeField]
-        private Color _normalColor;
+        private List<IMemoPackageScrollEntry> _memoPackageScrollEntries = new();
 
-        [SerializeField]
-        private Image _bgImage;
+        private string _currSelectedShortPath = "";
 
         public void Initialize(AppEnvironment appEnvironment)
         {
             _appEnvironment = appEnvironment;
-            _readExternalCache = new();
+            _readUserPackage = new();
         }
 
         public override void OnPointerEnter(PointerEventData eventData)
         {
             base.OnPointerEnter(eventData);
-            _bgImage.color = _hoverColor;
+            _button.targetGraphic.color = _button.colors.selectedColor;
             ClearAndRecreate();
         }
 
@@ -52,7 +49,7 @@ namespace UABS.Assets.Script.DropdownOptions
         {
             ClearContentChildren();
             // Search paths and create prefabs
-            List<string> paths = _readExternalCache.GetCacheFoldersInExternal();
+            List<string> paths = _readUserPackage.GetPackagesInExternal();
             foreach (string path in paths)
             {
                 string validationFilePath = Path.Combine(path, "Validation.txt");
@@ -65,24 +62,29 @@ namespace UABS.Assets.Script.DropdownOptions
         public override void OnPointerExit(PointerEventData eventData)
         {
             base.OnPointerExit(eventData);
-            _bgImage.color = _normalColor;
+            _button.targetGraphic.color = _button.colors.normalColor;
         }
 
         private GameObject CreateScrollEntry(string path, bool interactable)
         {
             GameObject entry = Instantiate(_entryPrefab);
-            IDepCacheScrollEntry menuScrollEntry = entry.GetComponentsInChildren<MonoBehaviour>(true)
-                                                .OfType<IDepCacheScrollEntry>()
+            IMemoPackageScrollEntry menuScrollEntry = entry.GetComponentsInChildren<MonoBehaviour>(true)
+                                                .OfType<IMemoPackageScrollEntry>()
                                                 .FirstOrDefault();
             menuScrollEntry.ShortPath = path;
             menuScrollEntry.AssignDispatcher(AppEnvironment.Dispatcher);
             menuScrollEntry.ManagedButton.interactable = interactable;
+            menuScrollEntry.IsSelected = menuScrollEntry.ShortPath == _currSelectedShortPath;
+            _memoPackageScrollEntries.Add(menuScrollEntry);
+
             return entry;
         }
 
         private void ClearContentChildren()
         {
             Transform parentTransform = _content.transform;
+
+            _memoPackageScrollEntries.Clear();
 
             for (int i = parentTransform.childCount - 1; i >= 0; i--)
             {
@@ -94,9 +96,29 @@ namespace UABS.Assets.Script.DropdownOptions
 
         public void OnEvent(AppEvent e)
         {
-            if (e is CacheRefreshEvent)
+            if (e is PackageRefreshEvent)
             {
                 ClearAndRecreate();
+            }
+            else if (e is ClickMemoPackageEvent cmce)
+            {
+                if (cmce.IsSelected)
+                {
+                    _currSelectedShortPath = cmce.ShortPath;
+                }
+                else
+                {
+                    if (_currSelectedShortPath == cmce.ShortPath)
+                    {
+                        _currSelectedShortPath = "";  // Deselect
+                    }
+                }
+                foreach (IMemoPackageScrollEntry memoPackageScrollEntry in _memoPackageScrollEntries)
+                {
+                    if (memoPackageScrollEntry.ShortPath != _currSelectedShortPath)
+                        memoPackageScrollEntry.IsSelected = false;
+                }
+                _appEnvironment.Dispatcher.Dispatch(new MemoPackageEvent(_currSelectedShortPath));
             }
         }
     }

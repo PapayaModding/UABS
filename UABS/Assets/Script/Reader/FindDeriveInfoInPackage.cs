@@ -2,23 +2,23 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using UnityEngine;
 using AssetsTools.NET;
 using UABS.Assets.Script.DataStruct;
 using UABS.Assets.Script.Wrapper.Json;
-using UnityEngine;
 
 namespace UABS.Assets.Script.Reader
 {
-    public class FindDeriveInfoInCache
+    public class FindDeriveInfoInPackage
     {
         private IJsonSerializer _jsonSerializer;
 
-        public FindDeriveInfoInCache(IJsonSerializer jsonSerializer)
+        public FindDeriveInfoInPackage(IJsonSerializer jsonSerializer)
         {
             _jsonSerializer = jsonSerializer;
         }
 
-        public DeriveInfo? FindInCacheByCabCode(string cachePath, string cabCode)
+        public DeriveInfo? FindInPackageByCabCode(string cachePath, string cabCode)
         {
             string[] jsonFiles = Directory.GetFiles(cachePath, "*.json", SearchOption.AllDirectories);
             foreach (string filePath in jsonFiles)
@@ -55,7 +55,7 @@ namespace UABS.Assets.Script.Reader
             return cab1Low.StartsWith(cab2Low) || cab2Low.StartsWith(cab1Low);
         }
 
-        public List<DeriveInfo> FindInCacheBySearchOptions(string cachePath,
+        public List<DeriveInfo> FindInPackageBySearchOptions(string cachePath,
                                                             List<string> sKeys,
                                                             List<string> eKeys,
                                                             bool exactMatch=false,

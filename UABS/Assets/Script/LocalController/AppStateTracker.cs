@@ -106,7 +106,7 @@ namespace UABS.Assets.Script.Debugger
                     _onBundleView.Invoke();
                 }
             }
-            else if (e is ControlSearchCacheGoBackEvent csc)
+            else if (e is ControlSearchGoBackEvent csc)
             {
                 if (!csc.Enable)
                     _disableSearchCacheGoBack.Invoke();
@@ -117,7 +117,7 @@ namespace UABS.Assets.Script.Debugger
 
         private void TreatAsPath(string path)
         {
-            if (PathUtils.PathStartsWith(path, PredefinedPaths.ExternalSystemDependenceCache))
+            if (PathUtils.PathStartsWith(path, PredefinedPaths.ExternalSystemDependencyCache))
             {
                 ChangeState(AppState.Dependency);
                 _onDependencyView.Invoke();

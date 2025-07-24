@@ -19,7 +19,7 @@ namespace UABS.Assets.Script.UI
         [SerializeField]
         private TextMeshProUGUI _fieldDescription;
 
-        private string _memoCacheShortPath = "";
+        private string _memoPackageShortPath = "";
 
         private AppEnvironment _appEnvironment;
         public AppEnvironment AppEnvironment => _appEnvironment;
@@ -50,12 +50,12 @@ namespace UABS.Assets.Script.UI
 
         public void OnEvent(AppEvent e)
         {
-            if (e is MemoCacheEvent mce)
+            if (e is MemoPackageEvent mce)
             {
-                _memoCacheShortPath = mce.SelectedShortPath;
-                Debug.Log($"Set memo cache short path to [{_memoCacheShortPath}]");
+                _memoPackageShortPath = mce.SelectedShortPath;
+                Debug.Log($"Set memo package short path to [{_memoPackageShortPath}]");
 
-                if (_memoCacheShortPath != "")
+                if (_memoPackageShortPath != "")
                 {
                     if (_storedBundlePath != "" && _storedAssetName != "")
                     {
@@ -80,10 +80,10 @@ namespace UABS.Assets.Script.UI
         {
             Debounce(() =>
             {
-                string memoCacheShortPath = _memoCacheShortPath;
+                string memoPackageShortPath = _memoPackageShortPath;
                 string storedBundlePath = _storedBundlePath;
                 string storedAssetName = _storedAssetName;
-                HandleDebouncedInput(memoCacheShortPath, storedBundlePath, storedAssetName, text);
+                HandleDebouncedInput(memoPackageShortPath, storedBundlePath, storedAssetName, text);
             });
         }
 
@@ -102,7 +102,7 @@ namespace UABS.Assets.Script.UI
             action?.Invoke();
         }
 
-        private void HandleDebouncedInput(string memoCacheShortPath,
+        private void HandleDebouncedInput(string memoPackageShortPath,
                                             string storedBundlePath,
                                             string storedAssetName,
                                             string text)
@@ -110,13 +110,13 @@ namespace UABS.Assets.Script.UI
             if (!_field.isFocused)
                 return;
             
-            _memoWriter.WriteMemo(Path.Combine(PredefinedPaths.ExternalCache, memoCacheShortPath),
+            _memoWriter.WriteMemo(Path.Combine(PredefinedPaths.ExternalUserPackages, memoPackageShortPath),
                                     storedBundlePath,
                                     storedAssetName,
                                     text);
         }
 
-        // Read from cache
+        // Read from package
         public void GetMemoAndSet(string bundlePath, string name, AssetClassID classID)
         {
             _storedBundlePath = bundlePath;
@@ -148,14 +148,14 @@ namespace UABS.Assets.Script.UI
 
         private string GetRecordedMemo(string bundlePath, string name)
         {
-            string cachePath = GetMemoCacheCompletePath();
-            string result = _memoReader.ReadAssetMemo(cachePath, bundlePath, name);
+            string packagePath = GetMemoPackageCompletePath();
+            string result = _memoReader.ReadAssetMemo(packagePath, bundlePath, name);
             return !string.IsNullOrEmpty(result) ? result : "";
         }
 
-        private string GetMemoCacheCompletePath()
+        private string GetMemoPackageCompletePath()
         {
-            return Path.Combine(PredefinedPaths.ExternalCache, _memoCacheShortPath);
+            return Path.Combine(PredefinedPaths.ExternalUserPackages, _memoPackageShortPath);
         }
 
         public void Initialize(AppEnvironment appEnvironment)
@@ -180,7 +180,7 @@ namespace UABS.Assets.Script.UI
         // ! Memo only work for specific assets
         private bool ShouldUseMemoField(AssetClassID classID)
         {
-            return _memoCacheShortPath != "" &&
+            return _memoPackageShortPath != "" &&
                     (classID == AssetClassID.Texture2D ||
                     classID == AssetClassID.Sprite);
         }

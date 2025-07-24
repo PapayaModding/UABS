@@ -1,10 +1,10 @@
 namespace UABS.Assets.Script.Event
 {
-    public class MemoCacheEvent : AppEvent
+    public class MemoPackageEvent : AppEvent
     {
         public string SelectedShortPath { get; }
 
-        public MemoCacheEvent(string selectedShortPath)
+        public MemoPackageEvent(string selectedShortPath)
         {
             SelectedShortPath = selectedShortPath;
         }

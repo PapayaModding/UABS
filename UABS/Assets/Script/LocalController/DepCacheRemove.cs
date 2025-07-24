@@ -9,7 +9,7 @@ using UABS.Assets.Script.Misc;
 
 namespace UABS.Assets.Script.View
 {
-    public class DepCacheRemove : MonoBehaviour, IDepCacheScrollEntry
+    public class DepCacheRemove : MonoBehaviour, IDepScrollEntry
     {
         private string _shortPath;
         public string ShortPath { get => _shortPath;
@@ -30,10 +30,10 @@ namespace UABS.Assets.Script.View
 
         public void ClickButton()
         {
-            string fullRelPath = Path.Combine(PredefinedPaths.ExternalCache, ShortPath);
+            string fullRelPath = Path.Combine(PredefinedPaths.ExternalUserPackages, ShortPath);
             Debug.Log($"Removed cache folder '{fullRelPath}'");
             Directory.Delete(fullRelPath, true);
-            _dispatcher.Dispatch(new CacheRefreshEvent());
+            _dispatcher.Dispatch(new PackageRefreshEvent());
         }
 
         public void AssignDispatcher(EventDispatcher dispatcher)

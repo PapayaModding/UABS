@@ -16,9 +16,9 @@ namespace UABS.Assets.Script.__Test__.Memo
         {
             AppEnvironment appEnvironment = new();
             InheritMemoWriter writer = new(appEnvironment);
-            string FROM_PATH = Path.Combine(PredefinedPaths.ExternalCache, "战魂铭人2.10.0.4");
-            string TO_PATH = Path.Combine(PredefinedPaths.ExternalCache, "战魂铭人2.3.4");
-            writer.InheritMemoCache(FROM_PATH, TO_PATH, DataStruct.MemoInheritMode.Safe);
+            string FROM_PATH = Path.Combine(PredefinedPaths.ExternalUserPackages, "战魂铭人2.10.0.4");
+            string TO_PATH = Path.Combine(PredefinedPaths.ExternalUserPackages, "战魂铭人2.3.4");
+            writer.InheritMemoPackage(FROM_PATH, TO_PATH, DataStruct.MemoInheritMode.Safe);
         }
     }
 }

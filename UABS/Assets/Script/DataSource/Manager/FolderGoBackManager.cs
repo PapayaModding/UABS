@@ -54,12 +54,12 @@ namespace UABS.Assets.Script.DataSource.Manager
                 {
                     if (PathUtils.ArePathsEqual(Path.GetDirectoryName(Paths[0]), PredefinedPaths.ExternalSystemSearchCache))
                     {
-                        _appEnvironment.Dispatcher.Dispatch(new ControlSearchCacheGoBackEvent(false));
+                        _appEnvironment.Dispatcher.Dispatch(new ControlSearchGoBackEvent(false));
                     }
                 }
                 else
                 {
-                    _appEnvironment.Dispatcher.Dispatch(new ControlSearchCacheGoBackEvent(true));
+                    _appEnvironment.Dispatcher.Dispatch(new ControlSearchGoBackEvent(true));
                 }
             }
         }

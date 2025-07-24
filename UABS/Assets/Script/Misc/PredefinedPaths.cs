@@ -5,8 +5,9 @@ namespace UABS.Assets.Script.Misc
 {
     public struct PredefinedPaths
     {
-        public const string ExternalCache = "External/UABS_Cache"; // Cache created by user
-        public const string ExternalSystemDependenceCache = "External/UABS_System_Cache/Dependency";
+        public const string ExternalUserPackages = "External/UABS_UserPackages";
+        public const string ExternalSystemDependencyCache = "External/UABS_System_Cache/Dependency";
+        public const string ExternalSystemDependentCache = "External/UABS_System_Cache/Dependent";
         public const string ExternalSystemSearchCache = "External/UABS_System_Cache/Search";
         public const string ExportFolderName = "UABS_Exported";
         public static readonly string ClassDataPath = Path.Combine(Application.streamingAssetsPath, "classdata.tpk");

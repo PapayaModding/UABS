@@ -7,7 +7,7 @@ using UABS.Assets.Script.Event;
 
 namespace UABS.Assets.Script.LocalController
 {
-    public class SearchCacheButton : MonoBehaviour, ISearchCacheScrollEntry
+    public class SearchPackageButton : MonoBehaviour, ISearchScrollEntry
     {
         private EventDispatcher _dispatcher;
         private string _shortPath;
@@ -55,7 +55,7 @@ namespace UABS.Assets.Script.LocalController
             {
                 IsIncluded = !IsIncluded;
 
-                _dispatcher.Dispatch(new ClickSearchCacheEvent(ShortPath, IsIncluded));
+                _dispatcher.Dispatch(new ClickSearchEvent(ShortPath, IsIncluded));
             }
             else
             {

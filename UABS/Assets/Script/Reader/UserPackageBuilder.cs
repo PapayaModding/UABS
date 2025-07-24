@@ -1,8 +1,6 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Text;
 using AssetsTools.NET;
 using AssetsTools.NET.Extra;
@@ -11,7 +9,7 @@ using UABS.Assets.Script.Wrapper.Json;
 
 namespace UABS.Assets.Script.Reader
 {
-    public class ManualCacheBuilder
+    public class UserPackageBuilder
     {
         public class AssetInfo
         {
@@ -31,20 +29,20 @@ namespace UABS.Assets.Script.Reader
         private AssetsManager _assetsManager;
         private IJsonSerializer _jsonSerializer;
 
-        public ManualCacheBuilder(AssetsManager assetsManager, IJsonSerializer jsonSerializer)
+        public UserPackageBuilder(AssetsManager assetsManager, IJsonSerializer jsonSerializer)
         {
             _assetsManager = assetsManager;
             _jsonSerializer = jsonSerializer;
         }
 
-        public List<CacheInfo> BuildCache(string targetFolder, string cacheFolder)
+        public List<UserPackageInfo> BuildPackage(string targetFolder, string packageFolder)
         {
-            List<CacheInfo> result = new();
+            List<UserPackageInfo> result = new();
             List<string> paths = SurfFoldersUnderAllDir(targetFolder);
             foreach (string path in paths)
             {
                 string basePath = path.Replace(targetFolder, "");
-                string newPath = cacheFolder + "\\" + basePath;
+                string newPath = packageFolder + "\\" + basePath;
                 // if (!Directory.Exists(newPath))
                 // {
                 //     Debug.Log($"Creating path {newPath}");

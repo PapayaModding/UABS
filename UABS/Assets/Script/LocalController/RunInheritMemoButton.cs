@@ -12,10 +12,10 @@ namespace UABS.Assets.Script.LocalController
     public class RunInheritMemoButton : MonoBehaviour, IAppEnvironment, IAppEventListener
     {
         [SerializeField]
-        private TMP_InputField _fromCachePathField;
+        private TMP_InputField _fromPackagePathField;
 
         [SerializeField]
-        private TMP_InputField _toCachePathField;
+        private TMP_InputField _toPackagePathField;
 
         private AppEnvironment _appEnvironment = null;
         public AppEnvironment AppEnvironment => _appEnvironment;
@@ -32,8 +32,8 @@ namespace UABS.Assets.Script.LocalController
 
         public void ClickButton()
         {
-            string from = _fromCachePathField.text;
-            string to = _toCachePathField.text;
+            string from = _fromPackagePathField.text;
+            string to = _toPackagePathField.text;
 
             if (string.IsNullOrEmpty(from))
             {
@@ -57,7 +57,7 @@ namespace UABS.Assets.Script.LocalController
                 Debug.LogWarning($"[TO]: {to} doesn't exist");
             }
 
-            _inheritMemoWriter.InheritMemoCache(from, to, _memoInheritMode);
+            _inheritMemoWriter.InheritMemoPackage(from, to, _memoInheritMode);
         }
 
         public void OnEvent(AppEvent e)

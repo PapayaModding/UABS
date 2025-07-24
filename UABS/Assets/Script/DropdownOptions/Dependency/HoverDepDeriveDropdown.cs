@@ -13,7 +13,7 @@ using UABS.Assets.Script.UI;
 
 namespace UABS.Assets.Script.DropdownOptions
 {
-    public class HoverCacheDepDeriveDropdown : HoverDropdown, IAppEnvironment, IAppEventListener
+    public class HoverDepDeriveDropdown : HoverDropdown, IAppEnvironment, IAppEventListener
     {
         private AppEnvironment _appEnvironment = null;
         public AppEnvironment AppEnvironment => _appEnvironment;
@@ -24,7 +24,7 @@ namespace UABS.Assets.Script.DropdownOptions
         [SerializeField]
         private RectTransform _content;
 
-        private ReadExternalCache _readExternalCache;
+        private ReadUserPackage _readUserPackage;
 
         [SerializeField]
         private Button _button;
@@ -32,7 +32,7 @@ namespace UABS.Assets.Script.DropdownOptions
         public void Initialize(AppEnvironment appEnvironment)
         {
             _appEnvironment = appEnvironment;
-            _readExternalCache = new();
+            _readUserPackage = new();
         }
 
         public override void OnPointerEnter(PointerEventData eventData)
@@ -46,7 +46,7 @@ namespace UABS.Assets.Script.DropdownOptions
         {
             ClearContentChildren();
             // Search paths and create prefabs
-            List<string> paths = _readExternalCache.GetCacheFoldersInExternal();
+            List<string> paths = _readUserPackage.GetPackagesInExternal();
             foreach (string path in paths)
             {
                 string validationFilePath = Path.Combine(path, "Validation.txt");
@@ -65,8 +65,8 @@ namespace UABS.Assets.Script.DropdownOptions
         private GameObject CreateScrollEntry(string path, bool interactable)
         {
             GameObject entry = Instantiate(_entryPrefab);
-            IDepCacheScrollEntry menuScrollEntry = entry.GetComponentsInChildren<MonoBehaviour>(true)
-                                                .OfType<IDepCacheScrollEntry>()
+            IDepScrollEntry menuScrollEntry = entry.GetComponentsInChildren<MonoBehaviour>(true)
+                                                .OfType<IDepScrollEntry>()
                                                 .FirstOrDefault();
             menuScrollEntry.ShortPath = path;
             menuScrollEntry.AssignDispatcher(AppEnvironment.Dispatcher);
@@ -88,7 +88,7 @@ namespace UABS.Assets.Script.DropdownOptions
 
         public void OnEvent(AppEvent e)
         {
-            if (e is CacheRefreshEvent)
+            if (e is PackageRefreshEvent)
             {
                 ClearAndRecreate();
             }

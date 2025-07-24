@@ -9,7 +9,7 @@ using UABS.Assets.Script.Misc;
 
 namespace UABS.Assets.Script.View
 {
-    public class DepCacheSearch : MonoBehaviour, IDepCacheScrollEntry
+    public class DepCacheSearch : MonoBehaviour, IDepScrollEntry
     {
         private EventDispatcher _dispatcher;
         private string _shortPath;
@@ -32,7 +32,7 @@ namespace UABS.Assets.Script.View
         {
             if (_dispatcher != null)
             {
-                _dispatcher.Dispatch(new RequestDependencyEvent(Path.Combine(PredefinedPaths.ExternalCache, ShortPath)));
+                _dispatcher.Dispatch(new RequestDependencyEvent(Path.Combine(PredefinedPaths.ExternalUserPackages, ShortPath)));
             }
             else
             {

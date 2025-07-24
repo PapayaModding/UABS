@@ -15,13 +15,13 @@ namespace UABS.Assets.Script.Writer
             _appEnvironment = appEnvironment;
         }
 
-        public void WriteMemo(string cachePath, string bundlePath, string assetName, string memo)
+        public void WriteMemo(string packagePath, string bundlePath, string assetName, string memo)
         {
-            string[] jsonFiles = Directory.GetFiles(cachePath, "*.json", SearchOption.AllDirectories);
+            string[] jsonFiles = Directory.GetFiles(packagePath, "*.json", SearchOption.AllDirectories);
             (string targetJson, int targetIndex) = SearchTargetJson(jsonFiles, bundlePath);
             if (string.IsNullOrEmpty(targetJson))
             {
-                UnityEngine.Debug.LogWarning($"Failed to write memo in {bundlePath}. Couldn't find path in the currently selected cache.");
+                UnityEngine.Debug.LogWarning($"Failed to write memo in {bundlePath}. Couldn't find path in the currently selected package.");
                 return;
             }
             string targetJsonContent = File.ReadAllText(targetJson);

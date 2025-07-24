@@ -10,17 +10,17 @@ using UABS.Assets.Script.Wrapper.Json;
 
 namespace UABS.Assets.Script.Writer
 {
-    public class WriteCache
+    public class WriteUserPackage
     {
-        private ManualCacheBuilder _manualCacheBuilder;
+        private UserPackageBuilder _packageBuilder;
 
-        public WriteCache(AssetsManager assetsManager, IJsonSerializer jsonSerializer)
+        public WriteUserPackage(AssetsManager assetsManager, IJsonSerializer jsonSerializer)
         {
-            _manualCacheBuilder = new(assetsManager, jsonSerializer);
+            _packageBuilder = new(assetsManager, jsonSerializer);
         }
 
 #pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously
-        async public void CreateAndSaveNewCache(string dataPath, string savePath, Action onDone)
+        async public void CreateAndSaveNewPackage(string dataPath, string savePath, Action onDone)
 #pragma warning restore CS1998 // Async method lacks 'await' operators and will run synchronously
         {
             Thread thread = new(() =>
@@ -56,11 +56,11 @@ namespace UABS.Assets.Script.Writer
                 Directory.CreateDirectory(savePath);
             }
 
-            List<CacheInfo> cache = _manualCacheBuilder.BuildCache(dataPath, savePath);
-            foreach (CacheInfo cacheInfo in cache)
+            List<UserPackageInfo> packages = _packageBuilder.BuildPackage(dataPath, savePath);
+            foreach (UserPackageInfo packageInfo in packages)
             {
-                string path = cacheInfo.path;
-                string content = cacheInfo.jsonContent;
+                string path = packageInfo.path;
+                string content = packageInfo.jsonContent;
                 string dir = Path.GetDirectoryName(path);
                 if (!Directory.Exists(dir))
                 {

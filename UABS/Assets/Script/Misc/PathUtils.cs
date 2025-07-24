@@ -48,7 +48,7 @@ namespace UABS.Assets.Script.Misc
 
         public static bool IsSystemCacheFolder(string path)
         {
-            return PathStartsWith(path, PredefinedPaths.ExternalSystemDependenceCache)
+            return PathStartsWith(path, PredefinedPaths.ExternalSystemDependencyCache)
                     || PathStartsWith(path, PredefinedPaths.ExternalSystemSearchCache);
         }
 

@@ -8,7 +8,7 @@ namespace UABS.Assets.Script.Writer
         public void ClearSearchAndDependencyCache()
         {
             string searchCachePath = PredefinedPaths.ExternalSystemSearchCache;
-            string dependencyCachePath = PredefinedPaths.ExternalSystemDependenceCache;
+            string dependencyCachePath = PredefinedPaths.ExternalSystemDependencyCache;
 
             RemovePath(searchCachePath);
             RemovePath(dependencyCachePath);

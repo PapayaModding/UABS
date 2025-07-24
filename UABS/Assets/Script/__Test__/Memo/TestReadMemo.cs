@@ -16,14 +16,14 @@ namespace UABS.Assets.Script.__Test__
         {
             AppEnvironment appEnvironment = new();
             MemoReader memoReader = new(appEnvironment);
-            string CACHE_PATH = Path.Combine(PredefinedPaths.ExternalCache, "战魂铭人2.10.0.4");
+            string PACKAGE_PATH = Path.Combine(PredefinedPaths.ExternalUserPackages, "战魂铭人2.10.0.4");
 
             // This is the first item in the first index.json that has AssetInfos
             string BUNDLE_PATH = "\\\\?\\C:\\Program Files (x86)\\Steam\\steamapps\\common\\Otherworld Legends\\Otherworld Legends_Data\\StreamingAssets\\aa\\StandaloneWindows64\\bodygroup_assets_all_2d25edfe2a44d351d4079093e6d8239b.bundle";
             // This is the first asset info in the above bundle
             string ASSET_NAME = "unit_hero_gangdan_hammer_soldier_7";
 
-            Debug.Log(memoReader.ReadAssetMemo(CACHE_PATH, BUNDLE_PATH, ASSET_NAME));
+            Debug.Log(memoReader.ReadAssetMemo(PACKAGE_PATH, BUNDLE_PATH, ASSET_NAME));
         }
     }
 }

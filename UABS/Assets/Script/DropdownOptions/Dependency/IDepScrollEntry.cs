@@ -1,15 +1,13 @@
 using UnityEngine.UI;
 using UABS.Assets.Script.Dispatcher;
 
-namespace UABS.Assets.Script.DropdownOptions.Memo
+namespace UABS.Assets.Script.DropdownOptions.Dependency
 {
-    public interface IMemoCacheScrollEntry
+    public interface IDepScrollEntry
     {
         public Button ManagedButton { get; }
 
         public string ShortPath { get; set; }
-
-        public bool IsSelected { get; set; }
 
         void AssignDispatcher(EventDispatcher dispatcher);
     }

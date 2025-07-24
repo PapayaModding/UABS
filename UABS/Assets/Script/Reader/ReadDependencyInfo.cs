@@ -10,7 +10,7 @@ namespace UABS.Assets.Script.Reader
     public class ReadDependencyInfo
     {
         private readonly AssetsManager _assetsManager;
-        private readonly FindDeriveInfoInCache _findDeriveInfoInCache;
+        private readonly FindDeriveInfoInPackage _findDeriveInfoInCache;
 
         public ReadDependencyInfo(AssetsManager assetsManager, IJsonSerializer jsonSerializer)
         {
@@ -37,7 +37,7 @@ namespace UABS.Assets.Script.Reader
                 string dependencyCabCode = dependenciesArray[i].Value.AsString;
                 Debug.Log($"Dependency {i}: {dependencyCabCode}");
 
-                DeriveInfo? _dependencyInfo = _findDeriveInfoInCache.FindInCacheByCabCode(fromCache, dependencyCabCode);
+                DeriveInfo? _dependencyInfo = _findDeriveInfoInCache.FindInPackageByCabCode(fromCache, dependencyCabCode);
                 if (_dependencyInfo != null)
                 {
                     DeriveInfo dependencyInfo = (DeriveInfo)_dependencyInfo;

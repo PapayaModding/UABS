@@ -14,13 +14,13 @@ namespace UABS.Assets.Script.Reader
             _appEnvironment = appEnvironment;
         }
 
-        public string ReadAssetMemo(string cachePath, string bundlePath, string assetName)
+        public string ReadAssetMemo(string packagePath, string bundlePath, string assetName)
         {
-            string[] jsonFiles = Directory.GetFiles(cachePath, "*.json", SearchOption.AllDirectories);
+            string[] jsonFiles = Directory.GetFiles(packagePath, "*.json", SearchOption.AllDirectories);
             (string targetJson, int targetIndex) = SearchTargetJson(jsonFiles, bundlePath);
             if (string.IsNullOrEmpty(targetJson))
             {
-                UnityEngine.Debug.LogWarning($"Failed to read memo in {bundlePath}. Couldn't find path in the currently selected cache.");
+                UnityEngine.Debug.LogWarning($"Failed to read memo in {bundlePath}. Couldn't find path in the currently selected package.");
                 return null;
             }
             string targetJsonContent = File.ReadAllText(targetJson);

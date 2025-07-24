@@ -8,7 +8,7 @@ namespace UABS.Assets.Script.Reader
 {
     public class ReadSearchInfo
     {
-        private readonly FindDeriveInfoInCache _findDeriveInfoInCache;
+        private readonly FindDeriveInfoInPackage _findDeriveInfoInCache;
 
         public ReadSearchInfo(IJsonSerializer jsonSerializer)
         {
@@ -23,7 +23,7 @@ namespace UABS.Assets.Script.Reader
         {
             List<string> sKeys = SplitByComma(searchKeywords);
             List<string> eKeys = SplitByComma(excludeKeywords);
-            return _findDeriveInfoInCache.FindInCacheBySearchOptions(fromCache, sKeys, eKeys, exactMatch, searchMemo);
+            return _findDeriveInfoInCache.FindInPackageBySearchOptions(fromCache, sKeys, eKeys, exactMatch, searchMemo);
         }
 
         public static List<string> SplitByComma(string input)
