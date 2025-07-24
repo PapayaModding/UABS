@@ -31,7 +31,8 @@ namespace UABS.Assets.Script.__Test__.Depend
             (BundleFileInstance bunInst, AssetsFileInstance _) = bundleReader.ReadBundle(dependentPath);
             List<DeriveInfo> deriveInfos = readDependencyInfo.ReadInfoFor(bunInst, PACKAGE_PATH, false);
 
-            List<string> expectingDependencies = new(){
+            List<string> expectingDependencies = new()
+            {
                 "cab-8aec1fae84b6a213e9d9089f91bdc9c1",
                 "cab-ab9abde196f8584c62c6b015421e254e",
                 "cab-c0e651c84145c1ae8e19e2c9b991bec8",
@@ -49,7 +50,7 @@ namespace UABS.Assets.Script.__Test__.Depend
             if (counter == expectingDependencies.Count)
                 Debug.Log("[✔] Dependency Test Succeed.");
             else
-                Debug.LogError("[✘] Failed to pass Dependency Test.");
+                Debug.LogError("[✘] Dependency Test Failed.");
         }
     }
 }

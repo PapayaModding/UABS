@@ -3,7 +3,7 @@ using System.IO;
 using UnityEngine;
 using UABS.Assets.Script.Reader.BundlesRead;
 using UABS.Assets.Script.Misc.AppCore;
-using UABS.Assets.Script.Misc.Paths;
+using UABS.Assets.Script.__Test__.TestUtil;
 
 namespace UABS.Assets.Script.__Test__.Depend
 {
@@ -16,15 +16,42 @@ namespace UABS.Assets.Script.__Test__.Depend
 
         private void Test()
         {
-            string PACKAGE_PATH = Path.Combine(PredefinedPaths.ExternalUserPackages, "战魂铭人2.11.0.3max");
             AppEnvironment appEnvironment = new();
             DependentReader dependentReader = new(appEnvironment.Wrapper.JsonSerializer);
-            List<string> dependentPaths = dependentReader.FindDependentPaths("CAB-fd2b4437a0d855001a014467f13d723b", PACKAGE_PATH);
+            
+            string PACKAGE_PATH = Path.Combine(PredefinedTestPaths.TestResPath, "Depend/TestFindDependent/UserPackage");
+            string DependentCAB = "CAB-c8b157fca857626dbba75589e140a72a";
+
+            List<string> dependentPaths = dependentReader.FindDependentPaths(DependentCAB, PACKAGE_PATH);
+            List<string> expectingBundleNames = new()
+            {
+                "drop.psd_aabbc0f3fd250c94537b2f88c3b61a66.bundle",
+                "rockparticles.psd_0f016160800e83e164e88f9b8a8d30a8.bundle",
+                "rockparticlesblue.psd_887b5a296151bada22bc8623dfe9af97.bundle",
+                "hookarm.png_4c49053944b0c5a6a2e9ac046bc6af11.bundle"
+            };
+
+            bool HasPathEndsWith(string p)
+            {
+                foreach (string name in expectingBundleNames)
+                {
+                    if (p.EndsWith(name))
+                        return true;
+                }
+                return false;
+            }
+
+            int counter = 0;
             foreach (string path in dependentPaths)
             {
-                Debug.Log(path);
+                if (HasPathEndsWith(path))
+                    counter++;
             }
-            Debug.Log("Search done");
+
+            if (counter == expectingBundleNames.Count)
+                Debug.Log("[✔] Dependent Test Succeed.");
+            else
+                Debug.LogError("[✘] Dependent Test Failed.");
         }
     }
 }
