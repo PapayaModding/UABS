@@ -1,7 +1,7 @@
 using System.IO;
 using UnityEngine;
 
-namespace UABS.Assets.Script.Misc
+namespace UABS.Assets.Script.Misc.Paths
 {
     public struct PredefinedPaths
     {

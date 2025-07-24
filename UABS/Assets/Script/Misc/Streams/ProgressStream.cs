@@ -3,11 +3,11 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace UABS.Assets.Script.Misc
+namespace UABS.Assets.Script.Misc.Streams
 {
     public class ProgressStream : MemoryStream
     {
-        private ProgressStreamCallback _callback;
+        private readonly ProgressStreamCallback _callback;
 
         public ProgressStream(ProgressStreamCallback callback)
         {

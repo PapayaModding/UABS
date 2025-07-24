@@ -7,9 +7,9 @@ using UnityEngine.UI;
 using UABS.Assets.Script.DropdownOptions.Dependency;
 using UABS.Assets.Script.Event;
 using UABS.Assets.Script.EventListener;
-using UABS.Assets.Script.Misc;
 using UABS.Assets.Script.UI.OptionPanel;
 using UABS.Assets.Script.Reader.UserPackage;
+using UABS.Assets.Script.Misc.AppCore;
 
 namespace UABS.Assets.Script.DropdownOptions
 {

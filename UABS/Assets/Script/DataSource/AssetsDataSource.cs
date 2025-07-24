@@ -2,8 +2,8 @@ using System.Collections.Generic;
 using UnityEngine;
 using UABS.Assets.Script.DataSource.Manager;
 using UABS.Assets.Script.DataStruct;
-using UABS.Assets.Script.Misc;
 using UABS.Assets.Script.Event;
+using UABS.Assets.Script.Misc.AppCore;
 
 namespace UABS.Assets.Script.DataSource
 {

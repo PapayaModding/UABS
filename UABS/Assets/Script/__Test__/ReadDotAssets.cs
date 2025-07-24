@@ -3,7 +3,8 @@ using System.Text;
 using UnityEngine;
 using AssetsTools.NET;
 using AssetsTools.NET.Extra;
-using UABS.Assets.Script.Misc;
+using UABS.Assets.Script.Misc.AppCore;
+using UABS.Assets.Script.Misc.Paths;
 
 namespace UABS.Assets.Script.__Test__
 {

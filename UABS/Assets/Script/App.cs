@@ -1,6 +1,6 @@
 using UnityEngine;
 using UABS.Assets.Script.EventListener;
-using UABS.Assets.Script.Misc;
+using UABS.Assets.Script.Misc.AppCore;
 
 namespace UABS.Assets.Script
 {

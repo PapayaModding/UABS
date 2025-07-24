@@ -1,8 +1,9 @@
 using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
-using UABS.Assets.Script.Misc;
 using UABS.Assets.Script.Reader.BundlesRead;
+using UABS.Assets.Script.Misc.AppCore;
+using UABS.Assets.Script.Misc.Paths;
 
 namespace UABS.Assets.Script.__Test__.UserPackage
 {

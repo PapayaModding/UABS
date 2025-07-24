@@ -4,9 +4,10 @@ using System.IO;
 using System.Threading;
 using UnityEngine;
 using AssetsTools.NET.Extra;
-using UABS.Assets.Script.Misc;
 using UABS.Assets.Script.Wrapper.Json;
 using UABS.Assets.Script.Reader.UserPackage;
+using UABS.Assets.Script.Misc.Threads;
+using UABS.Assets.Script.DataStruct;
 
 namespace UABS.Assets.Script.Writer.UserPackage
 {

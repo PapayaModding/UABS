@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UABS.Assets.Script.DataStruct;
 
-namespace UABS.Assets.Script.ScriptableObjects
+namespace UABS.Assets.Script.Misc.ScriptableObjects
 {
     [CreateAssetMenu(fileName = "FolderViewType2IconData", menuName = "Custom/FolderViewType2IconData", order = 1)]
     public class FolderViewType2IconData : ScriptableObject

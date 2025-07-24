@@ -3,7 +3,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using UnityEngine;
 
-namespace UABS.Assets.Script.Misc
+namespace UABS.Assets.Script.Misc.Paths
 {
     public static class PathUtils
     {

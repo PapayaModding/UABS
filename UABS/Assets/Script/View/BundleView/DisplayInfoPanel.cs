@@ -3,9 +3,9 @@ using UnityEngine;
 using TMPro;
 using UABS.Assets.Script.DataStruct;
 using UABS.Assets.Script.Event;
-using UABS.Assets.Script.Misc;
 using UABS.Assets.Script.EventListener;
 using UABS.Assets.Script.UI.BundleView;
+using UABS.Assets.Script.Misc.AppCore;
 
 namespace UABS.Assets.Script.View.BundleView
 {

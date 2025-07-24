@@ -5,8 +5,9 @@ using UnityEngine;
 using UABS.Assets.Script.DataStruct;
 using UABS.Assets.Script.Event;
 using UABS.Assets.Script.EventListener;
-using UABS.Assets.Script.Misc;
 using UABS.Assets.Script.Reader.BundlesRead;
+using UABS.Assets.Script.Misc.AppCore;
+using UABS.Assets.Script.Misc.Paths;
 
 namespace UABS.Assets.Script.DataSource.Manager
 {

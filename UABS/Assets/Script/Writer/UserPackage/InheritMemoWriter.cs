@@ -4,7 +4,8 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using UABS.Assets.Script.DataStruct;
-using UABS.Assets.Script.Misc;
+using UABS.Assets.Script.Misc.AppCore;
+using UABS.Assets.Script.Misc.Paths;
 using UABS.Assets.Script.Wrapper.Json;
 
 namespace UABS.Assets.Script.Writer.UserPackage

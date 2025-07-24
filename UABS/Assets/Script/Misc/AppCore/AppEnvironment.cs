@@ -1,8 +1,9 @@
 using AssetsTools.NET.Extra;
 using UABS.Assets.Script.Dispatcher;
+using UABS.Assets.Script.Misc.Paths;
 using UABS.Assets.Script.Reader.BundlesRead;
 
-namespace UABS.Assets.Script.Misc
+namespace UABS.Assets.Script.Misc.AppCore
 {
     public class AppEnvironment
     {

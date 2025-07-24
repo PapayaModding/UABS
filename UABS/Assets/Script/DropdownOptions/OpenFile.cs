@@ -1,5 +1,6 @@
 using UnityEngine;
-using UABS.Assets.Script.Misc;
+using UABS.Assets.Script.Misc.AppCore;
+using UABS.Assets.Script.Misc.Paths;
 
 namespace UABS.Assets.Script.DropdownOptions
 {

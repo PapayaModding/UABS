@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace UABS.Assets.Script.Misc
+namespace UABS.Assets.Script.Misc.Streams
 {
     public class ProgressStreamCallback
     {

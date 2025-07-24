@@ -1,5 +1,5 @@
 using System.IO;
-using UABS.Assets.Script.Misc;
+using UABS.Assets.Script.Misc.Paths;
 
 namespace UABS.Assets.Script.Writer.SystemCache
 {

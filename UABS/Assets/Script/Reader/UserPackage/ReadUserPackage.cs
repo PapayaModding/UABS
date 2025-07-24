@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using UABS.Assets.Script.Misc;
+using UABS.Assets.Script.Misc.Paths;
 
 namespace UABS.Assets.Script.Reader.UserPackage
 {

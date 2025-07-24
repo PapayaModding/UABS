@@ -3,9 +3,9 @@ using System.IO;
 using UnityEngine;
 using AssetsTools.NET.Extra;
 using UABS.Assets.Script.DataStruct;
-using UABS.Assets.Script.Misc;
 using UABS.Assets.Script.Wrapper.TextureDecoder;
 using UABS.Assets.Script.Reader.ImageDecoder;
+using UABS.Assets.Script.Misc.Paths;
 
 namespace UABS.Assets.Script.Writer.Exporter
 {

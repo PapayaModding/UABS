@@ -5,9 +5,10 @@ using AssetsTools.NET.Extra;
 using TMPro;
 using UABS.Assets.Script.Event;
 using UABS.Assets.Script.EventListener;
-using UABS.Assets.Script.Misc;
 using UABS.Assets.Script.Reader.UserPackage;
 using UABS.Assets.Script.Writer.UserPackage;
+using UABS.Assets.Script.Misc.AppCore;
+using UABS.Assets.Script.Misc.Paths;
 
 namespace UABS.Assets.Script.UI.BundleView
 {

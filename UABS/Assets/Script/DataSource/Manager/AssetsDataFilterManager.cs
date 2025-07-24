@@ -6,7 +6,7 @@ using UABS.Assets.Script.DataStruct;
 using UABS.Assets.Script.Event;
 using UABS.Assets.Script.EventListener;
 
-namespace UABS.Assets.Script.Misc
+namespace UABS.Assets.Script.DataSource.Manager
 {
     public class AssetsDataFilterManager : IAppEventListener
     {

@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace UABS.Assets.Script.Misc
+namespace UABS.Assets.Script.Misc.Threads
 {
     public class UnityMainThreadDispatcher : MonoBehaviour
     {

@@ -4,8 +4,8 @@ using UnityEngine.UI;
 using UABS.Assets.Script.DataStruct;
 using UABS.Assets.Script.Event;
 using UABS.Assets.Script.EventListener;
-using UABS.Assets.Script.Misc;
 using UABS.Assets.Script.View.FolderView;
+using UABS.Assets.Script.Misc.AppCore;
 
 namespace UABS.Assets.Script.Controller
 {

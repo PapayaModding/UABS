@@ -2,7 +2,7 @@ using System.IO;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
-using UABS.Assets.Script.Misc;
+using UABS.Assets.Script.Misc.AppCore;
 
 namespace UABS.Assets.Script.UI.OptionPanel
 {

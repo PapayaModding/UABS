@@ -5,7 +5,7 @@ using TMPro;
 using UABS.Assets.Script.Dispatcher;
 using UABS.Assets.Script.DropdownOptions.Dependency;
 using UABS.Assets.Script.Event;
-using UABS.Assets.Script.Misc;
+using UABS.Assets.Script.Misc.Paths;
 
 namespace UABS.Assets.Script.View
 {

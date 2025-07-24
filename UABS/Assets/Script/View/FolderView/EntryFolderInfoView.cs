@@ -4,8 +4,8 @@ using TMPro;
 using UABS.Assets.Script.DataStruct;
 using UABS.Assets.Script.Dispatcher;
 using UABS.Assets.Script.Event;
-using UABS.Assets.Script.ScriptableObjects;
-using UABS.Assets.Script.Misc;
+using UABS.Assets.Script.Misc.ScriptableObjects;
+using UABS.Assets.Script.Misc.Streams;
 
 namespace UABS.Assets.Script.View.FolderView
 {

@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using AssetsTools.NET.Extra;
 
-namespace UABS.Assets.Script.ScriptableObjects
+namespace UABS.Assets.Script.Misc.ScriptableObjects
 {
     [CreateAssetMenu(fileName = "AssetType2IconData", menuName = "Custom/AssetType2IconData", order = 1)]
     public class AssetType2IconData : ScriptableObject
@@ -14,7 +14,7 @@ namespace UABS.Assets.Script.ScriptableObjects
             public Sprite icon;
         }
 
-        public List<AssetIconEntry> iconEntries = new List<AssetIconEntry>();
+        public List<AssetIconEntry> iconEntries = new();
 
         private Dictionary<AssetClassID, Sprite> lookup;
 

@@ -1,4 +1,4 @@
-namespace UABS.Assets.Script.Misc
+namespace UABS.Assets.Script.Misc.AppCore
 {
     public interface IAppEnvironment
     {

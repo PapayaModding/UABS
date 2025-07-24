@@ -2,7 +2,7 @@ using System.IO;
 using UnityEngine;
 using UABS.Assets.Script.Event;
 using UABS.Assets.Script.EventListener;
-using UABS.Assets.Script.Misc;
+using UABS.Assets.Script.Misc.AppCore;
 
 namespace UABS.Assets.Script.UI.Universal
 {
