@@ -18,7 +18,7 @@ namespace UABS.Assets.Script.Reader.Search
             _findDeriveInfoInCache = new(jsonSerializer);
         }
 
-        public List<DeriveInfo> ReadInfoFor(BundleFileInstance bunInst, string fromCache)
+        public List<DeriveInfo> ReadInfoFor(BundleFileInstance bunInst, string fromPackage, bool vocal=true)
         {
             List<DeriveInfo> result = new();
             AssetsFileInstance fileInst = _assetsManager.LoadAssetsFileFromBundle(bunInst, 0, false);
@@ -31,13 +31,15 @@ namespace UABS.Assets.Script.Reader.Search
             AssetTypeValueField dependenciesArray = baseField["m_Dependencies"][0];
 
             int depCount = dependenciesArray.Children.Count;
-            Debug.Log($"Number of dependencies: {depCount}");
+            if (vocal)
+                Debug.Log($"Number of dependencies: {depCount}");
             for (int i = 0; i < depCount; i++)
             {
                 string dependencyCabCode = dependenciesArray[i].Value.AsString;
-                Debug.Log($"Dependency {i}: {dependencyCabCode}");
+                if (vocal)
+                    Debug.Log($"Dependency {i}: {dependencyCabCode}");
 
-                DeriveInfo? _dependencyInfo = _findDeriveInfoInCache.FindInPackageByCabCode(fromCache, dependencyCabCode);
+                DeriveInfo? _dependencyInfo = _findDeriveInfoInCache.FindInPackageByCabCode(fromPackage, dependencyCabCode);
                 if (_dependencyInfo != null)
                 {
                     DeriveInfo dependencyInfo = (DeriveInfo)_dependencyInfo;

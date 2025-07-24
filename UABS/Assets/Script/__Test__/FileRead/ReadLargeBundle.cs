@@ -11,7 +11,7 @@ namespace UABS.Assets.Script.__Test__.FileRead
     public class ReadLargeBundle : MonoBehaviour
     {
         private AppEnvironment _appEnvironment;
-        // public const string TestBundlePath = @"\\?\C:\Program Files (x86)\Steam\steamapps\common\Otherworld Legends\Otherworld Legends_Data\StreamingAssets\aa\StandaloneWindows64\bodygroup_assets_all_2d25edfe2a44d351d4079093e6d8239b.bundle";
+        // ! Replace this with a very large bundle (over 200MB)
         public const string TestBundlePath = @"\\?\D:\元气骑士\assets\AssetBundles\common.ab";
 
         private void Start()

@@ -5,9 +5,9 @@ using UABS.Assets.Script.Reader.BundlesRead;
 using UABS.Assets.Script.Misc.AppCore;
 using UABS.Assets.Script.Misc.Paths;
 
-namespace UABS.Assets.Script.__Test__.UserPackage
+namespace UABS.Assets.Script.__Test__.Depend
 {
-    public class FindDependent : MonoBehaviour
+    public class TestFindDependent : MonoBehaviour
     {
         private void Start()
         {

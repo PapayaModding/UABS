@@ -1,0 +1,4 @@
+Notice:
+All assets contained within this folder, including those in any subdirectories, are provided solely for testing and educational purposes.
+
+If you are the rightful owner of any asset and wish to request its removal from this folder and its associated GitHub repository, please contact me directly.
