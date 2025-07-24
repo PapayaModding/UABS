@@ -100,4 +100,4 @@ Packages/*
 .idea
 
 External
-Assets/TestResources/**/*.meta
+UABS/Assets/TestResources/**/*.meta
