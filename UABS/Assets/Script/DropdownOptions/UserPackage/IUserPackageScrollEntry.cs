@@ -1,9 +1,9 @@
 using UnityEngine.UI;
 using UABS.Assets.Script.Dispatcher;
 
-namespace UABS.Assets.Script.DropdownOptions.Dependency
+namespace UABS.Assets.Script.DropdownOptions.UserPackage
 {
-    public interface IDepScrollEntry
+    public interface IUserPackageScrollEntry
     {
         public Button ManagedButton { get; }
 

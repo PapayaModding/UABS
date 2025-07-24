@@ -2,7 +2,7 @@ using UnityEngine;
 using UABS.Assets.Script.Event;
 using UABS.Assets.Script.Misc.AppCore;
 
-namespace UABS.Assets.Script.LocalController
+namespace UABS.Assets.Script.LocalController.Filter
 {
     public class FilterAllButton : MonoBehaviour, IAppEnvironment
     {

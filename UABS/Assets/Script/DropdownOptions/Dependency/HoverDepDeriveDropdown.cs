@@ -4,12 +4,12 @@ using System.Linq;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
-using UABS.Assets.Script.DropdownOptions.Dependency;
 using UABS.Assets.Script.Event;
 using UABS.Assets.Script.EventListener;
 using UABS.Assets.Script.UI.OptionPanel;
 using UABS.Assets.Script.Reader.UserPackage;
 using UABS.Assets.Script.Misc.AppCore;
+using UABS.Assets.Script.DropdownOptions.UserPackage;
 
 namespace UABS.Assets.Script.DropdownOptions
 {
@@ -65,8 +65,8 @@ namespace UABS.Assets.Script.DropdownOptions
         private GameObject CreateScrollEntry(string path, bool interactable)
         {
             GameObject entry = Instantiate(_entryPrefab);
-            IDepScrollEntry menuScrollEntry = entry.GetComponentsInChildren<MonoBehaviour>(true)
-                                                .OfType<IDepScrollEntry>()
+            IUserPackageScrollEntry menuScrollEntry = entry.GetComponentsInChildren<MonoBehaviour>(true)
+                                                .OfType<IUserPackageScrollEntry>()
                                                 .FirstOrDefault();
             menuScrollEntry.ShortPath = path;
             menuScrollEntry.AssignDispatcher(AppEnvironment.Dispatcher);

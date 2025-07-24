@@ -1,11 +1,11 @@
 using UnityEngine;
 using UABS.Assets.Script.Writer.SystemCache;
 
-namespace UABS.Assets.Script.Misc
+namespace UABS.Assets.Script.LocalController.SystemCache
 {
     public class CacheCleaner : MonoBehaviour
     {
-        private ClearSystemCache _clearSystemCache = new();
+        private readonly ClearSystemCache _clearSystemCache = new();
 
         public void Clear()
         {

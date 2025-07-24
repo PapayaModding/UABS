@@ -3,13 +3,13 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using UABS.Assets.Script.Dispatcher;
-using UABS.Assets.Script.DropdownOptions.Dependency;
 using UABS.Assets.Script.Event;
 using UABS.Assets.Script.Misc.Paths;
+using UABS.Assets.Script.DropdownOptions.UserPackage;
 
-namespace UABS.Assets.Script.View
+namespace UABS.Assets.Script.LocalController.UserPackage
 {
-    public class DepCacheRemove : MonoBehaviour, IDepScrollEntry
+    public class UserPackageRemove : MonoBehaviour, IUserPackageScrollEntry
     {
         private string _shortPath;
         public string ShortPath { get => _shortPath;

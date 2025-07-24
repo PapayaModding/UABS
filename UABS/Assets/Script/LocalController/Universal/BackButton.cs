@@ -2,7 +2,7 @@ using UnityEngine;
 using UABS.Assets.Script.Event;
 using UABS.Assets.Script.Misc.AppCore;
 
-namespace UABS.Assets.Script.View
+namespace UABS.Assets.Script.LocalController.Universal
 {
     public class BackButton : MonoBehaviour, IAppEnvironment
     {

@@ -7,7 +7,7 @@ using UABS.Assets.Script.DataStruct;
 using UABS.Assets.Script.Writer.UserPackage;
 using UABS.Assets.Script.Misc.AppCore;
 
-namespace UABS.Assets.Script.LocalController
+namespace UABS.Assets.Script.LocalController.Memo
 {
     public class RunInheritMemoButton : MonoBehaviour, IAppEnvironment, IAppEventListener
     {

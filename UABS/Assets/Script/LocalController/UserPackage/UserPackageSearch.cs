@@ -3,13 +3,13 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using UABS.Assets.Script.Dispatcher;
-using UABS.Assets.Script.DropdownOptions.Dependency;
 using UABS.Assets.Script.Event;
 using UABS.Assets.Script.Misc.Paths;
+using UABS.Assets.Script.DropdownOptions.UserPackage;
 
-namespace UABS.Assets.Script.View
+namespace UABS.Assets.Script.LocalController.UserPackage
 {
-    public class DepCacheSearch : MonoBehaviour, IDepScrollEntry
+    public class UserPackageSearch : MonoBehaviour, IUserPackageScrollEntry
     {
         private EventDispatcher _dispatcher;
         private string _shortPath;

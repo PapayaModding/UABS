@@ -6,7 +6,7 @@ using UABS.Assets.Script.Event;
 using UABS.Assets.Script.EventListener;
 using UABS.Assets.Script.Misc.AppCore;
 
-namespace UABS.Assets.Script.View
+namespace UABS.Assets.Script.LocalController.EntrySort
 {
     public class SortScrollViewButton : MonoBehaviour, IAppEnvironment, IAppEventListener
     {

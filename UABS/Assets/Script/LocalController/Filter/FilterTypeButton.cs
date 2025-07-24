@@ -7,7 +7,7 @@ using UABS.Assets.Script.DropdownOptions.Filter;
 using UABS.Assets.Script.Event;
 using UABS.Assets.Script.EventListener;
 
-namespace UABS.Assets.Script.LocalController
+namespace UABS.Assets.Script.LocalController.Filter
 {
     public class FilterTypeButton : MonoBehaviour, IFilterTypeScrollEntry, IAppEventListener
     {

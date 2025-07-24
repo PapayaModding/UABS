@@ -5,7 +5,7 @@ using UABS.Assets.Script.Dispatcher;
 using UABS.Assets.Script.DropdownOptions.Search;
 using UABS.Assets.Script.Event;
 
-namespace UABS.Assets.Script.LocalController
+namespace UABS.Assets.Script.LocalController.BundleSearch
 {
     public class SearchPackageButton : MonoBehaviour, ISearchScrollEntry
     {

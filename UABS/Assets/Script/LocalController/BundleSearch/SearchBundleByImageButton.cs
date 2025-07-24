@@ -8,7 +8,7 @@ using UABS.Assets.Script.EventListener;
 using UABS.Assets.Script.Misc.AppCore;
 using UABS.Assets.Script.Misc.Paths;
 
-namespace UABS.Assets.Script.LocalController
+namespace UABS.Assets.Script.LocalController.BundleSearch
 {
     public class SearchBundleByImageButton : MonoBehaviour, IAppEnvironment, IAppEventListener
     {

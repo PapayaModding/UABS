@@ -6,7 +6,7 @@ using UABS.Assets.Script.Event;
 using UABS.Assets.Script.EventListener;
 using UABS.Assets.Script.Misc.Paths;
 
-namespace UABS.Assets.Script.Debugger
+namespace UABS.Assets.Script.LocalController.Universal
 {
     public class AppStateTracker : MonoBehaviour, IAppEventListener
     {

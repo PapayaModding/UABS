@@ -5,7 +5,7 @@ using UABS.Assets.Script.Writer.UserPackage;
 using UABS.Assets.Script.Misc.AppCore;
 using UABS.Assets.Script.Misc.Paths;
 
-namespace UABS.Assets.Script.LocalController
+namespace UABS.Assets.Script.LocalController.UserPackage
 {
     public class WriteUserPackageButton : MonoBehaviour, IAppEnvironment
     {

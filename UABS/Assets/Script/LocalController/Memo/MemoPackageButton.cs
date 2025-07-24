@@ -1,17 +1,25 @@
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
-using UABS.Assets.Script.DataStruct;
 using UABS.Assets.Script.Dispatcher;
 using UABS.Assets.Script.DropdownOptions.Memo;
 using UABS.Assets.Script.Event;
-using UABS.Assets.Script.EventListener;
 
-namespace UABS.Assets.Script.LocalController
+namespace UABS.Assets.Script.LocalController.Memo
 {
-    public class MemoInheritButton : MonoBehaviour, IMemoInheritModeEntry, IAppEventListener
+    public class MemoPackageButton : MonoBehaviour, IMemoPackageScrollEntry
     {
         private EventDispatcher _dispatcher;
+        private string _shortPath;
+        public string ShortPath
+        {
+            get => _shortPath;
+            set
+            {
+                _shortPath = value;
+                _text.text = value;
+            }
+        }
 
         [SerializeField]
         private Button _button;
@@ -41,21 +49,13 @@ namespace UABS.Assets.Script.LocalController
             }
         }
 
-        private MemoInheritMode _memoInheritMode = MemoInheritMode.Safe;
-        public MemoInheritMode MemoInheritMode {
-            get => _memoInheritMode;
-            set
-            {
-                _memoInheritMode = value;
-                _text.text = _memoInheritMode.ToString();
-            }
-        }
-
         public void ClickButton()
         {
             if (_dispatcher != null)
             {
-                _dispatcher.Dispatch(new ClickInheritMemoEvent(MemoInheritMode));
+                IsSelected = !IsSelected;
+
+                _dispatcher.Dispatch(new ClickMemoPackageEvent(ShortPath, IsSelected));
             }
             else
             {
@@ -66,14 +66,6 @@ namespace UABS.Assets.Script.LocalController
         public void AssignDispatcher(EventDispatcher dispatcher)
         {
             _dispatcher = dispatcher;
-        }
-
-        public void OnEvent(AppEvent e)
-        {
-            if (e is MemoInheritEvent mie)
-            {
-                IsSelected = mie.MemoInheritMode == MemoInheritMode;
-            }
         }
     }
 }

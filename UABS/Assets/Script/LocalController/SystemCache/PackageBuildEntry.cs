@@ -2,12 +2,12 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using UABS.Assets.Script.Dispatcher;
-using UABS.Assets.Script.DropdownOptions.Dependency;
+using UABS.Assets.Script.DropdownOptions.UserPackage;
 
-namespace UABS.Assets.Script.View
+namespace UABS.Assets.Script.LocalController.SystemCache
 {
     // Purely visual, do not interact
-    public class DepCacheBuild : MonoBehaviour, IDepScrollEntry
+    public class PackageBuildEntry : MonoBehaviour, IUserPackageScrollEntry
     {
         private EventDispatcher _dispatcher;
         private string _shortPath;

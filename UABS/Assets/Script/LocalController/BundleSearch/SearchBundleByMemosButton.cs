@@ -8,14 +8,14 @@ using UABS.Assets.Script.EventListener;
 using UABS.Assets.Script.Misc.AppCore;
 using UABS.Assets.Script.Misc.Paths;
 
-namespace UABS.Assets.Script.LocalController
+namespace UABS.Assets.Script.LocalController.BundleSearch
 {
-    public class SearchBundleByKeywordsButton : MonoBehaviour, IAppEnvironment, IAppEventListener
+    public class SearchBundleByMemosButton : MonoBehaviour, IAppEnvironment, IAppEventListener
     {
         [SerializeField]
-        private TMP_InputField _searchKeywordsField;
+        private TMP_InputField _searchMemosField;
         [SerializeField]
-        private TMP_InputField _excludeKeywordsField;
+        private TMP_InputField _excludeMemosField;
 
         private AppEnvironment _appEnvironment = null;
         public AppEnvironment AppEnvironment => _appEnvironment;
@@ -29,13 +29,12 @@ namespace UABS.Assets.Script.LocalController
 
         public void ClickButton()
         {
-            // Debug.Log(_searchKeywordsField.text);
-            // Debug.Log(_excludeKeywordsField.text);
             foreach (string path in _fullIncludedPaths)
             {
                 AppEnvironment.Dispatcher.Dispatch(new RequestSearchEvent(path,
-                                                                        _searchKeywordsField.text,
-                                                                        _excludeKeywordsField.text));
+                                                                        _searchMemosField.text,
+                                                                        _excludeMemosField.text,
+                                                                        searchMemo: true));
             }
         }
 
