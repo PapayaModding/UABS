@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 272739934164719747}
   - component: {fileID: 272739934164719746}
   m_Layer: 5
-  m_Name: DepCacheRemove
+  m_Name: DepRemove
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

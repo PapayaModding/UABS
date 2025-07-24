@@ -9,8 +9,8 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1665749154416389548}
-  - component: {fileID: 1961388167704349592}
-  - component: {fileID: 562593858393500386}
+  - component: {fileID: 2406377977591897418}
+  - component: {fileID: 2520221636170891755}
   m_Layer: 5
   m_Name: Script
   m_TagString: Untagged
@@ -38,7 +38,21 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
---- !u!114 &1961388167704349592
+--- !u!114 &2406377977591897418
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 48722272088202439}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6a385dd8a2837d145948ef987694a4ca, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _button: {fileID: 3581500426204341593}
+  _text: {fileID: 1539230774637575624}
+--- !u!114 &2520221636170891755
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -51,23 +65,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _button: {fileID: 3581500426204341593}
---- !u!114 &562593858393500386
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 48722272088202439}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3a2848810bf586e438fd30cb8276d4ea, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _button: {fileID: 3581500426204341593}
-  _bgImage: {fileID: 8466634851879690000}
-  _notIncludeColor: {r: 0.49019608, g: 0.49019608, b: 0.49019608, a: 1}
-  _includedColor: {r: 1, g: 1, b: 1, a: 1}
-  _text: {fileID: 1539230774637575624}
 --- !u!1 &5399496955651609002
 GameObject:
   m_ObjectHideFlags: 0
@@ -216,7 +213,7 @@ GameObject:
   - component: {fileID: 8466634851879690000}
   - component: {fileID: 3581500426204341593}
   m_Layer: 5
-  m_Name: SearchCacheButton
+  m_Name: DepSearch
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -326,10 +323,10 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1961388167704349592}
-        m_TargetAssemblyTypeName: UABS.Assets.Script.UI.ForceToNormalStateAfterClick,
+      - m_Target: {fileID: 2406377977591897418}
+        m_TargetAssemblyTypeName: UABS.Assets.Script.View.MenuScrollEntrySearch,
           Assembly-CSharp
-        m_MethodName: ResetButtonVisuals
+        m_MethodName: ClickButton
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -339,10 +336,10 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
-      - m_Target: {fileID: 562593858393500386}
-        m_TargetAssemblyTypeName: UABS.Assets.Script.LocalController.SearchCacheButton,
+      - m_Target: {fileID: 2520221636170891755}
+        m_TargetAssemblyTypeName: UABS.Assets.Script.UI.ForceToNormalStateAfterClick,
           Assembly-CSharp
-        m_MethodName: ClickButton
+        m_MethodName: ResetButtonVisuals
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}

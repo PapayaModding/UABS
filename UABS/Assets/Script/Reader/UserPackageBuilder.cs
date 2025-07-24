@@ -143,7 +143,8 @@ namespace UABS.Assets.Script.Reader
 
             // !!! Testing purpose only, remember to change back
 
-            foreach (AssetClassID classID in Enum.GetValues(typeof(AssetClassID)))
+            // foreach (AssetClassID classID in Enum.GetValues(typeof(AssetClassID)))
+            foreach (AssetClassID classID in classIDs)
             {
                 List<AssetFileInfo> assets = afile.GetAssetsOfType(classID);
                 if (assets.Count == 0)
