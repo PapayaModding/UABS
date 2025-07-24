@@ -4,7 +4,7 @@ using System.Linq;
 using UABS.Assets.Script.DataStruct;
 using UABS.Assets.Script.Wrapper.Json;
 
-namespace UABS.Assets.Script.Reader
+namespace UABS.Assets.Script.Reader.Search
 {
     public class ReadSearchInfo
     {
@@ -15,7 +15,7 @@ namespace UABS.Assets.Script.Reader
             _findDeriveInfoInCache = new(jsonSerializer);
         }
 
-        public List<DeriveInfo> ReadInfoFor(string fromCache,
+        public List<DeriveInfo> ReadInfoFor(string fromPackage,
                                             string searchKeywords,
                                             string excludeKeywords,
                                             bool exactMatch=false,
@@ -23,10 +23,11 @@ namespace UABS.Assets.Script.Reader
         {
             List<string> sKeys = SplitByComma(searchKeywords);
             List<string> eKeys = SplitByComma(excludeKeywords);
-            return _findDeriveInfoInCache.FindInPackageBySearchOptions(fromCache, sKeys, eKeys, exactMatch, searchMemo);
+            return _findDeriveInfoInCache.FindInPackageBySearchOptions(fromPackage, sKeys, eKeys, exactMatch, searchMemo);
         }
 
-        public static List<string> SplitByComma(string input)
+        // !!! How to handle commas in Memo?
+        private static List<string> SplitByComma(string input)
         {
             if (string.IsNullOrWhiteSpace(input))
                 return new List<string>();

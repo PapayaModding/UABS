@@ -6,7 +6,7 @@ using TMPro;
 using UABS.Assets.Script.Event;
 using UABS.Assets.Script.EventListener;
 using UABS.Assets.Script.Misc;
-using UABS.Assets.Script.Reader;
+using UABS.Assets.Script.Reader.UserPackage;
 using UABS.Assets.Script.Writer.UserPackage;
 
 namespace UABS.Assets.Script.UI.BundleView

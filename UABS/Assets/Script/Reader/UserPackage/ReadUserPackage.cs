@@ -3,7 +3,7 @@ using System.IO;
 using System.Linq;
 using UABS.Assets.Script.Misc;
 
-namespace UABS.Assets.Script.Reader
+namespace UABS.Assets.Script.Reader.UserPackage
 {
     public class ReadUserPackage
     {

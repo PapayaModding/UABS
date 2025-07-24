@@ -4,15 +4,15 @@ using AssetsTools.NET.Extra;
 using UABS.Assets.Script.DataStruct;
 using UABS.Assets.Script.Wrapper.Json;
 
-namespace UABS.Assets.Script.Reader
+namespace UABS.Assets.Script.Reader.DumpProcessor
 {
     public class DumpReader
     {
-        private AssetsManager AssetsManager { get; }
+        private readonly AssetsManager _assetsManager;
 
         public DumpReader(AssetsManager am)
         {
-            AssetsManager = am;
+            _assetsManager = am;
         }
 
         public List<DumpInfo> ReadSpriteAtlasDumps(AssetsFileInstance fileInst)
@@ -42,7 +42,7 @@ namespace UABS.Assets.Script.Reader
 
         private List<DumpInfo> ReadDumps(BundleFileInstance bunInst, AssetClassID assetType)
         {
-            return ReadDumps(AssetsManager.LoadAssetsFileFromBundle(bunInst, 0, false), assetType);
+            return ReadDumps(_assetsManager.LoadAssetsFileFromBundle(bunInst, 0, false), assetType);
         }
         
         private List<DumpInfo> ReadDumps(AssetsFileInstance fileInst, AssetClassID assetType)
@@ -55,7 +55,7 @@ namespace UABS.Assets.Script.Reader
 
             foreach (var assetInfo in assetInfos)
             {
-                AssetTypeValueField assetBase = AssetsManager.GetBaseField(fileInst, assetInfo);
+                AssetTypeValueField assetBase = _assetsManager.GetBaseField(fileInst, assetInfo);
                 result.Add(new()
                 {
                     dumpJson = new NewtonsoftJsonObject(JsonDumper.RecurseJsonDump(assetBase, true)),

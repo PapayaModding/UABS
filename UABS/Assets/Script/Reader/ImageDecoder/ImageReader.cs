@@ -7,8 +7,9 @@ using AssetsTools.NET;
 using AssetsTools.NET.Extra;
 using UABS.Assets.Script.DataStruct;
 using UABS.Assets.Script.Wrapper.TextureDecoder;
+using UABS.Assets.Script.Reader.DumpProcessor;
 
-namespace UABS.Assets.Script.Reader
+namespace UABS.Assets.Script.Reader.ImageDecoder
 {
     public class ImageReader
     {
@@ -18,13 +19,13 @@ namespace UABS.Assets.Script.Reader
 
         private AssetClassID _lastReadType = AssetClassID.@void;
 
-        private DumpReader _dumpReader;
+        private readonly DumpReader _dumpReader;
 
         private List<DumpInfo> _currSpriteDumps = null;
 
-        private AssetsManager _assetsManager;
+        private readonly AssetsManager _assetsManager;
 
-        private ITextureDecoder _textureDecoder;
+        private readonly ITextureDecoder _textureDecoder;
 
         public ImageReader(AssetsManager assetsManager, ITextureDecoder textureDecoder)
         {

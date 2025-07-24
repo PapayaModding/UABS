@@ -1,13 +1,12 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Security.Cryptography;
 using System.Text;
 using AssetsTools.NET;
 using AssetsTools.NET.Extra;
 using UABS.Assets.Script.DataStruct;
 
-namespace UABS.Assets.Script.Reader
+namespace UABS.Assets.Script.Reader.BundlesRead
 {
     /// <summary>
     /// * Reads information from ParsedAsset
@@ -15,7 +14,7 @@ namespace UABS.Assets.Script.Reader
     public class AssetReader
     {
         private Dictionary<long, string> _currMonoScriptNames;
-        private AssetsManager _assetsManager;
+        private readonly AssetsManager _assetsManager;
 
         public AssetReader(AssetsManager am)
         {

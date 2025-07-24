@@ -5,14 +5,14 @@ using System.Threading;
 using UnityEngine;
 using AssetsTools.NET.Extra;
 using UABS.Assets.Script.Misc;
-using UABS.Assets.Script.Reader;
 using UABS.Assets.Script.Wrapper.Json;
+using UABS.Assets.Script.Reader.UserPackage;
 
 namespace UABS.Assets.Script.Writer.UserPackage
 {
     public class WriteUserPackage
     {
-        private readonly UserPackageBuilder _packageBuilder;
+        private readonly UserPackageBuildReader _packageBuilder;
 
         public WriteUserPackage(AssetsManager assetsManager, IJsonSerializer jsonSerializer)
         {
@@ -56,7 +56,7 @@ namespace UABS.Assets.Script.Writer.UserPackage
                 Directory.CreateDirectory(savePath);
             }
 
-            List<UserPackageInfo> packages = _packageBuilder.BuildPackage(dataPath, savePath);
+            List<UserPackageInfo> packages = _packageBuilder.ReadInfoForBuildPackage(dataPath, savePath);
             foreach (UserPackageInfo packageInfo in packages)
             {
                 string path = packageInfo.path;

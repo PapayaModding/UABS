@@ -7,7 +7,7 @@ using UABS.Assets.Script.DataStruct;
 using UABS.Assets.Script.Event;
 using UABS.Assets.Script.EventListener;
 using UABS.Assets.Script.Misc;
-using UABS.Assets.Script.Reader;
+using UABS.Assets.Script.Reader.BundlesRead;
 using System.IO;
 
 namespace UABS.Assets.Script.DataSource.Manager
@@ -27,7 +27,7 @@ namespace UABS.Assets.Script.DataSource.Manager
         public AssetsOpenBundleManager(AppEnvironment appEnvironment)
         {
             _appEnvironment = appEnvironment;
-            _assetParser = new(appEnvironment.AssetsManager);
+            _assetParser = new();
         }
 
         public void OnEvent(AppEvent e)

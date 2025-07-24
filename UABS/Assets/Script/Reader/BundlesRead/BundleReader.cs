@@ -4,13 +4,13 @@ using AssetsTools.NET.Extra;
 using UABS.Assets.Script.Dispatcher;
 using UABS.Assets.Script.Event;
 
-namespace UABS.Assets.Script.Reader
+namespace UABS.Assets.Script.Reader.BundlesRead
 {
     public class BundleReader
     {
         private readonly AssetsManager _assetsManager;
         private readonly EventDispatcher _dispatcher;
-        private ReadAssetsFromBundle _readAssetsFromBundle;
+        private readonly ReadAssetsFromBundle _readAssetsFromBundle;
 
         public BundleReader(AssetsManager assetsManager, EventDispatcher dispatcher)
         {

@@ -4,8 +4,10 @@ using UnityEngine;
 using UABS.Assets.Script.DataStruct;
 using UABS.Assets.Script.Wrapper.Json;
 
-namespace UABS.Assets.Script.Reader
+namespace UABS.Assets.Script.Reader.DumpProcessor
 {
+    // * Manages SpriteAtlas & Sprites in a bundle.
+    // * Keep in mind that a bundle can have multiple SpriteAtlas files.
     public struct AtlasDumpProcessor
     {
         public readonly struct RenderDataKey
@@ -51,7 +53,7 @@ namespace UABS.Assets.Script.Reader
             Dictionary<int, long> result = new();
             IJsonObject packedSprites = AtlasJson.GetObject("m_PackedSprites");
             List<IJsonObject> array = packedSprites.GetArray("Array");
-            
+
             for (int i = 0; i < array.ToList().Count; i++)
             {
                 // var pathID = long.Parse(array[i].GetObject("m_PathID").ToString());
@@ -110,7 +112,7 @@ namespace UABS.Assets.Script.Reader
             List<IJsonObject> array = renderDataMap.GetArray("Array");
 
             // var renderDataMap = jObject["m_RenderDataMap"]["Array"];
-            
+
             List<RenderDataKey> renderDataKeys = new();
             for (int i = 0; i < array.Count(); i++)
             {
@@ -167,10 +169,10 @@ namespace UABS.Assets.Script.Reader
                 textureRect.GetFloat("y"),
                 textureRect.GetFloat("width"),
                 textureRect.GetFloat("height")
-                // float.Parse(texRect["x"].ToString()),
-                // float.Parse(texRect["y"].ToString()),
-                // float.Parse(texRect["width"].ToString()),
-                // float.Parse(texRect["height"].ToString())
+            // float.Parse(texRect["x"].ToString()),
+            // float.Parse(texRect["y"].ToString()),
+            // float.Parse(texRect["width"].ToString()),
+            // float.Parse(texRect["height"].ToString())
             );
         }
 

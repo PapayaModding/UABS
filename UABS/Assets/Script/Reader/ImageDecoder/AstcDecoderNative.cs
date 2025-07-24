@@ -1,6 +1,6 @@
 using System.Runtime.InteropServices;
 
-namespace UABS.Assets.Script.Reader
+namespace UABS.Assets.Script.Reader.ImageDecoder
 {
     public class AstcDecoderNative
     {

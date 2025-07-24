@@ -5,11 +5,11 @@ using AssetsTools.NET;
 using AssetsTools.NET.Extra;
 using UABS.Assets.Script.DataStruct;
 
-namespace UABS.Assets.Script.Reader
+namespace UABS.Assets.Script.Reader.BundlesRead
 {
     public class ReadFolderContent
     {
-        private AssetsManager _assetsManager;
+        private readonly AssetsManager _assetsManager;
 
         public ReadFolderContent(AssetsManager assetsManager)
         {

@@ -3,11 +3,11 @@ using System.IO;
 using UABS.Assets.Script.Misc;
 using UABS.Assets.Script.Wrapper.Json;
 
-namespace UABS.Assets.Script.Reader
+namespace UABS.Assets.Script.Reader.UserPackage
 {
     public class MemoReader
     {
-        private AppEnvironment _appEnvironment;
+        private readonly AppEnvironment _appEnvironment;
 
         public MemoReader(AppEnvironment appEnvironment)
         {

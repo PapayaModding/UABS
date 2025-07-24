@@ -4,11 +4,11 @@ using System.IO;
 using UnityEngine;
 using UABS.Assets.Script.Wrapper.Json;
 
-namespace UABS.Assets.Script.Reader
+namespace UABS.Assets.Script.Reader.BundlesRead
 {
     public class DependentReader
     {
-        private IJsonSerializer _jsonSerializer;
+        private readonly IJsonSerializer _jsonSerializer;
 
         public DependentReader(IJsonSerializer jsonSerializer)
         {

@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
@@ -7,9 +6,9 @@ using AssetsTools.NET.Extra;
 using UABS.Assets.Script.Misc;
 using UABS.Assets.Script.Wrapper.Json;
 
-namespace UABS.Assets.Script.Reader
+namespace UABS.Assets.Script.Reader.UserPackage
 {
-    public class UserPackageBuilder
+    public class UserPackageBuildReader
     {
         public class AssetInfo
         {
@@ -26,16 +25,16 @@ namespace UABS.Assets.Script.Reader
             public List<string> Dependencies { get; set; }
         }
 
-        private AssetsManager _assetsManager;
-        private IJsonSerializer _jsonSerializer;
+        private readonly AssetsManager _assetsManager;
+        private readonly IJsonSerializer _jsonSerializer;
 
-        public UserPackageBuilder(AssetsManager assetsManager, IJsonSerializer jsonSerializer)
+        public UserPackageBuildReader(AssetsManager assetsManager, IJsonSerializer jsonSerializer)
         {
             _assetsManager = assetsManager;
             _jsonSerializer = jsonSerializer;
         }
 
-        public List<UserPackageInfo> BuildPackage(string targetFolder, string packageFolder)
+        public List<UserPackageInfo> ReadInfoForBuildPackage(string targetFolder, string packageFolder)
         {
             List<UserPackageInfo> result = new();
             List<string> paths = SurfFoldersUnderAllDir(targetFolder);
@@ -182,43 +181,6 @@ namespace UABS.Assets.Script.Reader
                 }
             }
 
-            return result;
-        }
-
-        private List<AssetInfo> GetAssetInfoInBundle(string bundlePath)
-        {
-            List<AssetInfo> result = new();
-            BundleFileInstance bunInst = _assetsManager.LoadBundleFile(bundlePath, true);
-            AssetsFileInstance fileInst = _assetsManager.LoadAssetsFileFromBundle(bunInst, 0, false);
-
-            List<AssetFileInfo> allAssets = fileInst.file.AssetInfos;
-            foreach (var assetInfo in allAssets)
-            {
-                AssetTypeValueField baseField = _assetsManager.GetBaseField(fileInst, assetInfo);
-
-                string assetName = "Unnamed asset";
-
-                if (baseField != null)
-                {
-                    var nameField = baseField.Get("m_Name");
-                    if (nameField != null && !nameField.IsDummy)
-                    {
-                        try
-                        {
-                            assetName = nameField.AsString;
-                        }
-                        catch
-                        {
-                            UnityEngine.Debug.Log(GetAssetTypeValueFieldString(nameField));
-                        }
-                    }
-                }
-                result.Add(new()
-                {
-                    Name = assetName,
-                    PathId = assetInfo.PathId
-                });
-            }
             return result;
         }
 

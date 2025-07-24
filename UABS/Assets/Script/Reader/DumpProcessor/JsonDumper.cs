@@ -2,8 +2,9 @@ using System;
 using AssetsTools.NET;
 using Newtonsoft.Json.Linq;
 
-namespace UABS.Assets.Script.Reader
+namespace UABS.Assets.Script.Reader.DumpProcessor
 {
+    // The following code directly came from UABEA
     public class JsonDumper
     {
         public static JToken RecurseJsonDump(AssetTypeValueField field, bool uabeFlavor)
@@ -39,7 +40,7 @@ namespace UABS.Assets.Script.Reader
                 if (field.Value != null)
                 {
                     AssetValueType evt = field.Value.ValueType;
-                    
+
                     if (field.Value.ValueType != AssetValueType.ManagedReferencesRegistry)
                     {
                         object value = evt switch

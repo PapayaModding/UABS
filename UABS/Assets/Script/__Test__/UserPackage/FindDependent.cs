@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 using UABS.Assets.Script.Misc;
-using UABS.Assets.Script.Reader;
+using UABS.Assets.Script.Reader.BundlesRead;
 
 namespace UABS.Assets.Script.__Test__.UserPackage
 {

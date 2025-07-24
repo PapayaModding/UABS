@@ -1,6 +1,6 @@
 using AssetsTools.NET.Extra;
 using UABS.Assets.Script.Dispatcher;
-using UABS.Assets.Script.Reader;
+using UABS.Assets.Script.Reader.BundlesRead;
 
 namespace UABS.Assets.Script.Misc
 {

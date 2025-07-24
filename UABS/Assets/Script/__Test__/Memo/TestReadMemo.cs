@@ -1,7 +1,7 @@
 using System.IO;
 using UnityEngine;
 using UABS.Assets.Script.Misc;
-using UABS.Assets.Script.Reader;
+using UABS.Assets.Script.Reader.UserPackage;
 
 namespace UABS.Assets.Script.__Test__
 {

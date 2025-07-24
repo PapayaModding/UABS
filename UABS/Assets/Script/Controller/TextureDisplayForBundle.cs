@@ -5,8 +5,8 @@ using UABS.Assets.Script.DataStruct;
 using UABS.Assets.Script.Event;
 using UABS.Assets.Script.EventListener;
 using UABS.Assets.Script.Misc;
-using UABS.Assets.Script.Reader;
 using UABS.Assets.Script.View.BundleView;
+using UABS.Assets.Script.Reader.ImageDecoder;
 
 namespace UABS.Assets.Script.Controller
 {

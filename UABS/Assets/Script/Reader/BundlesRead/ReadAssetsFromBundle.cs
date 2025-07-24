@@ -2,11 +2,11 @@ using System.IO;
 using AssetsTools.NET;
 using AssetsTools.NET.Extra;
 
-namespace UABS.Assets.Script.Reader
+namespace UABS.Assets.Script.Reader.BundlesRead
 {
     public class ReadAssetsFromBundle
     {
-        private AssetsManager _assetsManager;
+        private readonly AssetsManager _assetsManager;
 
         public ReadAssetsFromBundle(AssetsManager assetsManager)
         {

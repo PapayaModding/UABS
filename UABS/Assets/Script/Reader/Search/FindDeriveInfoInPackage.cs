@@ -7,11 +7,11 @@ using AssetsTools.NET;
 using UABS.Assets.Script.DataStruct;
 using UABS.Assets.Script.Wrapper.Json;
 
-namespace UABS.Assets.Script.Reader
+namespace UABS.Assets.Script.Reader.Search
 {
     public class FindDeriveInfoInPackage
     {
-        private IJsonSerializer _jsonSerializer;
+        private readonly IJsonSerializer _jsonSerializer;
 
         public FindDeriveInfoInPackage(IJsonSerializer jsonSerializer)
         {
