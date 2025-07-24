@@ -19,7 +19,7 @@ namespace UABS.Assets.Script.Writer.UserPackage
             _appEnvironment = appEnvironment;
         }
 
-        public void InheritMemoPackage(string from, string to, MemoInheritMode mode)
+        public void InheritMemoPackage(string from, string to, MemoInheritMode mode, bool vocal=true)
         {
             string[] fromJsonFiles = Directory.GetFiles(from, "*.json", SearchOption.AllDirectories);
             int totalChanges = 0;
@@ -33,7 +33,8 @@ namespace UABS.Assets.Script.Writer.UserPackage
                 totalChanges += CopyTo(fromJsonFile, toJsonFile, mode);
             }
             
-            UnityEngine.Debug.Log($"Successfully inherited {totalChanges} changes from [{from}] to [{to}].");
+            if (vocal)
+                UnityEngine.Debug.Log($"Successfully inherited {totalChanges} changes from [{from}] to [{to}].");
         }
 
         private int CopyTo(string fromJsonFile, string toJsonFile, MemoInheritMode mode)

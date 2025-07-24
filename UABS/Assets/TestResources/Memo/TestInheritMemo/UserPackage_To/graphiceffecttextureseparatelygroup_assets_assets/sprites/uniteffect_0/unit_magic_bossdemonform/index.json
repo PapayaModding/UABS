@@ -1,0 +1,20 @@
+﻿[
+  {
+    "Name": "hookarm.png_4c49053944b0c5a6a2e9ac046bc6af11.bundle",
+    "Path": "\\\\?\\D:\\Git\\UABS\\UABS\\Assets\\TestResources\\Depend\\TestFindDependency\\GameData\\graphiceffecttextureseparatelygroup_assets_assets\\sprites\\uniteffect_0\\unit_magic_bossdemonform\\hookarm.png_4c49053944b0c5a6a2e9ac046bc6af11.bundle",
+    "CabCode": "CAB-c4ab7132a743d96843c845eb90f25572",
+    "AssetInfos": [
+      {
+        "Name": "hookArm",
+        "PathId": 4989789292551070170
+      },
+      {
+        "Name": "hookArm",
+        "PathId": 4614285119530197466
+      }
+    ],
+    "Dependencies": [
+      "cab-c8b157fca857626dbba75589e140a72a"
+    ]
+  }
+]
