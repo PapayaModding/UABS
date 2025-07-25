@@ -1,0 +1,2687 @@
+[
+  {
+    "Name": "uniteffect_0.spriteatlas_66b2db9fb94b5bda5b7794c6ed82cf3f.bundle",
+    "Path": "\\\\?\\D:\\Git\\UABS\\UABS\\Assets\\TestResources\\Depend\\TestFindDependency\\GameData\\graphiceffecttextureseparatelygroup_assets_assets\\sprites\\uniteffect_0.spriteatlas_66b2db9fb94b5bda5b7794c6ed82cf3f.bundle",
+    "CabCode": "CAB-c8b157fca857626dbba75589e140a72a",
+    "AssetInfos": [
+      {
+        "Name": "elevatorTrailStart_4",
+        "PathId": -9220184650383434330
+      },
+      {
+        "Name": "octopus_tentacles_59",
+        "PathId": -9215343698733690786
+      },
+      {
+        "Name": "octopusSharedSkill_tentacles_22",
+        "PathId": -9210869544215743632
+      },
+      {
+        "Name": "hook",
+        "PathId": -9195836073069537342
+      },
+      {
+        "Name": "asura3_head_2",
+        "PathId": -9175242688956980572
+      },
+      {
+        "Name": "pigDust0_11",
+        "PathId": -9116629426537818403
+      },
+      {
+        "Name": "kluku_particle_01",
+        "PathId": -9078775325993747211
+      },
+      {
+        "Name": "asura3_head_9",
+        "PathId": -8910845280154803548
+      },
+      {
+        "Name": "kappa_attack_effect_1",
+        "PathId": -8864611190864652609
+      },
+      {
+        "Name": "1887_8",
+        "PathId": -8856715912410398736
+      },
+      {
+        "Name": "gokou_enter_ground_effect_7",
+        "PathId": -8855338805696568579
+      },
+      {
+        "Name": "walrus3_0",
+        "PathId": -8852102264163509959
+      },
+      {
+        "Name": "gokou_enter_ground_effect_3",
+        "PathId": -8838169326262197507
+      },
+      {
+        "Name": "asura3_head_0",
+        "PathId": -8829690515585293660
+      },
+      {
+        "Name": "asura3_gestures_21",
+        "PathId": -8801581199184215350
+      },
+      {
+        "Name": "ship_wood_4",
+        "PathId": -8799925675672156855
+      },
+      {
+        "Name": "gokou_enter_ground_effect_0",
+        "PathId": -8781438320452541699
+      },
+      {
+        "Name": "unit_final_asura1_earthRock_11",
+        "PathId": -8670755606415244411
+      },
+      {
+        "Name": "aim",
+        "PathId": -8658548446599400035
+      },
+      {
+        "Name": "pigDust1_4",
+        "PathId": -8653570917783146493
+      },
+      {
+        "Name": "unit_final_asura1_shieldBoomEffect_7",
+        "PathId": -8599772528016113665
+      },
+      {
+        "Name": "stoneBossOther_0",
+        "PathId": -8599048980759144494
+      },
+      {
+        "Name": "octopus_bubbleTube_3",
+        "PathId": -8555030674898531907
+      },
+      {
+        "Name": "stickyPud 1_3",
+        "PathId": -8540872299497399660
+      },
+      {
+        "Name": "calls_6",
+        "PathId": -8515488508023176367
+      },
+      {
+        "Name": "ship_wood_12",
+        "PathId": -8501886251503694736
+      },
+      {
+        "Name": "octopusSharedSkill_tentacles_49",
+        "PathId": -8480932493981093008
+      },
+      {
+        "Name": "octopus_tentacles_42",
+        "PathId": -8470665395189968802
+      },
+      {
+        "Name": "DropShotBall_0",
+        "PathId": -8459393231251269081
+      },
+      {
+        "Name": "gokou_enter_ground_effect_2",
+        "PathId": -8456290732012313859
+      },
+      {
+        "Name": "asura3_head_11",
+        "PathId": -8435263203973389660
+      },
+      {
+        "Name": "stone1_batch_1",
+        "PathId": -8431450787693951730
+      },
+      {
+        "Name": "asura3_head_1",
+        "PathId": -8423342799326141788
+      },
+      {
+        "Name": "ReboundShotBall_0",
+        "PathId": -8405342867990050963
+      },
+      {
+        "Name": "tengoishi_1",
+        "PathId": -8389513296545674119
+      },
+      {
+        "Name": "asura3_head_5",
+        "PathId": -8325138851025640796
+      },
+      {
+        "Name": "bubble2_4",
+        "PathId": -8298930755691892854
+      },
+      {
+        "Name": "brokenChain_0",
+        "PathId": -8288133880029389697
+      },
+      {
+        "Name": "unit_final_asura1_shieldBoomEffect_12",
+        "PathId": -8220205879891148801
+      },
+      {
+        "Name": "deep-sea bombs_5",
+        "PathId": -8218841565336753828
+      },
+      {
+        "Name": "saveIcon_0",
+        "PathId": -8190582048738017147
+      },
+      {
+        "Name": "unit_final_asura1_shieldBoomEffect_16",
+        "PathId": -8181632582493945857
+      },
+      {
+        "Name": "octopus_tentacles_17",
+        "PathId": -8180047799747538850
+      },
+      {
+        "Name": "octopus_littleTentacles_8",
+        "PathId": -8141199398217249492
+      },
+      {
+        "Name": "stoneBossOther_9",
+        "PathId": -8139626723881150510
+      },
+      {
+        "Name": "octopus_tentacles_38",
+        "PathId": -8136158640715198370
+      },
+      {
+        "Name": "octopusSharedSkill_tentacles_21",
+        "PathId": -8097099953510124688
+      },
+      {
+        "Name": "octopusSharedSkill_tentacles_26",
+        "PathId": -8095358332888583312
+      },
+      {
+        "Name": "pigDust1_2",
+        "PathId": -8080377077821771773
+      },
+      {
+        "Name": "calls_3",
+        "PathId": -8078951447460609199
+      },
+      {
+        "Name": "octopusSharedSkill_tentacles_20",
+        "PathId": -8070505421705677968
+      },
+      {
+        "Name": "pigDust0_3",
+        "PathId": -8047065925322467619
+      },
+      {
+        "Name": "octopus_tentacles_83",
+        "PathId": -8035143272166322082
+      },
+      {
+        "Name": "达摩克里斯之剑2_17",
+        "PathId": -8009569792132426637
+      },
+      {
+        "Name": "ship_wood_7",
+        "PathId": -7980394551895176080
+      },
+      {
+        "Name": "octopus_tentacles_2",
+        "PathId": -7971831416657276834
+      },
+      {
+        "Name": "stoneBossOther_2",
+        "PathId": -7817973607288367150
+      },
+      {
+        "Name": "octopus_tentacles_70",
+        "PathId": -7767688603257663394
+      },
+      {
+        "Name": "octopus_littleTentacles_4",
+        "PathId": -7763079075138564820
+      },
+      {
+        "Name": "unit_final_asura1_earthRock_2",
+        "PathId": -7721730736874486907
+      },
+      {
+        "Name": "Chen_smoke4",
+        "PathId": -7719213630167805360
+      },
+      {
+        "Name": "octopus_tentacles_5",
+        "PathId": -7718289949876416418
+      },
+      {
+        "Name": "rock",
+        "PathId": -7660104738847497955
+      },
+      {
+        "Name": "octopus_tentacles_27",
+        "PathId": -7606928825567670178
+      },
+      {
+        "Name": "octopus_littleTentacles_10",
+        "PathId": -7488713122066854612
+      },
+      {
+        "Name": "octopusSharedSkill_tentacles_9",
+        "PathId": -7478056883484527760
+      },
+      {
+        "Name": "asura3_gestures_22",
+        "PathId": -7475976219324431670
+      },
+      {
+        "Name": "ghosteffect_0",
+        "PathId": -7431302361972274483
+      },
+      {
+        "Name": "octopusSharedSkill_tentacles_10",
+        "PathId": -7412294529192004752
+      },
+      {
+        "Name": "minerDynamite_6",
+        "PathId": -7395870947335086896
+      },
+      {
+        "Name": "ship_wood_5",
+        "PathId": -7389154218758615952
+      },
+      {
+        "Name": "octopus_tentacles_47",
+        "PathId": -7378356550410039202
+      },
+      {
+        "Name": "shoot_3",
+        "PathId": -7354416945575953750
+      },
+      {
+        "Name": "octopus_tentacles_91",
+        "PathId": -7289319497869422498
+      },
+      {
+        "Name": "达摩克里斯之剑2_15",
+        "PathId": -7273745127851469709
+      },
+      {
+        "Name": "ghosteffect_5",
+        "PathId": -7217632529277515059
+      },
+      {
+        "Name": "octopus_tentacles_71",
+        "PathId": -7143890794552749986
+      },
+      {
+        "Name": "saveIcon_2",
+        "PathId": -7141463877408554875
+      },
+      {
+        "Name": "达摩克里斯之剑2_7",
+        "PathId": -7121829321927338893
+      },
+      {
+        "Name": "asura3_head_7",
+        "PathId": -7001227082959281500
+      },
+      {
+        "Name": "pigDust0_4",
+        "PathId": -6976515034009495843
+      },
+      {
+        "Name": "gokou_enter_ground_effect_11",
+        "PathId": -6941560476429622531
+      },
+      {
+        "Name": "Qian_knife2_0",
+        "PathId": -6922460768998285766
+      },
+      {
+        "Name": "达摩克里斯之剑2_27",
+        "PathId": -6869116954065873805
+      },
+      {
+        "Name": "octopus_tentacles_34",
+        "PathId": -6848813811787231138
+      },
+      {
+        "Name": "deep-sea bombs_0",
+        "PathId": -6822247045007398564
+      },
+      {
+        "Name": "Magic1StatueGuard_1",
+        "PathId": -6820318185729127348
+      },
+      {
+        "Name": "unit_final_asura1_earthRock_10",
+        "PathId": -6802222475972803707
+      },
+      {
+        "Name": "octopus_tentacles_65",
+        "PathId": -6762632412024598434
+      },
+      {
+        "Name": "tengoishi_2",
+        "PathId": -6747217429748347783
+      },
+      {
+        "Name": "shoot_0",
+        "PathId": -6696912716829885782
+      },
+      {
+        "Name": "Magic1StatueGuard_2",
+        "PathId": -6639826210652189620
+      },
+      {
+        "Name": "ship_wood_2",
+        "PathId": -6603216104849716112
+      },
+      {
+        "Name": "unit_final_asura1_earthRock_6",
+        "PathId": -6586878462199037051
+      },
+      {
+        "Name": "octopus_tentacles_15",
+        "PathId": -6568097914903850914
+      },
+      {
+        "Name": "pigDust0_5",
+        "PathId": -6559545978276210979
+      },
+      {
+        "Name": "arku_particle_texture",
+        "PathId": -6544720094081424047
+      },
+      {
+        "Name": "达摩克里斯之剑1",
+        "PathId": -6457571452059631490
+      },
+      {
+        "Name": "octopus_bubbleTube_SpitBubbles_3",
+        "PathId": -6456666903593640037
+      },
+      {
+        "Name": "octopus_vine_1",
+        "PathId": -6293873460432472073
+      },
+      {
+        "Name": "octopusSharedSkill_tentacles_0",
+        "PathId": -6280666206188899472
+      },
+      {
+        "Name": "octopus_bubbleTube_5",
+        "PathId": -6220732112910202435
+      },
+      {
+        "Name": "minerDynamite_0",
+        "PathId": -6198506133476025136
+      },
+      {
+        "Name": "unit_final_asura1_earthRock_0",
+        "PathId": -6177501228636732539
+      },
+      {
+        "Name": "octopus_tentacles_21",
+        "PathId": -6161932303885463458
+      },
+      {
+        "Name": "1887_0",
+        "PathId": -6159276041689268240
+      },
+      {
+        "Name": "octopus_bubbleTube_SpitBubbles_2",
+        "PathId": -6138537214071300197
+      },
+      {
+        "Name": "pigDust1_0",
+        "PathId": -6122626843296305149
+      },
+      {
+        "Name": "octopus_littleTentacles_downWater_7",
+        "PathId": -6097610309217183525
+      },
+      {
+        "Name": "gokou_enter_ground_effect_8",
+        "PathId": -6079109956011859203
+      },
+      {
+        "Name": "stoneBossOther_1",
+        "PathId": -6041243350492932142
+      },
+      {
+        "Name": "octopus_tentacles_22",
+        "PathId": -6010984238420717474
+      },
+      {
+        "Name": "asura3_head_17",
+        "PathId": -6002539902903246172
+      },
+      {
+        "Name": "unit_final_asura1_shieldBoomEffect_19",
+        "PathId": -5998611998187405313
+      },
+      {
+        "Name": "pigDust0_2",
+        "PathId": -5940352868931201315
+      },
+      {
+        "Name": "Chen_dragon",
+        "PathId": -5873053018490067826
+      },
+      {
+        "Name": "minerDynamite_4",
+        "PathId": -5822100740695008048
+      },
+      {
+        "Name": "pigDust0_15",
+        "PathId": -5818914202693527843
+      },
+      {
+        "Name": "Chen_scratch",
+        "PathId": -5817540767536225271
+      },
+      {
+        "Name": "octopus_tentacles_63",
+        "PathId": -5805879610053488546
+      },
+      {
+        "Name": "羽毛",
+        "PathId": -5787348740889186887
+      },
+      {
+        "Name": "magicChainBlue",
+        "PathId": -5752555247451163208
+      },
+      {
+        "Name": "octopusSharedSkill_tentacles_3",
+        "PathId": -5719014025582906512
+      },
+      {
+        "Name": "octopusSharedSkill_tentacles_5",
+        "PathId": -5700945922573175952
+      },
+      {
+        "Name": "达摩克里斯之剑2_11",
+        "PathId": -5643548688484772749
+      },
+      {
+        "Name": "octopus_vine_3",
+        "PathId": -5630344494672644105
+      },
+      {
+        "Name": "octopus_tentacles_87",
+        "PathId": -5584358041063255970
+      },
+      {
+        "Name": "octopus_tentacles_4",
+        "PathId": -5578409360809717666
+      },
+      {
+        "Name": "octopus_littleTentacles_11",
+        "PathId": -5573343731808793300
+      },
+      {
+        "Name": "octopus_tentacles_51",
+        "PathId": -5570932998833696674
+      },
+      {
+        "Name": "stoneBossOther_3",
+        "PathId": -5566992584314808366
+      },
+      {
+        "Name": "unit_final_asura1_earthRock_9",
+        "PathId": -5517619952464329851
+      },
+      {
+        "Name": "octopus_littleTentacles_2",
+        "PathId": -5510724482638475988
+      },
+      {
+        "Name": "达摩克里斯之剑2_10",
+        "PathId": -5510495790805330829
+      },
+      {
+        "Name": "calls_0",
+        "PathId": -5509034453473852591
+      },
+      {
+        "Name": "asura3_head_4",
+        "PathId": -5508994147216252252
+      },
+      {
+        "Name": "shoot_4",
+        "PathId": -5499921254281905494
+      },
+      {
+        "Name": "ship_wood_4",
+        "PathId": -5401511658319295376
+      },
+      {
+        "Name": "asura3_gestures_3",
+        "PathId": -5378684162374024502
+      },
+      {
+        "Name": "达摩克里斯之剑2_3",
+        "PathId": -5375709941077355405
+      },
+      {
+        "Name": "octopus_tentacles_7",
+        "PathId": -5311367963501653922
+      },
+      {
+        "Name": "stoneBossOther_8",
+        "PathId": -5262078462656997422
+      },
+      {
+        "Name": "pigDust0_7",
+        "PathId": -5238669283715442979
+      },
+      {
+        "Name": "pigDust0_13",
+        "PathId": -5224152706535975203
+      },
+      {
+        "Name": "octopusSharedSkill_tentacles_40",
+        "PathId": -5223568997573954704
+      },
+      {
+        "Name": "stickyPud 1_0",
+        "PathId": -5216839998401029484
+      },
+      {
+        "Name": "unit_final_asura1_shieldBoomEffect_11",
+        "PathId": -5215403562503323649
+      },
+      {
+        "Name": "asura3_gestures_5",
+        "PathId": -5202702520358386998
+      },
+      {
+        "Name": "octopusSharedSkill_tentacles_2",
+        "PathId": -5191679980411194512
+      },
+      {
+        "Name": "octopusSharedSkill_tentacles_38",
+        "PathId": -5174581885014543504
+      },
+      {
+        "Name": "octopus_littleTentacles_downWater_1",
+        "PathId": -5162331926314313509
+      },
+      {
+        "Name": "assassin_chain",
+        "PathId": -5158926226300211595
+      },
+      {
+        "Name": "ship_wood_14",
+        "PathId": -5149524793237156752
+      },
+      {
+        "Name": "octopusSharedSkill_tentacles_32",
+        "PathId": -5114927002384501904
+      },
+      {
+        "Name": "sandGrow",
+        "PathId": -5104242422117860392
+      },
+      {
+        "Name": "white_rope_bullet_3",
+        "PathId": -5080204393387061357
+      },
+      {
+        "Name": "达摩克里斯之剑2_18",
+        "PathId": -5059461489397902221
+      },
+      {
+        "Name": "1887_3",
+        "PathId": -5014674255817703440
+      },
+      {
+        "Name": "octopus_bubbleTube_SpitBubbles_5",
+        "PathId": -4995420982798803045
+      },
+      {
+        "Name": "bullet",
+        "PathId": -4970912273388232606
+      },
+      {
+        "Name": "达摩克里斯之剑2_24",
+        "PathId": -4950116878336830349
+      },
+      {
+        "Name": "elevatorTrailStart_5",
+        "PathId": -4947032829212303962
+      },
+      {
+        "Name": "gokou_enter_ground_effect_9",
+        "PathId": -4946019781003418883
+      },
+      {
+        "Name": "asura3_gestures_4",
+        "PathId": -4923692332100402486
+      },
+      {
+        "Name": "octopus_littleTentacles_upWater_1",
+        "PathId": -4916043456519878729
+      },
+      {
+        "Name": "stone1_batch_2",
+        "PathId": -4870068028632562418
+      },
+      {
+        "Name": "unit_final_asura1_shieldBoomEffect_5",
+        "PathId": -4860655940384604161
+      },
+      {
+        "Name": "Chen_shoot_horizontal",
+        "PathId": -4832575672646253440
+      },
+      {
+        "Name": "octopus_tentacles_39",
+        "PathId": -4817019994764537762
+      },
+      {
+        "Name": "pointBomb",
+        "PathId": -4791932212295550184
+      },
+      {
+        "Name": "gokou_enter_ground_effect_5",
+        "PathId": -4721928022545374467
+      },
+      {
+        "Name": "asura3_armleft3",
+        "PathId": -4701857104212046981
+      },
+      {
+        "Name": "white_rope_bullet_6",
+        "PathId": -4698226748515086445
+      },
+      {
+        "Name": "octopus_tentacles_48",
+        "PathId": -4688255956545957794
+      },
+      {
+        "Name": "gokou_attack_effect_1_3",
+        "PathId": -4685121646782851660
+      },
+      {
+        "Name": "asura3_head_16",
+        "PathId": -4625427178200620380
+      },
+      {
+        "Name": "octopus_tentacles_11",
+        "PathId": -4606439593967939490
+      },
+      {
+        "Name": "达摩克里斯之剑2_6",
+        "PathId": -4586019441023822733
+      },
+      {
+        "Name": "octopus_tentacles_31",
+        "PathId": -4525879248108646306
+      },
+      {
+        "Name": "octopus_tentacles_73",
+        "PathId": -4498945181196611490
+      },
+      {
+        "Name": "kluku_particle_02",
+        "PathId": -4488741638577339779
+      },
+      {
+        "Name": "octopus_littleTentacles_9",
+        "PathId": -4435448506419049172
+      },
+      {
+        "Name": "octopusSharedSkill_tentacles_25",
+        "PathId": -4421097990654561424
+      },
+      {
+        "Name": "octopus_tentacles_64",
+        "PathId": -4402544587277856674
+      },
+      {
+        "Name": "MagicChainYellow",
+        "PathId": -4373539383467174564
+      },
+      {
+        "Name": "octopus_tentacles_90",
+        "PathId": -4373389031196913570
+      },
+      {
+        "Name": "mortarbombRelease",
+        "PathId": -4371780694288436143
+      },
+      {
+        "Name": "unit_final_asura1_earthRock_7",
+        "PathId": -4353717556673346683
+      },
+      {
+        "Name": "bubble2_2",
+        "PathId": -4345478738236231798
+      },
+      {
+        "Name": "deep-sea bombs_4",
+        "PathId": -4324425327616906916
+      },
+      {
+        "Name": "octopus_tentacles_35",
+        "PathId": -4322777192637853602
+      },
+      {
+        "Name": "octopus_tentacles_81",
+        "PathId": -4190740263690432418
+      },
+      {
+        "Name": "asura3_gestures_25",
+        "PathId": -4138472498460998966
+      },
+      {
+        "Name": "asura3_gestures_1",
+        "PathId": -4124722339918429494
+      },
+      {
+        "Name": "octopus_tentacles_28",
+        "PathId": -4093332744887005090
+      },
+      {
+        "Name": "walrus1_0",
+        "PathId": -4086284603610388622
+      },
+      {
+        "Name": "Chen_shoot_vertical",
+        "PathId": -4046639585313250709
+      },
+      {
+        "Name": "octopus_littleTentacles_downWater_6",
+        "PathId": -4037390706682390309
+      },
+      {
+        "Name": "octopus_tentacles_33",
+        "PathId": -4030985772448804770
+      },
+      {
+        "Name": "octopus_tentacles_3",
+        "PathId": -3987722906225274786
+      },
+      {
+        "Name": "octopus_tentacles_44",
+        "PathId": -3983554984132997026
+      },
+      {
+        "Name": "white_rope_bullet_4",
+        "PathId": -3970027841284534381
+      },
+      {
+        "Name": "octopus_tentacles_24",
+        "PathId": -3925903030813585314
+      },
+      {
+        "Name": "pigDust0_9",
+        "PathId": -3913214056861526307
+      },
+      {
+        "Name": "unit_final_asura1_shieldBoomEffect_9",
+        "PathId": -3908382926698856449
+      },
+      {
+        "Name": "octopus_tentacles_75",
+        "PathId": -3906677442270326690
+      },
+      {
+        "Name": "ship_wood_14",
+        "PathId": -3883712016646879927
+      },
+      {
+        "Name": "arku_particle_01",
+        "PathId": -3837953252406827350
+      },
+      {
+        "Name": "octopusSharedSkill_tentacles_47",
+        "PathId": -3835663632813165712
+      },
+      {
+        "Name": "brokenChain_1",
+        "PathId": -3833678046730658689
+      },
+      {
+        "Name": "octopus_tentacles_37",
+        "PathId": -3833197560561725346
+      },
+      {
+        "Name": "达摩克里斯之剑2_22",
+        "PathId": -3809349478777400205
+      },
+      {
+        "Name": "deep-sea bombs_3",
+        "PathId": -3728942891074639524
+      },
+      {
+        "Name": "witch_airkiss",
+        "PathId": -3583993806782224733
+      },
+      {
+        "Name": "ship_wood_13",
+        "PathId": -3576901983459228343
+      },
+      {
+        "Name": "octopus_tentacles_58",
+        "PathId": -3567533121698787234
+      },
+      {
+        "Name": "minerDynamite_12",
+        "PathId": -3552045745192969008
+      },
+      {
+        "Name": "elevatorTrailStart_3",
+        "PathId": -3552011803627168346
+      },
+      {
+        "Name": "stoneBossOther_6",
+        "PathId": -3497906954220628014
+      },
+      {
+        "Name": "octopusSharedSkill_tentacles_12",
+        "PathId": -3487022246078942352
+      },
+      {
+        "Name": "unit_final_asura1_shieldBoomEffect_8",
+        "PathId": -3446815190194143233
+      },
+      {
+        "Name": "deep-sea bombs_6",
+        "PathId": -3444406819664811684
+      },
+      {
+        "Name": "stoneBossOther_10",
+        "PathId": -3271127000782956590
+      },
+      {
+        "Name": "Magic1StatueGuard_8",
+        "PathId": -3215360675938071476
+      },
+      {
+        "Name": "octopus_tentacles_69",
+        "PathId": -3210713571346804642
+      },
+      {
+        "Name": "boss眼球珠子",
+        "PathId": -3202312991082848045
+      },
+      {
+        "Name": "octopus_tentacles_20",
+        "PathId": -3167009759684587426
+      },
+      {
+        "Name": "asura3_gestures_0",
+        "PathId": -3135151584177732918
+      },
+      {
+        "Name": "gokou_attack_effect_2_1",
+        "PathId": -3097440240119986133
+      },
+      {
+        "Name": "minerDynamite_8",
+        "PathId": -3087233418786906928
+      },
+      {
+        "Name": "octopus_littleTentacles_15",
+        "PathId": -3069503166163055316
+      },
+      {
+        "Name": "octopus_tentacles_12",
+        "PathId": -3055494781958221730
+      },
+      {
+        "Name": "octopus_vine_5",
+        "PathId": -3025565859600599049
+      },
+      {
+        "Name": "stickypud_3",
+        "PathId": -3005848129965245169
+      },
+      {
+        "Name": "octopus_tentacles_62",
+        "PathId": -2992378275588009890
+      },
+      {
+        "Name": "octopus_tentacles_74",
+        "PathId": -2991285814489378722
+      },
+      {
+        "Name": "octopus_tentacles_82",
+        "PathId": -2886978362340667298
+      },
+      {
+        "Name": "calls_11",
+        "PathId": -2877925048484330671
+      },
+      {
+        "Name": "ship_wood_12",
+        "PathId": -2877297752840157879
+      },
+      {
+        "Name": "thunder",
+        "PathId": -2854044792257640456
+      },
+      {
+        "Name": "达摩克里斯之剑2_21",
+        "PathId": -2803457885393955725
+      },
+      {
+        "Name": "octopus_tentacles_19",
+        "PathId": -2743266444437155746
+      },
+      {
+        "Name": "octopus_bubbleTube_4",
+        "PathId": -2692404701173495363
+      },
+      {
+        "Name": "minerDynamite_1",
+        "PathId": -2605660966977872688
+      },
+      {
+        "Name": "ship_wood_6",
+        "PathId": -2602025908249901751
+      },
+      {
+        "Name": "asura3_gestures_12",
+        "PathId": -2597815640460148022
+      },
+      {
+        "Name": "octopus_tentacles_80",
+        "PathId": -2554406356842639266
+      },
+      {
+        "Name": "octopus_tentacles_29",
+        "PathId": -2548956060817747874
+      },
+      {
+        "Name": "asura3_gestures_17",
+        "PathId": -2527542579251100982
+      },
+      {
+        "Name": "asura3_shoulderleft",
+        "PathId": -2509653562659624167
+      },
+      {
+        "Name": "bubble2_0",
+        "PathId": -2506434723671462006
+      },
+      {
+        "Name": "asura3_lefthand_2",
+        "PathId": -2463603473114329271
+      },
+      {
+        "Name": "Magic1StatueGuard_10",
+        "PathId": -2411478941974098868
+      },
+      {
+        "Name": "asura3_head_3",
+        "PathId": -2375186272550116700
+      },
+      {
+        "Name": "gokou_attack_effect_2_0",
+        "PathId": -2373709171809859541
+      },
+      {
+        "Name": "octopus_tentacles_54",
+        "PathId": -2295065916342333346
+      },
+      {
+        "Name": "octopusSharedSkill_tentacles_36",
+        "PathId": -2280817020575583376
+      },
+      {
+        "Name": "Magic1StatueGuard_9",
+        "PathId": -2162728386454713268
+      },
+      {
+        "Name": "octopus_tentacles_36",
+        "PathId": -2114100559935500194
+      },
+      {
+        "Name": "octopus_tentacles_23",
+        "PathId": -2095079692025589666
+      },
+      {
+        "Name": "shoot_1",
+        "PathId": -2036968157631415638
+      },
+      {
+        "Name": "bubble_0",
+        "PathId": -2033174631103097694
+      },
+      {
+        "Name": "brokenChain_7",
+        "PathId": -1943101053378110337
+      },
+      {
+        "Name": "asura3_gestures_7",
+        "PathId": -1864579328461684022
+      },
+      {
+        "Name": "octopusSharedSkill_tentacles_24",
+        "PathId": -1863750153333673104
+      },
+      {
+        "Name": "Hook_0",
+        "PathId": -1848507852019875794
+      },
+      {
+        "Name": "octopusSharedSkill_tentacles_19",
+        "PathId": -1843978825136508048
+      },
+      {
+        "Name": "1887_5",
+        "PathId": -1821513544784314384
+      },
+      {
+        "Name": "octopus_littleTentacles_downWater_2",
+        "PathId": -1800557878307481381
+      },
+      {
+        "Name": "unit_final_asura1_shieldBoomEffect_3",
+        "PathId": -1778085427187433473
+      },
+      {
+        "Name": "arku_particle_02",
+        "PathId": -1733495195607107963
+      },
+      {
+        "Name": "asura3_pants",
+        "PathId": -1693684607804597750
+      },
+      {
+        "Name": "octopus_tentacles_8",
+        "PathId": -1663953608908664738
+      },
+      {
+        "Name": "octopus_bubbleTube_2",
+        "PathId": -1659112465085609539
+      },
+      {
+        "Name": "ship_wood_3",
+        "PathId": -1623305793669804944
+      },
+      {
+        "Name": "asura3_gestures_23",
+        "PathId": -1619536332274646326
+      },
+      {
+        "Name": "magicBossStoneTiles_2",
+        "PathId": -1579350935263612385
+      },
+      {
+        "Name": "kluku_particle_00",
+        "PathId": -1562031913113473854
+      },
+      {
+        "Name": "elevatorTrailStart_1",
+        "PathId": -1553809329630814810
+      },
+      {
+        "Name": "octopusSharedSkill_tentacles_33",
+        "PathId": -1544151427598748816
+      },
+      {
+        "Name": "Chen_smoke2",
+        "PathId": -1459060845510200564
+      },
+      {
+        "Name": "octopus_tentacles_0",
+        "PathId": -1448414718578847650
+      },
+      {
+        "Name": "ship_wood_8",
+        "PathId": -1424483052552762256
+      },
+      {
+        "Name": "octopus_tentacles_66",
+        "PathId": -1406411186091323298
+      },
+      {
+        "Name": "brokenChain_8",
+        "PathId": -1352637134618305409
+      },
+      {
+        "Name": "asura3_lefthand_5",
+        "PathId": -1349708569932329143
+      },
+      {
+        "Name": "unit_final_asura1_earthRock_13",
+        "PathId": -1342403372113886331
+      },
+      {
+        "Name": "shoot_2",
+        "PathId": -1319852711903823190
+      },
+      {
+        "Name": "MagicChainPole_0",
+        "PathId": -1286600014207688826
+      },
+      {
+        "Name": "stone1_batch_4",
+        "PathId": -1283560260215274226
+      },
+      {
+        "Name": "MagicDemonHook_1",
+        "PathId": -1280624673958742527
+      },
+      {
+        "Name": "shuriken",
+        "PathId": -1257700494467494665
+      },
+      {
+        "Name": "MagicChainPole_1",
+        "PathId": -1183558884750172282
+      },
+      {
+        "Name": "octopus_tentacles_25",
+        "PathId": -1139327637899636642
+      },
+      {
+        "Name": "saveIcon_1",
+        "PathId": -1097887893397405563
+      },
+      {
+        "Name": "Hook_1",
+        "PathId": -1067179170835480530
+      },
+      {
+        "Name": "ship_wood_6",
+        "PathId": -980916136226370448
+      },
+      {
+        "Name": "达摩克里斯之剑2_1",
+        "PathId": -965667131084680077
+      },
+      {
+        "Name": "deep-sea bombs_2",
+        "PathId": -953090133152618148
+      },
+      {
+        "Name": "Qian_knife",
+        "PathId": -941766961153847312
+      },
+      {
+        "Name": "asura3_gestures_6",
+        "PathId": -937872696314805558
+      },
+      {
+        "Name": "octopus_littleTentacles_7",
+        "PathId": -923741889823896276
+      },
+      {
+        "Name": "octopus_vine_0",
+        "PathId": -881489377794852873
+      },
+      {
+        "Name": "walrus2_0",
+        "PathId": -854725526898337816
+      },
+      {
+        "Name": "thunder_warning",
+        "PathId": -832797159084403313
+      },
+      {
+        "Name": "gokou_attack_effect_2_3",
+        "PathId": -831626705461983189
+      },
+      {
+        "Name": "asura3_gestures_10",
+        "PathId": -805761641278455094
+      },
+      {
+        "Name": "octopus_littleTentacles_downWater_9",
+        "PathId": -798263991738918693
+      },
+      {
+        "Name": "bossEyeballSprite",
+        "PathId": -779606614688206791
+      },
+      {
+        "Name": "octopus_littleTentacles_upWater_6",
+        "PathId": -723988085129623625
+      },
+      {
+        "Name": "octopus_littleTentacles_downWater_5",
+        "PathId": -688890024642111269
+      },
+      {
+        "Name": "ship_wood_1",
+        "PathId": -679018870371793591
+      },
+      {
+        "Name": "octopus_vine_4",
+        "PathId": -659490559697684489
+      },
+      {
+        "Name": "达摩克里斯之剑2_14",
+        "PathId": -652644527569349517
+      },
+      {
+        "Name": "tengoishi_3",
+        "PathId": -548405178364425095
+      },
+      {
+        "Name": "octopusSharedSkill_tentacles_48",
+        "PathId": -525721609124678800
+      },
+      {
+        "Name": "bubble_2",
+        "PathId": -515107265024256862
+      },
+      {
+        "Name": "rock_4",
+        "PathId": -443804554897578198
+      },
+      {
+        "Name": "gokou_enter_ground_effect_10",
+        "PathId": -435587797350259971
+      },
+      {
+        "Name": "pigDust1_3",
+        "PathId": -424258968325754877
+      },
+      {
+        "Name": "asura3_head_13",
+        "PathId": -402181718227279196
+      },
+      {
+        "Name": "octopus_tentacles_40",
+        "PathId": -391496001608282018
+      },
+      {
+        "Name": "octopus_tentacles_72",
+        "PathId": -361599810298179490
+      },
+      {
+        "Name": "elevatorTrail",
+        "PathId": -358352856610468220
+      },
+      {
+        "Name": "shoot_8",
+        "PathId": -337863400482014550
+      },
+      {
+        "Name": "deep-sea bombs_8",
+        "PathId": -320390632638109348
+      },
+      {
+        "Name": "octopus_bubbleTube_SpitBubbles_7",
+        "PathId": -257237603963068517
+      },
+      {
+        "Name": "gokou_enter_ground_effect_4",
+        "PathId": -228162531543063811
+      },
+      {
+        "Name": "calls_5",
+        "PathId": -215933722395180207
+      },
+      {
+        "Name": "brokenChain_4",
+        "PathId": -210787543810646913
+      },
+      {
+        "Name": "octopus_littleTentacles_upWater_5",
+        "PathId": -206127601868945481
+      },
+      {
+        "Name": "octopus_tentacles_60",
+        "PathId": -195515911263547298
+      },
+      {
+        "Name": "unit_final_asura1_earthRock_3",
+        "PathId": -190011755566169211
+      },
+      {
+        "Name": "white_rope_bullet_0",
+        "PathId": -123624323876319341
+      },
+      {
+        "Name": "asura3_head_12",
+        "PathId": -83392125880229212
+      },
+      {
+        "Name": "DropShotBall_2",
+        "PathId": -41454306336007641
+      },
+      {
+        "Name": "达摩克里斯之剑2_12",
+        "PathId": 17257583113360499
+      },
+      {
+        "Name": "octopus_tentacles_49",
+        "PathId": 39899460381184094
+      },
+      {
+        "Name": "asura3_armourleft1",
+        "PathId": 85488224026693383
+      },
+      {
+        "Name": "arku_particle_00",
+        "PathId": 86112470711598785
+      },
+      {
+        "Name": "gokou_attack_effect_1_2",
+        "PathId": 87490981257532852
+      },
+      {
+        "Name": "octopus_tentacles_41",
+        "PathId": 99589384264880222
+      },
+      {
+        "Name": "poisonbubble",
+        "PathId": 108785793202679843
+      },
+      {
+        "Name": "octopusSharedSkill_tentacles_31",
+        "PathId": 205729141818291056
+      },
+      {
+        "Name": "DropShotBall_1",
+        "PathId": 250020447598713383
+      },
+      {
+        "Name": "octopusSharedSkill_tentacles_42",
+        "PathId": 260021751177835376
+      },
+      {
+        "Name": "octopusSharedSkill_tentacles_39",
+        "PathId": 263613401312228208
+      },
+      {
+        "Name": "rock_2",
+        "PathId": 283023645013649194
+      },
+      {
+        "Name": "MagicPillar 2",
+        "PathId": 294358242018413065
+      },
+      {
+        "Name": "magicBossStoneTiles_0",
+        "PathId": 308159235026350623
+      },
+      {
+        "Name": "ReboundShotBall_1",
+        "PathId": 313228174190315373
+      },
+      {
+        "Name": "elevatorTrailStart_2",
+        "PathId": 337058449406287270
+      },
+      {
+        "Name": "calls_7",
+        "PathId": 350057692762112849
+      },
+      {
+        "Name": "octopusSharedSkill_tentacles_35",
+        "PathId": 404106825133421424
+      },
+      {
+        "Name": "unit_final_asura1_earthRock_8",
+        "PathId": 468845631524799365
+      },
+      {
+        "Name": "ship_wood_15",
+        "PathId": 475104673664683120
+      },
+      {
+        "Name": "octopus_tentacles_76",
+        "PathId": 484966987708502110
+      },
+      {
+        "Name": "达摩克里斯之剑2_16",
+        "PathId": 499018302826501235
+      },
+      {
+        "Name": "brokenChain_9",
+        "PathId": 514662829080697983
+      },
+      {
+        "Name": "shoot_7",
+        "PathId": 628654266285947562
+      },
+      {
+        "Name": "octopusSharedSkill_tentacles_23",
+        "PathId": 699813695082754928
+      },
+      {
+        "Name": "pigDust0_1",
+        "PathId": 735841966367315677
+      },
+      {
+        "Name": "bubble2_3",
+        "PathId": 804493129816911754
+      },
+      {
+        "Name": "octopus_tentacles_13",
+        "PathId": 838568394991865950
+      },
+      {
+        "Name": "minerDynamite_7",
+        "PathId": 857859391137373392
+      },
+      {
+        "Name": "stickyPud 1_1",
+        "PathId": 877622239429581460
+      },
+      {
+        "Name": "octopusSharedSkill_tentacles_13",
+        "PathId": 907054553155007344
+      },
+      {
+        "Name": "stickypud_0",
+        "PathId": 966052902117522703
+      },
+      {
+        "Name": "ghosteffect_4",
+        "PathId": 983560475108575949
+      },
+      {
+        "Name": "unit_final_asura1_shieldBoomEffect_6",
+        "PathId": 1018613448507506687
+      },
+      {
+        "Name": "octopus_littleTentacles_5",
+        "PathId": 1059120161730858284
+      },
+      {
+        "Name": "octopusSharedSkill_tentacles_17",
+        "PathId": 1118957751574360944
+      },
+      {
+        "Name": "MagicChainPole_2",
+        "PathId": 1174907508812373894
+      },
+      {
+        "Name": "octopusSharedSkill_tentacles_37",
+        "PathId": 1179294746715386736
+      },
+      {
+        "Name": "octopus_littleTentacles_downWater_0",
+        "PathId": 1190894647668283611
+      },
+      {
+        "Name": "octopus_tentacles_9",
+        "PathId": 1197682664210698334
+      },
+      {
+        "Name": "ghosteffect_1",
+        "PathId": 1223551226398378701
+      },
+      {
+        "Name": "magicBossStoneTileEdge_0",
+        "PathId": 1224860785983529744
+      },
+      {
+        "Name": "octopus_tentacles_14",
+        "PathId": 1231949825411321950
+      },
+      {
+        "Name": "pigDust0_16",
+        "PathId": 1237946138248943325
+      },
+      {
+        "Name": "stoneBossOther_4",
+        "PathId": 1246087107726514130
+      },
+      {
+        "Name": "octopus_tentacles_68",
+        "PathId": 1254809610590556254
+      },
+      {
+        "Name": "1887_4",
+        "PathId": 1275502766367997936
+      },
+      {
+        "Name": "sapperMine",
+        "PathId": 1292169884109080289
+      },
+      {
+        "Name": "asura3_forearmright",
+        "PathId": 1311895245668473304
+      },
+      {
+        "Name": "octopus_littleTentacles_1",
+        "PathId": 1315587677051424044
+      },
+      {
+        "Name": "asura3_trunk",
+        "PathId": 1341144821505962250
+      },
+      {
+        "Name": "Chen_tiger",
+        "PathId": 1373252673265139112
+      },
+      {
+        "Name": "asura3_gestures_13",
+        "PathId": 1379472011922391754
+      },
+      {
+        "Name": "asura3_gestures_19",
+        "PathId": 1397725920365593290
+      },
+      {
+        "Name": "brokenChain_3",
+        "PathId": 1404309492523588735
+      },
+      {
+        "Name": "octopus_tentacles_32",
+        "PathId": 1409534692914171998
+      },
+      {
+        "Name": "octopus_tentacles_61",
+        "PathId": 1412594117503553630
+      },
+      {
+        "Name": "达摩克里斯之剑2_8",
+        "PathId": 1429675097240327283
+      },
+      {
+        "Name": "octopusSharedSkill_tentacles_16",
+        "PathId": 1476723173029999472
+      },
+      {
+        "Name": "iceDebris_0",
+        "PathId": 1515991905206076542
+      },
+      {
+        "Name": "calls_8",
+        "PathId": 1528849835449811793
+      },
+      {
+        "Name": "pigDust0_8",
+        "PathId": 1539989190060807901
+      },
+      {
+        "Name": "octopus_tentacles_88",
+        "PathId": 1564512787873927262
+      },
+      {
+        "Name": "unit_final_asura1_earthRock_5",
+        "PathId": 1585863903829001093
+      },
+      {
+        "Name": "octopus_tentacles_57",
+        "PathId": 1636843533417123934
+      },
+      {
+        "Name": "assassin_claw",
+        "PathId": 1646196911032099433
+      },
+      {
+        "Name": "deep-sea bombs_9",
+        "PathId": 1652952333607905628
+      },
+      {
+        "Name": "kluku_particle_texture",
+        "PathId": 1661310107117568653
+      },
+      {
+        "Name": "shoot_5",
+        "PathId": 1666472556927449770
+      },
+      {
+        "Name": "ship_wood_9",
+        "PathId": 1702393452835816777
+      },
+      {
+        "Name": "unit_final_asura1_shieldBoomEffect_2",
+        "PathId": 1729774732766068735
+      },
+      {
+        "Name": "asura3_lefthand_1",
+        "PathId": 1737710051888533321
+      },
+      {
+        "Name": "blur",
+        "PathId": 1752925029464228635
+      },
+      {
+        "Name": "Magic1StatueGuard_3",
+        "PathId": 1767587654990007372
+      },
+      {
+        "Name": "Magic1StatueGuard_4",
+        "PathId": 1768129127659899980
+      },
+      {
+        "Name": "octopusSharedSkill_tentacles_8",
+        "PathId": 1819553547460637552
+      },
+      {
+        "Name": "octopusSharedSkill_tentacles_27",
+        "PathId": 1830596127369163632
+      },
+      {
+        "Name": "unit_final_asura1_shieldBoomEffect_13",
+        "PathId": 1852686848857522175
+      },
+      {
+        "Name": "laser_used",
+        "PathId": 1854847538183456335
+      },
+      {
+        "Name": "ironball",
+        "PathId": 1905048359177721218
+      },
+      {
+        "Name": "gokou_attack_effect_2_5",
+        "PathId": 1932801356937152555
+      },
+      {
+        "Name": "达摩克里斯之剑2_5",
+        "PathId": 1946073704314328179
+      },
+      {
+        "Name": "iceDebris_1",
+        "PathId": 1981398621358916734
+      },
+      {
+        "Name": "li_bladewave",
+        "PathId": 1989791834141045626
+      },
+      {
+        "Name": "octopus_tentacles_45",
+        "PathId": 1991449284477653086
+      },
+      {
+        "Name": "brokenChain_11",
+        "PathId": 2034764598353190015
+      },
+      {
+        "Name": "octopus_littleTentacles_12",
+        "PathId": 2034894178113097004
+      },
+      {
+        "Name": "asura3_armright",
+        "PathId": 2051207377728916227
+      },
+      {
+        "Name": "asura3_gestures_9",
+        "PathId": 2085540084470530762
+      },
+      {
+        "Name": "octopusSharedSkill_tentacles_43",
+        "PathId": 2122407842988782448
+      },
+      {
+        "Name": "stickypud_1",
+        "PathId": 2127394093120896271
+      },
+      {
+        "Name": "gokou_attack_effect_1_4",
+        "PathId": 2141178080737351092
+      },
+      {
+        "Name": "octopus_tentacles_26",
+        "PathId": 2158429556671058014
+      },
+      {
+        "Name": "demonHook",
+        "PathId": 2165063488937382058
+      },
+      {
+        "Name": "octopusSharedSkill_tentacles_29",
+        "PathId": 2195052182723261296
+      },
+      {
+        "Name": "octopusSharedSkill_tentacles_50",
+        "PathId": 2211522325704504176
+      },
+      {
+        "Name": "stone1_batch_0",
+        "PathId": 2215625203996001550
+      },
+      {
+        "Name": "rock_1",
+        "PathId": 2241216230491760426
+      },
+      {
+        "Name": "deep-sea bombs_10",
+        "PathId": 2267335806983678300
+      },
+      {
+        "Name": "octopus_tentacles_79",
+        "PathId": 2287917231915208798
+      },
+      {
+        "Name": "asura3_armourleft2",
+        "PathId": 2302198059424945061
+      },
+      {
+        "Name": "iceDebris_2",
+        "PathId": 2309457383720748158
+      },
+      {
+        "Name": "asura3_gestures_24",
+        "PathId": 2375112550540329674
+      },
+      {
+        "Name": "octopus_bubbleTube_SpitBubbles_1",
+        "PathId": 2382537577761447835
+      },
+      {
+        "Name": "toudninja_tongue",
+        "PathId": 2403523891261401481
+      },
+      {
+        "Name": "asura3_lefthand_4",
+        "PathId": 2419415436378246985
+      },
+      {
+        "Name": "pigDust0_0",
+        "PathId": 2429178068807390941
+      },
+      {
+        "Name": "white_rope_bullet_2",
+        "PathId": 2472213976788307859
+      },
+      {
+        "Name": "bubble_1",
+        "PathId": 2596602409816396962
+      },
+      {
+        "Name": "asura3_armright3",
+        "PathId": 2597117184044472212
+      },
+      {
+        "Name": "octopusSharedSkill_tentacles_34",
+        "PathId": 2665575573844226928
+      },
+      {
+        "Name": "magicBossStoneTiles_1",
+        "PathId": 2673157317585433119
+      },
+      {
+        "Name": "gokou_enter_ground_effect_1",
+        "PathId": 2694599052443345661
+      },
+      {
+        "Name": "octopus_tentacles_89",
+        "PathId": 2707948245090242654
+      },
+      {
+        "Name": "bubble2_1",
+        "PathId": 2728824788054224778
+      },
+      {
+        "Name": "达摩克里斯之剑2_9",
+        "PathId": 2734073625025926259
+      },
+      {
+        "Name": "1887_1",
+        "PathId": 2737161242270400496
+      },
+      {
+        "Name": "minerDynamite_2",
+        "PathId": 2760204080977927376
+      },
+      {
+        "Name": "unit_final_asura1_shieldBoomEffect_10",
+        "PathId": 2769826780091891711
+      },
+      {
+        "Name": "octopus_tentacles_43",
+        "PathId": 2817622988700848222
+      },
+      {
+        "Name": "Chen_smoke3",
+        "PathId": 2820064007939815030
+      },
+      {
+        "Name": "octopusSharedSkill_tentacles_4",
+        "PathId": 2887511752592814960
+      },
+      {
+        "Name": "asura3_gestures_16",
+        "PathId": 2946037964377768650
+      },
+      {
+        "Name": "Magic1StatueGuard_6",
+        "PathId": 2999303229400124492
+      },
+      {
+        "Name": "asura3_gestures_18",
+        "PathId": 3017064462122959562
+      },
+      {
+        "Name": "octopus_bubbleTube_SpitBubbles_4",
+        "PathId": 3069132537390735259
+      },
+      {
+        "Name": "Magic1StatueGuard_5",
+        "PathId": 3089919492786719820
+      },
+      {
+        "Name": "octopus_tentacles_10",
+        "PathId": 3165872707885928542
+      },
+      {
+        "Name": "octopus_vine_6",
+        "PathId": 3186039564270761975
+      },
+      {
+        "Name": "bubble2_5",
+        "PathId": 3198555300479152010
+      },
+      {
+        "Name": "Boss眼球_6",
+        "PathId": 3211969281528321890
+      },
+      {
+        "Name": "octopusSharedSkill_tentacles_11",
+        "PathId": 3274633839741334384
+      },
+      {
+        "Name": "lightBomb",
+        "PathId": 3277937526383320758
+      },
+      {
+        "Name": "walrus4_0",
+        "PathId": 3283601602603401757
+      },
+      {
+        "Name": "pigDust0_6",
+        "PathId": 3286303114450179805
+      },
+      {
+        "Name": "Boss眼球_7",
+        "PathId": 3291917415089067874
+      },
+      {
+        "Name": "pigDust0_14",
+        "PathId": 3320223584692803293
+      },
+      {
+        "Name": "达摩克里斯之剑2_20",
+        "PathId": 3384917501198947443
+      },
+      {
+        "Name": "minerDynamite_5",
+        "PathId": 3438144962455067856
+      },
+      {
+        "Name": "calls_2",
+        "PathId": 3454164652271698769
+      },
+      {
+        "Name": "asura3_head_10",
+        "PathId": 3476996472833909412
+      },
+      {
+        "Name": "asura3_gestures_28",
+        "PathId": 3513489142678962890
+      },
+      {
+        "Name": "magicChainShooter_1",
+        "PathId": 3576664734032405601
+      },
+      {
+        "Name": "Boss眼球_2",
+        "PathId": 3655395586336708450
+      },
+      {
+        "Name": "shoot_6",
+        "PathId": 3659351957041838762
+      },
+      {
+        "Name": "Boss眼球_1",
+        "PathId": 3680606004217796450
+      },
+      {
+        "Name": "pigDust0_12",
+        "PathId": 3696359279664240349
+      },
+      {
+        "Name": "unit_final_asura1_shieldBoomEffect_1",
+        "PathId": 3827755263334727679
+      },
+      {
+        "Name": "octopus_tentacles_30",
+        "PathId": 3830805995193503838
+      },
+      {
+        "Name": "unit_final_asura1_shieldBoomEffect_0",
+        "PathId": 3904786817916321791
+      },
+      {
+        "Name": "asura3_lefthand_3",
+        "PathId": 4032366112534761289
+      },
+      {
+        "Name": "octopus_littleTentacles_upWater_2",
+        "PathId": 4082193664492619703
+      },
+      {
+        "Name": "brokenChain_5",
+        "PathId": 4137510978879478911
+      },
+      {
+        "Name": "chain",
+        "PathId": 4206825692455248503
+      },
+      {
+        "Name": "octopusSharedSkill_tentacles_15",
+        "PathId": 4240085199925703536
+      },
+      {
+        "Name": "octopusSharedSkill_tentacles_41",
+        "PathId": 4251017251027972976
+      },
+      {
+        "Name": "asura3_gestures_20",
+        "PathId": 4285161338047578826
+      },
+      {
+        "Name": "octopus_bubbleTube_0",
+        "PathId": 4287395021631867325
+      },
+      {
+        "Name": "deep-sea bombs_11",
+        "PathId": 4312935353773271388
+      },
+      {
+        "Name": "unit_final_asura1_earthRock_12",
+        "PathId": 4369760720752509829
+      },
+      {
+        "Name": "asura3_gestures_15",
+        "PathId": 4394426973965140682
+      },
+      {
+        "Name": "ship_wood_7",
+        "PathId": 4413945109225325897
+      },
+      {
+        "Name": "asura3_head_14",
+        "PathId": 4506199652782318244
+      },
+      {
+        "Name": "octopusSharedSkill_tentacles_6",
+        "PathId": 4575418325282157424
+      },
+      {
+        "Name": "asura3_gestures_14",
+        "PathId": 4603624858657964746
+      },
+      {
+        "Name": "ship_wood_11",
+        "PathId": 4663424646352454985
+      },
+      {
+        "Name": "octopusSharedSkill_tentacles_14",
+        "PathId": 4700544065970336624
+      },
+      {
+        "Name": "earthRockEffect",
+        "PathId": 4736992900468413689
+      },
+      {
+        "Name": "Magic1StatueGuard_11",
+        "PathId": 4738280476263025740
+      },
+      {
+        "Name": "octopus_tentacles_78",
+        "PathId": 4815424737610109022
+      },
+      {
+        "Name": "jumpsmoke",
+        "PathId": 4905070920743616886
+      },
+      {
+        "Name": "octopus_tentacles_50",
+        "PathId": 4905186007938502750
+      },
+      {
+        "Name": "ghosteffect_2",
+        "PathId": 4931138144254560973
+      },
+      {
+        "Name": "rock_0",
+        "PathId": 4938639546806511402
+      },
+      {
+        "Name": "octopus_bubbleTube_1",
+        "PathId": 4966016628906674621
+      },
+      {
+        "Name": "ship_wood_9",
+        "PathId": 4997313067886267504
+      },
+      {
+        "Name": "gokou_attack_effect_1_0",
+        "PathId": 4998368848230077876
+      },
+      {
+        "Name": "calls_4",
+        "PathId": 5038870748826272593
+      },
+      {
+        "Name": "bubble_4",
+        "PathId": 5039618702556501154
+      },
+      {
+        "Name": "white_rope_bullet_5",
+        "PathId": 5075522433380126611
+      },
+      {
+        "Name": "达摩克里斯之剑2_2",
+        "PathId": 5083315867442107507
+      },
+      {
+        "Name": "ship_wood_3",
+        "PathId": 5164649332513621321
+      },
+      {
+        "Name": "地裂",
+        "PathId": 5166100643445612317
+      },
+      {
+        "Name": "brokenChain_10",
+        "PathId": 5208594290237693055
+      },
+      {
+        "Name": "rock_3",
+        "PathId": 5242982674486273834
+      },
+      {
+        "Name": "octopus_bubbleTube_SpitBubbles_6",
+        "PathId": 5247355908835418011
+      },
+      {
+        "Name": "Boss眼球_5",
+        "PathId": 5264031574516062050
+      },
+      {
+        "Name": "calls_9",
+        "PathId": 5309437503829869393
+      },
+      {
+        "Name": "octopus_littleTentacles_14",
+        "PathId": 5405001839093681452
+      },
+      {
+        "Name": "octopus_tentacles_55",
+        "PathId": 5411017748332089438
+      },
+      {
+        "Name": "octopus_bubbleTube_SpitBubbles_0",
+        "PathId": 5423840433979039643
+      },
+      {
+        "Name": "达摩克里斯之剑2_26",
+        "PathId": 5458480992127898739
+      },
+      {
+        "Name": "toudpoisondrop_1",
+        "PathId": 5459019396406892603
+      },
+      {
+        "Name": "sun_sword",
+        "PathId": 5459414775042144938
+      },
+      {
+        "Name": "octopus_littleTentacles_upWater_7",
+        "PathId": 5483530091272980407
+      },
+      {
+        "Name": "calls_10",
+        "PathId": 5558518059271291729
+      },
+      {
+        "Name": "octopus_tentacles_18",
+        "PathId": 5606996082785849438
+      },
+      {
+        "Name": "octopusSharedSkill_tentacles_52",
+        "PathId": 5663437829144802160
+      },
+      {
+        "Name": "stone1_batch_3",
+        "PathId": 5677113853085779214
+      },
+      {
+        "Name": "octopus_littleTentacles_downWater_8",
+        "PathId": 5677416547114391771
+      },
+      {
+        "Name": "asura3_head_8",
+        "PathId": 5709787154415952548
+      },
+      {
+        "Name": "toudpoisondrop_2",
+        "PathId": 5721948560007223355
+      },
+      {
+        "Name": "octopus_tentacles_86",
+        "PathId": 5760511868967653470
+      },
+      {
+        "Name": "1887_2",
+        "PathId": 5772347820116443120
+      },
+      {
+        "Name": "magicBossStoneTileEdge_1",
+        "PathId": 5805945214922826512
+      },
+      {
+        "Name": "octopus_littleTentacles_upWater_4",
+        "PathId": 5840964152677156791
+      },
+      {
+        "Name": "unit_final_asura1_shieldBoomEffect_4",
+        "PathId": 5852426404666195967
+      },
+      {
+        "Name": "toudNinja_chain",
+        "PathId": 5878833800906108412
+      },
+      {
+        "Name": "magicChainShooter_0",
+        "PathId": 5882088892514706529
+      },
+      {
+        "Name": "1887_6",
+        "PathId": 5885755189329035248
+      },
+      {
+        "Name": "minerDynamite_11",
+        "PathId": 5892508778876755152
+      },
+      {
+        "Name": "asura3_armleft",
+        "PathId": 5896078041133112492
+      },
+      {
+        "Name": "white_rope_bullet_1",
+        "PathId": 5986368384492310419
+      },
+      {
+        "Name": "kappa_attack_effect_0",
+        "PathId": 5986918719311317903
+      },
+      {
+        "Name": "octopus_tentacles_46",
+        "PathId": 5996801844075368542
+      },
+      {
+        "Name": "asura3_head_15",
+        "PathId": 6063725461940019876
+      },
+      {
+        "Name": "unit_final_asura1_shieldBoomEffect_18",
+        "PathId": 6090042299549335551
+      },
+      {
+        "Name": "saveFrame",
+        "PathId": 6127655624832733815
+      },
+      {
+        "Name": "ghosteffect_3",
+        "PathId": 6130876824592386765
+      },
+      {
+        "Name": "octopus_tentacles_6",
+        "PathId": 6197521108863750238
+      },
+      {
+        "Name": "witch_magicBall",
+        "PathId": 6230320531537268930
+      },
+      {
+        "Name": "pigDust0_10",
+        "PathId": 6246880653585553117
+      },
+      {
+        "Name": "Boss眼球_4",
+        "PathId": 6256940275700946786
+      },
+      {
+        "Name": "asura3_lefthand_0",
+        "PathId": 6289406665976516425
+      },
+      {
+        "Name": "octopus_littleTentacles_6",
+        "PathId": 6291287887325826348
+      },
+      {
+        "Name": "asura3_head_6",
+        "PathId": 6336903208377066148
+      },
+      {
+        "Name": "达摩克里斯之剑2_0",
+        "PathId": 6369356061452883059
+      },
+      {
+        "Name": "deep-sea bombs_1",
+        "PathId": 6374120010004900188
+      },
+      {
+        "Name": "Magic1StatueGuard_7",
+        "PathId": 6391897723198868556
+      },
+      {
+        "Name": "asura3_gestures_11",
+        "PathId": 6392464125819372234
+      },
+      {
+        "Name": "octopus_littleTentacles_0",
+        "PathId": 6421265520460762412
+      },
+      {
+        "Name": "unit_final_asura1_earthRock_4",
+        "PathId": 6428128847662646149
+      },
+      {
+        "Name": "Magic1StatueGuard_0",
+        "PathId": 6439921228964465740
+      },
+      {
+        "Name": "Qian_knife2_1",
+        "PathId": 6489543551535652410
+      },
+      {
+        "Name": "iceDebris_6",
+        "PathId": 6516630194774934654
+      },
+      {
+        "Name": "octopus_littleTentacles_3",
+        "PathId": 6521886916578446636
+      },
+      {
+        "Name": "iceDebris_3",
+        "PathId": 6631525237183349886
+      },
+      {
+        "Name": "unit_final_asura1_shieldBoomEffect_14",
+        "PathId": 6637110976655245311
+      },
+      {
+        "Name": "calls_1",
+        "PathId": 6648808339946832721
+      },
+      {
+        "Name": "octopus_tentacles_77",
+        "PathId": 6656522232586768478
+      },
+      {
+        "Name": "达摩克里斯之剑2_13",
+        "PathId": 6656701208922117235
+      },
+      {
+        "Name": "ReboundShotBall_2",
+        "PathId": 6685807355288553325
+      },
+      {
+        "Name": "magicChainShooter_2",
+        "PathId": 6715637173035082849
+      },
+      {
+        "Name": "达摩克里斯之剑2_25",
+        "PathId": 6749246038202406003
+      },
+      {
+        "Name": "1887_7",
+        "PathId": 6754633867386388464
+      },
+      {
+        "Name": "octopus_tentacles_56",
+        "PathId": 6776847016872251486
+      },
+      {
+        "Name": "octopus_littleTentacles_downWater_3",
+        "PathId": 6781031428083914971
+      },
+      {
+        "Name": "rock_5",
+        "PathId": 6787082977969317674
+      },
+      {
+        "Name": "MagicDemonHook_0",
+        "PathId": 6834764269613594113
+      },
+      {
+        "Name": "octopusSharedSkill_tentacles_30",
+        "PathId": 6845914550381540208
+      },
+      {
+        "Name": "octopus_littleTentacles_upWater_0",
+        "PathId": 6852635133019670455
+      },
+      {
+        "Name": "asura3_armleft2",
+        "PathId": 6943018726111907412
+      },
+      {
+        "Name": "ship_wood_11",
+        "PathId": 7047213659246840944
+      },
+      {
+        "Name": "iceDebris_5",
+        "PathId": 7048410522884899966
+      },
+      {
+        "Name": "toudpoisondrop_3",
+        "PathId": 7066460869778135099
+      },
+      {
+        "Name": "stickyPud 1_2",
+        "PathId": 7076843391687842452
+      },
+      {
+        "Name": "elevatorTrailStart_0",
+        "PathId": 7086527798129515942
+      },
+      {
+        "Name": "asura3_gestures_27",
+        "PathId": 7171176755026608842
+      },
+      {
+        "Name": "bubble_3",
+        "PathId": 7199704391214732450
+      },
+      {
+        "Name": "octopusSharedSkill_tentacles_46",
+        "PathId": 7211427728285397872
+      },
+      {
+        "Name": "stickypud_2",
+        "PathId": 7212931229188701455
+      },
+      {
+        "Name": "asura3_armourright",
+        "PathId": 7284837875019124156
+      },
+      {
+        "Name": "octopus_tentacles_16",
+        "PathId": 7306846629939056734
+      },
+      {
+        "Name": "toudpoisondrop_0",
+        "PathId": 7322838111366535227
+      },
+      {
+        "Name": "octopus_littleTentacles_upWater_8",
+        "PathId": 7333650814591027127
+      },
+      {
+        "Name": "octopus_littleTentacles_13",
+        "PathId": 7343886672571534636
+      },
+      {
+        "Name": "ship_wood_0",
+        "PathId": 7347815488568542537
+      },
+      {
+        "Name": "MagicPillar",
+        "PathId": 7369363661324506338
+      },
+      {
+        "Name": "达摩克里斯之剑2_4",
+        "PathId": 7385242012560217203
+      },
+      {
+        "Name": "ship_wood_10",
+        "PathId": 7463647026264786249
+      },
+      {
+        "Name": "minerDynamite_9",
+        "PathId": 7488743415998045392
+      },
+      {
+        "Name": "pigDust1_1",
+        "PathId": 7508378249599217667
+      },
+      {
+        "Name": "ship_wood_13",
+        "PathId": 7523250710354480240
+      },
+      {
+        "Name": "octopusSharedSkill_tentacles_51",
+        "PathId": 7524435974343258992
+      },
+      {
+        "Name": "asura3_gestures_26",
+        "PathId": 7535037267767214794
+      },
+      {
+        "Name": "达摩克里斯之剑2_23",
+        "PathId": 7576874234760156275
+      },
+      {
+        "Name": "ship_wood_0",
+        "PathId": 7657686844773846128
+      },
+      {
+        "Name": "octopus_tentacles_53",
+        "PathId": 7674504647137955934
+      },
+      {
+        "Name": "octopus_tentacles_1",
+        "PathId": 7679185179601277022
+      },
+      {
+        "Name": "asura3_gestures_8",
+        "PathId": 7697095588667867850
+      },
+      {
+        "Name": "tengoishi_0",
+        "PathId": 7716337272763944057
+      },
+      {
+        "Name": "brokenChain_6",
+        "PathId": 7727530501497019519
+      },
+      {
+        "Name": "octopus_tentacles_85",
+        "PathId": 7753205242860671070
+      },
+      {
+        "Name": "unit_final_asura1_earthRock_1",
+        "PathId": 7774131022639432581
+      },
+      {
+        "Name": "Chen_smoke1",
+        "PathId": 7788891133814436519
+      },
+      {
+        "Name": "ship_wood_1",
+        "PathId": 7790443999687363696
+      },
+      {
+        "Name": "pigDust1_5",
+        "PathId": 7800675808936488963
+      },
+      {
+        "Name": "asura3_gestures_29",
+        "PathId": 7812728676967662282
+      },
+      {
+        "Name": "minerDynamite_3",
+        "PathId": 7861036940728655056
+      },
+      {
+        "Name": "octopus_littleTentacles_upWater_9",
+        "PathId": 7885757979821459383
+      },
+      {
+        "Name": "poisonfield",
+        "PathId": 8032017867974840573
+      },
+      {
+        "Name": "octopusSharedSkill_tentacles_18",
+        "PathId": 8064441651434386288
+      },
+      {
+        "Name": "iceDebris_4",
+        "PathId": 8068887775168038014
+      },
+      {
+        "Name": "达摩克里斯之剑2_19",
+        "PathId": 8096851194163647603
+      },
+      {
+        "Name": "stoneBossOther_7",
+        "PathId": 8144547693961844690
+      },
+      {
+        "Name": "ship_wood_15",
+        "PathId": 8183411925924300105
+      },
+      {
+        "Name": "ship_wood_2",
+        "PathId": 8194913302040462665
+      },
+      {
+        "Name": "asura3_gestures_2",
+        "PathId": 8309103040850182858
+      },
+      {
+        "Name": "Boss眼球_3",
+        "PathId": 8319334280716900194
+      },
+      {
+        "Name": "bubble_5",
+        "PathId": 8327693882657576098
+      },
+      {
+        "Name": "gokou_attack_effect_2_2",
+        "PathId": 8408985211111393323
+      },
+      {
+        "Name": "ship_wood_8",
+        "PathId": 8418042200426464585
+      },
+      {
+        "Name": "octopusSharedSkill_tentacles_7",
+        "PathId": 8423351786975097712
+      },
+      {
+        "Name": "ship_wood_5",
+        "PathId": 8431855677028353353
+      },
+      {
+        "Name": "tengoishi_4",
+        "PathId": 8440049945768463481
+      },
+      {
+        "Name": "minerDynamite_10",
+        "PathId": 8447664582736665808
+      },
+      {
+        "Name": "ship_wood_10",
+        "PathId": 8520583127971744880
+      },
+      {
+        "Name": "Boss眼球_0",
+        "PathId": 8541142755105199970
+      },
+      {
+        "Name": "Qian_knife2_2",
+        "PathId": 8546033709826088506
+      },
+      {
+        "Name": "octopus_tentacles_52",
+        "PathId": 8555274583607021662
+      },
+      {
+        "Name": "boom",
+        "PathId": 8630285334727730126
+      },
+      {
+        "Name": "octopus_littleTentacles_downWater_4",
+        "PathId": 8631353136595900635
+      },
+      {
+        "Name": "octopus_tentacles_84",
+        "PathId": 8659143582256861278
+      },
+      {
+        "Name": "octopusSharedSkill_tentacles_1",
+        "PathId": 8659578589718868848
+      },
+      {
+        "Name": "gokou_attack_effect_1_1",
+        "PathId": 8699079371778807220
+      },
+      {
+        "Name": "stoneBossOther_5",
+        "PathId": 8704663031593474002
+      },
+      {
+        "Name": "firebottle",
+        "PathId": 8729263991039351575
+      },
+      {
+        "Name": "octopus_tentacles_67",
+        "PathId": 8755830760127926366
+      },
+      {
+        "Name": "unit_final_asura1_shieldBoomEffect_15",
+        "PathId": 8780671571161235455
+      },
+      {
+        "Name": "unit_final_asura1_shieldBoomEffect_17",
+        "PathId": 8833646135941251071
+      },
+      {
+        "Name": "gokou_attack_effect_2_4",
+        "PathId": 8846709709135923243
+      },
+      {
+        "Name": "MagicChainGreen",
+        "PathId": 8847854616954880199
+      },
+      {
+        "Name": "brokenChain_2",
+        "PathId": 8857510179280247935
+      },
+      {
+        "Name": "gokou_enter_ground_effect_6",
+        "PathId": 8909629123064587005
+      },
+      {
+        "Name": "deep-sea bombs_7",
+        "PathId": 8912863870174505308
+      },
+      {
+        "Name": "gokou_attack_effect_2_6",
+        "PathId": 9037349874649385003
+      },
+      {
+        "Name": "octopusSharedSkill_tentacles_45",
+        "PathId": 9173140066642129776
+      },
+      {
+        "Name": "octopus_vine_2",
+        "PathId": 9177391024956569591
+      },
+      {
+        "Name": "octopusSharedSkill_tentacles_44",
+        "PathId": 9192058554682798960
+      },
+      {
+        "Name": "octopus_littleTentacles_upWater_3",
+        "PathId": 9207869707852105655
+      },
+      {
+        "Name": "octopusSharedSkill_tentacles_28",
+        "PathId": 9212611812489393008
+      },
+      {
+        "Name": "sactx-0-2048x2048-Uncompressed-unitEffect_0-0a7dee43",
+        "PathId": 5325912907759767769
+      }
+    ],
+    "Dependencies": [
+      "cab-8aec1fae84b6a213e9d9089f91bdc9c1",
+      "cab-ab9abde196f8584c62c6b015421e254e",
+      "cab-c0e651c84145c1ae8e19e2c9b991bec8",
+      "cab-c4ab7132a743d96843c845eb90f25572"
+    ]
+  }
+]

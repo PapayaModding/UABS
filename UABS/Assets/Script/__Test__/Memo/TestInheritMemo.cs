@@ -1,4 +1,3 @@
-using System;
 using System.IO;
 using UnityEngine;
 using UABS.Assets.Script.__Test__.TestUtil;
@@ -24,19 +23,15 @@ namespace UABS.Assets.Script.__Test__.Memo
             string TO_PATH = Path.Combine(PredefinedTestPaths.TestResPath, "Memo/TestInheritMemo/UserPackage_To");
             string from_meta = FROM_PATH + ".meta";
             string to_meta = TO_PATH + ".meta";
-            if (Directory.Exists(FROM_PATH))
-                SafeDeleteDirectory(FROM_PATH);
-            if (Directory.Exists(TO_PATH))
-                SafeDeleteDirectory(TO_PATH);
-            if (File.Exists(from_meta))
-                File.Delete(from_meta);
-            if (File.Exists(to_meta))
-                File.Delete(to_meta);
+            HelperMemo.SafeDeleteDirectory(FROM_PATH);
+            HelperMemo.SafeDeleteDirectory(TO_PATH);
+            HelperMemo.SafeDeleteFile(from_meta);
+            HelperMemo.SafeDeleteFile(to_meta);
 
             // 2. Copy the user packages from clean build
             string CleanBuild_Path = Path.Combine(PredefinedTestPaths.TestResPath, "Memo/TestInheritMemo/DoNotOverride");
             string TestInheritMemo_Path = Path.Combine(PredefinedTestPaths.TestResPath, "Memo/TestInheritMemo");
-            CopyDirectory(CleanBuild_Path, TestInheritMemo_Path, () =>
+            HelperMemo.CopyDirectory(CleanBuild_Path, TestInheritMemo_Path, () =>
             {
                 // Test
                 AppEnvironment appEnvironment = new();
@@ -60,50 +55,6 @@ namespace UABS.Assets.Script.__Test__.Memo
                 else
                 Debug.Log("[✘] Inherit Memo Test Failed.");
             });
-        }
-
-        private static void CopyDirectory(string sourceDir, string targetDir, Action onComplete)
-        {
-            if (!Directory.Exists(sourceDir))
-            {
-                Debug.Log("Source directory does not exist: " + sourceDir);
-                return;
-            }
-
-            Directory.CreateDirectory(targetDir);
-
-            foreach (string file in Directory.GetFiles(sourceDir))
-            {
-                string destFile = Path.Combine(targetDir, Path.GetFileName(file));
-                File.Copy(file, destFile, true);
-            }
-
-            foreach (string subDir in Directory.GetDirectories(sourceDir))
-            {
-                string destSubDir = Path.Combine(targetDir, Path.GetFileName(subDir));
-                CopyDirectory(subDir, destSubDir, null);
-            }
-
-            onComplete?.Invoke();
-        }
-
-        private void SafeDeleteDirectory(string path)
-        {
-            try
-            {
-                if (!Directory.Exists(path))
-                    return;
-
-                // Remove read-only flags
-                foreach (var file in Directory.GetFiles(path, "*", SearchOption.AllDirectories))
-                    File.SetAttributes(file, FileAttributes.Normal);
-
-                Directory.Delete(path, true);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Failed to delete {path}: {ex.Message}");
-            }
         }
     }
 }

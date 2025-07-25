@@ -1,8 +1,10 @@
 using System.IO;
 using UnityEngine;
-using UABS.Assets.Script.Writer.UserPackage;
+using UABS.Assets.Script.__Test__.Memo;
+using UABS.Assets.Script.__Test__.TestUtil;
 using UABS.Assets.Script.Misc.AppCore;
-using UABS.Assets.Script.Misc.Paths;
+using UABS.Assets.Script.Reader.UserPackage;
+using UABS.Assets.Script.Writer.UserPackage;
 
 namespace UABS.Assets.Script.__Test__
 {
@@ -15,17 +17,31 @@ namespace UABS.Assets.Script.__Test__
 
         private void Test()
         {
-            AppEnvironment appEnvironment = new();
-            MemoWriter memoWriter = new(appEnvironment);
-            string PACKAGE_PATH = Path.Combine(PredefinedPaths.ExternalUserPackages, "战魂铭人2.10.0.4");
+            // Need a clean build
+            string PACKAGE_PATH = Path.Combine(PredefinedTestPaths.TestResPath, "Memo/TestWriteMemo/UserPackage");
+            string package_meta = PACKAGE_PATH + ".meta";
+            HelperMemo.SafeDeleteDirectory(PACKAGE_PATH);
+            HelperMemo.SafeDeleteFile(package_meta);
 
-            // This is the first item in the first index.json that has AssetInfos
-            string BUNDLE_PATH = "\\\\?\\C:\\Program Files (x86)\\Steam\\steamapps\\common\\Otherworld Legends\\Otherworld Legends_Data\\StreamingAssets\\aa\\StandaloneWindows64\\bodygroup_assets_all_2d25edfe2a44d351d4079093e6d8239b.bundle";
-            // This is the first asset info in the above bundle
-            string ASSET_NAME = "unit_hero_gangdan_hammer_soldier_7";
+            string CleanBuild_Path = Path.Combine(PredefinedTestPaths.TestResPath, "Memo/TestWriteMemo/DoNotOverride");
+            string TestMemoWriter_Path = Path.Combine(PredefinedTestPaths.TestResPath, "Memo/TestWriteMemo");
+            HelperMemo.CopyDirectory(CleanBuild_Path, TestMemoWriter_Path, () =>
+            {
+                // Test
+                AppEnvironment appEnvironment = new();
+                MemoWriter memoWriter = new(appEnvironment);
+                string BundlePath = "\\\\?\\D:\\Git\\UABS\\UABS\\Assets\\TestResources\\Depend\\TestFindDependency\\GameData\\graphiceffecttextureseparatelygroup_assets_assets\\sprites\\uniteffect_0.spriteatlas_66b2db9fb94b5bda5b7794c6ed82cf3f.bundle";
+                string assetName = "octopus_tentacles_59";
+                string memo = "章鱼";
+                memoWriter.WriteMemo(PACKAGE_PATH, BundlePath, assetName, memo);
 
-            string MEMO = "战士钢弹挥锤动画7";
-            memoWriter.WriteMemo(PACKAGE_PATH, BUNDLE_PATH, ASSET_NAME, MEMO);
+                MemoReader memoReader = new(appEnvironment);
+                string readingResult = memoReader.ReadAssetMemo(PACKAGE_PATH, BundlePath, assetName);
+                if (readingResult == memo)
+                    Debug.Log("[✔] Memo Writer Test Succeed.");
+                else
+                Debug.Log("[✘] Memo Writer Test Failed.");
+            });
         }
     }
 }
