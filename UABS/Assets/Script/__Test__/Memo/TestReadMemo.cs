@@ -1,30 +1,35 @@
 using System.IO;
 using UnityEngine;
 using UABS.Assets.Script.Misc.AppCore;
-using UABS.Assets.Script.Misc.Paths;
 using UABS.Assets.Script.Reader.UserPackage;
+using UABS.Assets.Script.__Test__.TestUtil;
+using System;
 
-namespace UABS.Assets.Script.__Test__
+namespace UABS.Assets.Script.__Test__.Memo
 {
-    public class TestReadMemo : MonoBehaviour
+    public class TestReadMemo : MonoBehaviour, ITestable
     {
-        private void Start()
+        public void Test(Action onComplete)
         {
-            Test();
-        }
+            string PACKAGE_PATH = Path.Combine(PredefinedTestPaths.LabDeskPath, "UserPackage1");
 
-        private void Test()
-        {
-            AppEnvironment appEnvironment = new();
-            MemoReader memoReader = new(appEnvironment);
-            string PACKAGE_PATH = Path.Combine(PredefinedPaths.ExternalUserPackages, "战魂铭人2.10.0.4");
+            TestHelper.TestOnCleanLabDesk(() =>
+            {
+                AppEnvironment appEnvironment = new();
+                MemoReader memoReader = new(appEnvironment);
+                string BundlePath = "\\\\?\\D:\\Git\\UABS\\UABS\\Assets\\TestResources\\__DoNotOverwrite__\\GameData\\graphiceffecttextureseparatelygroup_assets_assets\\sprites\\uniteffect_0.spriteatlas_66b2db9fb94b5bda5b7794c6ed82cf3f.bundle";
+                string assetName = "hook";
+                string memo = "钩爪";
+                string readingResult = memoReader.ReadAssetMemo(PACKAGE_PATH, BundlePath, assetName);
 
-            // This is the first item in the first index.json that has AssetInfos
-            string BUNDLE_PATH = "\\\\?\\C:\\Program Files (x86)\\Steam\\steamapps\\common\\Otherworld Legends\\Otherworld Legends_Data\\StreamingAssets\\aa\\StandaloneWindows64\\bodygroup_assets_all_2d25edfe2a44d351d4079093e6d8239b.bundle";
-            // This is the first asset info in the above bundle
-            string ASSET_NAME = "unit_hero_gangdan_hammer_soldier_7";
+                appEnvironment.AssetsManager.UnloadAll();
 
-            Debug.Log(memoReader.ReadAssetMemo(PACKAGE_PATH, BUNDLE_PATH, ASSET_NAME));
+                if (readingResult == memo)
+                    Debug.Log("[✔] Memo Reader Test Succeed.");
+                else
+                    Debug.Log("[✘] Memo Reader Test Failed.");
+                onComplete?.Invoke();
+            });
         }
     }
 }

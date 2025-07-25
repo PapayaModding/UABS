@@ -7,51 +7,51 @@ using UABS.Assets.Script.__Test__.TestUtil;
 
 namespace UABS.Assets.Script.__Test__.Depend
 {
-    public class TestFindDependent : MonoBehaviour
+    public class TestFindDependent : MonoBehaviour, ITestable
     {
-        private void Start()
+        public void Test(System.Action onComplete)
         {
-            Test();
-        }
-
-        private void Test()
-        {
-            AppEnvironment appEnvironment = new();
-            DependentReader dependentReader = new(appEnvironment.Wrapper.JsonSerializer);
-            
-            string PACKAGE_PATH = Path.Combine(PredefinedTestPaths.TestResPath, "Depend/TestFindDependent/UserPackage");
-            string DependentCAB = "CAB-c8b157fca857626dbba75589e140a72a";
-
-            List<string> dependentPaths = dependentReader.FindDependentPaths(DependentCAB, PACKAGE_PATH);
-            List<string> expectingBundleNames = new()
+            string PACKAGE_PATH = Path.Combine(PredefinedTestPaths.LabDeskPath, "UserPackage1");
+            TestHelper.TestOnCleanLabDesk(() =>
             {
-                "drop.psd_aabbc0f3fd250c94537b2f88c3b61a66.bundle",
-                "rockparticles.psd_0f016160800e83e164e88f9b8a8d30a8.bundle",
-                "rockparticlesblue.psd_887b5a296151bada22bc8623dfe9af97.bundle",
-                "hookarm.png_4c49053944b0c5a6a2e9ac046bc6af11.bundle"
-            };
+                AppEnvironment appEnvironment = new();
+                DependentReader dependentReader = new(appEnvironment.Wrapper.JsonSerializer);
+                string DependentCAB = "CAB-c8b157fca857626dbba75589e140a72a";
 
-            bool HasPathEndsWith(string p)
-            {
-                foreach (string name in expectingBundleNames)
+                List<string> dependentPaths = dependentReader.FindDependentPaths(DependentCAB, PACKAGE_PATH);
+                List<string> expectingBundleNames = new()
                 {
-                    if (p.EndsWith(name))
-                        return true;
+                    "drop.psd_aabbc0f3fd250c94537b2f88c3b61a66.bundle",
+                    "rockparticles.psd_0f016160800e83e164e88f9b8a8d30a8.bundle",
+                    "rockparticlesblue.psd_887b5a296151bada22bc8623dfe9af97.bundle",
+                    "hookarm.png_4c49053944b0c5a6a2e9ac046bc6af11.bundle"
+                };
+
+                bool HasPathEndsWith(string p)
+                {
+                    foreach (string name in expectingBundleNames)
+                    {
+                        if (p.EndsWith(name))
+                            return true;
+                    }
+                    return false;
                 }
-                return false;
-            }
 
-            int counter = 0;
-            foreach (string path in dependentPaths)
-            {
-                if (HasPathEndsWith(path))
-                    counter++;
-            }
+                int counter = 0;
+                foreach (string path in dependentPaths)
+                {
+                    if (HasPathEndsWith(path))
+                        counter++;
+                }
 
-            if (counter == expectingBundleNames.Count)
-                Debug.Log("[✔] Dependent Test Succeed.");
-            else
-                Debug.LogError("[✘] Dependent Test Failed.");
+                appEnvironment.AssetsManager.UnloadAll();
+
+                if (counter == expectingBundleNames.Count)
+                    Debug.Log("[✔] Dependent Test Succeed.");
+                else
+                    Debug.Log("[✘] Dependent Test Failed.");
+                onComplete?.Invoke();
+            });
         }
     }
 }
