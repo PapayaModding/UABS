@@ -23,7 +23,7 @@ namespace UABS.Assets.Script.__Test__.UABEA
 
                 (BundleFileInstance _, AssetsFileInstance assetInst) = bundleReader.ReadBundle(bundlePath);
                 long firstSpritePathID = -452988096852721839;
-                AssetFileInfo firstSpriteInfo = GetAssetInfoByPathId(assetInst, firstSpritePathID);
+                AssetFileInfo firstSpriteInfo = assetInst.file.GetAssetInfo(firstSpritePathID);
 
                 string DUMP_PATH = Path.Combine(PredefinedTestPaths.LabDeskPath, "Dump");
                 string firstSpriteDumpPath = Path.Combine(DUMP_PATH, "spriteassetgroup_assets_assets/needdynamicloadresources/spritereference/unit_hero_gangdan_0-CAB-7570f5ae7807c50c425af095d0113220--452988096852721839.json");
@@ -32,16 +32,6 @@ namespace UABS.Assets.Script.__Test__.UABEA
                 appEnvironment.AssetsManager.UnloadAll();
                 onComplete?.Invoke();
             });
-        }
-
-        private AssetFileInfo GetAssetInfoByPathId(AssetsFileInstance fileInst, long pathId)
-        {
-            foreach (AssetFileInfo info in fileInst.file.AssetInfos)
-            {
-                if (info.PathId == pathId)
-                    return info;
-            }
-            return null;
         }
 
         private void SingleImportJsonDump(AssetsManager am,
