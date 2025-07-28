@@ -177,7 +177,7 @@ namespace UABS.Assets.Script.Reader.ImageDecoder
                     texture = CropTexture(texture, (Rect)cropRect);
                     return new()
                     {
-                        texture2D = PadToSquare(texture),
+                        texture2D = texture,
                         rect = (Rect)cropRect,
                         compressionFormat = (TextureFormat)format
                     };
@@ -186,7 +186,7 @@ namespace UABS.Assets.Script.Reader.ImageDecoder
                 {
                     return new()
                     {
-                        texture2D = PadToSquare(texture),
+                        texture2D = texture,
                         rect = new(0, 0, width, height),
                         compressionFormat = (TextureFormat)format
                     };
@@ -464,7 +464,7 @@ namespace UABS.Assets.Script.Reader.ImageDecoder
             };
         }
 
-        private Texture2D PadToSquare(Texture2D original)
+        public static Texture2D PadToSquare(Texture2D original)
         {
             int size = Mathf.Max(original.width, original.height); // square dimension
             Texture2D square = new(size, size, TextureFormat.RGBA32, false);

@@ -76,6 +76,10 @@ namespace UABS.Assets.Script.Controller
                     return new();
                 }
                 _storedTextureByPathID[pathID] = (AssetImageInfo)_textureWithMeta;
+                AssetImageInfo toBePadded = _storedTextureByPathID[pathID];
+                if (toBePadded.texture2D != null)
+                    toBePadded.texture2D = ImageReader.PadToSquare(toBePadded.texture2D);
+                _storedTextureByPathID[pathID] = toBePadded;
             }
             return _storedTextureByPathID[pathID];
         }
