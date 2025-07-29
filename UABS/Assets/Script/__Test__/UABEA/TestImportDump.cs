@@ -23,11 +23,10 @@ namespace UABS.Assets.Script.__Test__.UABEA
 
                 (BundleFileInstance _, AssetsFileInstance assetInst) = bundleReader.ReadBundle(bundlePath);
                 long firstSpritePathID = -452988096852721839;
-                AssetFileInfo firstSpriteInfo = assetInst.file.GetAssetInfo(firstSpritePathID);
 
                 string DUMP_PATH = Path.Combine(PredefinedTestPaths.LabDeskPath, "Dump");
                 string firstSpriteDumpPath = Path.Combine(DUMP_PATH, "spriteassetgroup_assets_assets/needdynamicloadresources/spritereference/unit_hero_gangdan_0-CAB-7570f5ae7807c50c425af095d0113220--452988096852721839.json");
-                SingleImportJsonDump(appEnvironment.AssetsManager, firstSpriteInfo, assetInst, firstSpriteDumpPath, bundlePath);
+                SingleImportJsonDump(appEnvironment.AssetsManager, firstSpritePathID, assetInst, firstSpriteDumpPath, bundlePath);
 
                 appEnvironment.AssetsManager.UnloadAll();
                 onComplete?.Invoke();
@@ -35,11 +34,13 @@ namespace UABS.Assets.Script.__Test__.UABEA
         }
 
         private void SingleImportJsonDump(AssetsManager am,
-                                            AssetFileInfo info,
+                                            long pathID,
                                             AssetsFileInstance assetInst,
                                             string replaceFilePath,
                                             string bundlePath)
         {
+            AssetFileInfo info = assetInst.file.GetAssetInfo(pathID);
+
             using (FileStream fs = File.OpenRead(replaceFilePath))
             using (StreamReader sr = new(fs))
             {
@@ -68,7 +69,7 @@ namespace UABS.Assets.Script.__Test__.UABEA
                 // AssetsFileWriter newWriter = new(newStream);
                 // replacer.Write(newWriter);
                 // newStream.Position = 0;
-                string outputPath = bundlePath;
+
                 AssetsFile file = assetInst.file;
                 List<AssetsReplacer> replacers = new() { replacer };
 

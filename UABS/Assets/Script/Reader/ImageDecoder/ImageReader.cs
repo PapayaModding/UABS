@@ -6,8 +6,8 @@ using UnityEngine;
 using AssetsTools.NET;
 using AssetsTools.NET.Extra;
 using UABS.Assets.Script.DataStruct;
-using UABS.Assets.Script.Wrapper.TextureDecoder;
 using UABS.Assets.Script.Reader.DumpProcessor;
+using UABS.Assets.Script.Wrapper.TextureDecoder;
 
 namespace UABS.Assets.Script.Reader.ImageDecoder
 {
@@ -195,14 +195,14 @@ namespace UABS.Assets.Script.Reader.ImageDecoder
 
             if (IsSupportedFormat((TextureFormat)format, out TextureCompressionFormat compressFormat))
             {
-                byte[] rgbaBytes = _textureDecoder.DecodeToBytes(imageBytes, width, height, compressFormat);
+                byte[] bytes = _textureDecoder.DecodeToBytes(imageBytes, width, height, compressFormat);
 
                 // var decoder = new BcDecoder();
                 // ColorRgba32[] decoded = decoder.DecodeRaw(imageBytes, width, height, bcnFormat);
                 // byte[] rgbaBytes = new byte[decoded.Length * 4];
                 // MemoryMarshal.Cast<ColorRgba32, byte>(decoded.AsSpan()).CopyTo(rgbaBytes);
 
-                return LoadImage(rgbaBytes, TextureFormat.RGBA32);
+                return LoadImage(bytes, TextureFormat.RGBA32);
             }
             else if (IsAndroidFormat((TextureFormat)format))
             {
