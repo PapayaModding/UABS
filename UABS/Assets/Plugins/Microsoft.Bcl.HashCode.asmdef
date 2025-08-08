@@ -1,0 +1,16 @@
+{
+    "name": "Microsoft.Bcl.HashCode",
+    "rootNamespace": "",
+    "references": [
+        "GUID:041d6cb712750894cbca1a7f22d38db5"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

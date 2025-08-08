@@ -25,7 +25,7 @@ namespace UABS.Assets.Script.__Test__.FileRead
             AssetsFileInstance assetsInst = appEnvironment.AssetsManager.LoadAssetsFile(TestAssetsPath, true);
             string uVer = assetsInst.file.Metadata.UnityVersion;
             assetsManager.LoadClassDatabaseFromPackage(uVer);
-            List<AssetFileInfo> assetFileInfos = assetsInst.file.AssetInfos;
+            List<AssetFileInfo> assetFileInfos = (List<AssetFileInfo>)assetsInst.file.AssetInfos;
             // foreach (AssetFileInfo assetFileInfo in assetFileInfos)
             // {
             //     var baseField = assetsManager.GetBaseField(assetsInst, assetFileInfo);
