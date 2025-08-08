@@ -25,7 +25,7 @@ namespace UABS.Assets.Script.DropdownOptions.Opener
             else
             {
                 // Debug.Log(filePath);
-                AppEnvironment.BundleReader.ReadBundle(PathUtils.GetLongPath(filePaths[0]));
+                AppEnvironment.BundleReader.ReadBundle(PathUtils.GetRawPath(filePaths[0]));
             }
         }
     }
