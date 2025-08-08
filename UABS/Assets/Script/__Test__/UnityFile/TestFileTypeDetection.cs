@@ -1,8 +1,8 @@
 using System;
 using System.IO;
 using UABS.Assets.Script.__Test__.TestUtil;
+using UABS.Assets.Script.DataStruct._New;
 using UABS.Assets.Script.Misc.Paths;
-using UABS.Assets.Script.UnityFile;
 using UnityEngine;
 
 namespace UABS.Assets.Script.__Test__.UnityFile
@@ -43,7 +43,7 @@ namespace UABS.Assets.Script.__Test__.UnityFile
             if (!File.Exists(filePath))
                 Debug.Log($"[✘] DNE: {filePath}");
             filePath = PathUtils.ToLongPath(filePath);
-            Debug.Log($"[✔] {Path.GetFileName(filePath)}: {UnityFileDetector.DetectUnityFileType(filePath)}, exists: True");
+            Debug.Log($"[✔] {Path.GetFileName(filePath)}: {FileTypeDetector.DetectFileType(filePath)}, exists: True");
         }
     }
 }
