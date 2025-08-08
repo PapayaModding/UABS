@@ -64,6 +64,7 @@ namespace UABS.Assets.Script.Reader.BundlesRead
                         type = FolderViewType.Bundle,
                         size = GetAssetsSize(file)
                     });
+                // TODO: Need to handle different extensions
             }
 
             return result;

@@ -16,7 +16,8 @@ namespace UABS.Assets.Script.DropdownOptions.Opener
 
         public void ClickButton()
         {
-            string[] filePaths = _appEnvironment.Wrapper.FileBrowser.OpenFilePanel("Select .bundle File", "", new[] { "bundle", "ab", "assets" }, false);
+            // string[] filePaths = _appEnvironment.Wrapper.FileBrowser.OpenFilePanel("Select .bundle File", "", new[] { "bundle", "ab", "assets" }, false);
+            string[] filePaths = _appEnvironment.Wrapper.FileBrowser.OpenFilePanel("Select File", "", false);
             if (filePaths.Length <= 0)
             {
                 Debug.Log("Couldn't find path to File.");
