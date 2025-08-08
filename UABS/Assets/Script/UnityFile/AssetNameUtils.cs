@@ -167,6 +167,9 @@ namespace UABS.Assets.Script.UnityFile
             if (scriptBaseField == null)
                 return "";
 
+            if (scriptBaseField["m_ClassName"].IsDummy)
+                return "";
+
             return scriptBaseField["m_ClassName"].AsString;
         }
     }

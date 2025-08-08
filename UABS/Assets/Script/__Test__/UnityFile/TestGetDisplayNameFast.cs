@@ -6,7 +6,6 @@ using UABS.Assets.Script.Misc.AppCore;
 using UABS.Assets.Script.UnityFile;
 using UABS.Assets.Script.DataStruct._New;
 using AssetsTools.NET.Extra;
-using AssetsTools.NET;
 
 namespace UABS.Assets.Script.__Test__.UnityFile
 {
@@ -22,18 +21,15 @@ namespace UABS.Assets.Script.__Test__.UnityFile
             AssetsFileInstance assetsInst = fileInst.AsAssetsFileInstance;
             
             var assetFileInfos = assetsInst.file.AssetInfos;
-            int count = 0;
-            // while (count < 100)
-            // {
-                AssetFileInfo assetFileInfo = assetFileInfos[count];
+            foreach (var assetFileInfo in assetFileInfos)
+            {
                 (string assetName, string typeName) = AssetNameUtils.GetDisplayNameFast(
                     appEnvironment.AssetsManager,
                     assetsInst,
                     assetFileInfo
                 );
-            //     Debug.Log($"{assetName}, {typeName}");
-            //     count++;
-            // }
+                Debug.Log($"{assetName}, {typeName}");
+            }
 
             onComplete?.Invoke();
         }
