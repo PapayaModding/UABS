@@ -61,5 +61,15 @@ namespace UABS.Assets.Script.Wrapper.Json
                 .Select(jObj => (IJsonObject)new NewtonsoftJsonObject(jObj))
                 .ToList();
         }
+
+        public string SerializeNoFirstLayer(object obj)
+        {
+            string serialized = Serialize(obj, true);
+            int start = serialized.IndexOf("{", serialized.IndexOf("InnerJObject")) + 1;
+            int end = serialized.LastIndexOf("}");
+            string innerContent = serialized.Substring(start, end - start - 1).Trim();
+            string flattenedJson = "{\n" + innerContent + "\n";
+            return flattenedJson;
+        }
     }
 }

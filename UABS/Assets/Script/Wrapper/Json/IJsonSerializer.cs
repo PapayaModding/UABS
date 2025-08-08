@@ -9,6 +9,7 @@ namespace UABS.Assets.Script.Wrapper.Json
         public string Serialize(object obj, bool prettyPrint);
         public string Serialize(List<IJsonObject> obj);
         public string Serialize(List<IJsonObject> obj, bool prettyPrint);
+        public string SerializeNoFirstLayer(object obj);
         public T Deserialize<T>(string json);
         public object Deserialize(string json, Type type);
 

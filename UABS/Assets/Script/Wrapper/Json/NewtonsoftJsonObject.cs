@@ -56,6 +56,19 @@ namespace UABS.Assets.Script.Wrapper.Json
             return _jObject[key] is JObject token ? new NewtonsoftJsonObject(token) : null;
         }
 
+        public bool SetObject(string key, IJsonObject value)
+        {
+            try
+            {
+                _jObject[key] = ((NewtonsoftJsonObject) value).InnerJObject;
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
         public List<IJsonObject> GetArray(string key)
         {
             if (_jObject == null || key == null)
