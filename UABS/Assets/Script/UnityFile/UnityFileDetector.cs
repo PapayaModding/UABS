@@ -7,6 +7,9 @@ namespace UABS.Assets.Script.UnityFile
 {
     public class UnityFileDetector
     {
+
+        // Only work above unity 5!
+        
         public static UnityAssetContainer DetectUnityFileType(string filePath)
         {
             if (!File.Exists(filePath))
@@ -33,19 +36,8 @@ namespace UABS.Assets.Script.UnityFile
                 return UnityAssetContainer.CabContainer;
 
             // 4. Serialized .assets file
-            // Unity serialized files have a small int version in first 4 bytes, and
-            // a data offset within the first 32 bytes.
-            // This is heuristic but works for most cases.
-            using (var fs = File.OpenRead(filePath))
-            using (var br = new BinaryReader(fs))
-            {
-                fs.Seek(0, SeekOrigin.Begin);
-                int fileGen = br.ReadInt32();
-                if (fileGen >= 6 && fileGen <= 30) // Common Unity file generation range
-                {
-                    return UnityAssetContainer.AssetsFile;
-                }
-            }
+            bool isAssetsFile = IsAssetsFile(filePath);
+            if (isAssetsFile) return UnityAssetContainer.AssetsFile;
 
             // 5. Heuristic for ResourceStream (.resS)
             // If filename ends with .resS and doesn't match other formats
@@ -58,6 +50,21 @@ namespace UABS.Assets.Script.UnityFile
 
             // 7. Unknown
             return UnityAssetContainer.Unknown;
+        }
+
+        private static bool IsAssetsFile(string filePath)
+        {
+            byte[] buf = new byte[256];
+            using (var fs = File.OpenRead(filePath))
+            {
+                fs.Read(buf, 0, buf.Length);
+            }
+
+            string ascii = Encoding.ASCII.GetString(buf);
+            return System.Text.RegularExpressions.Regex.IsMatch(
+                ascii,
+                @"\d{4}\.\d\.\d+[a-z]\d"
+            );
         }
     }
 }
