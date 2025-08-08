@@ -23,5 +23,10 @@ namespace UABS.Assets.Script.UnityFile
 
         public AssetPPtr AssetPPtr => new(FileInstance.path, 0, PathId);
         public bool HasValueField => BaseValueField != null;
+
+        public AssetContainer(AssetsManager assetsManager, string filePath, long pathID)
+        {
+            
+        }
     }
 }
