@@ -9,6 +9,8 @@ namespace UABS.Assets.Script.Reader.UserPackage
     {
         public List<string> GetPackagesInExternal()
         {
+            if (!Directory.Exists(PredefinedPaths.ExternalUserPackages))
+                Directory.CreateDirectory(PredefinedPaths.ExternalUserPackages);
             string[] allFolders = Directory.GetDirectories(PredefinedPaths.ExternalUserPackages, "*", SearchOption.TopDirectoryOnly);
             return allFolders.ToList();
         }
