@@ -24,7 +24,7 @@ namespace UABS.Assets.Script.__Test__.UnityFile
             var assetFileInfos = assetsInst.file.AssetInfos;
             foreach (var assetFileInfo in assetFileInfos)
             {
-                (string assetName, string typeName) = nextInstance.GetDisplayNameFast(assetFileInfo);
+                (string assetName, AssetClassID typeName) = nextInstance.GetDisplayNameFast(assetFileInfo);
                 Debug.Log($"{assetName}, {typeName}");
             }
 

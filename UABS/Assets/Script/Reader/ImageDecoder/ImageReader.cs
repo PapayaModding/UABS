@@ -27,6 +27,7 @@ namespace UABS.Assets.Script.Reader.ImageDecoder
 
         private readonly ITextureDecoder _textureDecoder;
 
+        // TODO: clean the code by reading linking info from AssetBundle
         public ImageReader(AssetsManager assetsManager, ITextureDecoder textureDecoder)
         {
             _assetsManager = assetsManager;

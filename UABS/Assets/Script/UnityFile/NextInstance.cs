@@ -1,5 +1,7 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using AssetsTools.NET;
 using AssetsTools.NET.Cpp2IL;
 using AssetsTools.NET.Extra;
@@ -14,6 +16,16 @@ namespace UABS.Assets.Script.UnityFile
     // * LoadAnyFile
     public class NextInstance
     {
+        // For very fast string - classId conversion
+        private static readonly Dictionary<string, AssetClassID> _classIdMap =
+            Enum.GetValues(typeof(AssetClassID))
+            .Cast<AssetClassID>()
+            .ToDictionary(
+                id => id.ToString(),
+                id => id,
+                StringComparer.Ordinal
+        );
+        
         // Just need to be set once for the (only) assets manager in the app
         private static bool _hasSetMonoTempGenerators = false;
         public static bool HasSetMonoTempGenerators => _hasSetMonoTempGenerators;
@@ -26,7 +38,7 @@ namespace UABS.Assets.Script.UnityFile
             _assetsInst = assetsInst;
         }
 
-        public (string, string) GetDisplayNameFast(AssetFileInfo assetFileInfo)
+        public (string, AssetClassID) GetDisplayNameFast(AssetFileInfo assetFileInfo)
         {
             string assetName;
             string typeName;
@@ -61,7 +73,7 @@ namespace UABS.Assets.Script.UnityFile
                         if (assetName == "")
                             assetName = null;
 
-                        return (assetName, typeName);
+                        return (assetName, Str2ClassID(typeName));
                     }
                     else if (typeName == "GameObject")
                     {
@@ -74,7 +86,7 @@ namespace UABS.Assets.Script.UnityFile
                         if (usePrefix)
                             assetName = $"GameObject {assetName}";
 
-                        return (assetName, typeName);
+                        return (assetName, Str2ClassID(typeName));
                     }
                     else if (typeName == "MonoBehaviour")
                     {
@@ -89,10 +101,10 @@ namespace UABS.Assets.Script.UnityFile
                             if (assetName == "")
                                 assetName = null;
                         }
-                        return (assetName, typeName);
+                        return (assetName, Str2ClassID(typeName));
                     }
                     assetName = null;
-                    return (assetName, typeName);
+                    return (assetName, Str2ClassID(typeName));
                 }
             }
 
@@ -101,7 +113,7 @@ namespace UABS.Assets.Script.UnityFile
             {
                 typeName = $"0x{classId:X8}";
                 assetName = null;
-                return (assetName, typeName);
+                return (assetName, Str2ClassID(typeName));
             }
 
             typeName = cldb.GetString(type.Name);
@@ -110,7 +122,7 @@ namespace UABS.Assets.Script.UnityFile
             if (cldbNodes.Count == 0)
             {
                 assetName = null;
-                return (assetName, typeName);
+                return (assetName, Str2ClassID(typeName));
             }
 
             if (cldbNodes.Count > 1 && cldb.GetString(cldbNodes[0].FieldName) == "m_Name")
@@ -120,7 +132,7 @@ namespace UABS.Assets.Script.UnityFile
                 if (assetName == "")
                     assetName = null;
 
-                return (assetName, typeName);
+                return (assetName, Str2ClassID(typeName));
             }
             else if (typeName == "GameObject")
             {
@@ -133,7 +145,7 @@ namespace UABS.Assets.Script.UnityFile
                 if (usePrefix)
                     assetName = $"GameObject {assetName}";
 
-                return (assetName, typeName);
+                return (assetName, Str2ClassID(typeName));
             }
             else if (typeName == "MonoBehaviour")
             {
@@ -148,10 +160,15 @@ namespace UABS.Assets.Script.UnityFile
                     if (assetName == "")
                         assetName = null;
                 }
-                return (assetName, typeName);
+                return (assetName, Str2ClassID(typeName));
             }
             assetName = null;
-            return (assetName, typeName);
+            return (assetName, Str2ClassID(typeName));
+        }
+
+        private AssetClassID Str2ClassID(string s)
+        {
+            return _classIdMap.TryGetValue(s, out var id) ? id : AssetClassID.@void;
         }
 
         private string GetMonoBehaviourNameFast(AssetFileInfo assetFileInfo,
@@ -182,7 +199,7 @@ namespace UABS.Assets.Script.UnityFile
             AssetTypeValueField monoBf = monoTemp.MakeValue(reader, filePosition);
             AssetTypeValueField scriptBaseField = GetBaseField(_assetsManager,
                                                                         _assetsInst,
-                                                                        assetFileInfo);
+                                                                        monoBf["m_Script"]);
             if (scriptBaseField == null)
                 return "";
 
