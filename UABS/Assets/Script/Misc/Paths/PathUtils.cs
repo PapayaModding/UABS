@@ -103,8 +103,8 @@ namespace UABS.Assets.Script.Misc.Paths
                 string dir = Path.GetDirectoryName(fileInst.parentBundle.path)!;
 
                 // addressables
-                string? upDir = Path.GetDirectoryName(dir);
-                string? upDir2 = Path.GetDirectoryName(upDir ?? string.Empty);
+                string upDir = Path.GetDirectoryName(dir);
+                string upDir2 = Path.GetDirectoryName(upDir ?? string.Empty);
                 if (upDir != null && upDir2 != null)
                 {
                     if (Path.GetFileName(upDir) == "aa" && Path.GetFileName(upDir2) == "StreamingAssets")

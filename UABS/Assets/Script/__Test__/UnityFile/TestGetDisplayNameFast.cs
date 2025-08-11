@@ -17,17 +17,14 @@ namespace UABS.Assets.Script.__Test__.UnityFile
             string owlPath = "C:\\Program Files (x86)\\Steam\\steamapps\\common\\Otherworld Legends\\Otherworld Legends_Data";
             string assetsFile = Path.Combine(owlPath, "resources.assets");
 
-            FileInstanceLike fileInst = FileLoader.LoadAnyFile(appEnvironment.AssetsManager, assetsFile);
+            FileInstanceLike fileInst = NextInstance.LoadAnyFile(appEnvironment.AssetsManager, assetsFile);
             AssetsFileInstance assetsInst = fileInst.AsAssetsFileInstance;
-            
+            NextInstance nextInstance = new(appEnvironment.AssetsManager, assetsInst);
+
             var assetFileInfos = assetsInst.file.AssetInfos;
             foreach (var assetFileInfo in assetFileInfos)
             {
-                (string assetName, string typeName) = AssetNameUtils.GetDisplayNameFast(
-                    appEnvironment.AssetsManager,
-                    assetsInst,
-                    assetFileInfo
-                );
+                (string assetName, string typeName) = nextInstance.GetDisplayNameFast(assetFileInfo);
                 Debug.Log($"{assetName}, {typeName}");
             }
 
