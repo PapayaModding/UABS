@@ -70,7 +70,7 @@ namespace UABS.Assets.Script.UI.BundleView
                     SetTextToEmpty();
                 }
             }
-            else if (e is BundleReadEvent)
+            else if (e is AssetsReadEvent)
             {
                 _storedBundlePath = "";
                 _storedAssetName = "";

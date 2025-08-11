@@ -25,7 +25,7 @@ namespace UABS.Assets.Script.Reader.BundlesRead
             {
                 // Load as standalone .assets file
                 var assetsInst = _assetsReader.ReadValidAssetsFileInst(path, true);
-                _dispatcher.Dispatch(new BundleReadEvent(null, path, assetsInst));
+                _dispatcher.Dispatch(new AssetsReadEvent(null, path, assetsInst));
                 return (null, assetsInst);
             }
             else
@@ -33,7 +33,7 @@ namespace UABS.Assets.Script.Reader.BundlesRead
                 // Load as bundle
                 var bunInst = _assetsManager.LoadBundleFile(path, true);
                 var assetsInst = _assetsReader.ReadAssetsFileInstFromBundle(bunInst);
-                _dispatcher.Dispatch(new BundleReadEvent(bunInst, path, assetsInst));
+                _dispatcher.Dispatch(new AssetsReadEvent(bunInst, path, assetsInst));
                 return (bunInst, assetsInst);
             }
         }
@@ -44,7 +44,7 @@ namespace UABS.Assets.Script.Reader.BundlesRead
             {
                 // Load as standalone .assets file
                 var assetsInst = _assetsReader.ReadValidAssetsFileInst(path, true);
-                _dispatcher.Dispatch(new BundleRead4DeriveEvent(null, path, overridePath, assetsInst));
+                _dispatcher.Dispatch(new AssetsRead4DeriveEvent(null, path, overridePath, assetsInst));
                 return (null, assetsInst);
             }
             else
@@ -52,7 +52,7 @@ namespace UABS.Assets.Script.Reader.BundlesRead
                 // Load as bundle
                 var bunInst = _assetsManager.LoadBundleFile(path, true);
                 var assetsInst = _assetsReader.ReadAssetsFileInstFromBundle(bunInst);
-                _dispatcher.Dispatch(new BundleRead4DeriveEvent(bunInst, path, overridePath, assetsInst));
+                _dispatcher.Dispatch(new AssetsRead4DeriveEvent(bunInst, path, overridePath, assetsInst));
                 return (bunInst, assetsInst);
             }
         }
