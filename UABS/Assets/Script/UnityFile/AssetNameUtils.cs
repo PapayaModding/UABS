@@ -153,8 +153,17 @@ namespace UABS.Assets.Script.UnityFile
                 return "";
 
             AssetTypeTemplateField monoTemp = FileLoader.GetTemplateField(assetsManager, assetsInst, assetFileInfo, true);
-            // TODO: Speed up
-            int nameIndex = monoTemp.Children.FindIndex(monoTemp => monoTemp.Name == "m_Script");
+
+            int nameIndex = -1;
+            var children = monoTemp.Children;
+            for (int i = 0; i < children.Count; i++)
+            {
+                if (children[i].Name == "m_Script")
+                {
+                    nameIndex = i;
+                    break;
+                }
+            }
             if (nameIndex != -1)
             {
                 monoTemp.Children.RemoveRange(nameIndex + 1, monoTemp.Children.Count - (nameIndex + 1));

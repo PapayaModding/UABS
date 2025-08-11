@@ -1,5 +1,5 @@
 {
-    "name": "Microsoft.Bcl.HashCode",
+    "name": "Microsoft.Bcl.HashCodeASM",
     "rootNamespace": "",
     "references": [
         "GUID:041d6cb712750894cbca1a7f22d38db5"
