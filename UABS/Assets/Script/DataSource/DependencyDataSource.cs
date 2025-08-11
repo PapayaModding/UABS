@@ -31,12 +31,12 @@ namespace UABS.Assets.Script.DataSource
         {
             if (e is AssetsReadEvent bre)
             {
-                _currBunInst = bre.Bundle;
+                _currBunInst = bre.BunInst;
                 // Debug.Log($"Dependency data source: Received Bundle from {bre.FilePath}");
             }
             else if (e is AssetsRead4DeriveEvent br4d)
             {
-                _currBunInst = br4d.Bundle;
+                _currBunInst = br4d.BunInst;
             }
             else if (e is FolderReadEvent fre)
             {

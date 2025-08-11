@@ -34,11 +34,15 @@ namespace UABS.Assets.Script.DataSource.Manager
         {
             if (e is AssetsRead4DeriveEvent br4d)
             {
-                OpenBundle(br4d.AssetsInst, br4d.OverridePath);
+                // OpenBundle(br4d.AssetsInst, br4d.OverridePath);
+                SetEntryInfosCallBack(br4d.ParsedAEs);
+                _appEnvironment.Dispatcher.Dispatch(new GoBundleViewEvent(EntryInfos));
             }
             else if (e is AssetsReadEvent bre)
             {
-                OpenBundle(bre.AssetsInst, bre.FilePath);
+                // OpenBundle(bre.AssetsInst, bre.FilePath);
+                SetEntryInfosCallBack(bre.ParsedAEs);
+                _appEnvironment.Dispatcher.Dispatch(new GoBundleViewEvent(EntryInfos));
             }
         }
 

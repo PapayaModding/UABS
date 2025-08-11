@@ -1,20 +1,31 @@
+using System.Collections.Generic;
 using AssetsTools.NET.Extra;
+using UABS.Assets.Script.DataStruct;
 
 namespace UABS.Assets.Script.Event
 {
     public class AssetsReadEvent : AppEvent
     {
-        public BundleFileInstance Bundle { get; }
-        public AssetsFileInstance AssetsInst { get; }
+        public List<AssetsFileInstance> AssetsInsts { get; }
+
+        public List<ParsedAssetAndEntry> ParsedAEs { get; }
+
+        public BundleFileInstance BunInst { get; }
+
         public string FilePath { get; }
 
-        public AssetsReadEvent(BundleFileInstance bundle,
-                                string filePath,
-                                AssetsFileInstance assetsInst)
+        public AssetsReadEvent(string filePath,
+                                List<AssetsFileInstance> assetsInsts,
+                                List<ParsedAssetAndEntry> parsedAEs)
         {
-            Bundle = bundle;
             FilePath = filePath;
-            AssetsInst = assetsInst;
+            AssetsInsts = assetsInsts;
+            ParsedAEs = parsedAEs;
+
+            if (assetsInsts.Count > 0)
+            {
+                BunInst = assetsInsts[0].parentBundle;
+            }
         }
     }
 }

@@ -225,9 +225,27 @@ namespace UABS.Assets.Script.UnityFile
 
         private static FileInstanceLike LoadBundle(AssetsManager assetsManager, string filePath)
         {
+            // FileStream stream = File.OpenRead(filePath);
+            // BundleFileInstance bunInst = assetsManager.LoadBundleFile(stream);
+            // TryLoadClassDatabase(assetsManager, bunInst.file);
+            // return new(bunInst);
             FileStream stream = File.OpenRead(filePath);
             BundleFileInstance bunInst = assetsManager.LoadBundleFile(stream);
             TryLoadClassDatabase(assetsManager, bunInst.file);
+
+            // Load all .assets files in the bundle
+            var dirInfos = bunInst.file.BlockAndDirInfo.DirectoryInfos;
+
+            for (int i = 0; i < dirInfos.Count; i++)
+            {
+                var dirInfo = dirInfos[i];
+                if (dirInfo.Name.EndsWith(".assets", StringComparison.OrdinalIgnoreCase) ||
+                    dirInfo.Name.StartsWith("CAB-", StringComparison.OrdinalIgnoreCase))
+                {
+                    assetsManager.LoadAssetsFileFromBundle(bunInst, i, false);
+                }
+            }
+
             return new(bunInst);
         }
 
