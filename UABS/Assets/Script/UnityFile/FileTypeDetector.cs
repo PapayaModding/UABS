@@ -64,6 +64,7 @@ namespace UABS.Assets.Script.DataStruct._New
     {
         Unknown,
         AssetsFile,
-        BundleFile
+        BundleFile,
+        ResourceFile
     }
 }

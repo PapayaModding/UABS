@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using AssetsTools.NET;
@@ -225,28 +227,68 @@ namespace UABS.Assets.Script.UnityFile
 
         private static FileInstanceLike LoadBundle(AssetsManager assetsManager, string filePath)
         {
-            // FileStream stream = File.OpenRead(filePath);
-            // BundleFileInstance bunInst = assetsManager.LoadBundleFile(stream);
-            // TryLoadClassDatabase(assetsManager, bunInst.file);
-            // return new(bunInst);
-            FileStream stream = File.OpenRead(filePath);
-            BundleFileInstance bunInst = assetsManager.LoadBundleFile(stream);
+            // * Workspace
+            var fileStream = File.Open(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+            BundleFileInstance bunInst = assetsManager.LoadBundleFile(fileStream);
             TryLoadClassDatabase(assetsManager, bunInst.file);
 
-            // Load all .assets files in the bundle
-            var dirInfos = bunInst.file.BlockAndDirInfo.DirectoryInfos;
-
-            for (int i = 0; i < dirInfos.Count; i++)
+            // * Go to MainViewModel constructor 3
+            int fileCount = bunInst.file.BlockAndDirInfo.DirectoryInfos.Count;
+            for (int i = 0; i < fileCount; i++)
             {
-                var dirInfo = dirInfos[i];
-                if (dirInfo.Name.EndsWith(".assets", StringComparison.OrdinalIgnoreCase) ||
-                    dirInfo.Name.StartsWith("CAB-", StringComparison.OrdinalIgnoreCase))
+                AssetBundleDirectoryInfo dirInf = BundleHelper.GetDirInfo(bunInst.file, i);
+                DetectedFileType type = ((dirInf.Flags & 0x04) != 0)
+                                        ? DetectedFileType.AssetsFile
+                                        : DetectedFileType.ResourceFile;
+                if (type == DetectedFileType.AssetsFile)
                 {
-                    assetsManager.LoadAssetsFileFromBundle(bunInst, i, false);
+                    LoadAssetsFromBundle(assetsManager, bunInst, i);
+
+                }
+                else
+                {
+
                 }
             }
 
             return new(bunInst);
+        }
+
+        private static FileInstanceLike LoadAssetsFromBundle(AssetsManager assetsManager, BundleFileInstance bunInst, int index)
+        {
+            // var dirInf = BundleHelper.GetDirInfo(bunInst.file, index);
+            var fileInst = assetsManager.LoadAssetsFileFromBundle(bunInst, index);
+            // UnityEngine.Debug.Log($"Do we have fileInst? -> {fileInst != null}");
+
+            TryLoadClassDatabase(assetsManager, fileInst.file);
+
+            FixupAssetsFile(assetsManager, fileInst);
+
+            UnityEngine.Debug.Log(fileInst.file);
+
+            return new(fileInst);
+        }
+
+        private static void FixupAssetsFile(AssetsManager assetsManager, AssetsFileInstance fileInst)
+        {
+            NextInstance nextInstance = new(assetsManager, fileInst);
+            if (fileInst.file.AssetInfos is not RangeObservableCollection<AssetFileInfo>)
+            {
+                var assetInsts = new RangeObservableCollection<AssetFileInfo>();
+                var tmp = new List<AssetFileInfo>();
+                foreach (var info in fileInst.file.AssetInfos)
+                {
+                    lock (fileInst.LockReader)
+                    {
+                        (string name, AssetClassID id) = nextInstance.GetDisplayNameFast(info);
+                        // asset.AssetName = assetName;
+                    }
+                    tmp.Add(info);
+                }
+                assetInsts.AddRange(tmp);
+                fileInst.file.Metadata.AssetInfos = assetInsts;
+                fileInst.file.GenerateQuickLookup();
+            }
         }
 
         private static FileInstanceLike LoadAssets(AssetsManager assetsManager, string filePath)
@@ -265,7 +307,8 @@ namespace UABS.Assets.Script.UnityFile
                 var fileVersion = file.Header.EngineVersion;
                 if (fileVersion != "0.0.0")
                 {
-                    assetsManager.LoadClassDatabaseFromPackage(fileVersion);
+                    ClassDatabaseFile f = assetsManager.LoadClassDatabaseFromPackage(fileVersion);
+                    UnityEngine.Debug.Log($"Load AssetBundleFile, success? -> {f != null}");
                 }
             }
         }
@@ -371,6 +414,7 @@ namespace UABS.Assets.Script.UnityFile
             if (isValidMono && !_hasSetMonoTempGenerators && !fileInst.file.Metadata.TypeTreeEnabled)
             {
                 string dataDir = PathUtils.GetAssetsFileDirectory(fileInst);
+                UnityEngine.Debug.Log($"Set mono temp generators for DIR: {dataDir}");
                 SetMonoTempGenerators(assetsManager, dataDir);
             }
         }
