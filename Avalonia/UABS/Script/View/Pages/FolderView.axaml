@@ -1,0 +1,10 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="UABS.Pages.FolderView">
+
+    <StackPanel Margin="10">
+        <TextBlock Text="Welcome to FolderView!" FontSize="20" />
+        <!-- Add more UI here -->
+    </StackPanel>
+
+</UserControl>

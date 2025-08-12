@@ -1,5 +1,6 @@
 using Avalonia.Controls;
 using Avalonia.Interactivity;
+using UABS.Pages;
 
 namespace UABS;
 
@@ -9,6 +10,6 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
 
-        MainContent.Content = new TextBlock { Text = "Welcome!" };
+        MainContent.Content = new FolderView();
     }
 }
