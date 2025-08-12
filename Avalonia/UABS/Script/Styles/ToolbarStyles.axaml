@@ -4,6 +4,7 @@
   <Style Selector="Button.toolbarButton">
     <Setter Property="Foreground" Value="Black"/>
     <Setter Property="Background" Value="White"/>
+    <Setter Property="FontFamily" Value="avares://UABS/UI/Fonts/NotoSansSC-Regular.ttf"/>
   </Style>
 
   <Style Selector="Button.toolbarButton:pointerover">
