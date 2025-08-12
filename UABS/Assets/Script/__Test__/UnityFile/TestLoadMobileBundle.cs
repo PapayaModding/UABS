@@ -19,6 +19,8 @@ namespace UABS.Assets.Script.__Test__.UnityFile
             appEnvironment.AssetsManager.UseRefTypeManagerCache = true;
             appEnvironment.AssetsManager.UseTemplateFieldCache = true;
             appEnvironment.AssetsManager.UseQuickLookup = true;
+
+            UnityEngine.Debug.Log(System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription);
             
             string skPath = "D:\\Soul_Knight\\元气骑士7.4.0.11\\split_UnityDataAssetPack\\assets\\AssetBundles";
             // string assetsFile = Path.Combine(skPath, "aram_guide.ab");

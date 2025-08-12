@@ -9,7 +9,7 @@ namespace UABS.Assets.Script.DataStruct._New
     {
         public static DetectedFileType DetectFileType(string filePath)
         {
-            using (FileStream fs = File.OpenRead(filePath))
+            using (FileStream fs = File.Open(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
             using (AssetsFileReader r = new(fs))
             {
                 return DetectFileType(r, 0);
