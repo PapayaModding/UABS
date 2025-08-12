@@ -2,29 +2,18 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:UABS.Options"
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
         x:Class="UABS.MainWindow"
         Title="UABS">
 
-    <Window.Styles>
-        <StyleInclude Source="avares://UABS/Script/Styles/ToolbarStyles.axaml"/>
-    </Window.Styles>
-
     <DockPanel>
         <!-- Persistent Toolbar -->
-        <StackPanel Orientation="Horizontal" Background="#FFFFFF" DockPanel.Dock="Top" Spacing="10">
-            <Button Content="File" Classes="toolbarButton" />
-            <Button Content="Export" Classes="toolbarButton" />
-            <Button Content="Search" Classes="toolbarButton"/>
-            <Button Content="Depend" Classes="toolbarButton"/>
-            <Button Content="Filter" Classes="toolbarButton"/>
-            <Button Content="Memo" Classes="toolbarButton"/>
-            <Button Content="Package" Classes="toolbarButton"/>
-            <Button Content="Back" Classes="toolbarButton"/>
-        </StackPanel>
+        <local:Toolbar DockPanel.Dock="Top"/>
 
         <!-- Content Area -->
         <ContentControl x:Name="MainContent"/>
     </DockPanel>
 
 </Window>
+
