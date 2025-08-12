@@ -1,0 +1,13 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+  <Style Selector="Button.toolbarButton">
+    <Setter Property="Foreground" Value="Black"/>
+    <Setter Property="Background" Value="White"/>
+  </Style>
+
+  <Style Selector="Button.toolbarButton:pointerover">
+    <Setter Property="Background" Value="#a7a7a7ff"/> <!-- light gray -->
+  </Style>
+
+</Styles>

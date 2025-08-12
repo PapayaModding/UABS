@@ -1,0 +1,25 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+        x:Class="UABS.MainWindow"
+        Title="UABS">
+
+    <Window.Styles>
+        <StyleInclude Source="avares://UABS/Script/Styles/ToolbarStyles.axaml"/>
+    </Window.Styles>
+
+    <DockPanel>
+        <!-- Persistent Toolbar -->
+        <StackPanel Orientation="Horizontal" Background="#EEE" DockPanel.Dock="Top" Spacing="10">
+            <Button Classes="toolbarButton" Content="New" Click="New_Click" Margin="5"/>
+            <Button Classes="toolbarButton" Content="Open" Click="Open_Click"  Margin="5"/>
+            <Button Classes="toolbarButton" Content="Save" Click="Save_Click" Margin="5"/>
+        </StackPanel>
+
+        <!-- Content Area -->
+        <ContentControl x:Name="MainContent"/>
+    </DockPanel>
+
+</Window>
