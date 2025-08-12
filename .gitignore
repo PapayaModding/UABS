@@ -101,3 +101,5 @@ Packages/*
 
 External
 bin
+!UABS.csproj
+!Avalonia.sln
