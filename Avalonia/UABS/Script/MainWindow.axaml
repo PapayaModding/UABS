@@ -12,10 +12,15 @@
 
     <DockPanel>
         <!-- Persistent Toolbar -->
-        <StackPanel Orientation="Horizontal" Background="#EEE" DockPanel.Dock="Top" Spacing="10">
-            <Button Classes="toolbarButton" Content="New" Click="New_Click" Margin="5"/>
-            <Button Classes="toolbarButton" Content="Open" Click="Open_Click"  Margin="5"/>
-            <Button Classes="toolbarButton" Content="Save" Click="Save_Click" Margin="5"/>
+        <StackPanel Orientation="Horizontal" Background="#FFFFFF" DockPanel.Dock="Top" Spacing="10">
+            <Button Content="File" Classes="toolbarButton" />
+            <Button Content="Export" Classes="toolbarButton" />
+            <Button Content="Search" Classes="toolbarButton"/>
+            <Button Content="Depend" Classes="toolbarButton"/>
+            <Button Content="Filter" Classes="toolbarButton"/>
+            <Button Content="Memo" Classes="toolbarButton"/>
+            <Button Content="Package" Classes="toolbarButton"/>
+            <Button Content="Back" Classes="toolbarButton"/>
         </StackPanel>
 
         <!-- Content Area -->
