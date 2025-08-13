@@ -3,7 +3,7 @@
              x:Class="UABS.Options.Toolbar">
 
     <UserControl.Styles>
-        <StyleInclude Source="avares://UABS/Script/Styles/ToolbarStyles.axaml"/>
+        <StyleInclude Source="avares://UABS/Script/Styles/ToolbarStyle.axaml"/>
     </UserControl.Styles>
 
     <StackPanel Orientation="Horizontal" Background="#FFFFFF" DockPanel.Dock="Top" Spacing="10">

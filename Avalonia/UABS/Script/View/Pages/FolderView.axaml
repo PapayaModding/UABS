@@ -2,9 +2,16 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="UABS.Pages.FolderView">
 
+    <UserControl.Styles>
+        <StyleInclude Source="avares://UABS/Script/Styles/PathfieldStyle.axaml"/>
+    </UserControl.Styles>
+
     <StackPanel Margin="10">
-        <TextBlock Text="Welcome to FolderView!" FontSize="20" />
-        <!-- Add more UI here -->
+        <!-- Path Field -->
+        <TextBox Watermark="---" IsReadOnly="True" Classes="pathfieldTextBox"/>
+
+        <!-- Other page content -->
+        <TextBlock Text="Welcome to MyPage!" FontSize="20"/>
     </StackPanel>
 
 </UserControl>
