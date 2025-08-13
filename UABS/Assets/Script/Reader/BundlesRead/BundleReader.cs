@@ -1,6 +1,6 @@
-using System;
-using System.IO;
+using System.Collections.Generic;
 using AssetsTools.NET.Extra;
+using UABS.Assets.Script.DataStruct;
 using UABS.Assets.Script.Dispatcher;
 using UABS.Assets.Script.Event;
 
@@ -19,42 +19,18 @@ namespace UABS.Assets.Script.Reader.BundlesRead
             _assetsReader = new AssetsReader(_assetsManager);
         }
 
-        public (BundleFileInstance, AssetsFileInstance) ReadBundle(string path)
+        public (List<AssetsFileInstance>, List<ParsedAssetAndEntry>) ReadBundle(string path)
         {
-            if (Path.GetExtension(path).Equals(".assets", StringComparison.OrdinalIgnoreCase))
-            {
-                // Load as standalone .assets file
-                var assetsInst = _assetsReader.ReadValidAssetsFileInst(path, true);
-                _dispatcher.Dispatch(new BundleReadEvent(null, path, assetsInst));
-                return (null, assetsInst);
-            }
-            else
-            {
-                // Load as bundle
-                var bunInst = _assetsManager.LoadBundleFile(path, true);
-                var assetsInst = _assetsReader.ReadAssetsFileInstFromBundle(bunInst);
-                _dispatcher.Dispatch(new BundleReadEvent(bunInst, path, assetsInst));
-                return (bunInst, assetsInst);
-            }
+            (List<AssetsFileInstance> assetsInsts, List<ParsedAssetAndEntry> parsedAE) = _assetsReader.ReadAssets(path);
+            _dispatcher.Dispatch(new AssetsReadEvent(path, assetsInsts, parsedAE));
+            return (assetsInsts, parsedAE);
         }
 
-        public (BundleFileInstance, AssetsFileInstance) ReadBundle4Derive(string path, string overridePath)
+        public (List<AssetsFileInstance>, List<ParsedAssetAndEntry>) ReadBundle4Derive(string path, string overridePath)
         {
-            if (Path.GetExtension(path).Equals(".assets", StringComparison.OrdinalIgnoreCase))
-            {
-                // Load as standalone .assets file
-                var assetsInst = _assetsReader.ReadValidAssetsFileInst(path, true);
-                _dispatcher.Dispatch(new BundleRead4DeriveEvent(null, path, overridePath, assetsInst));
-                return (null, assetsInst);
-            }
-            else
-            {
-                // Load as bundle
-                var bunInst = _assetsManager.LoadBundleFile(path, true);
-                var assetsInst = _assetsReader.ReadAssetsFileInstFromBundle(bunInst);
-                _dispatcher.Dispatch(new BundleRead4DeriveEvent(bunInst, path, overridePath, assetsInst));
-                return (bunInst, assetsInst);
-            }
+            (List<AssetsFileInstance> assetsInsts, List<ParsedAssetAndEntry> parsedAE) = _assetsReader.ReadAssets(path);
+            _dispatcher.Dispatch(new AssetsRead4DeriveEvent(path, overridePath, assetsInsts, parsedAE));
+            return (assetsInsts, parsedAE);
         }
     }
 }

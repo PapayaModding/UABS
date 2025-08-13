@@ -58,7 +58,7 @@ namespace UABS.Assets.Script.LocalController.Universal
 
         public void OnEvent(AppEvent e)
         {
-            if (e is BundleReadEvent bre)
+            if (e is AssetsReadEvent bre)
             {
                 if (Directory.Exists(bre.FilePath))
                 {
@@ -70,7 +70,7 @@ namespace UABS.Assets.Script.LocalController.Universal
                     _onBundleView.Invoke();
                 }
             }
-            else if (e is BundleRead4DeriveEvent br4d)
+            else if (e is AssetsRead4DeriveEvent br4d)
             {
                 if (Directory.Exists(br4d.FilePath))
                 {

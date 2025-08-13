@@ -28,17 +28,29 @@ UABS (Unity Asset Bundle Seeker或者‘Unity资源包查找工具’) 是一款
 7. 尽可能把我在B站发布过的小工具加进来并实现自动化
 
 ## 使用库
-[UABEA](https://github.com/nesrak1/UABEA) (MIT) - AssetsTools.Net & AssetsTools.Net.Extra 以及导出文件Json化。很多UI也都是参考的UABEA。
+| **代码库** | **证书** |
+| --- | --- |
+| [AssetsTools.NET](https://github.com/nesrak1/AssetsTools.NET) | MIT |
+| [AssetsTools.NET.Texture](https://github.com/nesrak1/AssetsTools.NET/tree/main/AssetsTools.NET.Texture) | MIT |
+| [AddressablesTools](https://github.com/nesrak1/AddressablesTools/releases) | MIT |
+| [BCnEncoder.NET](https://github.com/Nominom/BCnEncoder.NET) | MIT |
+| &nbsp;&nbsp;&nbsp;&nbsp; - [CommunityToolkit.HighPerformance](https://www.nuget.org/packages/CommunityToolkit.HighPerformance/) | MIT |
+| &nbsp;&nbsp;&nbsp;&nbsp; - [ImageSharp](https://github.com/SixLabors/ImageSharp?tab=readme-ov-file) | [Six Labors Split License](https://github.com/SixLabors/ImageSharp?tab=License-1-ov-file) |
+| &nbsp;&nbsp;&nbsp;&nbsp; - [System.Runtime.CompilerServices.Unsafe](https://www.nuget.org/packages/system.runtime.compilerservices.unsafe/) | MIT |
+| [StandaloneFileBrowser](https://github.com/gkngkc/UnityStandaloneFileBrowser) | MIT |
+| [Newtonsoft.Json-for-Unity](https://github.com/applejag/Newtonsoft.Json-for-Unity) | MIT |
+| [astc-encoder](https://github.com/ARM-software/astc-encoder) | Apache-2.0 |
+| [Noto Sans Simplified Chinese](https://fonts.google.com/noto/specimen/Noto+Sans+SC/license?lang=zh_Hans) | SIL Open Font License, Version 1.1 |
+| [UABEA](https://github.com/nesrak1/UABEA) | MIT |
+| [UABEANext](https://github.com/nesrak1/UABEANext) | MIT? |
+| &nbsp;&nbsp;&nbsp;&nbsp; - [AssetsTools.NET.MonoCecil](https://www.nuget.org/packages/AssetsTools.NET.MonoCecil/1.0.0-preview2) | MIT |
+| &nbsp;&nbsp;&nbsp;&nbsp; - [AssetsTools.NET.Cpp2IL](https://www.nuget.org/packages/AssetsTools.NET.Cpp2IL/) | MIT |
+| &nbsp;&nbsp;&nbsp;&nbsp; - [AssetRipper.Primitives](https://www.nuget.org/packages/AssetRipper.Primitives) | MIT |
+| &nbsp;&nbsp;&nbsp;&nbsp; - [Mono.Cecil](https://www.nuget.org/packages/Mono.Cecil/) | MIT |
+| &nbsp;&nbsp;&nbsp;&nbsp; - [Microsoft.Bcl.HashCode](https://www.nuget.org/packages/Microsoft.Bcl.HashCode/) | MIT |
+| &nbsp;&nbsp;&nbsp;&nbsp; - [LibCpp2IL](https://www.nuget.org/packages/Samboy063.LibCpp2IL/2022.1.0-pre-release.19) | MIT |
+| &nbsp;&nbsp;&nbsp;&nbsp; - [WasmDisassembler](https://www.nuget.org/packages/Samboy063.WasmDisassembler/2022.1.0-pre-release.19) | MIT |
 
-[AddressablesTools](https://github.com/nesrak1/AddressablesTools/releases) (MIT) - 做模组必要工具。
-
-[BCnEncoder.NET](https://github.com/Nominom/BCnEncoder.NET) (MIT) - 处理部分棘手的图像格式。
-
-[Newtonsoft.Json-for-Unity](https://github.com/applejag/Newtonsoft.Json-for-Unity) (MIT) - 最好的Json代码库。
-
-[astc-encoder](https://github.com/ARM-software/astc-encoder) (Apache-2.0) - ASTC图像文件解压。安卓，苹果游戏常见图像样式。
-
-[Noto Sans Simplified Chinese](https://fonts.google.com/noto/specimen/Noto+Sans+SC/license?lang=zh_Hans) (SIL Open Font License, Version 1.1)  - 中文字体。
 
 
 ## 安装

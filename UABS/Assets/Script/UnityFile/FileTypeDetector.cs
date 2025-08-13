@@ -10,7 +10,7 @@ namespace UABS.Assets.Script.DataStruct._New
         public static DetectedFileType DetectFileType(string filePath)
         {
             using (FileStream fs = File.OpenRead(filePath))
-            using (AssetsFileReader r = new AssetsFileReader(fs))
+            using (AssetsFileReader r = new(fs))
             {
                 return DetectFileType(r, 0);
             }
@@ -64,6 +64,7 @@ namespace UABS.Assets.Script.DataStruct._New
     {
         Unknown,
         AssetsFile,
-        BundleFile
+        BundleFile,
+        ResourceFile
     }
 }

@@ -50,7 +50,7 @@ namespace UABS.Assets.Script.View.BundleView
                 AssetExtraInfo extraInfo = _appEnvironment.AssetReader.ReadExtraInfoFromAsset(adie.EntryInfo.parsedAsset);
                 _fileIDField.text = extraInfo.fileID.ToString();
                 _sizeField.text = $"{extraInfo.compressedSize} ({extraInfo.uncompressedSize})";
-                _pathField.text = !string.IsNullOrWhiteSpace(adie.EntryInfo.realBundlePath) ? adie.EntryInfo.realBundlePath : extraInfo.path;
+                _pathField.text = !string.IsNullOrWhiteSpace(adie.EntryInfo.originalPath) ? adie.EntryInfo.originalPath : extraInfo.path;
                 _memoField.GetMemoAndSet(_pathField.text, _nameField.text, adie.EntryInfo.assetEntryInfo.classID);
             }
             else if (e is FolderReadEvent fre)
@@ -65,7 +65,7 @@ namespace UABS.Assets.Script.View.BundleView
                     _memoField.SetTextToEmpty();
                 }
             }
-            else if (e is BundleReadEvent)
+            else if (e is AssetsReadEvent)
             {
                 _nameField.text = "";
                 _pathIDField.text = "";
@@ -86,7 +86,7 @@ namespace UABS.Assets.Script.View.BundleView
                     _memoField.SetTextToEmpty();
                 }
             }
-            else if (e is BundleRead4DeriveEvent)
+            else if (e is AssetsRead4DeriveEvent)
             {
                 _nameField.text = "";
                 _pathIDField.text = "";

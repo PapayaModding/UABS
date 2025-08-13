@@ -32,13 +32,17 @@ namespace UABS.Assets.Script.DataSource.Manager
 
         public void OnEvent(AppEvent e)
         {
-            if (e is BundleRead4DeriveEvent br4d)
+            if (e is AssetsRead4DeriveEvent br4d)
             {
-                OpenBundle(br4d.AssetsInst, br4d.OverridePath);
+                // OpenBundle(br4d.AssetsInst, br4d.OverridePath);
+                SetEntryInfosCallBack(br4d.ParsedAEs);
+                _appEnvironment.Dispatcher.Dispatch(new GoBundleViewEvent(EntryInfos));
             }
-            else if (e is BundleReadEvent bre)
+            else if (e is AssetsReadEvent bre)
             {
-                OpenBundle(bre.AssetsInst, bre.FilePath);
+                // OpenBundle(bre.AssetsInst, bre.FilePath);
+                SetEntryInfosCallBack(bre.ParsedAEs);
+                _appEnvironment.Dispatcher.Dispatch(new GoBundleViewEvent(EntryInfos));
             }
         }
 
@@ -58,7 +62,7 @@ namespace UABS.Assets.Script.DataSource.Manager
                 {
                     parsedAsset = x,
                     assetEntryInfo = assetReader.ReadEntryInfoFromAsset(x, shouldLoadDatabase),
-                    realBundlePath = brePath
+                    originalPath = brePath
                 }
             ).ToList());
             _appEnvironment.Dispatcher.Dispatch(new GoBundleViewEvent(EntryInfos));

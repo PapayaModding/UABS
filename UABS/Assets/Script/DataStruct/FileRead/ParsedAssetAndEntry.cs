@@ -7,7 +7,7 @@ namespace UABS.Assets.Script.DataStruct
     {
         public ParsedAsset parsedAsset;
         public AssetEntryInfo assetEntryInfo;
-        public string realBundlePath;  // In case bundle was cached, need to reference its true location
+        public string originalPath;  // In case bundle was cached, need to reference its true location
         public bool isHighlighted;
     }
 }

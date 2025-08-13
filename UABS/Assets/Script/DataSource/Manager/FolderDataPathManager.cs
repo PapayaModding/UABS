@@ -46,7 +46,7 @@ namespace UABS.Assets.Script.DataSource.Manager
                 }
                 _appEnvironment.Dispatcher.Dispatch(new ControlSearchGoBackEvent(true));
             }
-            else if (e is BundleReadEvent bre)
+            else if (e is AssetsReadEvent bre)
             {
                 if (PathUtils.IsSystemCacheFolder(bre.FilePath))
                     return;
@@ -54,7 +54,7 @@ namespace UABS.Assets.Script.DataSource.Manager
                 RecordPath(bre.FilePath, "bre");
                 _appEnvironment.Dispatcher.Dispatch(new ControlSearchGoBackEvent(true));
             }
-            else if (e is BundleRead4DeriveEvent br4d)
+            else if (e is AssetsRead4DeriveEvent br4d)
             {
                 RecordPath(br4d.FilePath, "br4d");
                 _appEnvironment.Dispatcher.Dispatch(new ControlSearchGoBackEvent(true));

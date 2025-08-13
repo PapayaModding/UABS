@@ -31,7 +31,7 @@ namespace UABS.Assets.Script.UI.Universal
                     _folderPage.gameObject.SetActive(true);
                 }
             }
-            else if (e is BundleReadEvent bre)
+            else if (e is AssetsReadEvent bre)
             {
                 if (File.Exists(bre.FilePath))
                 {
@@ -47,7 +47,7 @@ namespace UABS.Assets.Script.UI.Universal
                     _folderPage.gameObject.SetActive(true);
                 }
             }
-            else if (e is BundleRead4DeriveEvent br4d)
+            else if (e is AssetsRead4DeriveEvent br4d)
             {
                 if (File.Exists(br4d.FilePath))
                 {

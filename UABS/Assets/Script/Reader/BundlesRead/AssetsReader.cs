@@ -1,8 +1,13 @@
 using System;
+using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Text;
 using AssetsTools.NET;
 using AssetsTools.NET.Extra;
+using UABS.Assets.Script.DataStruct;
+using UABS.Assets.Script.DataStruct._New;
+using UABS.Assets.Script.UnityFile;
 
 namespace UABS.Assets.Script.Reader.BundlesRead
 {
@@ -13,6 +18,64 @@ namespace UABS.Assets.Script.Reader.BundlesRead
         public AssetsReader(AssetsManager assetsManager)
         {
             _assetsManager = assetsManager;
+        }
+
+        public (List<AssetsFileInstance>, List<ParsedAssetAndEntry>) ReadAssets(string filePath)
+        {
+            FileInstanceLike fileInst = NextInstance.LoadAnyFile(_assetsManager, filePath);
+            if (fileInst.IsAssetsFileInstance)
+            {
+                AssetsFileInstance assetsInst = fileInst.AsAssetsFileInstance;
+                return (new() { assetsInst }, GetAssets(assetsInst, filePath));
+            }
+            else if (fileInst.IsBundleFileInstance)
+            {
+                BundleFileInstance bunInst = fileInst.AsBundleFileInstace;
+                List<AssetsFileInstance> assetsInsts = bunInst.loadedAssetsFiles;
+                List<ParsedAssetAndEntry> result = new();
+                foreach (AssetsFileInstance assetsInst in assetsInsts)
+                {
+                    result.AddRange(GetAssets(assetsInst, filePath));
+                }
+                return (assetsInsts, result);
+            }
+            else
+            {
+                return (null, null);
+            }
+        }
+
+        private List<ParsedAssetAndEntry> GetAssets(AssetsFileInstance assetsInst, string filePath)
+        {
+            List<ParsedAssetAndEntry> result = new();
+            NextInstance nextInstance = new(_assetsManager, assetsInst);
+            var assetFileInfos = assetsInst.file.AssetInfos;
+            foreach (var assetFileInfo in assetFileInfos)
+            {
+                (string assetName, AssetClassID typeName) = nextInstance.GetDisplayNameFast(assetFileInfo);
+                ParsedAsset parsedAsset = new()
+                {
+                    fileInfo = assetFileInfo,
+                    classID = typeName,
+                    fileInst = assetsInst
+                };
+                AssetEntryInfo assetEntryInfo = new()
+                {
+                    name = assetName,
+                    classID = typeName,
+                    pathID = assetFileInfo.PathId
+                };
+
+                result.Add(new()
+                {
+                    parsedAsset = parsedAsset,
+                    assetEntryInfo = assetEntryInfo,
+                    originalPath = filePath,
+                    isHighlighted = false
+                });
+            }
+            
+            return result;
         }
 
         public AssetsFileInstance ReadAssetsFileInstFromBundle(BundleFileInstance bunInst)

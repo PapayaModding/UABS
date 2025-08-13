@@ -23,8 +23,22 @@ namespace UABS.Assets.Script.__Test__.Depend
                 BundleReader bundleReader = new(appEnvironment.AssetsManager, appEnvironment.Dispatcher);
                 string DATA_PATH = Path.Combine(PredefinedTestPaths.LabDeskPath, "GameData");
                 string dependentPath = Path.Combine(DATA_PATH, "graphiceffecttextureseparatelygroup_assets_assets/sprites/uniteffect_0.spriteatlas_66b2db9fb94b5bda5b7794c6ed82cf3f.bundle");
+                if (!File.Exists(dependentPath))
+                {
+                    Debug.Log("[✘] Dependency Test Failed: Dependent not found");
+                    onComplete?.Invoke();
+                    return;
+                }
 
-                (BundleFileInstance bunInst, AssetsFileInstance _) = bundleReader.ReadBundle(dependentPath);
+                (List<AssetsFileInstance> assetsInsts, List<ParsedAssetAndEntry> parsedAEs) = bundleReader.ReadBundle(dependentPath);
+                if (assetsInsts.Count == 0)
+                {
+                    Debug.Log("[✘] Dependency Test Failed: No assetsInst found");
+                    onComplete?.Invoke();
+                    return;
+                }
+
+                BundleFileInstance bunInst = assetsInsts[0].parentBundle;
                 List<DeriveInfo> deriveInfos = readDependencyInfo.ReadInfoFor(bunInst, PACKAGE_PATH, false);
 
                 List<string> expectingDependencies = new()

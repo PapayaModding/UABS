@@ -24,11 +24,11 @@ namespace UABS.Assets.Script.View.FolderView
             {
                 _pathTextfield.text = fre.FolderPath;
             }
-            else if (e is BundleReadEvent bre)
+            else if (e is AssetsReadEvent bre)
             {
                 _lastBundlePath = bre.FilePath;
             }
-            else if (e is BundleRead4DeriveEvent br4d)
+            else if (e is AssetsRead4DeriveEvent br4d)
             {
                 _lastBundlePath = br4d.FilePath;
             }

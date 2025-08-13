@@ -13,7 +13,7 @@ namespace UABS.Assets.Script.Reader.BundlesRead
         public (List<ParsedAsset>, AssetsFileInstance) ReadAssetOnly(AssetsFileInstance assetsInst)
         {
             List<ParsedAsset> parsedAssets = new();
-            List<AssetFileInfo> allAssets = assetsInst.file.AssetInfos;
+            List<AssetFileInfo> allAssets = (List<AssetFileInfo>)assetsInst.file.AssetInfos;
 
             foreach (var assetInfo in allAssets)
             {
