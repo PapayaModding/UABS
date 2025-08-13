@@ -24,6 +24,6 @@
 
   <!-- Custom Resources -->
   <ItemGroup>
-    <AvaloniaResource Include="UI/Fonts/NotoSansSC-Regular.ttf"/>
+    <AvaloniaResource Include="UI/**"/>
   </ItemGroup>
 </Project>
