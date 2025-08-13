@@ -15,7 +15,7 @@ public partial class AssetTypeIconConvertor : IValueConverter
 {
     private readonly Dictionary<string, Bitmap> cache = [];
     
-    [GeneratedRegex("([A-Z])")]
+    [GeneratedRegex("(?<!^)(?=[A-Z][a-z])")]
     private static partial Regex MyRegex();
 
     private Bitmap GetBitMap(string path)
@@ -35,7 +35,7 @@ public partial class AssetTypeIconConvertor : IValueConverter
     private static string ClassId2IconName(AssetClassID classID)
     {
         string input = classID.ToString();
-        string result = MyRegex().Replace(input, "-$1").TrimStart('-').ToLower();
+        string result = MyRegex().Replace(input, "-").ToLower(); 
         return "asset-" + result + ".png";
     }
 

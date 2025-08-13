@@ -1,7 +1,9 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:local="clr-namespace:UABS.Component"
-             x:Class="UABS.Pages.FolderView">
+             xmlns:local="clr-namespace:UABS.Page"
+             xmlns:comp="clr-namespace:UABS.Component"
+             x:Class="UABS.Page.FolderView"
+             x:DataType="local:FolderView">
 
     <UserControl.Styles>
         <StyleInclude Source="avares://UABS/Script/Styles/PathfieldStyle.axaml"/>
@@ -12,55 +14,59 @@
         <TextBox Text="---" IsReadOnly="True" Classes="pathfieldTextBox"/>
 
         <!-- Sort Panel -->
-        <local:FolderViewSortPanel />
-
-        <!-- Other page content -->
-        <!-- <Grid>
-            <ScrollViewer>
-                <StackPanel>
-                    <local:FolderViewEntry Text="activity" Icon="avares://UABS/UI/Icons/folder.png"/>
-                    <local:FolderViewEntry Text="aram" Icon="avares://UABS/UI/Icons/asset-unknown.png"/>
-                    <local:FolderViewEntry Text="artifacts" Icon="avares://UABS/UI/Icons/asset-unknown.png"/>
-                </StackPanel>
-            </ScrollViewer>
-        </Grid> -->
+        <!-- <comp:FolderViewSortPanel /> -->
 
         <DataGrid x:Name="dataGrid"
-            AutoGenerateColumns="False"
-            CanUserResizeColumns="True"
-            IsReadOnly="True">
+                  AutoGenerateColumns="False"
+                  CanUserResizeColumns="True"
+                  IsReadOnly="True"
+                  ItemsSource="{Binding ItemsSource}">
 
             <DataGrid.Styles>
-                <!-- Alternate row coloring -->
+                <Style Selector="DataGridRow">
+                    <Setter Property="Background" Value="#EEFFE6"/>
+                </Style>
                 <Style Selector="DataGridRow:nth-child(2n)">
-                <Setter Property="Background" Value="#00FFFFFF"/>
+                    <Setter Property="Background" Value="#FFFFFF"/>
+                </Style>
+                <Style Selector="DataGridRow:selected">
+                    <Setter Property="Background" Value="#00C302"/>
+                </Style>
+                <Style Selector="DataGrid:focus DataGridCell:current /template/ Grid#FocusVisual"> 
+                    <Setter Property="IsVisible" Value="False" /> 
+                </Style> 
+                <Style Selector="DataGridColumnHeader">
+                    <Setter Property="Background" Value="Darkgray"/>
+                    <Setter Property="FontWeight" Value="Bold"/>
+                    <Setter Property="Foreground" Value="#222"/>
+                    <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                    <Setter Property="Height" Value="32"/>
                 </Style>
             </DataGrid.Styles>
 
             <DataGrid.Columns>
                 <DataGridTemplateColumn Header=" ">
                 <DataGridTemplateColumn.CellTemplate>
-                    <DataTemplate x:DataType="local:FolderViewEntry">
-                        <Image Source="{Binding TypeClass, Converter={StaticResource AssetTypeIconConverter}}"
-                                Width="16" Height="16"/>
+                    <DataTemplate x:DataType="comp:FolderViewEntry">
+                        <Image Source="{Binding TypeClass, Converter={StaticResource AssetTypeIconConvertor}}"
+                                Width="32" Height="32" Stretch="Uniform"
+                                VerticalAlignment="Center"/>
                     </DataTemplate>
                 </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
                 
-                <!-- Name column -->
                 <DataGridTemplateColumn Header="Name">
                     <DataGridTemplateColumn.CellTemplate>
-                        <DataTemplate x:DataType="local:FolderViewEntry">
-                            <TextBlock Text="{Binding Name}" />
+                        <DataTemplate x:DataType="comp:FolderViewEntry">
+                            <TextBlock Text="{Binding Name}" VerticalAlignment="Center"/>
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
 
-                <!-- Type column -->
                 <DataGridTemplateColumn Header="Type">
                     <DataGridTemplateColumn.CellTemplate>
-                        <DataTemplate x:DataType="local:FolderViewEntry">
-                            <TextBlock Text="{Binding Type}" />
+                        <DataTemplate x:DataType="comp:FolderViewEntry">
+                            <TextBlock Text="{Binding Type}" VerticalAlignment="Center"/>
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>

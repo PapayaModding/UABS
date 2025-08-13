@@ -1,33 +1,56 @@
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using AssetsTools.NET.Extra;
 using Avalonia.Controls;
 using UABS.Component;
 
-namespace UABS.Pages;
+namespace UABS.Page;
 
 public partial class FolderView : UserControl
 {
-    private readonly ObservableCollection<FolderViewEntry> _dataGridItems = [];
-    
+    public ObservableCollection<FolderViewEntry> ItemsSource { get; } = [];
+
     public FolderView()
     {
         InitializeComponent();
 
-        dataGrid.ItemsSource = _dataGridItems;
-
-        _dataGridItems.Add(new()
+        ItemsSource.Add(new()
         {
             Name = "Player.prefab",
             TypeClass = AssetClassID.Sprite,
             Type = "Sprite"
         });
 
-        _dataGridItems.Add(new()
+        ItemsSource.Add(new()
         {
             Name = "MainMenu.unity",
             TypeClass = AssetClassID.Texture2D,
             Type = "Texture2D"
         });
+        ItemsSource.Add(new()
+        {
+            Name = "MainMenu.unity",
+            TypeClass = AssetClassID.Texture2D,
+            Type = "Texture2D"
+        });
+        ItemsSource.Add(new()
+        {
+            Name = "MainMenu.unity",
+            TypeClass = AssetClassID.Texture2D,
+            Type = "Texture2D"
+        });
+        ItemsSource.Add(new()
+        {
+            Name = "MainMenu.unity",
+            TypeClass = AssetClassID.Texture2D,
+            Type = "Texture2D"
+        });
+        ItemsSource.Add(new()
+        {
+            Name = "MainMenu.unity",
+            TypeClass = AssetClassID.Texture2D,
+            Type = "Texture2D"
+        });
+
+        DataContext = this;
     }
 }

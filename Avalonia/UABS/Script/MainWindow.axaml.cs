@@ -1,6 +1,6 @@
 using Avalonia.Controls;
 using Avalonia.Interactivity;
-using UABS.Pages;
+using UABS.Page;
 
 namespace UABS;
 
