@@ -15,7 +15,7 @@
         <local:FolderViewSortPanel />
 
         <!-- Other page content -->
-        <Grid>
+        <!-- <Grid>
             <ScrollViewer>
                 <StackPanel>
                     <local:FolderViewEntry Text="activity" Icon="avares://UABS/UI/Icons/folder.png"/>
@@ -23,7 +23,51 @@
                     <local:FolderViewEntry Text="artifacts" Icon="avares://UABS/UI/Icons/asset-unknown.png"/>
                 </StackPanel>
             </ScrollViewer>
-        </Grid>
+        </Grid> -->
+
+        <DataGrid x:Name="dataGrid"
+            AutoGenerateColumns="False"
+            CanUserResizeColumns="True"
+            IsReadOnly="True">
+
+            <DataGrid.Styles>
+                <!-- Alternate row coloring -->
+                <Style Selector="DataGridRow:nth-child(2n)">
+                <Setter Property="Background" Value="#00FFFFFF"/>
+                </Style>
+            </DataGrid.Styles>
+
+            <DataGrid.Columns>
+                <DataGridTemplateColumn Header=" ">
+                <DataGridTemplateColumn.CellTemplate>
+                    <DataTemplate x:DataType="local:FolderViewEntry">
+                        <Image Source="{Binding TypeClass, Converter={StaticResource AssetTypeIconConverter}}"
+                                Width="16" Height="16"/>
+                    </DataTemplate>
+                </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+                
+                <!-- Name column -->
+                <DataGridTemplateColumn Header="Name">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate x:DataType="local:FolderViewEntry">
+                            <TextBlock Text="{Binding Name}" />
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+
+                <!-- Type column -->
+                <DataGridTemplateColumn Header="Type">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate x:DataType="local:FolderViewEntry">
+                            <TextBlock Text="{Binding Type}" />
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+            </DataGrid.Columns>
+
+        </DataGrid>
+
     </StackPanel>
 
 </UserControl>

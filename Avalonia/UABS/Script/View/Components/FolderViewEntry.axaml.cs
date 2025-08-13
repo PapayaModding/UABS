@@ -1,39 +1,19 @@
-using Avalonia;
-using Avalonia.Controls;
-using Avalonia.Interactivity;
-using Avalonia.Media.Imaging;
+using System;
+using System.ComponentModel;
+using AssetsTools.NET.Extra;
 
 namespace UABS.Component;
 
-public partial class FolderViewEntry : UserControl
+public class FolderViewEntry : INotifyPropertyChanged
 {
-    public static readonly StyledProperty<Bitmap?> IconProperty =
-        AvaloniaProperty.Register<FolderViewEntry, Bitmap?>(nameof(Icon));
+    public required string Name { get; set; }
+    public AssetClassID TypeClass { get; set; }
+    public required string Type { get; set; }
 
-    public static readonly StyledProperty<string> TextProperty =
-        AvaloniaProperty.Register<FolderViewEntry, string>(nameof(Text));
+    public event PropertyChangedEventHandler? PropertyChanged;
 
-    public Bitmap? Icon
+    public void Update(string propertyName = "")
     {
-        get => GetValue(IconProperty);
-        set => SetValue(IconProperty, value);
-    }
-
-    public string Text
-    {
-        get => GetValue(TextProperty);
-        set => SetValue(TextProperty, value);
-    }
-
-    public FolderViewEntry()
-    {
-        InitializeComponent();
-        DataContext = this;
-
-        // Example click handler for the whole entry
-        this.PointerPressed += (s, e) => 
-        {
-            // Handle click here or raise your own event
-        };
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
     }
 }
