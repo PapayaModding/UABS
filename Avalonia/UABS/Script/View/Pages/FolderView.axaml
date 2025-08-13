@@ -11,6 +11,9 @@
         <!-- Path Field -->
         <TextBox Text="---" IsReadOnly="True" Classes="pathfieldTextBox"/>
 
+        <!-- Sort Panel -->
+        <local:FolderViewSortPanel />
+
         <!-- Other page content -->
         <Grid>
             <ScrollViewer>
