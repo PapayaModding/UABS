@@ -6,12 +6,16 @@
         <StyleInclude Source="avares://UABS/Script/Styles/PathfieldStyle.axaml"/>
     </UserControl.Styles>
 
-    <StackPanel Margin="10">
+    <StackPanel>
         <!-- Path Field -->
-        <TextBox Watermark="---" IsReadOnly="True" Classes="pathfieldTextBox"/>
+        <TextBox Text="---" IsReadOnly="True" Classes="pathfieldTextBox"/>
 
         <!-- Other page content -->
-        <TextBlock Text="Welcome to MyPage!" FontSize="20"/>
+        <Grid>
+            <ScrollViewer>
+                <!-- Your scrollable content here -->
+            </ScrollViewer>
+        </Grid>
     </StackPanel>
 
 </UserControl>
