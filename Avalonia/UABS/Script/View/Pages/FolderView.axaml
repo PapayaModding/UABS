@@ -1,5 +1,6 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:UABS.Component"
              x:Class="UABS.Pages.FolderView">
 
     <UserControl.Styles>
@@ -13,7 +14,11 @@
         <!-- Other page content -->
         <Grid>
             <ScrollViewer>
-                <!-- Your scrollable content here -->
+                <StackPanel>
+                    <local:FolderViewEntry Text="activity" />
+                    <local:FolderViewEntry Text="aram" />
+                    <local:FolderViewEntry Text="artifacts" />
+                </StackPanel>
             </ScrollViewer>
         </Grid>
     </StackPanel>

@@ -1,0 +1,27 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:UABS.Component"
+             x:Class="UABS.Component.FolderViewEntry"
+             x:DataType="local:FolderViewEntry">
+
+    <UserControl.Styles>
+        <StyleInclude Source="avares://UABS/Script/Styles/EntryStyle.axaml"/>
+    </UserControl.Styles>
+
+    <Border Background="{DynamicResource EntryBackground}"
+        CornerRadius="5"
+        Padding="8,2,8,2"
+        Cursor="Hand"
+        Height="28">
+
+        <DockPanel LastChildFill="True" Background="LightGray" >
+            <!-- Icon on left -->
+            <Image Source="{Binding Icon}" Width="24" Height="24" Margin="0,0,8,0" />
+
+            <!-- Text -->
+            <TextBlock Text="{Binding Text}" Classes="entryTextBlock" />
+
+        </DockPanel>
+    </Border>
+
+</UserControl>
