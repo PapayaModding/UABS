@@ -12,6 +12,7 @@
 
     <Application.Resources>
         <FontFamily x:Key="NotoSansSC">avares://UABS/UI/Fonts/#NotoSansSC-Regular</FontFamily>
+        <local:FolderViewIconConvertor x:Key="FolderViewIconConvertor" />
         <local:AssetTypeIconConvertor x:Key="AssetTypeIconConvertor" />
     </Application.Resources>
 </Application>

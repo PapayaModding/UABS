@@ -32,7 +32,7 @@ public partial class FolderViewIconConvertor : IValueConverter
         return folderViewType switch
         {
             FolderViewType.Folder => "folder.png",
-            _ => "file.png",
+            _ => "asset-unknown.png",
         };
     }
 

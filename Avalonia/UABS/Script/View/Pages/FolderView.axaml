@@ -48,7 +48,7 @@
                 <DataGridTemplateColumn Header=" ">
                 <DataGridTemplateColumn.CellTemplate>
                     <DataTemplate x:DataType="comp:FolderViewEntry">
-                        <Image Source="{Binding TypeClass, Converter={StaticResource AssetTypeIconConvertor}}"
+                        <Image Source="{Binding Type, Converter={StaticResource FolderViewIconConvertor}}"
                                 Width="32" Height="32" Stretch="Uniform"
                                 VerticalAlignment="Center"/>
                     </DataTemplate>
@@ -59,14 +59,6 @@
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate x:DataType="comp:FolderViewEntry">
                             <TextBlock Text="{Binding Name}" VerticalAlignment="Center"/>
-                        </DataTemplate>
-                    </DataGridTemplateColumn.CellTemplate>
-                </DataGridTemplateColumn>
-
-                <DataGridTemplateColumn Header="Type">
-                    <DataGridTemplateColumn.CellTemplate>
-                        <DataTemplate x:DataType="comp:FolderViewEntry">
-                            <TextBlock Text="{Binding Type}" VerticalAlignment="Center"/>
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>

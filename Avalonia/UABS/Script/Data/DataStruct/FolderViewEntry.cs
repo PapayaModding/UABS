@@ -1,15 +1,13 @@
 using System.ComponentModel;
-using AssetsTools.NET.Extra;
 
 namespace UABS.Component;
 
 public class FolderViewEntry : INotifyPropertyChanged
 {
     private string name = string.Empty;
-    private AssetClassID typeClass;
-    private string type = string.Empty;
+    private FolderViewType type;
 
-    public required string Name 
+    public required string Name
     {
         get => name;
         set
@@ -22,20 +20,7 @@ public class FolderViewEntry : INotifyPropertyChanged
         }
     }
 
-    public AssetClassID TypeClass
-    {
-        get => typeClass;
-        set
-        {
-            if (typeClass != value)
-            {
-                typeClass = value;
-                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(TypeClass)));
-            }
-        }
-    }
-
-    public required string Type
+    public required FolderViewType Type
     {
         get => type;
         set

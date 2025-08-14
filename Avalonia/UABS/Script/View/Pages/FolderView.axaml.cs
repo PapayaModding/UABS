@@ -1,5 +1,4 @@
 using System.Collections.ObjectModel;
-using AssetsTools.NET.Extra;
 using Avalonia.Controls;
 using UABS.Component;
 
@@ -16,41 +15,34 @@ public partial class FolderView : UserControl
         ItemsSource.Add(new()
         {
             Name = "Player.prefab",
-            TypeClass = AssetClassID.Sprite,
-            Type = "Sprite"
-        });
-
-        ItemsSource.Add(new()
-        {
-            Name = "MainMenu.unity",
-            TypeClass = AssetClassID.Texture2D,
-            Type = "Texture2D"
+            Type = FolderViewType.Folder,
         });
         ItemsSource.Add(new()
         {
             Name = "MainMenu.unity",
-            TypeClass = AssetClassID.Texture2D,
-            Type = "Texture2D"
+            Type = FolderViewType.Folder,
         });
         ItemsSource.Add(new()
         {
             Name = "MainMenu.unity",
-            TypeClass = AssetClassID.Texture2D,
-            Type = "Texture2D"
+            Type = FolderViewType.File,
         });
         ItemsSource.Add(new()
         {
             Name = "MainMenu.unity",
-            TypeClass = AssetClassID.Texture2D,
-            Type = "Texture2D"
+            Type = FolderViewType.File,
         });
         ItemsSource.Add(new()
         {
             Name = "MainMenu.unity",
-            TypeClass = AssetClassID.Texture2D,
-            Type = "Texture2D"
+            Type = FolderViewType.File,
         });
-
+        ItemsSource.Add(new()
+        {
+            Name = "MainMenu.unity",
+            Type = FolderViewType.File,
+        });
+        
         DataContext = this;
     }
 }
