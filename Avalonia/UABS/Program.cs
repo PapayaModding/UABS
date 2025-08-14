@@ -23,6 +23,11 @@ class Program
             Printer.Print("Unobserved task exception: " + e.Exception);
         };
 
+        // ! Used for converting color in unity to Avalonia.
+        // ! Not ideal but works great.
+        // Comment out when you don't need.
+        // ConvertColorIfYouNeed("#00C302", 2);
+
         BuildAvaloniaApp()
         .LogToTrace()
         .StartWithClassicDesktopLifetime(args);
@@ -34,4 +39,9 @@ class Program
             .UsePlatformDetect()
             .WithInterFont()
             .LogToTrace();
+
+    private static void ConvertColorIfYouNeed(string unityHex, double intensity)
+    {
+        Printer.Print($"COLOR: {unityHex} -> {ColorHelper.Saturate(unityHex, intensity)}");
+    }
 }
