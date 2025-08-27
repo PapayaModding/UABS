@@ -231,7 +231,31 @@ namespace UABS.Assets.Script.UnityFile
             var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, bufferSize: 8096, options: FileOptions.SequentialScan);
             DateTime start = DateTime.Now;
             // !!! WTF
-            BundleFileInstance bunInst = assetsManager.LoadBundleFile(fileStream);
+            BundleFileInstance bunInst = assetsManager.LoadBundleFile(fileStream, false);
+
+            if (bunInst.file.BlockAndDirInfo.BlockInfos.Any(inf => inf.GetCompressionType() != 0))
+            {
+                if (bunInst.file.DataIsCompressed)
+                {
+                    // Decompress to Memory
+                    AssetBundleFile bundle = bunInst.file;
+                    MemoryStream bundleStream = new();
+                    bundle.Unpack(new AssetsFileWriter(bundleStream));
+
+                    bundleStream.Position = 0;
+
+                    AssetBundleFile newBundle = new();
+                    newBundle.Read(new AssetsFileReader(bundleStream));
+
+                    bundle.Close();
+                    bunInst.file = newBundle;
+                }
+                else
+                {
+                    
+                }
+            }
+
             UnityEngine.Debug.Log($"Time for loading bundle: {(DateTime.Now - start).TotalSeconds} seconds");
             UnityEngine.Debug.Log($"Loaded number of assets files in bundle: {bunInst.loadedAssetsFiles.Count}");
 

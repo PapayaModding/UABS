@@ -23,8 +23,8 @@ namespace UABS.Assets.Script.__Test__.UnityFile
             UnityEngine.Debug.Log(System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription);
             
             string skPath = "D:\\Soul_Knight\\元气骑士7.4.0.11\\split_UnityDataAssetPack\\assets\\AssetBundles";
-            // string assetsFile = Path.Combine(skPath, "aram_guide.ab");
-            string assetsFile = Path.Combine(skPath, "common.ab");
+            string assetsFile = Path.Combine(skPath, "aram_guide.ab");
+            // string assetsFile = Path.Combine(skPath, "common.ab");
 
             FileInstanceLike fileInst = NextInstance.LoadAnyFile(appEnvironment.AssetsManager, assetsFile);
             BundleFileInstance bunInst = fileInst.AsBundleFileInstace;
