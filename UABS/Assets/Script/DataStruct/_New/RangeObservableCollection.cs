@@ -25,7 +25,9 @@ namespace System.Collections.ObjectModel
 
         #region Private Fields    
         [NonSerialized]
+#pragma warning disable CS8632 // The annotation for nullable reference types should only be used in code within a '#nullable' annotations context.
         private DeferredEventsCollection? _deferredEvents;
+#pragma warning restore CS8632 // The annotation for nullable reference types should only be used in code within a '#nullable' annotations context.
         #endregion Private Fields
 
 
@@ -75,7 +77,9 @@ namespace System.Collections.ObjectModel
         //------------------------------------------------------
 
         #region Public Properties
+#pragma warning disable CS8632 // The annotation for nullable reference types should only be used in code within a '#nullable' annotations context.
         EqualityComparer<T>? _Comparer;
+#pragma warning restore CS8632 // The annotation for nullable reference types should only be used in code within a '#nullable' annotations context.
         public EqualityComparer<T> Comparer
         {
             get => _Comparer ??= EqualityComparer<T>.Default;
@@ -191,7 +195,9 @@ namespace System.Collections.ObjectModel
 
             var clusters = new Dictionary<int, List<T>>();
             var lastIndex = -1;
+#pragma warning disable CS8632 // The annotation for nullable reference types should only be used in code within a '#nullable' annotations context.
             List<T>? lastCluster = null;
+#pragma warning restore CS8632 // The annotation for nullable reference types should only be used in code within a '#nullable' annotations context.
             foreach (T item in collection)
             {
                 var index = IndexOf(item);
@@ -253,7 +259,9 @@ namespace System.Collections.ObjectModel
             if (Count == 0)
                 return 0;
 
+#pragma warning disable CS8632 // The annotation for nullable reference types should only be used in code within a '#nullable' annotations context.
             List<T>? cluster = null;
+#pragma warning restore CS8632 // The annotation for nullable reference types should only be used in code within a '#nullable' annotations context.
             var clusterIndex = -1;
             var removedCount = 0;
 
@@ -408,9 +416,11 @@ namespace System.Collections.ObjectModel
                 var addedCount = list.Count;
 
                 var changesMade = false;
+#pragma warning disable CS8632 // The annotation for nullable reference types should only be used in code within a '#nullable' annotations context.
                 List<T>?
                   newCluster = null,
                   oldCluster = null;
+#pragma warning restore CS8632 // The annotation for nullable reference types should only be used in code within a '#nullable' annotations context.
 
 
                 int i = index;
