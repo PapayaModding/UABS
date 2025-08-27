@@ -100,3 +100,6 @@ Packages/*
 .idea
 
 External
+bin
+!UABS.csproj
+!Avalonia.sln
