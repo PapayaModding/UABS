@@ -6,6 +6,11 @@
     <img src="./readme_img/logo.png" width="300"/>
 </p>
 
+<p align="center">
+  <img src="https://img.shields.io/github/stars/papayamodding/uabs?style=flat-square">
+  <img src="https://img.shields.io/github/license/papayamodding/uabs?style=flat-square">
+</p>
+
 🚀 This project lives here:
 
 👉 **https://marblestack.github.io/marblestack/posts/a_unity/z_uabs/a_intro/**
