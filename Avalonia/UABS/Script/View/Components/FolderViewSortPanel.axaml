@@ -9,7 +9,7 @@
     </UserControl.Styles>
 
     <DockPanel Height="32" Background="Darkgray" >
-        <TextBlock Text="Name" Classes="sortButtonText" Padding="40,0,0,0"/>
+        <TextBlock Text="Name" Classes="sortButtonText" Padding="46,0,0,0"/>
     </DockPanel>
 
 </UserControl>
