@@ -21,18 +21,27 @@ public partial class Toolbar : UserControl
         {
             // Get reference to MainWindow
             if (this.GetVisualRoot() is not Window window)
+            {
+                Log.Error("The control isn't ready yet.", 
+                            file: "Toolbar.axaml.cs");
                 return;
+            }
 
-            // Find the overlay canvas in MainWindow
+            // Find the one-and-only overlay canvas in MainWindow
             var dropdownLayer = window.Find<Canvas>("DropdownLayer");
             if (dropdownLayer == null)
+            {
+                Log.Error("DropdownLayer canvas not found in MainWindow. Cannot attach dropdowns.", 
+                            file: "Toolbar.axaml.cs");
                 return;
-            
-            StyleInclude styleInclude = new(new Uri("avares://UABS")) 
+            }
+
+            // * Add styles here
+            StyleInclude style1 = new(new Uri("avares://UABS")) 
             {
                 Source = new Uri("avares://UABS/Script/Styles/ToolbarStyle.axaml")
             };
-            dropdownLayer.Styles.Add(styleInclude);
+            dropdownLayer.Styles.Add(style1);
 
             PutFileDropdownPanel(dropdownLayer, trigger: FileButton);
         };
@@ -61,6 +70,8 @@ public partial class Toolbar : UserControl
         AttachDropdown(fileDropdown, trigger, dropdownLayer, layer =>
             ShowDropdownBelowTrigger(trigger, layer) ?? new Point(0, 0));
     }
+
+#region Component
 
     private static Point? ShowDropdownBelowTrigger(Control trigger, Canvas dropdownLayer)
     {
@@ -123,4 +134,6 @@ public partial class Toolbar : UserControl
             IsVisible = false,
         }; 
     }
+
+#endregion
 }
