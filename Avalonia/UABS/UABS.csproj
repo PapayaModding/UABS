@@ -21,6 +21,13 @@
       <PrivateAssets Condition="'$(Configuration)' != 'Debug'">All</PrivateAssets>
     </PackageReference>
     <PackageReference Include="Avalonia.Controls.DataGrid" Version="11.3.3" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
+
+    <Reference Include="BCnEncoder">
+      <HintPath>Plugin\BCnEncoder.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+
   </ItemGroup>
 
   <!-- Libraries -->
@@ -38,6 +45,6 @@
 
   <!-- Custom Resources -->
   <ItemGroup>
-    <AvaloniaResource Include="UI/**"/>
+    <AvaloniaResource Include="UI/**" />
   </ItemGroup>
 </Project>
