@@ -12,21 +12,21 @@ class Program
     [STAThread]
     public static void Main(string[] args)
     {
-        Printer.RemoveAllFromDefaultLogTxt();
+        Log.RemoveAllLogged();
         AppDomain.CurrentDomain.UnhandledException += (sender, e) =>
         {
-            Printer.Print("Unhandled exception: " + e.ExceptionObject);
+            Log.Error("Unhandled exception: " + e.ExceptionObject, file: "Program.cs", line: 18);
         };
 
         TaskScheduler.UnobservedTaskException += (sender, e) =>
         {
-            Printer.Print("Unobserved task exception: " + e.Exception);
+            Log.Error("Unobserved task exception: " + e.Exception, file: "Program.cs", line: 23);
         };
 
         // ! Used for converting color in unity to Avalonia.
         // ! Not ideal but works great.
         // Comment out when you don't need.
-        // ConvertColorIfYouNeed("#00C302", 2);
+        ConvertColorIfNeed("#00C302", 2);
 
         BuildAvaloniaApp()
         .LogToTrace()
@@ -40,8 +40,11 @@ class Program
             .WithInterFont()
             .LogToTrace();
 
-    private static void ConvertColorIfYouNeed(string unityHex, double intensity)
+    private static void ConvertColorIfNeed(string unityHex, double intensity)
     {
-        Printer.Print($"COLOR: {unityHex} -> {ColorHelper.Saturate(unityHex, intensity)}");
+        Log.Info($"COLOR: {unityHex} -> {ColorHelper.Saturate(unityHex, intensity)}", 
+            file: "Program.cs",
+            member: "ConvertColorIfNeed",
+            line: 47);
     }
 }
