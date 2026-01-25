@@ -6,7 +6,6 @@
         <Setter Property="Foreground" Value="White"/>
         <Setter Property="HorizontalContentAlignment" Value="Right"/>
         <Setter Property="BorderBrush" Value="Black"/>
-        <Setter Property="FontFamily" Value="NotoSansSC"/>
     </Style>
 
     <Style Selector="TextBox.pathfieldTextBox /template/ Border#PART_BorderElement">

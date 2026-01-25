@@ -3,7 +3,6 @@
 
     <Style Selector="TextBlock.entryTextBlock">
         <Setter Property="Foreground" Value="Black"/>
-        <Setter Property="FontSize" Value="14"/>
         <Setter Property="VerticalAlignment" Value="Center"/>
     </Style>
 

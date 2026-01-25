@@ -3,9 +3,7 @@
 
     <Style Selector="TextBlock.sortButtonText">
         <Setter Property="Foreground" Value="Black"/>
-        <Setter Property="FontSize" Value="14"/>
         <Setter Property="VerticalAlignment" Value="Center"/>
-        <Setter Property="FontWeight" Value="Bold"/>
     </Style>
 
 </Styles>

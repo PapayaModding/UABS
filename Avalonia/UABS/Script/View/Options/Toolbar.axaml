@@ -7,7 +7,7 @@
     </UserControl.Styles>
 
     <StackPanel Orientation="Horizontal" Background="#FFFFFF" DockPanel.Dock="Top" Spacing="10">
-        <Button Content="File" Classes="toolbarButton" />
+        <Button x:Name="FileButton" Content="File" Classes="toolbarButton" />
         <Button Content="Export" Classes="toolbarButton" />
         <Button Content="Search" Classes="toolbarButton"/>
         <Button Content="Depend" Classes="toolbarButton"/>

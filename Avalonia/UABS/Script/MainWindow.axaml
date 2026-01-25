@@ -8,13 +8,21 @@
         Title="UABS"
         Background="Gray">
 
-    <DockPanel>
-        <!-- Persistent Toolbar -->
-        <local:Toolbar DockPanel.Dock="Top"/>
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/> <!-- Toolbar -->
+            <RowDefinition Height="*"/>    <!-- MainContent -->
+        </Grid.RowDefinitions>
 
-        <!-- Content Area -->
-        <ContentControl x:Name="MainContent"/>
-    </DockPanel>
+        <!-- Toolbar always on top of main content -->
+        <local:Toolbar x:Name="Toolbar" Grid.Row="0"/>
+
+        <!-- Main content area -->
+        <ContentControl x:Name="MainContent" Grid.Row="1"/>
+
+        <!-- Overlay for dropdowns -->
+        <Canvas x:Name="DropdownLayer" IsHitTestVisible="True"/>
+    </Grid>
 
 </Window>
 
