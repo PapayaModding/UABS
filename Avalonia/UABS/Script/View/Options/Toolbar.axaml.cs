@@ -12,7 +12,6 @@ namespace UABS.Options;
 
 public partial class Toolbar : UserControl
 {
-    private CancellationTokenSource? _hideCts;
 
     public Toolbar()
     {
@@ -21,8 +20,7 @@ public partial class Toolbar : UserControl
         this.AttachedToVisualTree += (_, __) =>
         {
             // Get reference to MainWindow
-            var window = this.GetVisualRoot() as Window;
-            if (window == null)
+            if (this.GetVisualRoot() is not Window window)
                 return;
 
             // Find the overlay canvas in MainWindow
@@ -30,88 +28,99 @@ public partial class Toolbar : UserControl
             if (dropdownLayer == null)
                 return;
             
-            var styleInclude = new StyleInclude(new Uri("avares://UABS")) 
+            StyleInclude styleInclude = new(new Uri("avares://UABS")) 
             {
                 Source = new Uri("avares://UABS/Script/Styles/ToolbarStyle.axaml")
             };
             dropdownLayer.Styles.Add(styleInclude);
 
-            var openFileButton = new Button { Content = "Open File" };
-            openFileButton.Classes.Add("toolbarButton");
-            var openFolderButton = new Button { Content = "Open Folder" };
-            openFolderButton.Classes.Add("toolbarButton");
-
-            Border FileDropdown = new()
-            {
-                Background = Brushes.White,
-                BorderBrush = Brushes.Gray,
-                BorderThickness = new Thickness(1),
-                Padding = new Thickness(2),
-                Width = 140,
-                IsVisible = false,
-                Child = new StackPanel
-                {
-                    Children =
-                    {
-                        openFileButton,
-                        openFolderButton
-                    }
-                }
-            };
-
-            dropdownLayer.Children.Add(FileDropdown);
-
-            FileButton.PointerEntered += (_, __) =>
-            {
-                ShowDropdown(dropdownLayer, FileDropdown);
-            };
-
-            FileButton.PointerExited += (_, __) =>
-            {
-                ScheduleHideDropdown(FileDropdown);
-            };
-
-            FileDropdown.PointerEntered += (_, __) => 
-            {
-                CancelHideDropdown();
-            };
-
-            FileDropdown.PointerExited += (_, __) => 
-            {
-                ScheduleHideDropdown(FileDropdown);
-            };
+            PutFileDropdownPanel(dropdownLayer, trigger: FileButton);
         };
     }
 
-    private void ShowDropdown(Canvas dropdownLayer, Border fileDropdown)
+    private static void PutFileDropdownPanel(Canvas dropdownLayer, Control trigger)
     {
-        var pos = FileButton.TranslatePoint(new Point(0, FileButton.Bounds.Height), dropdownLayer);
-        if (pos.HasValue)
-        {
-            Canvas.SetLeft(fileDropdown, pos.Value.X);
-            Canvas.SetTop(fileDropdown, pos.Value.Y);
-        }
-        fileDropdown.IsVisible = true;
-    }
+        Border fileDropdown = MakeDropdownPanel();
 
-    private void ScheduleHideDropdown(Border fileDropdown)
-    {
-        _hideCts?.Cancel();
-        _hideCts = new CancellationTokenSource();
-        var token = _hideCts.Token;
+        var openFileButton = new Button { Content = "Open File" };
+        openFileButton.Classes.Add("toolbarButton");
+        var openFolderButton = new Button { Content = "Open Folder" };
+        openFolderButton.Classes.Add("toolbarButton");
 
-        // Delay 150ms before hiding
-        _ = Task.Delay(150).ContinueWith(_ =>
+        var stack = new StackPanel
         {
-            if (!token.IsCancellationRequested && !FileButton.IsPointerOver && !fileDropdown.IsPointerOver)
+            Children =
             {
-                Dispatcher.UIThread.Post(() => fileDropdown.IsVisible = false);
+                openFileButton,
+                openFolderButton
             }
-        });
+        };
+
+        fileDropdown.Child = stack;
+
+        AttachDropdown(fileDropdown, trigger, dropdownLayer, layer =>
+            ShowDropdownBelowTrigger(trigger, layer) ?? new Point(0, 0));
     }
 
-    private void CancelHideDropdown()
+    private static Point? ShowDropdownBelowTrigger(Control trigger, Canvas dropdownLayer)
     {
-        _hideCts?.Cancel();
+        return trigger.TranslatePoint(new Point(0, trigger.Bounds.Height), dropdownLayer);
+    }
+
+    private static Point? ShowDropdownRightOfParent(Control trigger, Canvas dropdownLayer)
+    {
+        return trigger.TranslatePoint(new Point(trigger.Bounds.Width, 0), dropdownLayer);
+    }
+
+    private static void AttachDropdown(
+                                Border dropdown, 
+                                Control trigger, 
+                                Canvas layer, 
+                                Func<Canvas, Point> getPosition)
+    {
+        CancellationTokenSource? hideCts = null;
+
+        void ScheduleHide()
+        {
+            hideCts?.Cancel();
+            hideCts = new CancellationTokenSource();
+            var token = hideCts.Token;
+
+            _ = Task.Delay(150).ContinueWith(_ =>
+            {
+                if (!token.IsCancellationRequested &&
+                    !trigger.IsPointerOver &&
+                    !dropdown.IsPointerOver)
+                {
+                    Dispatcher.UIThread.Post(() => dropdown.IsVisible = false);
+                }
+            });
+        }
+
+        void CancelHide() => hideCts?.Cancel();
+
+        trigger.PointerEntered += (_, __) =>
+        {
+            var pos = getPosition(layer);
+            Canvas.SetLeft(dropdown, pos.X);
+            Canvas.SetTop(dropdown, pos.Y);
+            dropdown.IsVisible = true;
+        };
+        trigger.PointerExited += (_, __) => ScheduleHide();
+        dropdown.PointerEntered += (_, __) => CancelHide();
+        dropdown.PointerExited += (_, __) => ScheduleHide();
+        layer.Children.Add(dropdown);
+    }
+
+    private static Border MakeDropdownPanel(int width=140)
+    {
+        return new() {
+            Background = Brushes.White,
+            BorderBrush = Brushes.Gray,
+            BorderThickness = new Thickness(1),
+            Padding = new Thickness(2),
+            Width = width,
+            IsVisible = false,
+        }; 
     }
 }
