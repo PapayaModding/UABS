@@ -7,7 +7,6 @@
         <Setter Property="Margin" Value="5"/>
         <Setter Property="TextElement.FontFamily" Value="{StaticResource LiberationSans}"/>
         <Setter Property="TextElement.FontSize" Value="18"/>
-        <Setter Property="TextElement.FontWeight" Value="Bold"/>
     </Style>
 
     <Style Selector="Button.toolbarButton:pointerover">

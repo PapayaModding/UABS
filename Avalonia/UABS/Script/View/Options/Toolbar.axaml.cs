@@ -1,10 +1,12 @@
-using Avalonia;
-using Avalonia.Controls;
-using Avalonia.VisualTree;
-using Avalonia.Media;
+using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Avalonia;
+using Avalonia.Controls;
+using Avalonia.Markup.Xaml.Styling;
+using Avalonia.Media;
 using Avalonia.Threading;
+using Avalonia.VisualTree;
 
 namespace UABS.Options;
 
@@ -27,21 +29,32 @@ public partial class Toolbar : UserControl
             var dropdownLayer = window.Find<Canvas>("DropdownLayer");
             if (dropdownLayer == null)
                 return;
+            
+            var styleInclude = new StyleInclude(new Uri("avares://UABS")) 
+            {
+                Source = new Uri("avares://UABS/Script/Styles/ToolbarStyle.axaml")
+            };
+            dropdownLayer.Styles.Add(styleInclude);
+
+            var openFileButton = new Button { Content = "Open File" };
+            openFileButton.Classes.Add("toolbarButton");
+            var openFolderButton = new Button { Content = "Open Folder" };
+            openFolderButton.Classes.Add("toolbarButton");
 
             Border FileDropdown = new()
             {
                 Background = Brushes.White,
                 BorderBrush = Brushes.Gray,
                 BorderThickness = new Thickness(1),
-                Padding = new Thickness(15),
-                Width = 180,
+                Padding = new Thickness(2),
+                Width = 140,
                 IsVisible = false,
                 Child = new StackPanel
                 {
                     Children =
                     {
-                        new Button { Content = "Open File", Classes = { "toolbarButton" } },
-                        new Button { Content = "Open Folder", Classes = { "toolbarButton" } }
+                        openFileButton,
+                        openFolderButton
                     }
                 }
             };
