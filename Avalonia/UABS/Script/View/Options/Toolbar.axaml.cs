@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Avalonia;
@@ -13,6 +15,63 @@ namespace UABS.Options;
 
 public partial class Toolbar : UserControl
 {
+    class DropdownWrapper
+    {
+        public Border Panel { get; init; } = null!;
+        public Control Trigger { get; init; } = null!;
+        public DropdownWrapper? Parent { get; init; }
+
+        public CancellationTokenSource? HideCts;
+
+        private int _visibleChildren = 0;
+        private DropdownWrapper? _activeChild;
+
+        public bool IsPointerOverSelf()
+            => Panel.IsPointerOver || Trigger.IsPointerOver;
+
+        public bool ShouldStayOpen()
+            => IsPointerOverSelf() || _visibleChildren > 0;
+
+        public void OnChildShown(DropdownWrapper child)
+        {
+            if (_activeChild != null && _activeChild != child)
+                _activeChild.ForceHide();
+
+            _activeChild = child;
+            _visibleChildren = 1;
+        }
+
+        public void OnChildHidden(DropdownWrapper child)
+        {
+            if (_activeChild == child)
+            {
+                _activeChild = null;
+                _visibleChildren = 0;
+            }
+
+            if (!ShouldStayOpen())
+                Hide();
+        }
+
+        public void Show()
+        {
+            Panel.IsVisible = true;
+            Parent?.OnChildShown(this);
+        }
+
+        public void Hide()
+        {
+            Panel.IsVisible = false;
+            Parent?.OnChildHidden(this);
+        }
+
+        public void ForceHide()
+        {
+            HideCts?.Cancel();
+            Panel.IsVisible = false;
+            Parent?.OnChildHidden(this);
+        }
+    }
 
     public Toolbar()
     {
@@ -101,6 +160,11 @@ public partial class Toolbar : UserControl
             }
         };
 
+        foreach (Control component in stack.Children)
+        {
+            component.HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Stretch;
+        }
+
         dropdownPanel.Child = stack;
 
         AttachDropdown(dropdownPanel, trigger, dropdownLayer, layer =>
@@ -128,6 +192,11 @@ public partial class Toolbar : UserControl
             }
         };
 
+        foreach (Control component in stack.Children)
+        {
+            component.HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Stretch;
+        }
+
         dropdownPanel.Child = stack;
 
         AttachDropdown(dropdownPanel, trigger, dropdownLayer, layer =>
@@ -140,8 +209,34 @@ public partial class Toolbar : UserControl
 
         Button byKeywordsButton = new() { Content = "By Keywords ▶" };
         byKeywordsButton.Classes.Add("toolbarButton");
+
+        Button testButton = new() { Content = "Test" };
+        testButton.Classes.Add("toolbarButton");
+        Border byKeywordsDropdownPanel = MakeDropdownPanel();
+        StackPanel stack1 = new()
+        {
+            Children =
+            {
+                testButton
+            }
+        };
+        byKeywordsDropdownPanel.Child = stack1;
+
         Button byImageButton = new() { Content = "By Image ▶" };
         byImageButton.Classes.Add("toolbarButton");
+
+        Button testButton2 = new() { Content = "Test" };
+        testButton2.Classes.Add("toolbarButton");
+        Border byImageDropdownPanel = MakeDropdownPanel();
+        StackPanel stack2 = new()
+        {
+            Children =
+            {
+                testButton2
+            }
+        };
+        byImageDropdownPanel.Child = stack2;
+
         Button byMemoButton = new() { Content = "By Memo ▶" };
         byMemoButton.Classes.Add("toolbarButton");
 
@@ -155,10 +250,21 @@ public partial class Toolbar : UserControl
             }
         };
 
+        foreach (Control component in stack.Children)
+        {
+            component.HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Stretch;
+        }
+
         dropdownPanel.Child = stack;
 
-        AttachDropdown(dropdownPanel, trigger, dropdownLayer, layer =>
+        DropdownWrapper parentWrapper = AttachDropdown(dropdownPanel, trigger, dropdownLayer, layer =>
             ShowDropdownBelowTrigger(trigger, layer) ?? new Point(0, 0));
+
+        AttachDropdown(byKeywordsDropdownPanel, byKeywordsButton, dropdownLayer, layer =>
+            ShowDropdownRightOfParent(byKeywordsButton, layer) ?? new Point(0, 0), parentWrapper: parentWrapper);
+        
+        AttachDropdown(byImageDropdownPanel, byImageButton, dropdownLayer, layer =>
+            ShowDropdownRightOfParent(byImageButton, layer) ?? new Point(0, 0), parentWrapper: parentWrapper);
     }
 
     private static void PutDependDropdownPanel(Canvas dropdownLayer, Control trigger)
@@ -178,6 +284,11 @@ public partial class Toolbar : UserControl
                 findDependentsButton
             }
         };
+
+        foreach (Control component in stack.Children)
+        {
+            component.HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Stretch;
+        }
 
         dropdownPanel.Child = stack;
 
@@ -203,6 +314,11 @@ public partial class Toolbar : UserControl
             }
         };
 
+        foreach (Control component in stack.Children)
+        {
+            component.HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Stretch;
+        }
+
         dropdownPanel.Child = stack;
 
         AttachDropdown(dropdownPanel, trigger, dropdownLayer, layer =>
@@ -226,6 +342,11 @@ public partial class Toolbar : UserControl
                 inheritMemoButton
             }
         };
+
+        foreach (Control component in stack.Children)
+        {
+            component.HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Stretch;
+        }
 
         dropdownPanel.Child = stack;
 
@@ -251,6 +372,11 @@ public partial class Toolbar : UserControl
             }
         };
 
+        foreach (Control component in stack.Children)
+        {
+            component.HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Stretch;
+        }
+
         dropdownPanel.Child = stack;
 
         AttachDropdown(dropdownPanel, trigger, dropdownLayer, layer =>
@@ -266,47 +392,60 @@ public partial class Toolbar : UserControl
 
     private static Point? ShowDropdownRightOfParent(Control trigger, Canvas dropdownLayer)
     {
-        return trigger.TranslatePoint(new Point(trigger.Bounds.Width, 0), dropdownLayer);
+        return trigger.TranslatePoint(new Point(trigger.Bounds.Width + 8, -8), dropdownLayer);
     }
 
-    private static void AttachDropdown(
-                                Border dropdown, 
-                                Control trigger, 
-                                Canvas layer, 
-                                Func<Canvas, Point> getPosition)
+    private static DropdownWrapper AttachDropdown(
+        Border dropdown,
+        Control trigger,
+        Canvas layer,
+        Func<Canvas, Point> getPosition,
+        DropdownWrapper? parentWrapper = null)
     {
-        CancellationTokenSource? hideCts = null;
+        var wrapper = new DropdownWrapper
+        {
+            Panel = dropdown,
+            Trigger = trigger,
+            Parent = parentWrapper
+        };
 
         void ScheduleHide()
         {
-            hideCts?.Cancel();
-            hideCts = new CancellationTokenSource();
-            var token = hideCts.Token;
+            wrapper.HideCts?.Cancel();
+            wrapper.HideCts = new CancellationTokenSource();
+            var token = wrapper.HideCts.Token;
 
             _ = Task.Delay(150).ContinueWith(_ =>
             {
-                if (!token.IsCancellationRequested &&
-                    !trigger.IsPointerOver &&
-                    !dropdown.IsPointerOver)
+                if (token.IsCancellationRequested)
+                    return;
+
+                Dispatcher.UIThread.Post(() =>
                 {
-                    Dispatcher.UIThread.Post(() => dropdown.IsVisible = false);
-                }
+                    if (!wrapper.ShouldStayOpen())
+                        wrapper.Hide();
+                });
             });
         }
 
-        void CancelHide() => hideCts?.Cancel();
+        void CancelHide() => wrapper.HideCts?.Cancel();
 
         trigger.PointerEntered += (_, __) =>
         {
             var pos = getPosition(layer);
             Canvas.SetLeft(dropdown, pos.X);
             Canvas.SetTop(dropdown, pos.Y);
-            dropdown.IsVisible = true;
+            wrapper.Show();
+            CancelHide();
         };
+
         trigger.PointerExited += (_, __) => ScheduleHide();
         dropdown.PointerEntered += (_, __) => CancelHide();
         dropdown.PointerExited += (_, __) => ScheduleHide();
+
         layer.Children.Add(dropdown);
+
+        return wrapper;
     }
 
     private static Border MakeDropdownPanel()
