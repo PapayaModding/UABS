@@ -207,8 +207,7 @@ public partial class Toolbar : UserControl
     {
         Border dropdownPanel = MakeDropdownPanel();
 
-        Button byKeywordsButton = new() { Content = "By Keywords ▶" };
-        byKeywordsButton.Classes.Add("toolbarButton");
+        Button byKeywordsButton = CreateArrowButton("By Keywords");
 
         Button testButton = new() { Content = "Test" };
         testButton.Classes.Add("toolbarButton");
@@ -222,8 +221,7 @@ public partial class Toolbar : UserControl
         };
         byKeywordsDropdownPanel.Child = stack1;
 
-        Button byImageButton = new() { Content = "By Image ▶" };
-        byImageButton.Classes.Add("toolbarButton");
+        Button byImageButton = CreateArrowButton("By Image");
 
         Button testButton2 = new() { Content = "Test" };
         testButton2.Classes.Add("toolbarButton");
@@ -237,8 +235,7 @@ public partial class Toolbar : UserControl
         };
         byImageDropdownPanel.Child = stack2;
 
-        Button byMemoButton = new() { Content = "By Memo ▶" };
-        byMemoButton.Classes.Add("toolbarButton");
+        Button byMemoButton = CreateArrowButton("By Memo");
 
         StackPanel stack = new()
         {
@@ -271,10 +268,8 @@ public partial class Toolbar : UserControl
     {
         Border dropdownPanel = MakeDropdownPanel();
 
-        Button findDependenciesButton = new() { Content = "Find Dependencies ▶" };
-        findDependenciesButton.Classes.Add("toolbarButton");
-        Button findDependentsButton = new() { Content = "Find Dependents ▶" };
-        findDependentsButton.Classes.Add("toolbarButton");
+        Button findDependenciesButton = CreateArrowButton("Find Dependencies");
+        Button findDependentsButton = CreateArrowButton("Find Dependents");
 
         StackPanel stack = new()
         {
@@ -300,10 +295,8 @@ public partial class Toolbar : UserControl
     {
         Border dropdownPanel = MakeDropdownPanel();
 
-        Button byTypeButton = new() { Content = "By Type ▶" };
-        byTypeButton.Classes.Add("toolbarButton");
-        Button byNameButton = new() { Content = "By Name ▶" };
-        byNameButton.Classes.Add("toolbarButton");
+        Button byTypeButton = CreateArrowButton("By Type");
+        Button byNameButton = CreateArrowButton("By Name");
 
         StackPanel stack = new()
         {
@@ -329,10 +322,8 @@ public partial class Toolbar : UserControl
     {
         Border dropdownPanel = MakeDropdownPanel();
 
-        Button selectPackageButton = new() { Content = "Select Package ▶" };
-        selectPackageButton.Classes.Add("toolbarButton");
-        Button inheritMemoButton = new() { Content = "Inherit Memo ▶" };
-        inheritMemoButton.Classes.Add("toolbarButton");
+        Button selectPackageButton = CreateArrowButton("Select Package");
+        Button inheritMemoButton = CreateArrowButton("Inherit Memo");
 
         StackPanel stack = new()
         {
@@ -358,10 +349,8 @@ public partial class Toolbar : UserControl
     {
         Border dropdownPanel = MakeDropdownPanel();
 
-        Button buildNewButton = new() { Content = "Build New ▶" };
-        buildNewButton.Classes.Add("toolbarButton");
-        Button removeButton = new() { Content = "Remove ▶" };
-        removeButton.Classes.Add("toolbarButton");
+        Button buildNewButton = CreateArrowButton("Build New");
+        Button removeButton = CreateArrowButton("Remove");
 
         StackPanel stack = new()
         {
@@ -384,6 +373,39 @@ public partial class Toolbar : UserControl
     }
 
 #region Component
+
+    private static Button CreateArrowButton(string text)
+    {
+        var grid = new Grid
+        {
+            ColumnDefinitions = new ColumnDefinitions("*,Auto")
+        };
+
+        var mainText = new TextBlock
+        {
+            Text = text,
+            VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center
+        };
+        Grid.SetColumn(mainText, 0);
+
+        var arrow = new TextBlock
+        {
+            Text = "▶",
+            VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
+            HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Right,
+            Margin = new Thickness(5, 0, 0, 0) // 5 pixels of space on the left
+        };
+        Grid.SetColumn(arrow, 1);
+
+        grid.Children.Add(mainText);
+        grid.Children.Add(arrow);
+
+        return new Button
+        {
+            Classes = { "toolbarButton" },
+            Content = grid
+        };
+    }
 
     private static Point? ShowDropdownBelowTrigger(Control trigger, Canvas dropdownLayer)
     {
