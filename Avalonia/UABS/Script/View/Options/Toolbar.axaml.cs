@@ -7,6 +7,7 @@ using Avalonia.Markup.Xaml.Styling;
 using Avalonia.Media;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
+using UABS.Script.View.ViewModels;
 
 namespace UABS.Options;
 
@@ -19,6 +20,16 @@ public partial class Toolbar : UserControl
 
         this.AttachedToVisualTree += (_, __) =>
         {
+            // Get the parent DataContext (MainViewModel)
+            if (this.Parent?.DataContext is MainViewModel mainVm)
+            {
+                this.DataContext = mainVm.Toolbar;
+            }
+            else
+            {
+                Log.Error("Toolbar must be placed inside a MainWindow with MainViewModel as DataContext.");
+            }
+
             // Get reference to MainWindow
             if (this.GetVisualRoot() is not Window window)
             {
@@ -53,14 +64,33 @@ public partial class Toolbar : UserControl
         };
     }
 
-    private static void PutFileDropdownPanel(Canvas dropdownLayer, Control trigger)
+    private void PutFileDropdownPanel(Canvas dropdownLayer, Control trigger)
     {
         Border dropdownPanel = MakeDropdownPanel();
 
-        Button openFileButton = new() { Content = "Open File" };
-        openFileButton.Classes.Add("toolbarButton");
-        Button openFolderButton = new() { Content = "Open Folder" };
-        openFolderButton.Classes.Add("toolbarButton");
+        var toolbarVm = this.DataContext as ToolbarViewModel;
+        Button openFileButton = new()
+        {
+            Content = "Open File",
+            Classes = { "toolbarButton" },
+        };
+        openFileButton.Click += (_, __) =>
+        {
+            if (toolbarVm == null) return;
+            var owner = this.VisualRoot as Window;
+            toolbarVm.OpenFileCommand.Execute(owner);
+        };
+        Button openFolderButton = new() 
+        { 
+            Content = "Open Folder",
+            Classes = { "toolbarButton" },
+        };
+        openFolderButton.Click += (_, __) =>
+        {
+            if (toolbarVm == null) return;
+            var owner = this.VisualRoot as Window;
+            toolbarVm.OpenFolderCommand.Execute(owner);
+        };
 
         StackPanel stack = new()
         {

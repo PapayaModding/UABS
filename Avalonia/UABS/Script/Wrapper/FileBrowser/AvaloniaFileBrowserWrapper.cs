@@ -8,12 +8,11 @@ namespace UABS.Script.Wrapper.FileBrowser
 {
     public class AvaloniaFileBrowserWrapper : IFileBrowser
     {
-        public async Task<string[]> OpenFilePanelAsync(Window owner, string title, string directory, string[] extensions, bool multiselect)
+        public async Task<string[]> OpenFilePanelAsync(Window owner, string title, string[] extensions)
         {
             var options = new FilePickerOpenOptions
             {
                 Title = title,
-                AllowMultiple = multiselect,
                 FileTypeFilter = new[]
                 {
                     new FilePickerFileType("Supported Files") { Patterns = extensions.Select(e => $"*.{e}").ToArray() }
@@ -24,21 +23,19 @@ namespace UABS.Script.Wrapper.FileBrowser
             return files?.Select(f => f.Path.LocalPath).ToArray() ?? [];
         }
 
-        public async Task<string[]> OpenFilePanelAsync(Window owner, string title, string directory, bool multiselect)
+        public async Task<string[]> OpenFilePanelAsync(Window owner, string title)
         {
             var options = new FilePickerOpenOptions
             {
-                Title = title,
-                AllowMultiple = multiselect
+                Title = title
             };
 
             var files = await owner.StorageProvider.OpenFilePickerAsync(options);
             return files?.Select(f => f.Path.LocalPath).ToArray() ?? Array.Empty<string>();
         }
 
-        public async Task<string[]> OpenFolderPanelAsync(Window owner, string title, string directory, bool multiselect)
+        public async Task<string[]> OpenFolderPanelAsync(Window owner, string title)
         {
-            // StorageProvider doesn't natively support multi-folder selection
             var folders = await owner.StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions
             {
                 Title = title
@@ -47,7 +44,7 @@ namespace UABS.Script.Wrapper.FileBrowser
             return folders?.Select(f => f.Path.LocalPath).ToArray() ?? [];
         }
 
-        public async Task<string?> SaveFilePanelAsync(Window owner, string title, string directory, string defaultName, string extension)
+        public async Task<string?> SaveFilePanelAsync(Window owner, string title, string defaultName, string extension)
         {
             var options = new FilePickerSaveOptions
             {

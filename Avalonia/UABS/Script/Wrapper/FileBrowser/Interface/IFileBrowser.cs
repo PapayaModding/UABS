@@ -5,9 +5,9 @@ namespace UABS.Script.Wrapper.FileBrowser
 {
     public interface IFileBrowser
     {
-        Task<string[]> OpenFilePanelAsync(Window owner, string title, string directory, string[] extensions, bool multiselect);
-        Task<string[]> OpenFilePanelAsync(Window owner, string title, string directory, bool multiselect);
-        Task<string[]> OpenFolderPanelAsync(Window owner, string title, string directory, bool multiselect);
-        Task<string?> SaveFilePanelAsync(Window owner, string title, string directory, string defaultName, string extension);
+        Task<string[]> OpenFilePanelAsync(Window owner, string title, string[] extensions);
+        Task<string[]> OpenFilePanelAsync(Window owner, string title);
+        Task<string[]> OpenFolderPanelAsync(Window owner, string title);
+        Task<string?> SaveFilePanelAsync(Window owner, string title, string defaultName, string extension);
     }
 }

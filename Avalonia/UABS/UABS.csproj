@@ -21,6 +21,7 @@
       <PrivateAssets Condition="'$(Configuration)' != 'Debug'">All</PrivateAssets>
     </PackageReference>
     <PackageReference Include="Avalonia.Controls.DataGrid" Version="11.3.3" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.2" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
 
     <Reference Include="BCnEncoder">
