@@ -120,6 +120,18 @@ public partial class Toolbar : UserControl
             PutFilterDropdownPanel(dropdownLayer, trigger: FilterButton);
             PutMemoDropdownPanel(dropdownLayer, trigger: MemoButton);
             PutPackageDropdownPanel(dropdownLayer, trigger: PackageButton);
+
+            if (this.DataContext is ToolbarViewModel toolbarVm)
+            {
+                var binding = new Avalonia.Data.Binding
+                {
+                    Path = nameof(ToolbarViewModel.CanExport),
+                    Source = toolbarVm,
+                    Mode = Avalonia.Data.BindingMode.OneWay
+                };
+
+                ExportButton.Bind(Button.IsEnabledProperty, binding);
+            };
         };
     }
 
@@ -454,6 +466,8 @@ public partial class Toolbar : UserControl
 
         trigger.PointerEntered += (_, __) =>
         {
+            if (!trigger.IsEnabled) return; // <-- ignore if disabled
+
             var pos = getPosition(layer);
             Canvas.SetLeft(dropdown, pos.X);
             Canvas.SetTop(dropdown, pos.Y);

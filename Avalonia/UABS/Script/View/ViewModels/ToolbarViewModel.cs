@@ -7,7 +7,7 @@ using UABS.Script.Wrapper.FileBrowser;
 
 namespace UABS.Script.View.ViewModels
 {
-    public class ToolbarViewModel
+    public class ToolbarViewModel : ViewModelBase
     {
         private readonly IFileBrowser _fileBrowser;
 
@@ -16,6 +16,13 @@ namespace UABS.Script.View.ViewModels
 
         public ICommand OpenFileCommand { get; }
         public event Action<string>? FileSelected;
+
+        private bool _canExport = false;
+        public bool CanExport
+        {
+            get => _canExport;
+            set => SetProperty(ref _canExport, value);
+        }
 
         public ToolbarViewModel(IFileBrowser fileBrowser)
         {
