@@ -220,7 +220,6 @@ public partial class Toolbar : UserControl
 
     private void PutSearchDropdownPanel(Canvas dropdownLayer, Control trigger)
     {
-        Border dropdownPanel = MakeDropdownPanel();
         Button byKeywordsButton = CreateArrowButton("By Keywords");
         Button byImageButton = CreateArrowButton("By Image");
         Button byMemoButton = CreateArrowButton("By Memo");
@@ -240,6 +239,7 @@ public partial class Toolbar : UserControl
             component.HorizontalAlignment = HorizontalAlignment.Stretch;
         }
 
+        Border dropdownPanel = MakeDropdownPanel();
         dropdownPanel.Child = stack;
 
         DropdownWrapper parentWrapper = AttachDropdown(dropdownPanel, trigger, dropdownLayer, layer =>
@@ -259,10 +259,8 @@ public partial class Toolbar : UserControl
         }
     }
 
-    private static void PutDependDropdownPanel(Canvas dropdownLayer, Control trigger)
+    private void PutDependDropdownPanel(Canvas dropdownLayer, Control trigger)
     {
-        Border dropdownPanel = MakeDropdownPanel();
-
         Button findDependenciesButton = CreateArrowButton("Find Dependencies");
         Button findDependentsButton = CreateArrowButton("Find Dependents");
 
@@ -280,10 +278,22 @@ public partial class Toolbar : UserControl
             component.HorizontalAlignment = HorizontalAlignment.Stretch;
         }
 
+        Border dropdownPanel = MakeDropdownPanel();
         dropdownPanel.Child = stack;
 
-        AttachDropdown(dropdownPanel, trigger, dropdownLayer, layer =>
+        DropdownWrapper parentWrapper = AttachDropdown(dropdownPanel, trigger, dropdownLayer, layer =>
             ShowDropdownBelowTrigger(trigger, layer) ?? new Point(0, 0));
+
+        if (this.DataContext is ToolbarViewModel toolbarVm)
+        {
+            AttachDropdown(DependDropdownPanels.BuildDependenciesPanel(toolbarVm, MakeDropdownPanel, NESTED_DROPDOWN_PANEL_WIDTH),
+                findDependenciesButton, dropdownLayer, layer =>
+                ShowDropdownRightOfParent(findDependenciesButton, layer) ?? new Point(0, 0), parentWrapper: parentWrapper);
+
+            AttachDropdown(DependDropdownPanels.BuildDependentsPanel(toolbarVm, MakeDropdownPanel, NESTED_DROPDOWN_PANEL_WIDTH),
+                findDependentsButton, dropdownLayer, layer =>
+                ShowDropdownRightOfParent(findDependentsButton, layer) ?? new Point(0, 0), parentWrapper: parentWrapper);
+        }
     }
 
     private static void PutFilterDropdownPanel(Canvas dropdownLayer, Control trigger)
