@@ -1,14 +1,15 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
+using Avalonia.Layout;
 using Avalonia.Markup.Xaml.Styling;
 using Avalonia.Media;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
+using UABS.Script.View.Options;
 using UABS.Script.View.ViewModels;
 
 namespace UABS.Options;
@@ -73,6 +74,8 @@ public partial class Toolbar : UserControl
         }
     }
 
+    private static readonly int NESTED_DROPDOWN_PANEL_WIDTH = 240;
+
     public Toolbar()
     {
         InitializeComponent();
@@ -106,12 +109,13 @@ public partial class Toolbar : UserControl
                 return;
             }
 
-            // * Add styles here
+#region Styles
             StyleInclude style1 = new(new Uri("avares://UABS")) 
             {
                 Source = new Uri("avares://UABS/Script/Styles/ToolbarStyle.axaml")
             };
             dropdownLayer.Styles.Add(style1);
+#endregion
 
             PutFileDropdownPanel(dropdownLayer, trigger: FileButton);
             PutExportDropdownPanel(dropdownLayer, trigger: ExportButton);
@@ -215,38 +219,11 @@ public partial class Toolbar : UserControl
             ShowDropdownBelowTrigger(trigger, layer) ?? new Point(0, 0));
     }
 
-    private static void PutSearchDropdownPanel(Canvas dropdownLayer, Control trigger)
+    private void PutSearchDropdownPanel(Canvas dropdownLayer, Control trigger)
     {
         Border dropdownPanel = MakeDropdownPanel();
-
         Button byKeywordsButton = CreateArrowButton("By Keywords");
-
-        Button testButton = new() { Content = "Test" };
-        testButton.Classes.Add("toolbarButton");
-        Border byKeywordsDropdownPanel = MakeDropdownPanel();
-        StackPanel stack1 = new()
-        {
-            Children =
-            {
-                testButton
-            }
-        };
-        byKeywordsDropdownPanel.Child = stack1;
-
         Button byImageButton = CreateArrowButton("By Image");
-
-        Button testButton2 = new() { Content = "Test" };
-        testButton2.Classes.Add("toolbarButton");
-        Border byImageDropdownPanel = MakeDropdownPanel();
-        StackPanel stack2 = new()
-        {
-            Children =
-            {
-                testButton2
-            }
-        };
-        byImageDropdownPanel.Child = stack2;
-
         Button byMemoButton = CreateArrowButton("By Memo");
 
         StackPanel stack = new()
@@ -261,7 +238,7 @@ public partial class Toolbar : UserControl
 
         foreach (Control component in stack.Children)
         {
-            component.HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Stretch;
+            component.HorizontalAlignment = HorizontalAlignment.Stretch;
         }
 
         dropdownPanel.Child = stack;
@@ -269,11 +246,18 @@ public partial class Toolbar : UserControl
         DropdownWrapper parentWrapper = AttachDropdown(dropdownPanel, trigger, dropdownLayer, layer =>
             ShowDropdownBelowTrigger(trigger, layer) ?? new Point(0, 0));
 
-        AttachDropdown(byKeywordsDropdownPanel, byKeywordsButton, dropdownLayer, layer =>
-            ShowDropdownRightOfParent(byKeywordsButton, layer) ?? new Point(0, 0), parentWrapper: parentWrapper);
-        
-        AttachDropdown(byImageDropdownPanel, byImageButton, dropdownLayer, layer =>
-            ShowDropdownRightOfParent(byImageButton, layer) ?? new Point(0, 0), parentWrapper: parentWrapper);
+        if (this.DataContext is ToolbarViewModel toolbarVm)
+        {
+            AttachDropdown(SearchDropdownPanels.BuildByKeywordsPanel(toolbarVm, MakeDropdownPanel, NESTED_DROPDOWN_PANEL_WIDTH), 
+                byKeywordsButton, dropdownLayer, layer =>
+                ShowDropdownRightOfParent(byKeywordsButton, layer) ?? new Point(0, 0), parentWrapper: parentWrapper);
+            AttachDropdown(SearchDropdownPanels.BuildByImagePanel(toolbarVm, MakeDropdownPanel, NESTED_DROPDOWN_PANEL_WIDTH), 
+                byImageButton, dropdownLayer, layer =>
+                ShowDropdownRightOfParent(byImageButton, layer) ?? new Point(0, 0), parentWrapper: parentWrapper);
+            AttachDropdown(SearchDropdownPanels.BuildByMemoPanel(toolbarVm, MakeDropdownPanel, NESTED_DROPDOWN_PANEL_WIDTH), 
+                byMemoButton, dropdownLayer, layer =>
+                ShowDropdownRightOfParent(byMemoButton, layer) ?? new Point(0, 0), parentWrapper: parentWrapper);
+        }
     }
 
     private static void PutDependDropdownPanel(Canvas dropdownLayer, Control trigger)
@@ -294,7 +278,7 @@ public partial class Toolbar : UserControl
 
         foreach (Control component in stack.Children)
         {
-            component.HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Stretch;
+            component.HorizontalAlignment = HorizontalAlignment.Stretch;
         }
 
         dropdownPanel.Child = stack;
@@ -426,7 +410,7 @@ public partial class Toolbar : UserControl
 
     private static Point? ShowDropdownRightOfParent(Control trigger, Canvas dropdownLayer)
     {
-        return trigger.TranslatePoint(new Point(trigger.Bounds.Width + 8, -8), dropdownLayer);
+        return trigger.TranslatePoint(new Point(trigger.Bounds.Width + 6, -6), dropdownLayer);
     }
 
     private static DropdownWrapper AttachDropdown(
@@ -490,7 +474,6 @@ public partial class Toolbar : UserControl
             Background = Brushes.White,
             BorderBrush = Brushes.Gray,
             BorderThickness = new Thickness(1),
-            Padding = new Thickness(2),
             IsVisible = false,
         }; 
     }
