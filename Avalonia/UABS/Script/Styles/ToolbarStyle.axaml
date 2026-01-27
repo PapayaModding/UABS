@@ -13,6 +13,18 @@
         <Setter Property="Background" Value="#a7a7a7ff"/>
     </Style>
 
+    <Style Selector="Button.smallToolbarButton">
+        <Setter Property="Foreground" Value="Black"/>
+        <Setter Property="Background" Value="White"/>
+        <Setter Property="Margin" Value="5,0"/>
+        <Setter Property="TextElement.FontFamily" Value="{StaticResource LiberationSans}"/>
+        <Setter Property="TextElement.FontSize" Value="14"/>
+    </Style>
+
+    <Style Selector="Button.smallToolbarButton:pointerover">
+        <Setter Property="Background" Value="#a7a7a7ff"/>
+    </Style>
+
     <Style Selector="Label.smallToolbarLabel">
         <Setter Property="Foreground" Value="DarkGray"/>
         <Setter Property="Background" Value="White"/>

@@ -3,7 +3,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
-using Avalonia.Controls.Primitives;
 using Avalonia.Layout;
 using Avalonia.Markup.Xaml.Styling;
 using Avalonia.Media;
@@ -178,7 +177,7 @@ public partial class Toolbar : UserControl
 
         foreach (Control component in stack.Children)
         {
-            component.HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Stretch;
+            component.HorizontalAlignment = HorizontalAlignment.Stretch;
         }
 
         dropdownPanel.Child = stack;
@@ -210,7 +209,7 @@ public partial class Toolbar : UserControl
 
         foreach (Control component in stack.Children)
         {
-            component.HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Stretch;
+            component.HorizontalAlignment = HorizontalAlignment.Stretch;
         }
 
         dropdownPanel.Child = stack;
@@ -305,7 +304,7 @@ public partial class Toolbar : UserControl
 
         foreach (Control component in stack.Children)
         {
-            component.HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Stretch;
+            component.HorizontalAlignment = HorizontalAlignment.Stretch;
         }
 
         dropdownPanel.Child = stack;
@@ -332,7 +331,7 @@ public partial class Toolbar : UserControl
 
         foreach (Control component in stack.Children)
         {
-            component.HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Stretch;
+            component.HorizontalAlignment = HorizontalAlignment.Stretch;
         }
 
         dropdownPanel.Child = stack;
@@ -359,7 +358,7 @@ public partial class Toolbar : UserControl
 
         foreach (Control component in stack.Children)
         {
-            component.HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Stretch;
+            component.HorizontalAlignment = HorizontalAlignment.Stretch;
         }
 
         dropdownPanel.Child = stack;
@@ -380,15 +379,15 @@ public partial class Toolbar : UserControl
         var mainText = new TextBlock
         {
             Text = text,
-            VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center
+            VerticalAlignment = VerticalAlignment.Center
         };
         Grid.SetColumn(mainText, 0);
 
         var arrow = new TextBlock
         {
             Text = "▶",
-            VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
-            HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Right,
+            VerticalAlignment = VerticalAlignment.Center,
+            HorizontalAlignment = HorizontalAlignment.Right,
             Margin = new Thickness(5, 0, 0, 0) // 5 pixels of space on the left
         };
         Grid.SetColumn(arrow, 1);
