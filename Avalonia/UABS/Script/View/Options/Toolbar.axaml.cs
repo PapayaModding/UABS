@@ -296,10 +296,8 @@ public partial class Toolbar : UserControl
         }
     }
 
-    private static void PutFilterDropdownPanel(Canvas dropdownLayer, Control trigger)
+    private void PutFilterDropdownPanel(Canvas dropdownLayer, Control trigger)
     {
-        Border dropdownPanel = MakeDropdownPanel();
-
         Button byTypeButton = CreateArrowButton("By Type");
         Button byNameButton = CreateArrowButton("By Name");
 
@@ -317,10 +315,22 @@ public partial class Toolbar : UserControl
             component.HorizontalAlignment = HorizontalAlignment.Stretch;
         }
 
+        Border dropdownPanel = MakeDropdownPanel();
         dropdownPanel.Child = stack;
 
-        AttachDropdown(dropdownPanel, trigger, dropdownLayer, layer =>
+        DropdownWrapper parentWrapper = AttachDropdown(dropdownPanel, trigger, dropdownLayer, layer =>
             ShowDropdownBelowTrigger(trigger, layer) ?? new Point(0, 0));
+
+        if (this.DataContext is ToolbarViewModel toolbarVm)
+        {
+            AttachDropdown(FilterDropdownPanels.BuildFilterByTypePanel(toolbarVm, MakeDropdownPanel, NESTED_DROPDOWN_PANEL_WIDTH),
+                byTypeButton, dropdownLayer, layer =>
+                ShowDropdownRightOfParent(byTypeButton, layer) ?? new Point(0, 0), parentWrapper: parentWrapper);
+
+            AttachDropdown(FilterDropdownPanels.BuildFilterByNamePanel(toolbarVm, MakeDropdownPanel, NESTED_DROPDOWN_PANEL_WIDTH),
+                byNameButton, dropdownLayer, layer =>
+                ShowDropdownRightOfParent(byNameButton, layer) ?? new Point(0, 0), parentWrapper: parentWrapper);
+        }
     }
 
     private static void PutMemoDropdownPanel(Canvas dropdownLayer, Control trigger)

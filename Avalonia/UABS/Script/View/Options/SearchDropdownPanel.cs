@@ -16,7 +16,7 @@ namespace UABS.Script.View.Options
                                                     Func<Border> makeDropdownPanel,
                                                     int nested_dropdown_panel_width)
         {
-            Button buildNewPackageButton = new() { Content = "BuildNewPackage" };
+            Button buildNewPackageButton = new() { Content = "Build New Package" };
             buildNewPackageButton.Classes.Add("toolbarButton");
 
             Border thinBlackLine = new()
@@ -93,7 +93,7 @@ namespace UABS.Script.View.Options
                                                 Func<Border> makeDropdownPanel,
                                                 int nested_dropdown_panel_width)
         {
-            Button buildNewPackageButton = new() { Content = "BuildNewPackage" };
+            Button buildNewPackageButton = new() { Content = "Build New Package" };
             buildNewPackageButton.Classes.Add("toolbarButton");
 
             Border thinBlackLine = new()
@@ -204,7 +204,7 @@ namespace UABS.Script.View.Options
                                                 Func<Border> makeDropdownPanel,
                                                 int nested_dropdown_panel_width)
         {
-            Button buildNewPackageButton = new() { Content = "BuildNewPackage" };
+            Button buildNewPackageButton = new() { Content = "Build New Package" };
             buildNewPackageButton.Classes.Add("toolbarButton");
 
             Border thinBlackLine = new()
