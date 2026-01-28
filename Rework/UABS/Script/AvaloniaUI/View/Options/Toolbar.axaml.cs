@@ -126,14 +126,37 @@ namespace UABS.AvaloniaUI
 
                 if (this.DataContext is ToolbarViewModel toolbarVm)
                 {
-                    var binding = new Avalonia.Data.Binding
+                    ExportButton.Bind(Button.IsEnabledProperty, 
+                    new Avalonia.Data.Binding
                     {
                         Path = nameof(ToolbarViewModel.CanExport),
                         Source = toolbarVm,
                         Mode = Avalonia.Data.BindingMode.OneWay
-                    };
+                    });
 
-                    ExportButton.Bind(Button.IsEnabledProperty, binding);
+                    DependButton.Bind(Button.IsEnabledProperty, 
+                    new Avalonia.Data.Binding
+                    {
+                        Path = nameof(ToolbarViewModel.CanDepend),
+                        Source = toolbarVm,
+                        Mode = Avalonia.Data.BindingMode.OneWay
+                    });
+
+                    FilterButton.Bind(Button.IsEnabledProperty, 
+                    new Avalonia.Data.Binding
+                    {
+                        Path = nameof(ToolbarViewModel.CanFilter),
+                        Source = toolbarVm,
+                        Mode = Avalonia.Data.BindingMode.OneWay
+                    });
+
+                    BackButton.Bind(Button.IsEnabledProperty, 
+                    new Avalonia.Data.Binding
+                    {
+                        Path = nameof(ToolbarViewModel.CanBack),
+                        Source = toolbarVm,
+                        Mode = Avalonia.Data.BindingMode.OneWay
+                    });
                 };
             };
         }

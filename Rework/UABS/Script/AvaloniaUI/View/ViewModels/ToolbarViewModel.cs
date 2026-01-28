@@ -24,6 +24,27 @@ namespace UABS.AvaloniaUI
             set => SetProperty(ref _canExport, value);
         }
 
+        private bool _canDepend = false;
+        public bool CanDepend
+        {
+            get => _canDepend;
+            set => SetProperty(ref _canDepend, value);
+        }
+
+        private bool _canFilter = false;
+        public bool CanFilter
+        {
+            get => _canFilter;
+            set => SetProperty(ref _canFilter, value);
+        }
+
+        private bool _canBack = false;
+        public bool CanBack
+        {
+            get => _canBack;
+            set => SetProperty(ref _canBack, value);
+        }
+
         public ToolbarViewModel(IFileBrowser fileBrowser)
         {
             _fileBrowser = fileBrowser;
