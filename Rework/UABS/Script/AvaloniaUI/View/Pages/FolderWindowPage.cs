@@ -22,6 +22,7 @@ namespace UABS.AvaloniaUI
                     Log.Error("Folder Window must be placed inside a MainWindow with MainViewModel as DataContext.");
                 }
 
+                // The data grid selection thing is mainly for File Window, put it here for now
                 dataGrid.SelectionMode = DataGridSelectionMode.Extended;
                 dataGrid.SelectionChanged += (s, e) =>
                 {
