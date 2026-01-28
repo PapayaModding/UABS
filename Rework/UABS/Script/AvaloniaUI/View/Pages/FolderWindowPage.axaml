@@ -9,68 +9,79 @@
         <StyleInclude Source="avares://UABS/Script/AvaloniaUI/Styles/PathfieldStyle.axaml"/>
     </UserControl.Styles>
 
-    <StackPanel>
+    <Grid RowDefinitions="Auto,Auto,*">
+
         <!-- Path Field -->
-        <TextBox Text="---" IsReadOnly="True" Classes="pathfieldTextBox"/>
+        <TextBox Grid.Row="0"
+                Text="---"
+                IsReadOnly="True"
+                Classes="pathfieldTextBox"/>
 
         <!-- Sort Panel -->
-        <local:FolderWindowSortPanel />
-        
-        <DataGrid x:Name="dataGrid"
-                  AutoGenerateColumns="False"
-                  CanUserResizeColumns="True"
-                  IsReadOnly="True"
-                  ItemsSource="{Binding ItemsSource}"
-                  HeadersVisibility="None">
+        <local:FolderWindowSortPanel Grid.Row="1"/>
 
+        <!-- DataGrid -->
+        <DataGrid Grid.Row="2"
+                ItemsSource="{Binding ItemsSource}"
+                AutoGenerateColumns="False"
+                CanUserResizeColumns="True"
+                IsReadOnly="True"
+                HeadersVisibility="None"
+                RowHeight="40">
+
+            <!-- Remove nth-child styles entirely -->
             <DataGrid.Styles>
-                <Style Selector="DataGridRow">
-                    <Setter Property="Background" Value="#EBFFDB"/>
-                    <Setter Property="Margin" Value="8, 2, 8, 2"/>
-                    <Setter Property="Height" Value="40"/>
-                    <Setter Property="CornerRadius" Value="2"/>
-                </Style>
-                <Style Selector="DataGridRow:nth-child(2n)">
-                    <Setter Property="Background" Value="#FFFFFF"/>
-                </Style>
                 <Style Selector="DataGridRow:selected">
-                    <Setter Property="Background" Value="#00FF00"/>
+                    <Setter Property="Background" Value="Transparent"/>
                 </Style>
-                <Style Selector="DataGrid:focus DataGridCell:current /template/ Grid#FocusVisual"> 
-                    <Setter Property="IsVisible" Value="False" /> 
-                </Style> 
-                <!-- <Style Selector="DataGridColumnHeader">
-                    <Setter Property="Background" Value="Darkgray"/>
-                    <Setter Property="FontWeight" Value="Bold"/>
-                    <Setter Property="Foreground" Value="#222"/>
-                    <Setter Property="HorizontalContentAlignment" Value="Center"/>
-                    <Setter Property="Height" Value="32"/>
-                </Style> -->
+
+                <Style Selector="DataGrid:focus DataGridCell:current /template/ Grid#FocusVisual">
+                    <Setter Property="IsVisible" Value="False"/>
+                </Style>
+
+                <Style Selector="DataGrid /template/ ScrollBar#PART_VerticalScrollbar">
+                    <Setter Property="AllowAutoHide" Value="False"/>
+                </Style>		
             </DataGrid.Styles>
 
             <DataGrid.Columns>
-                <DataGridTemplateColumn Header=" ">
-                <DataGridTemplateColumn.CellTemplate>
-                    <DataTemplate x:DataType="data:FolderWindowEntry">
-                        <Image Source="{Binding Type, Converter={StaticResource FolderWindowIconConvertor}}" Stretch="Uniform" 
-                                Width="32" Height="32"
-                                RenderOptions.BitmapInterpolationMode="HighQuality"
-                                VerticalAlignment="Center"/>
-                    </DataTemplate>
-                </DataGridTemplateColumn.CellTemplate>
-                </DataGridTemplateColumn>
-                
-                <DataGridTemplateColumn Header="Name">
+
+                <!-- Icon column -->
+                <DataGridTemplateColumn Width="48">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate x:DataType="data:FolderWindowEntry">
-                            <TextBlock Text="{Binding Name}" VerticalAlignment="Center" Padding="6,0,0,0"/>
+                            <Border Height="36"
+                                    Margin="8,2,0,0"
+                                    CornerRadius="2,0,0,2"
+                                    Background="{Binding RowBackground}">
+                                <Image Source="{Binding Type, Converter={StaticResource FolderWindowIconConvertor}}"
+                                    Width="32"
+                                    Height="32"
+                                    VerticalAlignment="Center"/>
+                            </Border>
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
-            </DataGrid.Columns>
 
+                <!-- Name column -->
+                <DataGridTemplateColumn Width="*">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate x:DataType="data:FolderWindowEntry">
+                            <Border Height="36"
+                                    Margin="0,2,8,0"
+                                    CornerRadius="0,2,2,0"
+                                    Background="{Binding RowBackground}">
+                                <TextBlock Text="{Binding Name}"
+                                        VerticalAlignment="Center"
+                                        Padding="6,0,0,0"/>
+                            </Border>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+
+            </DataGrid.Columns>
         </DataGrid>
 
-    </StackPanel>
+    </Grid>
 
 </UserControl>

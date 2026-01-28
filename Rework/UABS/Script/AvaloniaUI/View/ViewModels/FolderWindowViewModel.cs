@@ -21,8 +21,12 @@ namespace UABS.AvaloniaUI
             var newEntries = FolderWindowService.GetEntries(path, cachedFolder);
             ItemsSource.Clear();
 
-            foreach (var e in newEntries)
-                ItemsSource.Add(e);
+            for (int i = 0; i < newEntries.Count; i++)
+            {
+                newEntries[i].RowBackground =
+                    i % 2 == 0 ? "#d6ffd7" : "#FFFFFF";
+                ItemsSource.Add(newEntries[i]);
+            }
 
             FolderWindow.Items = ItemsSource.ToList();
         }

@@ -5,13 +5,15 @@ namespace UABS.Data
 {
     public class FolderWindowEntry
     {
-        public string Name { get; private set; }
+        public string Name { get; }
 
-        public FolderWindowType Type { get; private set; }
+        public FolderWindowType Type { get; }
 
-        public string FullPath { get; private set; }
+        public string FullPath { get; }
 
-        public string CachedPath { get; private set; }
+        public string CachedPath { get; }
+
+        public string RowBackground { get; set; } = "#FFFFFF";
 
         public FolderWindowEntry(string fullPath, string cachedPath="")
         {
