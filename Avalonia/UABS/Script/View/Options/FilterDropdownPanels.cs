@@ -31,11 +31,11 @@ namespace UABS.Script.View.Options
                 Margin = new Thickness(10, 0, 10, 10)
             };
 
-            Button includeAllButton = new() { Content = "Include All" };
-            includeAllButton.Classes.Add("toolbarButton");
+            Button enableAllButton = new() { Content = "Enable All" };
+            enableAllButton.Classes.Add("toolbarButton");
 
-            Button excludeAllButton = new() { Content = "Exclude All" };
-            excludeAllButton.Classes.Add("toolbarButton");
+            Button disableAllButton = new() { Content = "Disable All" };
+            disableAllButton.Classes.Add("toolbarButton");
 
             StackPanel stack = new()
             {
@@ -43,13 +43,13 @@ namespace UABS.Script.View.Options
                 {
                     filterByTypeLabel,
                     typesScrollView,
-                    includeAllButton,
-                    excludeAllButton
+                    enableAllButton,
+                    disableAllButton
                 }
             };
 
-            includeAllButton.HorizontalAlignment = HorizontalAlignment.Center;
-            excludeAllButton.HorizontalAlignment = HorizontalAlignment.Center;
+            enableAllButton.HorizontalAlignment = HorizontalAlignment.Center;
+            disableAllButton.HorizontalAlignment = HorizontalAlignment.Center;
 
             Border dropdownPanel = makeDropdownPanel();
             dropdownPanel.Width = nested_dropdown_panel_width;

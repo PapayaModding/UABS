@@ -333,10 +333,8 @@ public partial class Toolbar : UserControl
         }
     }
 
-    private static void PutMemoDropdownPanel(Canvas dropdownLayer, Control trigger)
+    private void PutMemoDropdownPanel(Canvas dropdownLayer, Control trigger)
     {
-        Border dropdownPanel = MakeDropdownPanel();
-
         Button selectPackageButton = CreateArrowButton("Select Package");
         Button inheritMemoButton = CreateArrowButton("Inherit Memo");
 
@@ -354,10 +352,22 @@ public partial class Toolbar : UserControl
             component.HorizontalAlignment = HorizontalAlignment.Stretch;
         }
 
+        Border dropdownPanel = MakeDropdownPanel();
         dropdownPanel.Child = stack;
 
-        AttachDropdown(dropdownPanel, trigger, dropdownLayer, layer =>
+        DropdownWrapper parentWrapper = AttachDropdown(dropdownPanel, trigger, dropdownLayer, layer =>
             ShowDropdownBelowTrigger(trigger, layer) ?? new Point(0, 0));
+        
+        if (this.DataContext is ToolbarViewModel toolbarVm)
+        {
+            AttachDropdown(MemoDropdownPanels.BuildSelectPackagePanel(toolbarVm, MakeDropdownPanel, NESTED_DROPDOWN_PANEL_WIDTH),
+                selectPackageButton, dropdownLayer, layer =>
+                ShowDropdownRightOfParent(selectPackageButton, layer) ?? new Point(0, 0), parentWrapper: parentWrapper);
+        
+            AttachDropdown(MemoDropdownPanels.BuildInheritMemoPanel(toolbarVm, MakeDropdownPanel, NESTED_DROPDOWN_PANEL_WIDTH),
+                inheritMemoButton, dropdownLayer, layer =>
+                ShowDropdownRightOfParent(inheritMemoButton, layer) ?? new Point(0, 0), parentWrapper: parentWrapper);
+        }
     }
 
     private static void PutPackageDropdownPanel(Canvas dropdownLayer, Control trigger)
