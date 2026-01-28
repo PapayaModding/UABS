@@ -370,7 +370,7 @@ public partial class Toolbar : UserControl
         }
     }
 
-    private static void PutPackageDropdownPanel(Canvas dropdownLayer, Control trigger)
+    private void PutPackageDropdownPanel(Canvas dropdownLayer, Control trigger)
     {
         Border dropdownPanel = MakeDropdownPanel();
 
@@ -393,8 +393,19 @@ public partial class Toolbar : UserControl
 
         dropdownPanel.Child = stack;
 
-        AttachDropdown(dropdownPanel, trigger, dropdownLayer, layer =>
+        DropdownWrapper parentWrapper = AttachDropdown(dropdownPanel, trigger, dropdownLayer, layer =>
             ShowDropdownBelowTrigger(trigger, layer) ?? new Point(0, 0));
+        
+        if (this.DataContext is ToolbarViewModel toolbarVm)
+        {
+            AttachDropdown(PackageDropdownPanels.BuildNewPackagePanel(toolbarVm, MakeDropdownPanel, NESTED_DROPDOWN_PANEL_WIDTH),
+                buildNewButton, dropdownLayer, layer =>
+                ShowDropdownRightOfParent(buildNewButton, layer) ?? new Point(0, 0), parentWrapper: parentWrapper);
+        
+            AttachDropdown(PackageDropdownPanels.BuildRemovePackagePanel(toolbarVm, MakeDropdownPanel, NESTED_DROPDOWN_PANEL_WIDTH),
+                removeButton, dropdownLayer, layer =>
+                ShowDropdownRightOfParent(removeButton, layer) ?? new Point(0, 0), parentWrapper: parentWrapper);
+        }
     }
 
 #region Component
