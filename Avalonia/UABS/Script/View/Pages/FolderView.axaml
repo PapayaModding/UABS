@@ -1,8 +1,9 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:local="clr-namespace:UABS.Page"
-             xmlns:comp="clr-namespace:UABS.Component"
-             x:Class="UABS.Page.FolderView"
+             xmlns:local="clr-namespace:UABS.Script.View.Pages"
+             xmlns:data_struct="clr-namespace:UABS.Script.Core.Data.DataStruct"
+             xmlns:view_component="clr-namespace:UABS.Script.Core.View.Components"
+             x:Class="UABS.Script.View.Pages.FolderView"
              x:DataType="local:FolderView">
 
     <UserControl.Styles>
@@ -14,7 +15,7 @@
         <TextBox Text="---" IsReadOnly="True" Classes="pathfieldTextBox"/>
 
         <!-- Sort Panel -->
-        <comp:FolderViewSortPanel />
+        <view_component:FolderViewSortPanel />
 
         <DataGrid x:Name="dataGrid"
                   AutoGenerateColumns="False"
@@ -51,7 +52,7 @@
             <DataGrid.Columns>
                 <DataGridTemplateColumn Header=" ">
                 <DataGridTemplateColumn.CellTemplate>
-                    <DataTemplate x:DataType="comp:FolderViewEntry">
+                    <DataTemplate x:DataType="data_struct:FolderViewEntry">
                         <Image Source="{Binding Type, Converter={StaticResource FolderViewIconConvertor}}" Stretch="Uniform" 
                                 Width="32" Height="32"
                                 RenderOptions.BitmapInterpolationMode="HighQuality"
@@ -62,7 +63,7 @@
                 
                 <DataGridTemplateColumn Header="Name">
                     <DataGridTemplateColumn.CellTemplate>
-                        <DataTemplate x:DataType="comp:FolderViewEntry">
+                        <DataTemplate x:DataType="data_struct:FolderViewEntry">
                             <TextBlock Text="{Binding Name}" VerticalAlignment="Center" Padding="6,0,0,0"/>
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>

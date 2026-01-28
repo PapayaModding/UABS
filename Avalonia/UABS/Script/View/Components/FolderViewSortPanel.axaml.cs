@@ -1,11 +1,12 @@
 using Avalonia.Controls;
 
-namespace UABS.Component;
-
-public partial class FolderViewSortPanel : UserControl
+namespace UABS.Script.Core.View.Components
 {
-    public FolderViewSortPanel()
+    public partial class FolderViewSortPanel : UserControl
     {
-        InitializeComponent();
+        public FolderViewSortPanel()
+        {
+            InitializeComponent();
+        }
     }
 }

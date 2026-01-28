@@ -2,7 +2,7 @@ using System;
 using System.Threading.Tasks;
 using System.Windows.Input;
 
-namespace UABS.Script.Misc.Services
+namespace UABS.Script.Misc
 {
     public class AsyncCommand<T> : ICommand
     {

@@ -1,7 +1,7 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:local="clr-namespace:UABS.Component"
-             x:Class="UABS.Component.FolderViewSortPanel"
+             xmlns:local="clr-namespace:UABS.Script.Core.View.Components"
+             x:Class="UABS.Script.Core.View.Components.FolderViewSortPanel"
              x:DataType="local:FolderViewSortPanel">
     
     <UserControl.Styles>

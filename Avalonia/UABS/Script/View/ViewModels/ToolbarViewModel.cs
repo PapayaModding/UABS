@@ -2,7 +2,7 @@ using System;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using Avalonia.Controls;
-using UABS.Script.Misc.Services;
+using UABS.Script.Misc;
 using UABS.Script.Wrapper.FileBrowser;
 
 namespace UABS.Script.View.ViewModels

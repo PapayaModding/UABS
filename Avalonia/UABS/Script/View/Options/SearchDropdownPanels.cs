@@ -133,7 +133,7 @@ namespace UABS.Script.View.Options
                 Stretch = Stretch.Fill
             };
             var checker = new Bitmap(
-                AssetLoader.Open(new Uri("avares://UABS/UI/Images/transparent_bg_8x8.png"))
+                AssetLoader.Open(new Uri("avares://UABS/Resources/Images/transparent_bg_8x8.png"))
             );
             backgroundImage.Source = checker;
             Image userImage = new()

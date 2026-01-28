@@ -7,7 +7,7 @@
     <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
-    <ApplicationIcon>UI/Images/logo.ico</ApplicationIcon>
+    <ApplicationIcon>Resources/Images/logo.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>
@@ -46,6 +46,6 @@
 
   <!-- Custom Resources -->
   <ItemGroup>
-    <AvaloniaResource Include="UI/**" />
+    <AvaloniaResource Include="Resources/**" />
   </ItemGroup>
 </Project>

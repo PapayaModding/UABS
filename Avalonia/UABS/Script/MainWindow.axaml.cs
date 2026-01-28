@@ -1,14 +1,15 @@
 using Avalonia.Controls;
-using UABS.Page;
+using UABS.Script.View.Pages;
 
-namespace UABS;
-
-public partial class MainWindow : Window
+namespace UABS
 {
-    public MainWindow()
+    public partial class MainWindow : Window
     {
-        InitializeComponent();
+        public MainWindow()
+        {
+            InitializeComponent();
 
-        MainContent.Content = new FolderView();
+            MainContent.Content = new FolderView();
+        }
     }
 }
