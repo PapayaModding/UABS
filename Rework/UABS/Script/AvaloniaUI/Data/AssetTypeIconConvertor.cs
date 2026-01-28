@@ -8,7 +8,6 @@ using Avalonia.Data;
 using Avalonia.Data.Converters;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform;
-using UABS.Misc;
 
 namespace UABS.AvaloniaUI
 {
