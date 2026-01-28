@@ -2,9 +2,9 @@ using Avalonia.Controls;
 
 namespace UABS.AvaloniaUI
 {
-    public partial class FolderViewSortPanel : UserControl
+    public partial class FolderWindowSortPanel : UserControl
     {
-        public FolderViewSortPanel()
+        public FolderWindowSortPanel()
         {
             InitializeComponent();
         }

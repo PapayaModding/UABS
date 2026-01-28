@@ -8,7 +8,7 @@ namespace UABS.AvaloniaUI
         {
             InitializeComponent();
 
-            MainContent.Content = new FolderView();
+            MainContent.Content = new FolderWindowPage();
         }
     }
 }

@@ -10,7 +10,7 @@ using UABS.Data;
 
 namespace UABS.AvaloniaUI
 {
-    public partial class FolderViewIconConvertor : IValueConverter
+    public partial class FolderWindowIconConvertor : IValueConverter
     {
         private readonly Dictionary<string, Bitmap> cache = [];
 
@@ -28,20 +28,20 @@ namespace UABS.AvaloniaUI
             }
         }
 
-        private static string FolderViewType2Name(FolderViewType folderViewType)
+        private static string FolderWindowType2Name(FolderWindowType FolderWindowType)
         {
-            return folderViewType switch
+            return FolderWindowType switch
             {
-                FolderViewType.Folder => "folder.png",
+                FolderWindowType.Folder => "folder.png",
                 _ => "asset-unknown.png",
             };
         }
 
         public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
         {
-            if (value is FolderViewType folderViewType)
+            if (value is FolderWindowType FolderWindowType)
             {
-                return GetBitmap(Path.Combine(PredefinedPaths.Icons_Path, FolderViewType2Name(folderViewType)));
+                return GetBitmap(Path.Combine(PredefinedPaths.Icons_Path, FolderWindowType2Name(FolderWindowType)));
             }
 
             return new BindingNotification(new InvalidCastException(), BindingErrorType.Error);

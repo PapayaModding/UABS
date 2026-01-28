@@ -6,6 +6,7 @@ using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using UABS.Wrapper;
 using UABS.Util;
+using UABS.App;
 
 namespace UABS.AvaloniaUI
 {
@@ -16,8 +17,10 @@ namespace UABS.AvaloniaUI
         public override void Initialize()
         {
             var services = new ServiceCollection();
+            
             // Core / domain services
             services.AddSingleton<AssetsManager>();
+            services.AddSingleton<Workspace>();
 
             // Platform services
             services.AddSingleton<IFileBrowser, AvaloniaFileBrowserWrapper>();

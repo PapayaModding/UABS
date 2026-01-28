@@ -14,7 +14,7 @@
         <FontFamily x:Key="LiberationSans">
             avares://UABS/Resources/Fonts#Liberation Sans
         </FontFamily>
-        <local:FolderViewIconConvertor x:Key="FolderViewIconConvertor" />
+        <local:FolderWindowIconConvertor x:Key="FolderWindowIconConvertor" />
         <local:AssetTypeIconConvertor x:Key="AssetTypeIconConvertor" />
     </Application.Resources>
 </Application>

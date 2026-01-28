@@ -2,8 +2,8 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:local="clr-namespace:UABS.AvaloniaUI"
              xmlns:data="clr-namespace:UABS.Data"
-             x:Class="UABS.AvaloniaUI.FolderView"
-             x:DataType="local:FolderView">
+             x:Class="UABS.AvaloniaUI.FolderWindowPage"
+             x:DataType="local:FolderWindowViewModel">
 
     <UserControl.Styles>
         <StyleInclude Source="avares://UABS/Script/AvaloniaUI/Styles/PathfieldStyle.axaml"/>
@@ -14,8 +14,8 @@
         <TextBox Text="---" IsReadOnly="True" Classes="pathfieldTextBox"/>
 
         <!-- Sort Panel -->
-        <local:FolderViewSortPanel />
-
+        <local:FolderWindowSortPanel />
+        
         <DataGrid x:Name="dataGrid"
                   AutoGenerateColumns="False"
                   CanUserResizeColumns="True"
@@ -51,8 +51,8 @@
             <DataGrid.Columns>
                 <DataGridTemplateColumn Header=" ">
                 <DataGridTemplateColumn.CellTemplate>
-                    <DataTemplate x:DataType="data:FolderViewEntry">
-                        <Image Source="{Binding Type, Converter={StaticResource FolderViewIconConvertor}}" Stretch="Uniform" 
+                    <DataTemplate x:DataType="data:FolderWindowEntry">
+                        <Image Source="{Binding Type, Converter={StaticResource FolderWindowIconConvertor}}" Stretch="Uniform" 
                                 Width="32" Height="32"
                                 RenderOptions.BitmapInterpolationMode="HighQuality"
                                 VerticalAlignment="Center"/>
@@ -62,7 +62,7 @@
                 
                 <DataGridTemplateColumn Header="Name">
                     <DataGridTemplateColumn.CellTemplate>
-                        <DataTemplate x:DataType="data:FolderViewEntry">
+                        <DataTemplate x:DataType="data:FolderWindowEntry">
                             <TextBlock Text="{Binding Name}" VerticalAlignment="Center" Padding="6,0,0,0"/>
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
