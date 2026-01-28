@@ -1,9 +1,10 @@
+using System.ComponentModel;
 using System.IO;
 using UABS.Util;
 
 namespace UABS.Data
 {
-    public class FolderWindowEntry
+    public class FolderWindowEntry : INotifyPropertyChanged
     {
         public string Name { get; }
 
@@ -13,7 +14,20 @@ namespace UABS.Data
 
         public string CachedPath { get; }
 
-        public string RowBackground { get; set; } = "#FFFFFF";
+        private string _rowBackground = "#FFFFFF";
+
+        public string RowBackground
+        {
+            get => _rowBackground;
+            set
+            {
+                if (_rowBackground != value)
+                {
+                    _rowBackground = value;
+                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(RowBackground)));
+                }
+            }
+        }
 
         public FolderWindowEntry(string fullPath, string cachedPath="")
         {
@@ -22,5 +36,7 @@ namespace UABS.Data
             Name = Path.GetFileName(fullPath);
             Type = PathHelper.IsDirectory(fullPath) ? FolderWindowType.Folder : FolderWindowType.File;
         }
+
+        public event PropertyChangedEventHandler? PropertyChanged;
     }
 }

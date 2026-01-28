@@ -21,7 +21,8 @@
         <local:FolderWindowSortPanel Grid.Row="1"/>
 
         <!-- DataGrid -->
-        <DataGrid Grid.Row="2"
+        <DataGrid x:Name="dataGrid"
+                Grid.Row="2"
                 ItemsSource="{Binding ItemsSource}"
                 AutoGenerateColumns="False"
                 CanUserResizeColumns="True"
@@ -31,10 +32,6 @@
 
             <!-- Remove nth-child styles entirely -->
             <DataGrid.Styles>
-                <Style Selector="DataGridRow:selected">
-                    <Setter Property="Background" Value="Transparent"/>
-                </Style>
-
                 <Style Selector="DataGrid:focus DataGridCell:current /template/ Grid#FocusVisual">
                     <Setter Property="IsVisible" Value="False"/>
                 </Style>
