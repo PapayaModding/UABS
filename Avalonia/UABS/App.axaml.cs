@@ -4,11 +4,10 @@ using AssetsTools.NET.Extra;
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
-using UABS.Script.View.ViewModels;
-using UABS.Script.Wrapper.FileBrowser;
-using UABS.Script.Wrapper.Json;
+using UABS.Wrapper;
+using UABS.Util;
 
-namespace UABS
+namespace UABS.AvaloniaUI
 {
     public partial class App : Application
     {

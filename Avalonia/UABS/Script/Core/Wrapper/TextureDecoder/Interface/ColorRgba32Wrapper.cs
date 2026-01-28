@@ -1,7 +1,7 @@
 using System;
 using BCnEncoder.Shared;
 
-namespace UABS.Script.Wrapper.TextureDecoder.Interface
+namespace UABS.Wrapper
 {
     public class ColorRgba32Wrapper : IColor, IEquatable<IColor>
     {

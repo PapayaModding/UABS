@@ -1,4 +1,4 @@
-namespace UABS.Script.Wrapper.TextureDecoder.Interface
+namespace UABS.Wrapper
 {
     public interface ITextureDecoder
     {

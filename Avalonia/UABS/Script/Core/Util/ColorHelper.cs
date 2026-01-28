@@ -1,6 +1,6 @@
 using System;
 
-namespace UABS.Script.Core.Util
+namespace UABS.Util
 {
     public static class ColorHelper
     {

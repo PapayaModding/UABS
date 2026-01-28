@@ -1,7 +1,7 @@
 using Avalonia.Controls;
 using System.Threading.Tasks;
 
-namespace UABS.Script.Wrapper.FileBrowser
+namespace UABS.Wrapper
 {
     public interface IFileBrowser
     {

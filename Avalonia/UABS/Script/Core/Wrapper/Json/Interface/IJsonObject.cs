@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace UABS.Script.Wrapper.Json
+namespace UABS.Wrapper
 {
     public interface IJsonObject
     {

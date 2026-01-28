@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Newtonsoft.Json.Linq;
 
-namespace UABS.Script.Wrapper.Json
+namespace UABS.Wrapper
 {
     public class NewtonsoftJsonObject : IJsonObject
     {

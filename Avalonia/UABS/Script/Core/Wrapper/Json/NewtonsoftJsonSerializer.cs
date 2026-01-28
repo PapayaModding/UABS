@@ -4,7 +4,7 @@ using System.Linq;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
-namespace UABS.Script.Wrapper.Json
+namespace UABS.Wrapper
 {
     public class NewtonsoftJsonSerializer : IJsonSerializer
     {

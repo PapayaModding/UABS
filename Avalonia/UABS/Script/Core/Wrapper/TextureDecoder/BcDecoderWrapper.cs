@@ -4,9 +4,8 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using BCnEncoder.Decoder;
 using BCnEncoder.Shared;
-using UABS.Script.Wrapper.TextureDecoder.Interface;
 
-namespace UABS.Script.Wrapper.TextureDecoder
+namespace UABS.Wrapper
 {
     public class BcDecoderWrapper : ITextureDecoder
     {

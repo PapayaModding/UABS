@@ -1,6 +1,6 @@
 using System;
 
-namespace UABS.Script.Wrapper.TextureDecoder
+namespace UABS.Wrapper
 {
     public interface IColor : IEquatable<IColor>
     {

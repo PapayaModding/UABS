@@ -1,9 +1,8 @@
 <Application xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             x:Class="UABS.App"
+             x:Class="UABS.AvaloniaUI.App"
              RequestedThemeVariant="Default"
-             xmlns:local="clr-namespace:UABS"
-             xmlns:avalonia_data="clr-namespace:UABS.Script.Avalonia.Data">
+             xmlns:local="clr-namespace:UABS.AvaloniaUI">
              <!-- "Default" ThemeVariant follows system theme variant. "Dark" or "Light" are other available options. -->
 
     <Application.Styles>
@@ -15,7 +14,7 @@
         <FontFamily x:Key="LiberationSans">
             avares://UABS/Resources/Fonts#Liberation Sans
         </FontFamily>
-        <avalonia_data:FolderViewIconConvertor x:Key="FolderViewIconConvertor" />
-        <avalonia_data:AssetTypeIconConvertor x:Key="AssetTypeIconConvertor" />
+        <local:FolderViewIconConvertor x:Key="FolderViewIconConvertor" />
+        <local:AssetTypeIconConvertor x:Key="AssetTypeIconConvertor" />
     </Application.Resources>
 </Application>

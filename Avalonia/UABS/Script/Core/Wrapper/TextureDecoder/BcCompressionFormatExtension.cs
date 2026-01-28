@@ -1,6 +1,6 @@
 using BCnEncoder.Shared;
 
-namespace UABS.Script.Wrapper.TextureDecoder
+namespace UABS.Wrapper
 {
     public static class BcCompressionFormatExtension
     {

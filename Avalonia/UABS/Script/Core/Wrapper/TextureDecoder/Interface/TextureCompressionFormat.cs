@@ -1,4 +1,4 @@
-namespace UABS.Script.Wrapper.TextureDecoder
+namespace UABS.Wrapper
 {
     public enum TextureCompressionFormat
     {
