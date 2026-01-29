@@ -9,10 +9,30 @@ namespace UABS.__Test__
         {
             // Build folders
             var A = new FsNode("A");
-            var B = new FsNode("B", A);
-            var C = new FsNode("C", B);
+            var B = new FsNode("B");
+            var C = new FsNode("C");
 
-            // Build cached folders
+            var navigator = new Navigator();
+
+            // Push normal folders
+            navigator.Push(new FolderLocation(A));
+            navigator.Push(new FolderLocation(B));
+            navigator.Push(new FolderLocation(C));
+
+            Log.Info("Test 1");
+            navigator.PrintStack();
+
+            Log.Info("C → B");
+            navigator.Back();
+            navigator.PrintStack();
+        }
+
+        public static void Test2()
+        {
+            // Build folders
+            var A = new FsNode("A");
+            var B = new FsNode("B");
+            var C = new FsNode("C");
             var Search1 = new FsNode("Search1");
             var Search2 = new FsNode("Search2");
 
@@ -23,68 +43,55 @@ namespace UABS.__Test__
             navigator.Push(new FolderLocation(B));
             navigator.Push(new FolderLocation(C));
 
-            // Push cached folders
-            navigator.Push(new CachedLocation(Search1, C));
-            navigator.Push(new CachedLocation(Search2, Search1));
+            navigator.Push(new CachedLocation(Search1));
+            navigator.Push(new CachedLocation(Search2));
 
-            Log.Info("Test 1");
+            Log.Info("Test 2");
             navigator.PrintStack();
 
-            Log.Info("Up from Search2 (leaf cached) → no effect");
-            navigator.Up();
-            navigator.PrintStack();
-
-            Log.Info("Back from Search2 → moves to Search1");
-            navigator.Back();
-            navigator.PrintStack();
-
-            Log.Info("Up from Search1 → moves to Search2");
-            navigator.Up();
-            navigator.PrintStack();
-
-            Log.Info("Back from Search2 → moves to Search1");
-            navigator.Back();
-            navigator.PrintStack();
-
-            Log.Info("Back from Search1 → moves to C");
-            navigator.Back();
-            navigator.PrintStack();
-
-            Log.Info("Back from C → moves to B");
-            navigator.Back();
-            navigator.PrintStack();
-
-            Log.Info("Back from B → moves to A");
-            navigator.Back();
-            navigator.PrintStack();
-
-            Log.Info("Back from A (root) → no effect");
+            Log.Info("Search2 → Search1");
             navigator.Back();
             navigator.PrintStack();
         }
 
-        public static void Test2()
+        public static void Test3()
         {
             // Build folders
             var A = new FsNode("A");
-            var B = new FsNode("B", A);
-            var C = new FsNode("C", B);
+            var B = new FsNode("B");
+            var C = new FsNode("C");
+            var Search1 = new FsNode("Search1");
+            var Search2 = new FsNode("Search2");
 
             var navigator = new Navigator();
 
             // Push normal folders
             navigator.Push(new FolderLocation(A));
-            navigator.Push(new FolderLocation(B));
-            navigator.Push(new FolderLocation(C));
+
+            navigator.Push(new CachedLocation(Search1));
+            navigator.Push(new CachedLocation(Search2));
 
             Log.Info("Test 2");
             navigator.PrintStack();
 
-            Log.Info("Up from C → no effect");
-            navigator.Up();
+            Log.Info("Search2 → Search1");
+            navigator.Back();
             navigator.PrintStack();
 
-            Log.Info("Back from C → moves to B");
+            Log.Info("Added B, C under Search1 (Search2 is gone)");
+            navigator.Push(new FolderLocation(B));
+            navigator.Push(new FolderLocation(C));
+            navigator.PrintStack();
+
+            Log.Info("C -> B");
+            navigator.Back();
+            navigator.PrintStack();
+
+            Log.Info("B -> Search1");
+            navigator.Back();
+            navigator.PrintStack();
+
+            Log.Info("Search1 -> A");
             navigator.Back();
             navigator.PrintStack();
         }

@@ -2,22 +2,15 @@ using System.Collections.Generic;
 
 namespace UABS.Data
 {
-    public class FsNode
+    public sealed class FsNode
     {
         public string Name { get; }
-        public FsNode? Parent { get; }
 
-        public FsNode(string name, FsNode? parent = null)
+        public FsNode(string name)
         {
             Name = name;
-            Parent = parent;
         }
 
-        // Returns A/B/C for this node
-        public string GetFullPath()
-        {
-            if (Parent == null) return Name;
-            return Parent.GetFullPath() + "/" + Name;
-        }
+        public override string ToString() => Name;
     }
 }

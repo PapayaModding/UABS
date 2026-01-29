@@ -2,7 +2,13 @@ namespace UABS.Data
 {
     public abstract class Location
     {
-        public abstract string Name { get; }
-        public abstract FsNode? ParentNode { get; }
+        public FsNode Node { get; }
+
+        protected Location(FsNode node)
+        {
+            Node = node;
+        }
+
+        public abstract string Kind { get; }
     }
 }

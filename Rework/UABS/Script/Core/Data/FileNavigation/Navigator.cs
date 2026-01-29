@@ -3,86 +3,41 @@ using UABS.Util;
 
 namespace UABS.Data
 {
-    public class Navigator
+    public sealed class Navigator
     {
-        private readonly List<Location> stack = new();
-        private int currentIndex = -1;
+        private readonly List<Location> _history = new();
+        private int _currentIndex = -1;
 
-        public Location? Current => currentIndex >= 0 ? stack[currentIndex] : null;
+        public Location? Current =>
+            _currentIndex >= 0 ? _history[_currentIndex] : null;
 
-        public void Push(Location loc)
+        public void Push(Location location)
         {
-            // Remove anything ahead if we navigated back
-            if (currentIndex < stack.Count - 1)
-                stack.RemoveRange(currentIndex + 1, stack.Count - currentIndex - 1);
+            // If user navigates after Back → discard forward history
+            if (_currentIndex < _history.Count - 1)
+            {
+                _history.RemoveRange(
+                    _currentIndex + 1,
+                    _history.Count - _currentIndex - 1);
+            }
 
-            stack.Add(loc);
-            currentIndex = stack.Count - 1;
+            _history.Add(location);
+            _currentIndex = _history.Count - 1;
         }
 
-        // Back moves to previous history location
         public void Back()
         {
-            if (currentIndex > 0)
-                currentIndex--;
+            if (_currentIndex > 0)
+                _currentIndex--;
         }
 
-        // Up moves forward to last child cached folder, or backward to parent
-        public void Up()
-        {
-            if (Current == null) return;
-
-            // Current folder/cached
-            FsNode? currentNode = Current is FolderLocation f ? f.Folder
-                                : Current is CachedLocation c ? c.Cached
-                                : null;
-            if (currentNode == null) return;
-
-            // Only search forward for child cached folders
-            for (int i = currentIndex + 1; i < stack.Count; i++)
-            {
-                if (stack[i].ParentNode == currentNode)
-                {
-                    currentIndex = i;
-                    return;
-                }
-            }
-
-            // Only move backward to parent if we are in a cached folder
-            if (Current is CachedLocation)
-            {
-                var parentNode = Current.ParentNode;
-                if (parentNode == null) return;
-
-                for (int i = currentIndex - 1; i >= 0; i--)
-                {
-                    var loc = stack[i];
-                    if (loc is FolderLocation pf && pf.Folder == parentNode)
-                    {
-                        currentIndex = i;
-                        return;
-                    }
-                    else if (loc is CachedLocation cl && cl.ParentNode == parentNode)
-                    {
-                        currentIndex = i;
-                        return;
-                    }
-                }
-            }
-
-            // Otherwise (normal folder leaf) → Up does nothing
-        }
-
-        // Debug: print stack
         public void PrintStack()
         {
             Log.Info("Navigation Stack:");
-            for (int i = 0; i < stack.Count; i++)
+            for (int i = 0; i < _history.Count; i++)
             {
-                var loc = stack[i];
-                string type = loc is FolderLocation ? "Folder" : "Cached";
-                string marker = i == currentIndex ? "->" : "  ";
-                Log.Info($"{marker} {loc.Name} ({type})");
+                var marker = i == _currentIndex ? "->" : "  ";
+                Log.Info($"{marker} {_history[i].Node} ({_history[i].Kind})");
             }
             Log.Info("");
         }
