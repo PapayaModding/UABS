@@ -36,6 +36,7 @@ namespace UABS.AvaloniaUI
             Log.RotateIfNeeded();
             Log.RemoveAllLogged();
             FileNavigationTester.Test1();
+            FileNavigationTester.Test2();
 
             AvaloniaXamlLoader.Load(this);
         }

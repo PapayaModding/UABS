@@ -27,14 +27,14 @@ namespace UABS.__Test__
             navigator.Push(new CachedLocation(Search1, C));
             navigator.Push(new CachedLocation(Search2, Search1));
 
+            Log.Info("Test 1");
             navigator.PrintStack();
 
-            Log.Info("Test 1");
             Log.Info("Up from Search2 (leaf cached) → no effect");
             navigator.Up();
             navigator.PrintStack();
 
-            Log.Info("Back → moves to Search1");
+            Log.Info("Back from Search2 → moves to Search1");
             navigator.Back();
             navigator.PrintStack();
 
@@ -59,6 +59,32 @@ namespace UABS.__Test__
             navigator.PrintStack();
 
             Log.Info("Back from A (root) → no effect");
+            navigator.Back();
+            navigator.PrintStack();
+        }
+
+        public static void Test2()
+        {
+            // Build folders
+            var A = new FsNode("A");
+            var B = new FsNode("B", A);
+            var C = new FsNode("C", B);
+
+            var navigator = new Navigator();
+
+            // Push normal folders
+            navigator.Push(new FolderLocation(A));
+            navigator.Push(new FolderLocation(B));
+            navigator.Push(new FolderLocation(C));
+
+            Log.Info("Test 2");
+            navigator.PrintStack();
+
+            Log.Info("Up from C → no effect");
+            navigator.Up();
+            navigator.PrintStack();
+
+            Log.Info("Back from C → moves to B");
             navigator.Back();
             navigator.PrintStack();
         }

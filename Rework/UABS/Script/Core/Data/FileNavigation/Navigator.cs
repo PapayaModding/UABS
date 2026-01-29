@@ -32,40 +32,45 @@ namespace UABS.Data
         {
             if (Current == null) return;
 
+            // Current folder/cached
             FsNode? currentNode = Current is FolderLocation f ? f.Folder
-                            : Current is CachedLocation c ? c.Cached
-                            : null;
+                                : Current is CachedLocation c ? c.Cached
+                                : null;
             if (currentNode == null) return;
 
-            // 1️⃣ Move forward to child cached folder
+            // Only search forward for child cached folders
             for (int i = currentIndex + 1; i < stack.Count; i++)
             {
-                if (stack[i] is CachedLocation child && child.ParentNode == currentNode)
+                if (stack[i].ParentNode == currentNode)
                 {
                     currentIndex = i;
                     return;
                 }
             }
 
-            // 2️⃣ Move backward to most recent parent
-            var parentNode = Current.ParentNode;
-            if (parentNode == null) return; // root
-
-            for (int i = currentIndex - 1; i >= 0; i--)
+            // Only move backward to parent if we are in a cached folder
+            if (Current is CachedLocation)
             {
-                if (stack[i] is FolderLocation pf && pf.Folder == parentNode)
+                var parentNode = Current.ParentNode;
+                if (parentNode == null) return;
+
+                for (int i = currentIndex - 1; i >= 0; i--)
                 {
-                    currentIndex = i;
-                    return;
-                }
-                else if (stack[i] is CachedLocation pc && pc.ParentNode == parentNode)
-                {
-                    currentIndex = i;
-                    return;
+                    var loc = stack[i];
+                    if (loc is FolderLocation pf && pf.Folder == parentNode)
+                    {
+                        currentIndex = i;
+                        return;
+                    }
+                    else if (loc is CachedLocation cl && cl.ParentNode == parentNode)
+                    {
+                        currentIndex = i;
+                        return;
+                    }
                 }
             }
 
-            // 3️⃣ Nothing found → Up has no effect
+            // Otherwise (normal folder leaf) → Up does nothing
         }
 
         // Debug: print stack

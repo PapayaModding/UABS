@@ -13,7 +13,6 @@ namespace UABS.AvaloniaUI
         [STAThread]
         public static void Main(string[] args)
         {
-            Log.RemoveAllLogged();
             AppDomain.CurrentDomain.UnhandledException += (sender, e) =>
             {
                 Log.Error("Unhandled exception: " + e.ExceptionObject, file: "Program.cs", line: 18);
