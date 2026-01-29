@@ -73,8 +73,8 @@ namespace UABS.Util
 
         public static void RemoveAllLogged()
         {
-            if (File.Exists(LogDir))
-                File.WriteAllText(LogDir, "");
+            if (File.Exists(LogFile))
+                File.WriteAllText(LogFile, "");
         }
     }
 }

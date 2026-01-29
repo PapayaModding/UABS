@@ -7,6 +7,7 @@ using Avalonia.Markup.Xaml;
 using UABS.Wrapper;
 using UABS.Util;
 using UABS.App;
+using UABS.__Test__;
 
 namespace UABS.AvaloniaUI
 {
@@ -33,6 +34,8 @@ namespace UABS.AvaloniaUI
 
             // Save the log file to another one if the current one has grown too big (> 5MB)
             Log.RotateIfNeeded();
+            Log.RemoveAllLogged();
+            FileNavigationTester.Test();
 
             AvaloniaXamlLoader.Load(this);
         }

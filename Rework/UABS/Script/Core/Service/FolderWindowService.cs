@@ -8,6 +8,11 @@ namespace UABS.Service
 {
     public class FolderWindowService
     {
+        public string GoBack(string path)
+        {
+            return "";
+        }
+
         public static IReadOnlyList<FolderWindowEntry> GetEntries(string path, string? cachedFolder=null)
         {
             if (!Directory.Exists(path))
