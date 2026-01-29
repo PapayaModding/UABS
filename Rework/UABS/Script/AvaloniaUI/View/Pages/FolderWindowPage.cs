@@ -15,7 +15,7 @@ namespace UABS.AvaloniaUI
             {
                 if (this.Parent?.DataContext is MainViewModel mainVm)
                 {
-                    this.DataContext = mainVm.FolderWindow;
+                    this.DataContext = mainVm.FolderWindowVM;
                 }
                 else
                 {

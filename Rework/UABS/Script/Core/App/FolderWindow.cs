@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using UABS.Data;
-using UABS.Service;
 
 namespace UABS.App
 {

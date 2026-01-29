@@ -17,4 +17,14 @@
         <local:FolderWindowIconConvertor x:Key="FolderWindowIconConvertor" />
         <local:AssetTypeIconConvertor x:Key="AssetTypeIconConvertor" />
     </Application.Resources>
+
+    <Application.DataTemplates>
+        <DataTemplate DataType="local:FolderWindowViewModel">
+            <local:FolderWindowPage />
+        </DataTemplate>
+
+        <!-- <DataTemplate DataType="local:FileWindowViewModel">
+            <local:FileWindowPage />
+        </DataTemplate> -->
+    </Application.DataTemplates>
 </Application>

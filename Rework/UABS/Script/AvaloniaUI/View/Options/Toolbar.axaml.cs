@@ -84,7 +84,7 @@ namespace UABS.AvaloniaUI
                 // Get the parent DataContext (MainViewModel)
                 if (this.Parent?.DataContext is MainViewModel mainVm)
                 {
-                    this.DataContext = mainVm.Toolbar;
+                    this.DataContext = mainVm.ToolbarVM;
                 }
                 else
                 {

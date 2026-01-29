@@ -1,33 +1,48 @@
+using System.ComponentModel;
 using UABS.App;
 using UABS.Util;
 using UABS.Wrapper;
 
 namespace UABS.AvaloniaUI
 {
-    public class MainViewModel
+    public class MainViewModel : INotifyPropertyChanged
     {
-        public ToolbarViewModel Toolbar { get; }
-        public FileWindowViewModel FileWindow { get; }
-        public FolderWindowViewModel FolderWindow { get; }
+        private object? _currentViewModel;
+        public object? CurrentViewModel
+        {
+            get => _currentViewModel;
+            set
+            {
+                _currentViewModel = value;
+                PropertyChanged?.Invoke(this, new(nameof(CurrentViewModel)));
+            }
+        }
+
+        public ToolbarViewModel ToolbarVM { get; }
+        public FileWindowViewModel FileWindowVM { get; }
+        public FolderWindowViewModel FolderWindowVM { get; }
 
         public MainViewModel(
             Workspace workspace,
             IFileBrowser fileBrowser
         )
         {
-            FileWindow = new FileWindowViewModel();
-            FolderWindow = new FolderWindowViewModel(workspace.GetFolderWindow);
+            FileWindowVM = new FileWindowViewModel();
+            FolderWindowVM = new FolderWindowViewModel(workspace.GetFolderWindow);
 
-            Toolbar = new ToolbarViewModel(fileBrowser);
-            Toolbar.FolderSelected += path =>
+            ToolbarVM = new ToolbarViewModel(fileBrowser);
+            ToolbarVM.FolderSelected += path =>
             {
                 Log.Info($"Opened Folder: {path}.", file: "MainViewModel.cs");
-                FolderWindow.Refresh(path);
+                FolderWindowVM.Refresh(path);
+                CurrentViewModel = FolderWindowVM;
             };
-            Toolbar.FileSelected += path =>
+            ToolbarVM.FileSelected += path =>
             {
                 Log.Info($"Opened File: {path}.", file: "MainViewModel.cs");
             };
         }
+
+        public event PropertyChangedEventHandler? PropertyChanged;
     }
 }
