@@ -36,10 +36,19 @@ namespace UABS.AvaloniaUI
                 Log.Info($"Opened Folder: {path}.", file: "MainViewModel.cs");
                 FolderWindowVM.Refresh(path);
                 CurrentViewModel = FolderWindowVM;
+                ToolbarVM.CanExport = false;
+                ToolbarVM.CanDepend = false;
+                ToolbarVM.CanFilter = false;
+                if (PathHelper.IsRootPath(path))
+                    ToolbarVM.CanBack = false;
             };
             ToolbarVM.FileSelected += path =>
             {
                 Log.Info($"Opened File: {path}.", file: "MainViewModel.cs");
+                ToolbarVM.CanExport = true;
+                ToolbarVM.CanDepend = true;
+                ToolbarVM.CanFilter = true;
+                ToolbarVM.CanBack = true;
             };
         }
 

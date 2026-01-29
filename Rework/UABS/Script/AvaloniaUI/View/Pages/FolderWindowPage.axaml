@@ -30,7 +30,6 @@
                 HeadersVisibility="None"
                 RowHeight="40">
 
-            <!-- Remove nth-child styles entirely -->
             <DataGrid.Styles>
                 <Style Selector="DataGrid:focus DataGridCell:current /template/ Grid#FocusVisual">
                     <Setter Property="IsVisible" Value="False"/>
