@@ -10,6 +10,7 @@ using Avalonia.Media;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
 using UABS.Util;
+using UABS.ViewModel;
 
 namespace UABS.AvaloniaUI
 {
@@ -171,22 +172,32 @@ namespace UABS.AvaloniaUI
                 Content = "Open File",
                 Classes = { "toolbarButton" },
             };
-            openFileButton.Click += (_, __) =>
+            openFileButton.Click += async (_, __) =>
             {
                 if (toolbarVm == null) return;
                 var owner = this.VisualRoot as Window;
-                toolbarVm.OpenFileCommand.Execute(owner);
+
+                if (toolbarVm.GetFileBrowser is AvaloniaFileBrowserWrapper avaloniaFileBrowser)
+                {
+                    avaloniaFileBrowser.Owner = owner;
+                }
+                await toolbarVm.OpenFileAsync();
             };
             Button openFolderButton = new() 
             { 
                 Content = "Open Folder",
                 Classes = { "toolbarButton" },
             };
-            openFolderButton.Click += (_, __) =>
+            openFolderButton.Click += async (_, __) =>
             {
                 if (toolbarVm == null) return;
                 var owner = this.VisualRoot as Window;
-                toolbarVm.OpenFolderCommand.Execute(owner);
+
+                if (toolbarVm.GetFileBrowser is AvaloniaFileBrowserWrapper avaloniaFileBrowser)
+                {
+                    avaloniaFileBrowser.Owner = owner;
+                }
+                await toolbarVm.OpenFolderAsync();
             };
 
             StackPanel stack = new()

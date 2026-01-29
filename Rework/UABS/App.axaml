@@ -2,7 +2,8 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="UABS.AvaloniaUI.App"
              RequestedThemeVariant="Default"
-             xmlns:local="clr-namespace:UABS.AvaloniaUI">
+             xmlns:local="clr-namespace:UABS.AvaloniaUI"
+             xmlns:vm="clr-namespace:UABS.ViewModel">
              <!-- "Default" ThemeVariant follows system theme variant. "Dark" or "Light" are other available options. -->
 
     <Application.Styles>
@@ -19,11 +20,11 @@
     </Application.Resources>
 
     <Application.DataTemplates>
-        <DataTemplate DataType="local:FolderWindowViewModel">
+        <DataTemplate DataType="vm:FolderWindowViewModel">
             <local:FolderWindowPage />
         </DataTemplate>
 
-        <!-- <DataTemplate DataType="local:FileWindowViewModel">
+        <!-- <DataTemplate DataType="vm:FileWindowViewModel">
             <local:FileWindowPage />
         </DataTemplate> -->
     </Application.DataTemplates>

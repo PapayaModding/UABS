@@ -4,7 +4,7 @@ using UABS.App;
 using UABS.Data;
 using UABS.Service;
 
-namespace UABS.AvaloniaUI
+namespace UABS.ViewModel
 {
     public class FolderWindowViewModel
     {

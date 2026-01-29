@@ -1,20 +1,15 @@
 using System;
 using System.Threading.Tasks;
-using System.Windows.Input;
-using Avalonia.Controls;
-using UABS.Misc;
 using UABS.Wrapper;
 
-namespace UABS.AvaloniaUI
+namespace UABS.ViewModel
 {
     public class ToolbarViewModel : ViewModelBase
     {
         private readonly IFileBrowser _fileBrowser;
+        public IFileBrowser GetFileBrowser => _fileBrowser;
 
-        public ICommand OpenFolderCommand { get; }
         public event Action<string>? FolderSelected;
-
-        public ICommand OpenFileCommand { get; }
         public event Action<string>? FileSelected;
 
         private bool _canExport = false;
@@ -48,15 +43,12 @@ namespace UABS.AvaloniaUI
         public ToolbarViewModel(IFileBrowser fileBrowser)
         {
             _fileBrowser = fileBrowser;
-
-            OpenFolderCommand = new AsyncCommand<Window>(OpenFolderAsync);
-            OpenFileCommand = new AsyncCommand<Window>(OpenFileAsync);
         }
 
-        private async Task OpenFolderAsync(Window ownerWindow)
+        public async Task OpenFolderAsync()
         {
             // Open the folder panel
-            var folders = await _fileBrowser.OpenFolderPanelAsync(ownerWindow, "Select Folder");
+            var folders = await _fileBrowser.OpenFolderPanelAsync("Select Folder");
 
             // Nothing selected? just return
             if (folders.Length == 0)
@@ -66,13 +58,13 @@ namespace UABS.AvaloniaUI
             FolderSelected?.Invoke(folders[0]);
         }
 
-        private async Task OpenFileAsync(Window ownerWindow)
+        public async Task OpenFileAsync()
         {
             // Title for the dialog
             string title = "Select File";
 
             // Call the IFileBrowser wrapper
-            var files = await _fileBrowser.OpenFilePanelAsync(ownerWindow, title);
+            var files = await _fileBrowser.OpenFilePanelAsync(title);
 
             // Nothing selected? return
             if (files.Length == 0)

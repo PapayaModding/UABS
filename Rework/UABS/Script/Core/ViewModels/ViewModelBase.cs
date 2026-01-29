@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 
-namespace UABS.AvaloniaUI
+namespace UABS.ViewModel
 {
     public class ViewModelBase : INotifyPropertyChanged
     {

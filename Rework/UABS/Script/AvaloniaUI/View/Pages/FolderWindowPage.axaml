@@ -1,9 +1,10 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:local="clr-namespace:UABS.AvaloniaUI"
+             xmlns:vm="clr-namespace:UABS.ViewModel"
              xmlns:data="clr-namespace:UABS.Data"
              x:Class="UABS.AvaloniaUI.FolderWindowPage"
-             x:DataType="local:FolderWindowViewModel">
+             x:DataType="vm:FolderWindowViewModel">
 
     <UserControl.Styles>
         <StyleInclude Source="avares://UABS/Script/AvaloniaUI/Styles/PathfieldStyle.axaml"/>

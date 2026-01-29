@@ -1,6 +1,4 @@
-
-
-namespace UABS.AvaloniaUI
+namespace UABS.ViewModel
 {
     public class FileWindowViewModel
     {

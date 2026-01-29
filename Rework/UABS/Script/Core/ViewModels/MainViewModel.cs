@@ -3,7 +3,7 @@ using UABS.App;
 using UABS.Util;
 using UABS.Wrapper;
 
-namespace UABS.AvaloniaUI
+namespace UABS.ViewModel
 {
     public class MainViewModel : INotifyPropertyChanged
     {

@@ -1,5 +1,6 @@
 using Avalonia.Controls;
 using UABS.Util;
+using UABS.ViewModel;
 
 namespace UABS.AvaloniaUI
 {

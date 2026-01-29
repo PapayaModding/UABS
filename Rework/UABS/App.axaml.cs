@@ -8,6 +8,7 @@ using UABS.Wrapper;
 using UABS.Util;
 using UABS.App;
 using UABS.__Test__;
+using UABS.ViewModel;
 
 namespace UABS.AvaloniaUI
 {
