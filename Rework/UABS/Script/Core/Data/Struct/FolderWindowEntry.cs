@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
 using UABS.Util;
@@ -6,6 +7,12 @@ namespace UABS.Data
 {
     public class FolderWindowEntry : INotifyPropertyChanged
     {
+        public static readonly List<string> Alternative_Row_Background_Colors = new()
+        {
+            "#d6ffd7",
+            "#FFFFFF"
+        };
+
         public string Name { get; }
 
         public FolderWindowType Type { get; }

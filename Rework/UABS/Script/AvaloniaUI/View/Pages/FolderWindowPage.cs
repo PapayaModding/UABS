@@ -24,20 +24,20 @@ namespace UABS.AvaloniaUI
                 }
 
                 // The data grid selection thing is mainly for File Window, put it here for now
-                dataGrid.SelectionMode = DataGridSelectionMode.Extended;
-                dataGrid.SelectionChanged += (s, e) =>
-                {
-                    if (this.DataContext is FolderWindowViewModel vm)
-                    {
-                        // Add newly selected items
-                        foreach (var item in e.AddedItems.OfType<FolderWindowEntry>())
-                            vm.SelectItem(item);
+                // dataGrid.SelectionMode = DataGridSelectionMode.Extended;
+                // dataGrid.SelectionChanged += (s, e) =>
+                // {
+                //     if (this.DataContext is FolderWindowViewModel vm)
+                //     {
+                //         // Add newly selected items
+                //         foreach (var item in e.AddedItems.OfType<FolderWindowEntry>())
+                //             vm.SelectItem(item);
 
-                        // Remove newly deselected items
-                        foreach (var item in e.RemovedItems.OfType<FolderWindowEntry>())
-                            vm.DeselectItem(item);
-                    }
-                };
+                //         // Remove newly deselected items
+                //         foreach (var item in e.RemovedItems.OfType<FolderWindowEntry>())
+                //             vm.DeselectItem(item);
+                //     }
+                // };
             };
         }
     }

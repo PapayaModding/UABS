@@ -23,18 +23,19 @@ namespace UABS.ViewModel
         public FolderWindowViewModel FolderWindowVM { get; }
 
         public MainViewModel(
-            Workspace workspace,
+            FileWindow fileWindow,
+            FolderWindow folderWindow,
             IFileBrowser fileBrowser
         )
         {
             FileWindowVM = new FileWindowViewModel();
-            FolderWindowVM = new FolderWindowViewModel(workspace.GetFolderWindow);
+            FolderWindowVM = new FolderWindowViewModel(folderWindow);
 
             ToolbarVM = new ToolbarViewModel(fileBrowser);
             ToolbarVM.FolderSelected += path =>
             {
                 Log.Info($"Opened Folder: {path}.", file: "MainViewModel.cs");
-                FolderWindowVM.Refresh(path);
+                FolderWindowVM.OpenNewPath(path);
                 CurrentViewModel = FolderWindowVM;
                 ToolbarVM.CanExport = false;
                 ToolbarVM.CanDepend = false;

@@ -24,7 +24,7 @@
         <!-- DataGrid -->
         <DataGrid x:Name="dataGrid"
                 Grid.Row="2"
-                ItemsSource="{Binding ItemsSource}"
+                ItemsSource="{Binding Items}"
                 AutoGenerateColumns="False"
                 CanUserResizeColumns="True"
                 IsReadOnly="True"

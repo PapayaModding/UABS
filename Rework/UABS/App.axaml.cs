@@ -22,7 +22,8 @@ namespace UABS.AvaloniaUI
             
             // Core / domain services
             services.AddSingleton<AssetsManager>();
-            services.AddSingleton<Workspace>();
+            services.AddSingleton<FolderWindow>();
+            services.AddSingleton<FileWindow>();
 
             // Platform services
             services.AddSingleton<IFileBrowser, AvaloniaFileBrowserWrapper>();
@@ -35,10 +36,10 @@ namespace UABS.AvaloniaUI
 
             // Save the log file to another one if the current one has grown too big (> 5MB)
             Log.RotateIfNeeded();
-            Log.RemoveAllLogged();
-            FileNavigationTester.Test1();
-            FileNavigationTester.Test2();
-            FileNavigationTester.Test3();
+            // Log.RemoveAllLogged();
+            // FileNavigationTester.Test1();
+            // FileNavigationTester.Test2();
+            // FileNavigationTester.Test3();
 
             AvaloniaXamlLoader.Load(this);
         }
