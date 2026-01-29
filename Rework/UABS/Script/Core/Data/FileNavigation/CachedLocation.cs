@@ -2,7 +2,14 @@ namespace UABS.Data
 {
     public class CachedLocation : Location
     {
-        public CachedFolder Cached { get; set; }
-        public CachedLocation(CachedFolder cached) { Cached = cached; }
+        public FsNode Cached { get; }
+        public override string Name => Cached.Name;
+        public override FsNode ParentNode { get; }
+
+        public CachedLocation(FsNode cached, FsNode parent)
+        {
+            Cached = cached;
+            ParentNode = parent;
+        }
     }
 }

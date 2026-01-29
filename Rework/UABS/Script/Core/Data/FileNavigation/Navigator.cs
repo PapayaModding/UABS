@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using UABS.Util;
 
@@ -6,105 +5,79 @@ namespace UABS.Data
 {
     public class Navigator
     {
-        private List<Location> stack = new();
+        private readonly List<Location> stack = new();
         private int currentIndex = -1;
 
-        public Location? Current => (currentIndex >= 0 && currentIndex < stack.Count) ? stack[currentIndex] : null;
+        public Location? Current => currentIndex >= 0 ? stack[currentIndex] : null;
 
-        private void PushLocation(Location loc)
+        public void Push(Location loc)
         {
+            // Remove anything ahead if we navigated back
             if (currentIndex < stack.Count - 1)
                 stack.RemoveRange(currentIndex + 1, stack.Count - currentIndex - 1);
+
             stack.Add(loc);
             currentIndex = stack.Count - 1;
         }
 
-        // -------------------------
-        // Navigation methods
-        // -------------------------
-        public void OpenFolder(FsNode node)
-        {
-            if (node == null || !node.IsFolder) return;
-            PushLocation(new FolderLocation(node));
-        }
-
-        public void OpenCachedFolder(CachedFolder cached)
-        {
-            if (cached == null) return;
-            PushLocation(new CachedLocation(cached));
-        }
-
-        public void OpenFile(FsNode file)
-        {
-            if (file == null || file.IsFolder) return;
-            Console.WriteLine($"Opening file: {file.GetFullPath()}");
-        }
-
+        // Back moves to previous history location
         public void Back()
         {
-            if (currentIndex > 0) currentIndex--;
+            if (currentIndex > 0)
+                currentIndex--;
         }
 
+        // Up moves forward to last child cached folder, or backward to parent
         public void Up()
         {
             if (Current == null) return;
 
-            if (Current is FolderLocation folder)
+            FsNode? currentNode = Current is FolderLocation f ? f.Folder
+                            : Current is CachedLocation c ? c.Cached
+                            : null;
+            if (currentNode == null) return;
+
+            // 1️⃣ Move forward to child cached folder
+            for (int i = currentIndex + 1; i < stack.Count; i++)
             {
-                if (folder.Node.Parent != null)
+                if (stack[i] is CachedLocation child && child.ParentNode == currentNode)
                 {
-                    // find index of parent if already in stack
-                    int parentIndex = -1;
-                    for (int i = currentIndex; i >= 0; i--)
-                    {
-                        if (stack[i] is FolderLocation f && f.Node == folder.Node.Parent)
-                        {
-                            parentIndex = i;
-                            break;
-                        }
-                    }
-                    if (parentIndex >= 0)
-                    {
-                        currentIndex = parentIndex;
-                    }
-                    else
-                    {
-                        OpenFolder(folder.Node.Parent); // push if not found
-                    }
+                    currentIndex = i;
+                    return;
                 }
             }
-            else if (Current is CachedLocation)
+
+            // 2️⃣ Move backward to most recent parent
+            var parentNode = Current.ParentNode;
+            if (parentNode == null) return; // root
+
+            for (int i = currentIndex - 1; i >= 0; i--)
             {
-                // Move to the last real folder before currentIndex
-                for (int i = currentIndex - 1; i >= 0; i--)
+                if (stack[i] is FolderLocation pf && pf.Folder == parentNode)
                 {
-                    if (stack[i] is FolderLocation)
-                    {
-                        currentIndex = i; // move index instead of pushing new folder
-                        break;
-                    }
+                    currentIndex = i;
+                    return;
+                }
+                else if (stack[i] is CachedLocation pc && pc.ParentNode == parentNode)
+                {
+                    currentIndex = i;
+                    return;
                 }
             }
+
+            // 3️⃣ Nothing found → Up has no effect
         }
 
-        // -------------------------
-        // Debug / display
-        // -------------------------
+        // Debug: print stack
         public void PrintStack()
         {
             Log.Info("Navigation Stack:");
             for (int i = 0; i < stack.Count; i++)
             {
-                string marker = (i == currentIndex) ? "-> " : "   ";
-                switch (stack[i])
-                {
-                    case FolderLocation f:
-                        Log.Info($"{marker}Folder: {f.Node.GetFullPath()}");
-                        break;
-                    case CachedLocation c:
-                        Log.Info($"{marker}Cached: {c.Cached.Name}");
-                        break;
-                }
+                var loc = stack[i];
+                string type = loc is FolderLocation ? "Folder" : "Cached";
+                string marker = i == currentIndex ? "->" : "  ";
+                Log.Info($"{marker} {loc.Name} ({type})");
             }
             Log.Info("");
         }
