@@ -1,6 +1,7 @@
 using AssetsTools.NET;
 using System.IO;
 using System.Text.RegularExpressions;
+#pragma warning disable
 
 namespace UABS.Data
 {
