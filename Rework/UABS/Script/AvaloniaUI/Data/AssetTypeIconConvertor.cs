@@ -57,29 +57,25 @@ namespace UABS.AvaloniaUI
 
         public string LoadIconPath(string iconName)
         {
-            var assembly = typeof(IconsLoader).Assembly;
-            string resourceName = $"UABS.Resources.Icons.{iconName}";
-            Log.Info(resourceName);
+            string iconPath = Path.Combine(PredefinedPaths.Icons_Path, iconName);
+            string absIconPath = PathHelper.ToLongPath(iconPath)
+                .Replace($"{Path.DirectorySeparatorChar}UABS{Path.DirectorySeparatorChar}UABS", $"{Path.DirectorySeparatorChar}UABS");
 
-            Stream? stream = assembly.GetManifestResourceStream(resourceName);
-
-            if (stream == null)
+            if (!File.Exists(absIconPath))
             {
-                // fallback
-                resourceName = "UABS.Resources.Icons.asset-unknown.png";
-                stream = assembly.GetManifestResourceStream(resourceName);
-                if (stream != null)
-                {
-                    return Path.Combine(PredefinedPaths.Icons_Path, "asset-unknown.png");
-                }
-                else
+                iconPath = Path.Combine(PredefinedPaths.Icons_Path, "asset-unknown.png");
+                absIconPath = PathHelper.ToLongPath(iconPath)
+                    .Replace($"{Path.DirectorySeparatorChar}UABS{Path.DirectorySeparatorChar}UABS", $"{Path.DirectorySeparatorChar}UABS");
+
+                if (!File.Exists(absIconPath))
                 {
                     Log.Error("Default icon missing.", file: "AssetTypeIconConvertor.cs");
                     throw new InvalidOperationException("Default icon missing");
                 }
+                return iconPath;
             }
 
-            return Path.Combine(PredefinedPaths.Icons_Path, iconName);
+            return iconPath;
         }
 
         public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
