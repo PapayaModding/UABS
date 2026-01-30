@@ -1,11 +1,11 @@
 using System.Collections.Generic;
-using System.ComponentModel;
 using AssetsTools.NET;
 using AssetsTools.NET.Extra;
+using UABS.Misc;
 
 namespace UABS.Data
 {
-    public class AssetEntry : INotifyPropertyChanged
+    public class AssetEntry : ObservableObject
     {
         public static readonly List<string> Alternative_Row_Background_Colors = new()
         {
@@ -32,16 +32,7 @@ namespace UABS.Data
         public string RowBackground
         {
             get => _rowBackground;
-            set
-            {
-                if (_rowBackground != value)
-                {
-                    _rowBackground = value;
-                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(RowBackground)));
-                }
-            }
+            set => SetProperty(ref _rowBackground, value);
         }
-
-        public event PropertyChangedEventHandler? PropertyChanged;
     }
 }

@@ -1,11 +1,11 @@
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.IO;
+using UABS.Misc;
 using UABS.Util;
 
 namespace UABS.Data
 {
-    public class FolderWindowEntry : INotifyPropertyChanged
+    public class FolderWindowEntry : ObservableObject
     {
         public static readonly List<string> Alternative_Row_Background_Colors = new()
         {
@@ -26,14 +26,7 @@ namespace UABS.Data
         public string RowBackground
         {
             get => _rowBackground;
-            set
-            {
-                if (_rowBackground != value)
-                {
-                    _rowBackground = value;
-                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(RowBackground)));
-                }
-            }
+            set => SetProperty(ref _rowBackground, value);
         }
 
         public FolderWindowEntry(string fullPath, string cachedPath="")
@@ -43,7 +36,5 @@ namespace UABS.Data
             Name = Path.GetFileName(fullPath);
             Type = PathHelper.IsDirectory(fullPath) ? FolderWindowType.Folder : FolderWindowType.File;
         }
-
-        public event PropertyChangedEventHandler? PropertyChanged;
     }
 }

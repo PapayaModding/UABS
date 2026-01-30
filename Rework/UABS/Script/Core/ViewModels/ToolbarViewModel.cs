@@ -1,10 +1,11 @@
 using System;
 using System.Threading.Tasks;
+using UABS.Misc;
 using UABS.Wrapper;
 
 namespace UABS.ViewModel
 {
-    public class ToolbarViewModel : ViewModelBase
+    public class ToolbarViewModel : ObservableObject
     {
         private readonly IFileBrowser _fileBrowser;
         public IFileBrowser GetFileBrowser => _fileBrowser;

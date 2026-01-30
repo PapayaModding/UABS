@@ -1,21 +1,17 @@
-using System.ComponentModel;
 using UABS.App;
+using UABS.Misc;
 using UABS.Util;
 using UABS.Wrapper;
 
 namespace UABS.ViewModel
 {
-    public class MainViewModel : INotifyPropertyChanged
+    public class MainViewModel : ObservableObject
     {
         private object? _currentViewModel;
         public object? CurrentViewModel
         {
             get => _currentViewModel;
-            set
-            {
-                _currentViewModel = value;
-                PropertyChanged?.Invoke(this, new(nameof(CurrentViewModel)));
-            }
+            set => SetProperty(ref _currentViewModel, value);
         }
 
         public ToolbarViewModel ToolbarVM { get; }
@@ -54,7 +50,5 @@ namespace UABS.ViewModel
                 ToolbarVM.CanBack = true;
             };
         }
-
-        public event PropertyChangedEventHandler? PropertyChanged;
     }
 }

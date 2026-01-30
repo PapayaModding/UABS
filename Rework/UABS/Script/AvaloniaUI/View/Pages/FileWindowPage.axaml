@@ -124,8 +124,11 @@
                     <Button Content="▶"
                             Width="28"
                             Height="28"/>
-
                 </StackPanel>
+
+                <!-- Challenge Part: Asset Preview -->
+
+                
 
             </StackPanel>
         </Grid>
