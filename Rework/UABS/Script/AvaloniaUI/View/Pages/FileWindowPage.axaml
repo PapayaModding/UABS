@@ -111,7 +111,7 @@
                     ShowsPreview="True"/>
 
         <!-- Right: Stack -->
-        <Grid Grid.Column="1" Margin="8" RowDefinitions="Auto,Auto,*">
+        <Grid Grid.Column="2" Margin="8" RowDefinitions="Auto,Auto,*">
             <!-- Top half displays -->
             <Grid Grid.Row="0"
                 ColumnDefinitions="Auto,*"
@@ -137,47 +137,33 @@
             </Grid>
 
             <!-- Bottom half displays -->
-            <Grid Grid.Row="1" Margin="8" RowDefinitions="Auto,*">
-
-                <StackPanel Grid.Row="0"
-                    Orientation="Horizontal"
-                    HorizontalAlignment="Center"
-                    Spacing="6"
-                    Margin="0,8,0,0">
-
-                    <Button Content="◀"
-                            Width="28"
-                            Height="28"/>
-
-                    <TextBlock Text="45 / 100"
-                            FontWeight="Bold"
-                            VerticalAlignment="Center"/>
-
-                    <Button Content="▶"
-                            Width="28"
-                            Height="28"/>
+            <Grid Grid.Row="1" RowDefinitions="Auto,*" RowSpacing="6" Margin="0,8,0,0">
+                <!-- Navigation Row -->
+                <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Center" Spacing="6">
+                    <Button Content="◀" Width="28" Height="28"/>
+                    <TextBlock Text="45 / 100" FontWeight="Bold" VerticalAlignment="Center"/>
+                    <Button Content="▶" Width="28" Height="28"/>
                 </StackPanel>
 
-                <!-- Challenge Part: Asset Preview -->
-                <StackPanel Grid.Row="1"
-                    Orientation="Vertical"
-                    HorizontalAlignment="Stretch"
-                    Spacing="6"
-                    Margin="0,8,0,0">
+                <!-- Asset Preview Row -->
+                <Grid Grid.Row="1">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
 
-                    <TextBlock Text="32x26 (RGBA32)"
-                            HorizontalAlignment="Center"/>
+                    <TextBlock Grid.Row="0" Text="32x26 (RGBA32)" HorizontalAlignment="Center"/>
 
-                    <Border BorderBrush="#444"
+                    <Border Grid.Row="1"
+                            BorderBrush="#444"
                             BorderThickness="1"
                             CornerRadius="4"
                             Padding="6"
-                            Height="200">
-                        <ContentControl Content="{Binding AssetPreview}" />
+                            HorizontalAlignment="Stretch"
+                            Height="300">
+                        <ContentControl Content="{Binding AssetPreview}" HorizontalAlignment="Stretch"/>
                     </Border>
-
-                </StackPanel>
-
+                </Grid>
             </Grid>
 
         </Grid>
