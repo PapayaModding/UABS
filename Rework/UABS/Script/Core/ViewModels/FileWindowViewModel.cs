@@ -48,7 +48,7 @@ namespace UABS.ViewModel
             UpdateRowBackgrounds();
         }
 
-        public void DeselectItem(AssetEntry entry)
+        public void DeselectAsset(AssetEntry entry)
         {
             if (SelectedAssets.Contains(entry))
                 SelectedAssets.Remove(entry);

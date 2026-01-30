@@ -12,11 +12,11 @@
         <Grid RowDefinitions="Auto,Auto,*">
 
             <!-- Sort Panel -->
-            <!-- <local:FolderWindowSortPanel Grid.Row="1"/> -->
+            <local:FileWindowSortPanel Grid.Row="1"/>
 
             <!-- DataGrid -->
             <DataGrid x:Name="dataGrid"
-                    Grid.Row="1"
+                    Grid.Row="2"
                     ItemsSource="{Binding Assets}"
                     AutoGenerateColumns="False"
                     CanUserResizeColumns="True"
