@@ -28,7 +28,7 @@ namespace UABS.ViewModel
             IFileBrowser fileBrowser
         )
         {
-            FileWindowVM = new FileWindowViewModel();
+            FileWindowVM = new FileWindowViewModel(fileWindow);
             FolderWindowVM = new FolderWindowViewModel(folderWindow);
 
             ToolbarVM = new ToolbarViewModel(fileBrowser);

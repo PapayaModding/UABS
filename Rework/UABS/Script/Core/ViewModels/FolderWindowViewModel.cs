@@ -30,19 +30,6 @@ namespace UABS.ViewModel
         public void OpenNewPath(string path, string? cachedFolder = null)
         {
             FolderWindow.OpenNewFolder(path, cachedFolder);
-
-            // var newEntries = FolderWindowService.GetEntries(path, cachedFolder);
-            // Items.Clear();
-
-            // for (int i = 0; i < newEntries.Count; i++)
-            // {
-            //     var entry = newEntries[i];
-            //     entry.RowBackground =
-            //         i % 2 == 0 ? "#d6ffd7" : "#FFFFFF";
-            //     if (SelectedItems.Contains(entry))
-            //         entry.RowBackground = "#00FF00";
-            //     Items.Add(entry);
-            // }
         }
 
         // public void SelectItem(FolderWindowEntry entry)

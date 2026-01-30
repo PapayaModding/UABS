@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.ComponentModel;
+using AssetsTools.NET;
 using AssetsTools.NET.Extra;
 
 namespace UABS.Data
@@ -12,15 +13,19 @@ namespace UABS.Data
             "#FFFFFF"
         };
 
-        public string Name { get; } = string.Empty;
-        public AssetClassID ClassID { get; } = AssetClassID.@void;
-        public long PathID { get; }
-        public uint UnCompressedSize { get; }
-        public uint CompressedSize { get; }
-        public string OriginalPath { get; } = string.Empty;
-        public string CachedPath { get; } = string.Empty;
-        public long FileID { get; }
-        public string Memo { get; } = string.Empty;
+        public static readonly string Selected_Row_Background_Color = "#00FF00";
+
+        public string Name { get; set; } = string.Empty;
+        public AssetClassID ClassID { get; set; } = AssetClassID.@void;
+        public long PathID { get; set; }
+        public uint UnCompressedSize { get; set; }
+        public uint CompressedSize { get; set; }
+        public string OriginalPath { get; set; } = string.Empty;
+        public string CachedPath { get; set; } = string.Empty;
+        public long FileID { get; set; }
+        public string Memo { get; set; } = string.Empty;
+        public AssetFileInfo? AssetFileInfo { get; set; }
+        public AssetsFileInstance? AssetsInst { get; set; }
 
         private string _rowBackground = "#FFFFFF";
 

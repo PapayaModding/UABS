@@ -8,6 +8,7 @@ namespace UABS.App
     public class FileWindow
     {
         private readonly AssetsManager _assetsManager;
+        private IReadOnlyList<AssetsFileInstance>? AssetsInsts { get; set; }
         private IReadOnlyList<AssetEntry>? Assets { get; set; }
         // When open any openable file
         public event Action<List<AssetEntry>>? OnNewBundleOpened;
@@ -21,7 +22,7 @@ namespace UABS.App
         {
             // Decompose the bundle file in path to AssetEntries
             var result = BundleReader.ReadFromPath(path, _assetsManager);
-            List<AssetsFileInstance>? assetsFileInstances = result.Item1;
+            AssetsInsts = result.Item1;
             Assets = result.Item2;
 
             if (Assets is List<AssetEntry> foundAssets)
