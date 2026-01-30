@@ -6,6 +6,10 @@
              x:Class="UABS.AvaloniaUI.FileWindowPage"
              x:DataType="vm:FileWindowViewModel">
 
+    <UserControl.Styles>
+        <StyleInclude Source="avares://UABS/Script/AvaloniaUI/Styles/FileWindowDisplay.axaml"/>
+    </UserControl.Styles>
+
     <Grid ColumnDefinitions="3*,1*">
 
         <!-- Left: DataGrid -->
@@ -75,14 +79,56 @@
         </Grid>
 
         <!-- Right: Stack -->
-        <StackPanel Grid.Column="1"
-                    Margin="8"
-                    Spacing="8">
+        <Grid Grid.Column="1" Margin="8" RowDefinitions="Auto,*">
+            <!-- Top half displays -->
+            <Grid Grid.Row="0"
+                ColumnDefinitions="Auto,*"
+                RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto"
+                RowSpacing="6">
+                <TextBlock Grid.Row="0" Grid.Column="0" Text="Name" VerticalAlignment="Center" Margin="0,0,4,0" Classes="displayHint"/>
+                <TextBox Grid.Row="0" Grid.Column="1" Text="---" IsReadOnly="True"/>
 
-            <TextBlock Text="Details" FontSize="16" FontWeight="Bold"/>
-            <TextBox Watermark="Name"/>
-            <Button Content="Action"/>
-        </StackPanel>
+                <TextBlock Grid.Row="1" Grid.Column="0" Text="Path ID" VerticalAlignment="Center" Margin="0,0,4,0" Classes="displayHint"/>
+                <TextBox Grid.Row="1" Grid.Column="1" Text="---" IsReadOnly="True"/>
+
+                <TextBlock Grid.Row="2" Grid.Column="0" Text="File ID" VerticalAlignment="Center" Margin="0,0,4,0" Classes="displayHint"/>
+                <TextBox Grid.Row="2" Grid.Column="1" Text="---" IsReadOnly="True"/>
+
+                <TextBlock Grid.Row="3" Grid.Column="0" Text="Size" VerticalAlignment="Center" Margin="0,0,4,0" Classes="displayHint"/>
+                <TextBox Grid.Row="3" Grid.Column="1" Text="---" IsReadOnly="True"/>
+
+                <TextBlock Grid.Row="4" Grid.Column="0" Text="Path" VerticalAlignment="Center" Margin="0,0,4,0" Classes="displayHint"/>
+                <TextBox Grid.Row="4" Grid.Column="1" Text="---" IsReadOnly="True"/>
+
+                <TextBlock Grid.Row="5" Grid.Column="0" Text="Memo" VerticalAlignment="Center" Margin="0,0,4,0" Classes="displayHint"/>
+                <TextBox Grid.Row="5" Grid.Column="1" Text="---" IsReadOnly="True"/>
+            </Grid>
+
+            <!-- Bottom half displays -->
+            <StackPanel Grid.Row="1" Spacing="8">
+
+                <StackPanel Grid.Row="1"
+                    Orientation="Horizontal"
+                    HorizontalAlignment="Center"
+                    Spacing="6"
+                    Margin="0,8,0,0">
+
+                    <Button Content="◀"
+                            Width="28"
+                            Height="28"/>
+
+                    <TextBlock Text="45 / 100"
+                            FontWeight="Bold"
+                            VerticalAlignment="Center"/>
+
+                    <Button Content="▶"
+                            Width="28"
+                            Height="28"/>
+
+                </StackPanel>
+
+            </StackPanel>
+        </Grid>
 
     </Grid>
 
