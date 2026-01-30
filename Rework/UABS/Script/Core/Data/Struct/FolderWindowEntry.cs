@@ -5,7 +5,7 @@ using UABS.Util;
 
 namespace UABS.Data
 {
-    public class FolderWindowEntry : ObservableObject
+    public sealed class FolderWindowEntry : ObservableObject
     {
         public static readonly List<string> Alternative_Row_Background_Colors = new()
         {

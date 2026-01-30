@@ -1,4 +1,5 @@
 using UABS.App;
+using UABS.Data;
 using UABS.Misc;
 using UABS.Util;
 using UABS.Wrapper;
@@ -17,6 +18,13 @@ namespace UABS.ViewModel
         public ToolbarViewModel ToolbarVM { get; }
         public FileWindowViewModel FileWindowVM { get; }
         public FolderWindowViewModel FolderWindowVM { get; }
+
+        private AssetPreviewViewModel? _assetPreview;
+        public AssetPreviewViewModel? AssetPreview
+        {
+            get => _assetPreview;
+            set => SetProperty(ref _assetPreview, value);
+        }
 
         public MainViewModel(
             FileWindow fileWindow,
@@ -48,6 +56,19 @@ namespace UABS.ViewModel
                 ToolbarVM.CanDepend = true;
                 ToolbarVM.CanFilter = true;
                 ToolbarVM.CanBack = true;
+            };
+        }
+
+        public void UpdatePreview(AssetPreviewInfo asset)
+        {
+            // TODO: Rework AssetPreviewInfo to include relevant information, for now just all strings.
+            AssetPreview = asset.Type switch
+            {
+                AssetPreviewType.Image2D => new ImagePreviewViewModel(asset.AssetPath),
+                AssetPreviewType.Model3D => new ModelPreviewViewModel(asset.AssetPath),
+                AssetPreviewType.Text    => new TextPreviewViewModel(asset.AssetPath),
+                AssetPreviewType.Audio   => new AudioPreviewViewModel(asset.AssetPath),
+                _                        => new UnknownPreviewViewModel("Unsupported type")
             };
         }
     }

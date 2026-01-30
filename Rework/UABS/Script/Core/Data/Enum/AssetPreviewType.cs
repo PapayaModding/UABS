@@ -1,10 +1,11 @@
 namespace UABS.Data
 {
-    public enum AssetType
+    public enum AssetPreviewType
     {
         Image2D,
         Model3D,
         Audio,
-        Text
+        Text,
+        None
     }
 }
