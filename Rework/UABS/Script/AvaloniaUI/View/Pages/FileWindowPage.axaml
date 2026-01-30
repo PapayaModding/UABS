@@ -10,7 +10,32 @@
         <StyleInclude Source="avares://UABS/Script/AvaloniaUI/Styles/FileWindowDisplay.axaml"/>
     </UserControl.Styles>
 
-    <Grid ColumnDefinitions="3*,1*">
+    <UserControl.DataTemplates>
+        <DataTemplate DataType="vm:ImagePreviewViewModel">
+            <Image Source="{Binding ImagePath}" Stretch="Uniform"/>
+        </DataTemplate>
+
+        <DataTemplate DataType="vm:TextPreviewViewModel">
+            <ScrollViewer>
+                <TextBlock Text="{Binding TextContent}" TextWrapping="Wrap"/>
+            </ScrollViewer>
+        </DataTemplate>
+
+        <DataTemplate DataType="vm:AudioPreviewViewModel">
+            <TextBlock Text="Audio preview coming soon…"/>
+        </DataTemplate>
+
+        <DataTemplate DataType="vm:UnknownPreviewViewModel">
+            <TextBlock Text="{Binding Reason}" Foreground="Gray"/>
+        </DataTemplate>
+    </UserControl.DataTemplates>
+
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="3*"/>  <!-- Left panel starts at 3/4 width -->
+            <ColumnDefinition Width="Auto"/> <!-- GridSplitter -->
+            <ColumnDefinition Width="*"/>   <!-- Right panel starts at 1/4 width -->
+        </Grid.ColumnDefinitions>
 
         <!-- Left: DataGrid -->
         <Grid RowDefinitions="Auto,Auto,*">
@@ -78,8 +103,15 @@
 
         </Grid>
 
+        <!-- GridSplitter -->
+        <GridSplitter Grid.Column="1"
+                    Width="4"
+                    HorizontalAlignment="Stretch"
+                    Background="#666"
+                    ShowsPreview="True"/>
+
         <!-- Right: Stack -->
-        <Grid Grid.Column="1" Margin="8" RowDefinitions="Auto,*">
+        <Grid Grid.Column="1" Margin="8" RowDefinitions="Auto,Auto,*">
             <!-- Top half displays -->
             <Grid Grid.Row="0"
                 ColumnDefinitions="Auto,*"
@@ -105,9 +137,9 @@
             </Grid>
 
             <!-- Bottom half displays -->
-            <StackPanel Grid.Row="1" Spacing="8">
+            <Grid Grid.Row="1" Margin="8" RowDefinitions="Auto,*">
 
-                <StackPanel Grid.Row="1"
+                <StackPanel Grid.Row="0"
                     Orientation="Horizontal"
                     HorizontalAlignment="Center"
                     Spacing="6"
@@ -127,10 +159,27 @@
                 </StackPanel>
 
                 <!-- Challenge Part: Asset Preview -->
+                <StackPanel Grid.Row="1"
+                    Orientation="Vertical"
+                    HorizontalAlignment="Stretch"
+                    Spacing="6"
+                    Margin="0,8,0,0">
 
-                
+                    <TextBlock Text="32x26 (RGBA32)"
+                            HorizontalAlignment="Center"/>
 
-            </StackPanel>
+                    <Border BorderBrush="#444"
+                            BorderThickness="1"
+                            CornerRadius="4"
+                            Padding="6"
+                            Height="200">
+                        <ContentControl Content="{Binding AssetPreview}" />
+                    </Border>
+
+                </StackPanel>
+
+            </Grid>
+
         </Grid>
 
     </Grid>
