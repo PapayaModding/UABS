@@ -17,7 +17,8 @@ namespace UABS.Data
         public long PathID { get; }
         public uint UnCompressedSize { get; }
         public uint CompressedSize { get; }
-        public string Path { get; } = string.Empty; // where asset is actually saved
+        public string OriginalPath { get; } = string.Empty;
+        public string CachedPath { get; } = string.Empty;
         public long FileID { get; }
         public string Memo { get; } = string.Empty;
 
