@@ -1,0 +1,29 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:UABS.AvaloniaUI"
+        xmlns:vm="clr-namespace:UABS.ViewModel"
+        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+        x:Class="UABS.AvaloniaUI.MainWindow"
+        x:DataType="vm:MainViewModel"
+        Title="UABS"
+        Background="Gray">
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/> <!-- Toolbar -->
+            <RowDefinition Height="*"/>    <!-- MainContent -->
+        </Grid.RowDefinitions>
+
+        <!-- Toolbar always on top of main content -->
+        <local:Toolbar x:Name="Toolbar" Grid.Row="0"/>
+
+        <!-- Main content area -->
+        <ContentControl Content="{Binding CurrentViewModel}" Grid.Row="1"/>
+
+        <!-- Overlay for dropdowns -->
+        <Canvas x:Name="DropdownLayer" IsHitTestVisible="True"/>
+    </Grid>
+
+</Window>
