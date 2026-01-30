@@ -1,0 +1,89 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:UABS.AvaloniaUI"
+             xmlns:vm="clr-namespace:UABS.ViewModel"
+             xmlns:data="clr-namespace:UABS.Data"
+             x:Class="UABS.AvaloniaUI.FileWindowPage"
+             x:DataType="vm:FileWindowViewModel">
+
+    <Grid ColumnDefinitions="3*,1*">
+
+        <!-- Left: DataGrid -->
+        <Grid RowDefinitions="Auto,Auto,*">
+
+            <!-- Sort Panel -->
+            <!-- <local:FolderWindowSortPanel Grid.Row="1"/> -->
+
+            <!-- DataGrid -->
+            <DataGrid x:Name="dataGrid"
+                    Grid.Row="1"
+                    ItemsSource="{Binding Assets}"
+                    AutoGenerateColumns="False"
+                    CanUserResizeColumns="True"
+                    IsReadOnly="True"
+                    HeadersVisibility="None"
+                    RowHeight="40">
+
+                <DataGrid.Styles>
+                    <Style Selector="DataGrid:focus DataGridCell:current /template/ Grid#FocusVisual">
+                        <Setter Property="IsVisible" Value="False"/>
+                    </Style>
+
+                    <Style Selector="DataGrid /template/ ScrollBar#PART_VerticalScrollbar">
+                        <Setter Property="AllowAutoHide" Value="False"/>
+                    </Style>		
+                </DataGrid.Styles>
+
+                <DataGrid.Columns>
+
+                    <!-- Icon column -->
+                    <DataGridTemplateColumn Width="48">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate x:DataType="data:AssetEntry">
+                                <Border Height="36"
+                                        Margin="8,2,0,0"
+                                        CornerRadius="2,0,0,2"
+                                        Background="{Binding RowBackground}">
+                                    <Image Source="{Binding ClassID, Converter={StaticResource AssetTypeIconConvertor}}"
+                                        Width="32"
+                                        Height="32"
+                                        VerticalAlignment="Center"/>
+                                </Border>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+
+                    <!-- Name column -->
+                    <DataGridTemplateColumn Width="*">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate x:DataType="data:AssetEntry">
+                                <Border Height="36"
+                                        Margin="0,2,26,0"
+                                        CornerRadius="0,2,2,0"
+                                        Background="{Binding RowBackground}">
+                                    <TextBlock Text="{Binding Name}"
+                                            VerticalAlignment="Center"
+                                            Padding="6,0,0,0"/>
+                                </Border>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+
+                </DataGrid.Columns>
+            </DataGrid>
+
+        </Grid>
+
+        <!-- Right: Stack -->
+        <StackPanel Grid.Column="1"
+                    Margin="8"
+                    Spacing="8">
+
+            <TextBlock Text="Details" FontSize="16" FontWeight="Bold"/>
+            <TextBox Watermark="Name"/>
+            <Button Content="Action"/>
+        </StackPanel>
+
+    </Grid>
+
+</UserControl>

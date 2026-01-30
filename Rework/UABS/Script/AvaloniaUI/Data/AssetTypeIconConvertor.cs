@@ -2,12 +2,15 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.Reflection;
 using System.Text.RegularExpressions;
 using AssetsTools.NET.Extra;
+using Avalonia;
 using Avalonia.Data;
 using Avalonia.Data.Converters;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform;
+using UABS.Util;
 
 namespace UABS.AvaloniaUI
 {
@@ -46,10 +49,37 @@ namespace UABS.AvaloniaUI
                 if ((int)classID < 0)
                     return GetBitMap(Path.Combine(PredefinedPaths.Icons_Path, ClassId2IconName(AssetClassID.MonoBehaviour)));
 
-                return GetBitMap(Path.Combine(PredefinedPaths.Icons_Path, ClassId2IconName(classID)));
+                return GetBitMap(LoadIconPath(ClassId2IconName(classID)));
             }
 
             return new BindingNotification(new InvalidCastException(), BindingErrorType.Error);
+        }
+
+        public string LoadIconPath(string iconName)
+        {
+            var assembly = typeof(IconsLoader).Assembly;
+            string resourceName = $"UABS.Resources.Icons.{iconName}";
+            Log.Info(resourceName);
+
+            Stream? stream = assembly.GetManifestResourceStream(resourceName);
+
+            if (stream == null)
+            {
+                // fallback
+                resourceName = "UABS.Resources.Icons.asset-unknown.png";
+                stream = assembly.GetManifestResourceStream(resourceName);
+                if (stream != null)
+                {
+                    return Path.Combine(PredefinedPaths.Icons_Path, "asset-unknown.png");
+                }
+                else
+                {
+                    Log.Error("Default icon missing.", file: "AssetTypeIconConvertor.cs");
+                    throw new InvalidOperationException("Default icon missing");
+                }
+            }
+
+            return Path.Combine(PredefinedPaths.Icons_Path, iconName);
         }
 
         public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)

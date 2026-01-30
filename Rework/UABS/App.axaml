@@ -24,8 +24,8 @@
             <local:FolderWindowPage />
         </DataTemplate>
 
-        <!-- <DataTemplate DataType="vm:FileWindowViewModel">
+        <DataTemplate DataType="vm:FileWindowViewModel">
             <local:FileWindowPage />
-        </DataTemplate> -->
+        </DataTemplate>
     </Application.DataTemplates>
 </Application>

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using AssetsTools.NET.Extra;
 using UABS.Data;
+using UABS.Util;
 
 namespace UABS.App
 {
@@ -16,6 +17,15 @@ namespace UABS.App
         public FileWindow(AssetsManager assetsManager)
         {
             _assetsManager = assetsManager;
+
+            // ! Load classdata.tpk
+            var assembly = typeof(ClassDataLoader).Assembly;
+            using var stream = assembly.GetManifestResourceStream(
+                "UABS.Script.Core.Data.ClassData.classdata.tpk");
+            if (stream == null)
+                Log.Error("classdata.tpk not found", "FileWindow.cs");
+
+            _assetsManager.LoadClassPackage(stream);
         }
 
         public void OpenNewBundle(string path)

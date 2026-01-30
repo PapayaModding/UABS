@@ -46,6 +46,8 @@ namespace UABS.ViewModel
             ToolbarVM.FileSelected += path =>
             {
                 Log.Info($"Opened File: {path}.", file: "MainViewModel.cs");
+                FileWindowVM.OpenNewBundle(path);
+                CurrentViewModel = FileWindowVM;
                 ToolbarVM.CanExport = true;
                 ToolbarVM.CanDepend = true;
                 ToolbarVM.CanFilter = true;

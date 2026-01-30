@@ -47,5 +47,7 @@
   <!-- Custom Resources -->
   <ItemGroup>
     <AvaloniaResource Include="Resources/**" />
+    <EmbeddedResource Include="Resources/Icons/**" />
+    <EmbeddedResource Include="Script/Core/Data/ClassData/classdata.tpk" />
   </ItemGroup>
 </Project>

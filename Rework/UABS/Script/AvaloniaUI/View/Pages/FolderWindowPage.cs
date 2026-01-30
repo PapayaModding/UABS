@@ -1,6 +1,4 @@
-using System.Linq;
 using Avalonia.Controls;
-using UABS.Data;
 using UABS.Util;
 using UABS.ViewModel;
 

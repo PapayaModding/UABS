@@ -36,7 +36,7 @@ namespace UABS.AvaloniaUI
 
             // Save the log file to another one if the current one has grown too big (> 5MB)
             Log.RotateIfNeeded();
-            // Log.RemoveAllLogged();
+            Log.RemoveAllLogged();
             // FileNavigationTester.Test1();
             // FileNavigationTester.Test2();
             // FileNavigationTester.Test3();
