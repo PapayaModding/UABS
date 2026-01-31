@@ -26,7 +26,14 @@
         </DataTemplate>
 
         <DataTemplate DataType="vm:UnknownPreviewViewModel">
-            <TextBlock Text="{Binding Reason}" Foreground="Gray"/>
+            <Border Padding="12">
+                <TextBlock Text="{Binding Reason}" 
+                        Foreground="Black" 
+                        FontStyle="Italic"
+                        HorizontalAlignment="Center" 
+                        VerticalAlignment="Center"
+                        TextWrapping="Wrap"/>
+            </Border>
         </DataTemplate>
     </UserControl.DataTemplates>
 

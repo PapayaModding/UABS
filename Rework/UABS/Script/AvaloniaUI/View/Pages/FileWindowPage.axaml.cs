@@ -37,6 +37,12 @@ namespace UABS.AvaloniaUI
                             vm.DeselectAsset(item);
                     }
                 };
+
+                if (this.DataContext is FileWindowViewModel vm)
+                {
+                    Log.Info("Displaying unsupported preview panel.", file: "FileWindowPage.axaml.cs");
+                    vm.AssetPreview = new UnknownPreviewViewModel("Preview not available for this asset type.");
+                }
             };
         }
     }
