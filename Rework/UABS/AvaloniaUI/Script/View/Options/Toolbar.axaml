@@ -1,0 +1,20 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="UABS.AvaloniaUI.Toolbar">
+
+    <UserControl.Styles>
+        <StyleInclude Source="avares://AvaloniaUI/Script/Styles/ToolbarStyle.axaml"/>
+    </UserControl.Styles>
+
+    <StackPanel Orientation="Horizontal" Background="#FFFFFF" DockPanel.Dock="Top" Spacing="10">
+        <Button x:Name="FileButton"    Content="File"    Classes="toolbarButton" />
+        <Button x:Name="ExportButton"  Content="Export"  Classes="toolbarButton" />
+        <Button x:Name="SearchButton"  Content="Search"  Classes="toolbarButton"/>
+        <Button x:Name="DependButton"  Content="Depend"  Classes="toolbarButton"/>
+        <Button x:Name="FilterButton"  Content="Filter"  Classes="toolbarButton"/>
+        <Button x:Name="MemoButton"    Content="Memo"    Classes="toolbarButton"/>
+        <Button x:Name="PackageButton" Content="Package" Classes="toolbarButton"/>
+        <Button x:Name="BackButton"    Content="Back"    Classes="toolbarButton"/>
+    </StackPanel>
+
+</UserControl>

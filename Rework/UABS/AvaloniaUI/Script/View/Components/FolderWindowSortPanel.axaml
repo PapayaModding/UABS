@@ -1,0 +1,15 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:UABS.AvaloniaUI"
+             x:Class="UABS.AvaloniaUI.FolderWindowSortPanel"
+             x:DataType="local:FolderWindowSortPanel">
+    
+    <UserControl.Styles>
+        <StyleInclude Source="avares://AvaloniaUI/Script/Styles/SortPanelStyle.axaml"/>
+    </UserControl.Styles>
+
+    <DockPanel Height="32" Background="Darkgray" >
+        <TextBlock Text="Name" Classes="sortButtonText" Padding="46,0,0,0"/>
+    </DockPanel>
+
+</UserControl>
