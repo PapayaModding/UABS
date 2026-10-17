@@ -1,12 +1,11 @@
 using System.ComponentModel;
-using AssetsTools.NET.Extra;
 
 namespace UABS.Component;
 
 public class AssetsViewEntry : INotifyPropertyChanged
 {
     private string name = string.Empty;
-    private AssetClassID typeClass;
+    private int typeClass;
     private string type = string.Empty;
 
     public required string Name 
@@ -22,7 +21,7 @@ public class AssetsViewEntry : INotifyPropertyChanged
         }
     }
 
-    public AssetClassID TypeClass
+    public int TypeClass
     {
         get => typeClass;
         set

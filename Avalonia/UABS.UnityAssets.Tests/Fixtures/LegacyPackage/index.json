@@ -1,0 +1,19 @@
+[
+  {
+    "Name": "character.ab",
+    "Path": "C:\\LegacyGame\\Data\\character.ab",
+    "CabCode": "CAB-0123456789abcdef",
+    "AssetInfos": [
+      {
+        "Name": "portrait",
+        "PathId": 1001,
+        "Memo": "legacy memo",
+        "LegacyAssetField": "preserve me"
+      }
+    ],
+    "Dependencies": [
+      "CAB-fedcba9876543210"
+    ],
+    "LegacyBundleField": 42
+  }
+]

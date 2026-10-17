@@ -1,0 +1,216 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:UABS.ViewModels"
+             x:Class="UABS.Page.PackageManagementView"
+             x:DataType="vm:PackageManagementViewModel">
+    <Grid RowDefinitions="Auto,Auto,*" Margin="12" RowSpacing="8">
+        <Grid Grid.Row="0" ColumnDefinitions="Auto,Auto,Auto,Auto,*" ColumnSpacing="8">
+            <Button Content="Open Package Catalog..." Command="{Binding ChoosePackageDirectoryCommand}"
+                    ToolTip.Tip="Choose either a catalog root containing package folders or one package folder."/>
+            <Button Grid.Column="1" Content="Refresh" Command="{Binding RefreshCatalogCommand}"/>
+            <Button Grid.Column="2" Content="New Package" Command="{Binding NewPackageCommand}"/>
+            <Button Grid.Column="3" Content="Edit Package" Command="{Binding EditPackageCommand}"/>
+            <TextBlock Grid.Column="4" Text="{Binding PackageDirectory}" VerticalAlignment="Center"
+                       TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding PackageDirectory}"/>
+        </Grid>
+
+        <Grid Grid.Row="1" RowDefinitions="Auto,Auto,Auto" RowSpacing="5">
+            <ProgressBar IsVisible="{Binding IsCatalogLoading}" IsIndeterminate="True" Height="4"/>
+            <TextBlock Grid.Row="1" Text="{Binding CatalogStatus}"/>
+            <Border Grid.Row="2" Background="#FFF2F2" BorderBrush="#D94848" BorderThickness="1"
+                    CornerRadius="4" Padding="8" IsVisible="{Binding HasCatalogError}">
+                <TextBlock Text="{Binding CatalogError}" Foreground="#9A2020" TextWrapping="Wrap"/>
+            </Border>
+        </Grid>
+
+        <Grid Grid.Row="2" ColumnDefinitions="330,4,*">
+            <Grid RowDefinitions="Auto,*" Margin="0,0,8,0" RowSpacing="6">
+                <TextBlock Text="Packages" FontWeight="SemiBold"/>
+                <DataGrid Grid.Row="1" AutoGenerateColumns="False" IsReadOnly="True"
+                          CanUserResizeColumns="True" GridLinesVisibility="Horizontal"
+                          ItemsSource="{Binding Packages}" SelectedItem="{Binding SelectedPackage}">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="2*"/>
+                        <DataGridTextColumn Header="Sources" Binding="{Binding SourceCount}" Width="70"/>
+                        <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="85"/>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </Grid>
+
+            <GridSplitter Grid.Column="1" ResizeDirection="Columns" Background="#D0D0D0"/>
+
+            <Grid Grid.Column="2" RowDefinitions="Auto,*" Margin="8,0,0,0" RowSpacing="6">
+                <TextBlock Text="{Binding SelectedPackageStatus}" TextWrapping="Wrap"/>
+                <TabControl Grid.Row="1" IsVisible="{Binding Editor.IsEditorClosed}">
+                    <TabItem Header="Contents">
+                        <Grid RowDefinitions="*,Auto" Margin="8" RowSpacing="8">
+                            <DataGrid AutoGenerateColumns="False" IsReadOnly="True" CanUserResizeColumns="True"
+                                      GridLinesVisibility="Horizontal" ItemsSource="{Binding Contents}"
+                                      SelectedItem="{Binding SelectedContent}">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Kind" Binding="{Binding Kind}" Width="80"/>
+                                    <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="2*"/>
+                                    <DataGridTextColumn Header="Source" Binding="{Binding SourceName}" Width="*"/>
+                                    <DataGridTextColumn Header="CAB" Binding="{Binding CabCode}" Width="*"/>
+                                    <DataGridTextColumn Header="Path ID" Binding="{Binding PathId}" Width="100"/>
+                                    <DataGridTextColumn Header="Memo" Binding="{Binding Memo}" Width="*"/>
+                                    <DataGridTextColumn Header="Original path" Binding="{Binding SourcePath}" Width="2*"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                            <Border Grid.Row="1" Background="White" BorderBrush="#D0D0D0" BorderThickness="1"
+                                    CornerRadius="4" Padding="8" IsVisible="{Binding HasSelectedContent}">
+                                <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="8">
+                                    <TextBlock Text="Selected:" FontWeight="SemiBold"/>
+                                    <TextBlock Grid.Column="1" Text="{Binding SelectedContent.Name}"/>
+                                    <TextBlock Grid.Row="1" Text="Source path:" FontWeight="SemiBold"/>
+                                    <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding SelectedContent.SourcePath}" TextWrapping="Wrap"/>
+                                    <TextBlock Grid.Row="2" Text="Index:" FontWeight="SemiBold"/>
+                                    <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding SelectedContent.IndexDirectory}"/>
+                                </Grid>
+                            </Border>
+                        </Grid>
+                    </TabItem>
+
+                    <TabItem Header="Search">
+                        <Grid RowDefinitions="Auto,Auto,Auto,*,Auto" Margin="8" RowSpacing="7">
+                            <Grid ColumnDefinitions="2*,2*,120,130,Auto,Auto" ColumnSpacing="6">
+                                <TextBox Watermark="Include terms (comma = OR)" Text="{Binding SearchText}"/>
+                                <TextBox Grid.Column="1" Watermark="Exclude terms" Text="{Binding ExcludedSearchText}"/>
+                                <TextBox Grid.Column="2" Watermark="Exact Path ID" Text="{Binding SearchPathIdText}"/>
+                                <ComboBox Grid.Column="3" ItemsSource="{Binding SearchFields}" SelectedItem="{Binding SearchField}"/>
+                                <CheckBox Grid.Column="4" Content="Exact text" IsChecked="{Binding SearchExact}" VerticalAlignment="Center"/>
+                                <Button Grid.Column="5" Content="Search" Command="{Binding SearchCommand}"/>
+                            </Grid>
+                            <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="12">
+                                <CheckBox Content="Packages" IsChecked="{Binding SearchPackages}"/>
+                                <CheckBox Content="Sources" IsChecked="{Binding SearchSources}"/>
+                                <CheckBox Content="Assets" IsChecked="{Binding SearchAssets}"/>
+                                <TextBlock Text="Case-insensitive; exclusions win; empty text requires a Path ID."
+                                           Foreground="#666666" VerticalAlignment="Center"/>
+                            </StackPanel>
+                            <ProgressBar Grid.Row="2" IsVisible="{Binding IsSearching}" IsIndeterminate="True" Height="4"/>
+                            <DataGrid Grid.Row="3" AutoGenerateColumns="False" IsReadOnly="True" CanUserResizeColumns="True"
+                                      GridLinesVisibility="Horizontal" ItemsSource="{Binding SearchResults}"
+                                      SelectedItem="{Binding SelectedSearchResult}">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Kind" Binding="{Binding Kind}" Width="80"/>
+                                    <DataGridTextColumn Header="Package" Binding="{Binding PackageName}" Width="*"/>
+                                    <DataGridTextColumn Header="Source" Binding="{Binding SourceName}" Width="*"/>
+                                    <DataGridTextColumn Header="Asset" Binding="{Binding AssetName}" Width="*"/>
+                                    <DataGridTextColumn Header="Path ID" Binding="{Binding PathId}" Width="100"/>
+                                    <DataGridTextColumn Header="Matched" Binding="{Binding MatchCategories}" Width="*"/>
+                                    <DataGridTextColumn Header="Original path" Binding="{Binding SourcePath}" Width="2*"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                            <Border Grid.Row="4" Background="#FFF2F2" BorderBrush="#D94848" BorderThickness="1"
+                                    CornerRadius="4" Padding="8" IsVisible="{Binding HasSearchError}">
+                                <TextBlock Text="{Binding SearchError}" Foreground="#9A2020" TextWrapping="Wrap"/>
+                            </Border>
+                        </Grid>
+                    </TabItem>
+
+                    <TabItem Header="Direct Dependencies">
+                        <Grid RowDefinitions="Auto,2*,Auto,*" Margin="8" RowSpacing="7">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <ProgressBar Width="120" IsVisible="{Binding IsDependencyLoading}" IsIndeterminate="True" Height="4"/>
+                                <TextBlock Text="Select a source row in Contents to filter; asset rows use their source provenance."
+                                           Foreground="#666666"/>
+                            </StackPanel>
+                            <DataGrid Grid.Row="1" AutoGenerateColumns="False" IsReadOnly="True" CanUserResizeColumns="True"
+                                      GridLinesVisibility="Horizontal" ItemsSource="{Binding DependencyResults}"
+                                      SelectedItem="{Binding SelectedDependency}">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Requested CAB" Binding="{Binding RequestedCabCode}" Width="*"/>
+                                    <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="100"/>
+                                    <DataGridTextColumn Header="Requesting source" Binding="{Binding RequestingSource}" Width="*"/>
+                                    <DataGridTextColumn Header="Candidates" Binding="{Binding CandidateCount}" Width="95"/>
+                                    <DataGridTextColumn Header="Candidate paths" Binding="{Binding CandidatePaths}" Width="2*"/>
+                                    <DataGridTextColumn Header="Diagnostic" Binding="{Binding Diagnostic}" Width="2*"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                            <TextBlock Grid.Row="2" Text="Candidate records (all are shown when ambiguous)" FontWeight="SemiBold"
+                                       IsVisible="{Binding HasSelectedDependency}"/>
+                            <DataGrid Grid.Row="3" AutoGenerateColumns="False" IsReadOnly="True" CanUserResizeColumns="True"
+                                      GridLinesVisibility="Horizontal" ItemsSource="{Binding SelectedDependency.Candidates}"
+                                      IsVisible="{Binding HasSelectedDependency}">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Package" Binding="{Binding PackageName}" Width="*"/>
+                                    <DataGridTextColumn Header="Source" Binding="{Binding SourceName}" Width="*"/>
+                                    <DataGridTextColumn Header="CAB" Binding="{Binding CabCode}" Width="*"/>
+                                    <DataGridTextColumn Header="Original path" Binding="{Binding SourcePath}" Width="2*"/>
+                                    <DataGridCheckBoxColumn Header="Complete provenance" Binding="{Binding HasCompleteProvenance}" Width="135"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </Grid>
+                    </TabItem>
+                </TabControl>
+
+                <Border Grid.Row="1" IsVisible="{Binding Editor.IsEditing}" Background="White"
+                        BorderBrush="#C8C8C8" BorderThickness="1" CornerRadius="4" Padding="12">
+                    <Grid RowDefinitions="Auto,Auto,Auto,Auto,*,Auto,Auto" RowSpacing="9">
+                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                            <TextBlock Text="Package Editor" FontSize="20" FontWeight="SemiBold"/>
+                            <Border Grid.Column="1" Background="#FFF3CD" CornerRadius="4" Padding="8,4">
+                                <TextBlock Text="{Binding Editor.UnsavedIndicator}" FontWeight="SemiBold"/>
+                            </Border>
+                        </Grid>
+
+                        <Grid Grid.Row="1" ColumnDefinitions="Auto,220,Auto,*,Auto" ColumnSpacing="8">
+                            <TextBlock Text="Name" VerticalAlignment="Center"/>
+                            <TextBox Grid.Column="1" Text="{Binding Editor.PackageName, UpdateSourceTrigger=PropertyChanged}"
+                                     Watermark="Required package name"/>
+                            <TextBlock Grid.Column="2" Text="Destination" VerticalAlignment="Center"/>
+                            <TextBox Grid.Column="3" Text="{Binding Editor.DestinationDirectory, UpdateSourceTrigger=PropertyChanged}"
+                                     Watermark="Choose the parent directory"/>
+                            <Button Grid.Column="4" Content="Choose..." Command="{Binding Editor.ChooseDestinationCommand}"/>
+                        </Grid>
+
+                        <WrapPanel Grid.Row="2" Orientation="Horizontal" ItemSpacing="8" LineSpacing="8">
+                            <Button Content="Add Assets from File..." Command="{Binding Editor.AddSourceCommand}"/>
+                            <CheckBox Content="Include subfolders" IsChecked="{Binding Editor.IncludeSubfolders, Mode=TwoWay}"
+                                      VerticalAlignment="Center"
+                                      ToolTip.Tip="Enable before importing when files are nested. Symbolic-link and junction targets are skipped."/>
+                            <Button Content="Add Assets from Folder..." Command="{Binding Editor.AddFolderCommand}"
+                                    ToolTip.Tip="Imports supported Unity files from the selected scope without copying source files."/>
+                            <Button Content="Remove Selected" Command="{Binding Editor.RemoveSelectedCommand}"/>
+                            <Button Content="Save" Command="{Binding Editor.SaveCommand}"/>
+                            <Button Content="Cancel / Discard" Command="{Binding Editor.DiscardCommand}"/>
+                            <Button Content="Cancel Operation" Command="{Binding Editor.CancelSaveCommand}"
+                                    IsVisible="{Binding Editor.IsOperationRunning}"/>
+                        </WrapPanel>
+
+                        <Grid Grid.Row="3" RowDefinitions="Auto,Auto" RowSpacing="4">
+                            <ProgressBar IsVisible="{Binding Editor.IsOperationRunning}" IsIndeterminate="True" Height="4"/>
+                            <TextBlock Grid.Row="1" Text="{Binding Editor.Status}" TextWrapping="Wrap"/>
+                        </Grid>
+
+                        <Grid Grid.Row="4" RowDefinitions="Auto,*" RowSpacing="4">
+                            <TextBlock Text="{Binding Editor.EditorContentsSummary}" FontWeight="SemiBold"/>
+                            <DataGrid Grid.Row="1" AutoGenerateColumns="False" IsReadOnly="True" CanUserResizeColumns="True"
+                                      GridLinesVisibility="Horizontal" ItemsSource="{Binding Editor.Items}"
+                                      SelectedItem="{Binding Editor.SelectedItem}">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Kind" Binding="{Binding Kind}" Width="80"/>
+                                    <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="2*"/>
+                                    <DataGridTextColumn Header="Source" Binding="{Binding SourceName}" Width="*"/>
+                                    <DataGridTextColumn Header="CAB" Binding="{Binding CabCode}" Width="*"/>
+                                    <DataGridTextColumn Header="Path ID" Binding="{Binding PathId}" Width="100"/>
+                                    <DataGridTextColumn Header="Original path" Binding="{Binding SourcePath}" Width="2*"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                            <TextBlock Grid.Row="1" Text="{Binding Editor.EmptyStateText}" IsVisible="{Binding !Editor.HasItems}"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center"
+                                       Foreground="#666666" TextWrapping="Wrap" MaxWidth="520"/>
+                        </Grid>
+
+                        <TextBlock Grid.Row="5" Text="{Binding Editor.ProgressText}" Foreground="#666666"/>
+                        <Border Grid.Row="6" Background="#FFF2F2" BorderBrush="#D94848" BorderThickness="1"
+                                CornerRadius="4" Padding="8" IsVisible="{Binding Editor.HasError}">
+                            <TextBlock Text="{Binding Editor.Error}" Foreground="#9A2020" TextWrapping="Wrap"/>
+                        </Border>
+                    </Grid>
+                </Border>
+            </Grid>
+        </Grid>
+    </Grid>
+</UserControl>

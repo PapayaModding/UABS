@@ -1,76 +1,83 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:local="clr-namespace:UABS.Page"
-             xmlns:comp="clr-namespace:UABS.Component"
+             xmlns:assets="clr-namespace:UABS.UnityAssets;assembly=UABS.UnityAssets"
+             xmlns:vm="clr-namespace:UABS.ViewModels"
              x:Class="UABS.Page.FolderView"
-             x:DataType="local:FolderView">
+             x:DataType="vm:MainWindowViewModel">
+    <Grid RowDefinitions="Auto,Auto,Auto,Auto,*,Auto" Margin="8,12,12,12" RowSpacing="8">
+        <Border Grid.Row="0" Background="White" BorderBrush="#D0D0D0" BorderThickness="1" CornerRadius="4" Padding="10,7">
+            <Grid ColumnDefinitions="Auto,*" ColumnSpacing="8">
+                <TextBlock Text="Open file:" FontWeight="SemiBold"/>
+                <TextBlock Grid.Column="1" Text="{Binding ActiveFilePath}" TextTrimming="CharacterEllipsis"/>
+            </Grid>
+        </Border>
 
-    <UserControl.Styles>
-        <StyleInclude Source="avares://UABS/Script/Styles/PathfieldStyle.axaml"/>
-    </UserControl.Styles>
+        <ProgressBar Grid.Row="1" IsVisible="{Binding IsLoading}" IsIndeterminate="True" Height="4"/>
 
-    <StackPanel>
-        <!-- Path Field -->
-        <TextBox Text="---" IsReadOnly="True" Classes="pathfieldTextBox"/>
+        <Grid Grid.Row="2" ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
+            <TextBlock Text="{Binding StatusText}" VerticalAlignment="Center"/>
+            <Button Grid.Column="1" Content="Add Selected to Package" Command="{Binding AddSelectedAssetToPackageCommand}"/>
+            <Button Grid.Column="2" Content="Open File..." Command="{Binding OpenFileCommand}"/>
+        </Grid>
 
-        <!-- Sort Panel -->
-        <comp:FolderViewSortPanel />
+        <Grid Grid.Row="3" ColumnDefinitions="*,*,140,150,Auto" ColumnSpacing="6">
+            <TextBox Watermark="Filter name" Text="{Binding AssetList.NameFilter, UpdateSourceTrigger=PropertyChanged}"/>
+            <TextBox Grid.Column="1" Watermark="Filter type" Text="{Binding AssetList.TypeFilter, UpdateSourceTrigger=PropertyChanged}"/>
+            <TextBox Grid.Column="2" Watermark="Path ID" Text="{Binding AssetList.PathIdFilter, UpdateSourceTrigger=PropertyChanged}"/>
+            <ComboBox Grid.Column="3" ItemsSource="{Binding AssetList.SortFields}" SelectedItem="{Binding AssetList.SortField}"/>
+            <CheckBox Grid.Column="4" Content="Descending" IsChecked="{Binding AssetList.SortDescending}" VerticalAlignment="Center"/>
+        </Grid>
 
-        <DataGrid x:Name="dataGrid"
-                  AutoGenerateColumns="False"
-                  CanUserResizeColumns="True"
-                  IsReadOnly="True"
-                  ItemsSource="{Binding ItemsSource}"
-                  HeadersVisibility="None">
+        <Grid Grid.Row="4">
+            <DataGrid AutoGenerateColumns="False"
+                      CanUserResizeColumns="True"
+                      CanUserSortColumns="True"
+                      GridLinesVisibility="Horizontal"
+                      IsReadOnly="True"
+                      ItemsSource="{Binding AssetList.Assets}"
+                      SelectedItem="{Binding AssetList.SelectedAsset}"
+                      HeadersVisibility="Column">
+                <DataGrid.Columns>
+                    <DataGridTemplateColumn Header="" Width="42">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate x:DataType="assets:AssetEntry">
+                                <Image Source="{Binding Type, Converter={StaticResource AssetTypeIconConvertor}}"
+                                       Width="24" Height="24" Stretch="Uniform"
+                                       RenderOptions.BitmapInterpolationMode="HighQuality"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                    <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="2*"/>
+                    <DataGridTextColumn Header="Type" Binding="{Binding Type}" Width="*"/>
+                    <DataGridTextColumn Header="Class ID" Binding="{Binding ClassId}" Width="85"/>
+                    <DataGridTextColumn Header="Path ID" Binding="{Binding PathId}" Width="105"/>
+                    <DataGridTextColumn Header="Size" Binding="{Binding ByteSize}" Width="90"/>
+                    <DataGridTextColumn Header="File" Binding="{Binding LogicalFile}" Width="2*"/>
+                </DataGrid.Columns>
+            </DataGrid>
 
-            <DataGrid.Styles>
-                <Style Selector="DataGridRow">
-                    <Setter Property="Background" Value="#EBFFDB"/>
-                    <Setter Property="Margin" Value="8, 2, 8, 2"/>
-                    <Setter Property="Height" Value="40"/>
-                    <Setter Property="CornerRadius" Value="2"/>
-                </Style>
-                <Style Selector="DataGridRow:nth-child(2n)">
-                    <Setter Property="Background" Value="#FFFFFF"/>
-                </Style>
-                <Style Selector="DataGridRow:selected">
-                    <Setter Property="Background" Value="#00FF00"/>
-                </Style>
-                <Style Selector="DataGrid:focus DataGridCell:current /template/ Grid#FocusVisual"> 
-                    <Setter Property="IsVisible" Value="False" /> 
-                </Style> 
-                <!-- <Style Selector="DataGridColumnHeader">
-                    <Setter Property="Background" Value="Darkgray"/>
-                    <Setter Property="FontWeight" Value="Bold"/>
-                    <Setter Property="Foreground" Value="#222"/>
-                    <Setter Property="HorizontalContentAlignment" Value="Center"/>
-                    <Setter Property="Height" Value="32"/>
-                </Style> -->
-            </DataGrid.Styles>
+            <Border Background="#FFF2F2" BorderBrush="#D94848" BorderThickness="1" CornerRadius="4"
+                    Padding="12" VerticalAlignment="Top" Margin="8" IsVisible="{Binding HasError}">
+                <TextBlock Text="{Binding ErrorMessage}" Foreground="#9A2020" TextWrapping="Wrap"/>
+            </Border>
+        </Grid>
 
-            <DataGrid.Columns>
-                <DataGridTemplateColumn Header=" ">
-                <DataGridTemplateColumn.CellTemplate>
-                    <DataTemplate x:DataType="comp:FolderViewEntry">
-                        <Image Source="{Binding Type, Converter={StaticResource FolderViewIconConvertor}}" Stretch="Uniform" 
-                                Width="32" Height="32"
-                                RenderOptions.BitmapInterpolationMode="HighQuality"
-                                VerticalAlignment="Center"/>
-                    </DataTemplate>
-                </DataGridTemplateColumn.CellTemplate>
-                </DataGridTemplateColumn>
-                
-                <DataGridTemplateColumn Header="Name">
-                    <DataGridTemplateColumn.CellTemplate>
-                        <DataTemplate x:DataType="comp:FolderViewEntry">
-                            <TextBlock Text="{Binding Name}" VerticalAlignment="Center" Padding="6,0,0,0"/>
-                        </DataTemplate>
-                    </DataGridTemplateColumn.CellTemplate>
-                </DataGridTemplateColumn>
-            </DataGrid.Columns>
-
-        </DataGrid>
-
-    </StackPanel>
-
+        <Border Grid.Row="5" Background="White" BorderBrush="#D0D0D0" BorderThickness="1" CornerRadius="4" Padding="10">
+            <Grid RowDefinitions="Auto,Auto,Auto">
+                <TextBlock Text="Asset details" FontWeight="SemiBold"/>
+                <ProgressBar Grid.Row="1" IsVisible="{Binding AssetList.IsDetailsLoading}" IsIndeterminate="True" Height="3" Margin="0,6"/>
+                <Grid Grid.Row="2" ColumnDefinitions="Auto,*,Auto,*" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="8" RowSpacing="3"
+                      IsVisible="{Binding AssetList.HasDetails}">
+                    <TextBlock Text="Name:" FontWeight="SemiBold"/><TextBlock Grid.Column="1" Text="{Binding AssetList.SelectedDetails.Name}"/>
+                    <TextBlock Grid.Column="2" Text="Type:" FontWeight="SemiBold"/><TextBlock Grid.Column="3" Text="{Binding AssetList.SelectedDetails.Type}"/>
+                    <TextBlock Grid.Row="1" Text="Path ID:" FontWeight="SemiBold"/><TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding AssetList.SelectedDetails.PathId}"/>
+                    <TextBlock Grid.Row="1" Grid.Column="2" Text="Size:" FontWeight="SemiBold"/><TextBlock Grid.Row="1" Grid.Column="3" Text="{Binding AssetList.SelectedDetails.ByteSize}"/>
+                    <TextBlock Grid.Row="2" Text="Unity:" FontWeight="SemiBold"/><TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding AssetList.SelectedDetails.UnityVersion}"/>
+                    <TextBlock Grid.Row="2" Grid.Column="2" Text="Source file:" FontWeight="SemiBold"/><TextBlock Grid.Row="2" Grid.Column="3" Text="{Binding AssetList.SelectedDetails.LogicalFile}"/>
+                </Grid>
+                <TextBlock Grid.Row="2" Text="{Binding AssetList.DetailsError}" Foreground="#9A2020"
+                           IsVisible="{Binding AssetList.HasDetailsError}" TextWrapping="Wrap"/>
+            </Grid>
+        </Border>
+    </Grid>
 </UserControl>

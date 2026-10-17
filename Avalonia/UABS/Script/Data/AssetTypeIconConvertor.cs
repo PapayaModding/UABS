@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Text.RegularExpressions;
-using AssetsTools.NET.Extra;
 using Avalonia.Data;
 using Avalonia.Data.Converters;
 using Avalonia.Media.Imaging;
@@ -32,21 +31,25 @@ public partial class AssetTypeIconConvertor : IValueConverter
         }
     }
 
-    private static string ClassId2IconName(AssetClassID classID)
+    private static string TypeNameToIconName(string typeName)
     {
-        string input = classID.ToString();
-        string result = MyRegex().Replace(input, "-").ToLower(); 
+        string result = MyRegex().Replace(typeName, "-").ToLowerInvariant();
         return "asset-" + result + ".png";
     }
 
     public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
     {
-        if (value is AssetClassID classID)
+        if (value is string typeName && !string.IsNullOrWhiteSpace(typeName))
         {
-            if ((int)classID < 0)
-                return GetBitMap(Path.Combine(PredefinedPaths.Icons_Path, ClassId2IconName(AssetClassID.MonoBehaviour)));
-
-            return GetBitMap(Path.Combine(PredefinedPaths.Icons_Path, ClassId2IconName(classID)));
+            string iconPath = Path.Combine(PredefinedPaths.Icons_Path, TypeNameToIconName(typeName));
+            try
+            {
+                return GetBitMap(iconPath);
+            }
+            catch (FileNotFoundException)
+            {
+                return GetBitMap(Path.Combine(PredefinedPaths.Icons_Path, "asset-unknown.png"));
+            }
         }
 
         return new BindingNotification(new InvalidCastException(), BindingErrorType.Error);

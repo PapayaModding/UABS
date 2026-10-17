@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.13.0" />
+    <PackageReference Include="xunit" Version="2.9.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.5">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\UABS.UnityAssets\UABS.UnityAssets.csproj" />
+    <ProjectReference Include="..\UABS\UABS.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="Fixtures\aigirl.ab" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Fixtures\aigirl.assets" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Fixtures\LegacyPackage\**\*" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\UABS.UnityAssets\Resources\classdata.tpk">
+      <Link>Resources\classdata.tpk</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+</Project>

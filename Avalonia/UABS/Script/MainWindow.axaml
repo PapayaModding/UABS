@@ -2,11 +2,14 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:UABS.Options"
-        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+        xmlns:options="clr-namespace:UABS.Options"
+        xmlns:page="clr-namespace:UABS.Page"
+        xmlns:vm="clr-namespace:UABS.ViewModels"
+        mc:Ignorable="d" d:DesignWidth="1200" d:DesignHeight="700"
         x:Class="UABS.MainWindow"
         Title="UABS"
-        Background="Gray">
+        Background="#F4F4F4"
+        x:DataType="vm:MainWindowViewModel">
 
     <Grid>
         <Grid.RowDefinitions>
@@ -14,14 +17,19 @@
             <RowDefinition Height="*"/>    <!-- MainContent -->
         </Grid.RowDefinitions>
 
-        <!-- Toolbar always on top of main content -->
-        <local:Toolbar x:Name="Toolbar" Grid.Row="0"/>
-
-        <!-- Main content area -->
-        <ContentControl x:Name="MainContent" Grid.Row="1"/>
-
-        <!-- Overlay for dropdowns -->
-        <Canvas x:Name="DropdownLayer" IsHitTestVisible="True"/>
+        <options:Toolbar Grid.Row="0"/>
+        <TabControl Grid.Row="1" SelectedIndex="{Binding SelectedWorkspaceIndex}">
+            <TabItem Header="Assets">
+                <Grid ColumnDefinitions="460,4,*">
+                    <page:BrowserView DataContext="{Binding Browser}"/>
+                    <GridSplitter Grid.Column="1" ResizeDirection="Columns" Background="#D0D0D0"/>
+                    <page:FolderView Grid.Column="2"/>
+                </Grid>
+            </TabItem>
+            <TabItem Header="Packages">
+                <page:PackageManagementView DataContext="{Binding Packages}"/>
+            </TabItem>
+        </TabControl>
     </Grid>
 
 </Window>

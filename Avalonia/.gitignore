@@ -1,0 +1,4 @@
+# The repository-level Unity ignore rules exclude all project files by default.
+# These two SDK projects are part of the standalone Avalonia solution.
+!UABS.UnityAssets/UABS.UnityAssets.csproj
+!UABS.UnityAssets.Tests/UABS.UnityAssets.Tests.csproj
