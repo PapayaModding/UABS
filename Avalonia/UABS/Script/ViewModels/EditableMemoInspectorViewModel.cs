@@ -157,7 +157,7 @@ public sealed class EditableMemoInspectorViewModel : ViewModelBase, IDisposable
                 PackageMemoStorageState.Empty => "This asset stores an explicit empty memo.",
                 _ => "Edit the indexed package memo below."
             };
-            ApplySnapshot(snapshot);
+            ApplySnapshot(_drafts.GetSnapshot(resolution.Identity));
         }
         catch (OperationCanceledException) when (_lifetime.IsCancellationRequested)
         {
@@ -223,6 +223,9 @@ public sealed class EditableMemoInspectorViewModel : ViewModelBase, IDisposable
     {
         if (_disposed || !SameIdentity(Identity, snapshot.Identity))
             return;
+        // Queued notifications and awaited saves may carry an older draft revision.
+        // Read the coordinator's current state at application time in either Inspector.
+        snapshot = _drafts.GetSnapshot(snapshot.Identity);
         _isApplyingSnapshot = true;
         try
         {
@@ -257,7 +260,7 @@ public sealed class EditableMemoInspectorViewModel : ViewModelBase, IDisposable
         _isApplyingSnapshot = true;
         try
         {
-            MemoText = string.Empty;
+            MemoText = _resolution?.Value ?? string.Empty;
         }
         finally
         {

@@ -149,13 +149,13 @@ sequenceDiagram
 
 Outcomes distinguish saved, unchanged, missing package/asset, ambiguous identity, revision conflict, active Package Editor, write failure, verification failure, catalog-publication failure, and cancellation before commit. The result retains the request so a later UI can preserve and retry a failed draft; verification or publication failures also identify that the disk transaction already completed. Cancellation is honored while waiting and throughout pre-commit staging. Once `PackageService` enters its directory-swap sequence it completes or restores the backup before returning.
 
-`PackageEditorSessionGuard` records the Package Editor's active package independently of dirty state. Memo-only persistence rejects that same path even when the editor is clean, while other packages remain eligible. It never publishes into or replaces the editor's working clone, so unrelated dirty state and the editor's explicit-Save semantics remain unchanged. Stage 5 also uses this guard as Search Inspector eligibility: opening or closing Package Editor immediately re-resolves the selected result without discarding its coordinator-owned draft.
+`PackageEditorSessionGuard` records the Package Editor's active package independently of dirty state. Memo-only persistence rejects that same path even when the editor is clean, while other packages remain eligible. It never publishes into or replaces the editor's working clone, so unrelated dirty state and the editor's explicit-Save semantics remain unchanged. Both Inspectors use this guard for eligibility: opening, replacing, saving, or successfully closing Package Editor rechecks eligibility without discarding coordinator-owned drafts. Close Editor still offers Save / Discard / Cancel for dirty sessions; failed Save and Cancel retain the editor and its guard.
 
 The revision is a SHA-256 fingerprint over every regular file's normalized relative path, length, and content plus directory paths; reparse points are excluded. It detects package changes outside any single `index.json`, but it is not an operating-system lock. An external process that ignores UABS coordination can still modify the directory after the final pre-commit check and race the transactional replacement. The service reports conflicts rather than merging or silently retrying, and cross-process locking remains deferred.
 
 ### Application-lifetime memo drafts
 
-Stage 4 adds one application-owned `MemoDraftCoordinator`; Stage 5 connects it only to the Search Inspector. Drafts are keyed by normalized package/source paths plus index directory, exact asset name, and Path ID, so changing selection or workspace cannot retarget a pending save. Each entry retains draft and confirmed text, the confirmed package fingerprint, a monotonic draft revision, structured failure details, and an observable snapshot. Missing (`null`) and explicitly empty memo text remain distinct.
+Stage 4 adds one application-owned `MemoDraftCoordinator`; Stage 5 connects Search and Stage 6 connects Assets to that same instance. Drafts are keyed by normalized package/source paths plus index directory, exact asset name, and Path ID, so changing selection or workspace cannot retarget a pending save. Each entry retains draft and confirmed text, the confirmed package fingerprint, a monotonic draft revision, structured failure details, and an observable snapshot. Missing (`null`) and explicitly empty memo text remain distinct. Revision capture also observes the entry before awaiting I/O: if another Inspector, edit, or save advances that entry while capture is pending, the earlier catalog value cannot reset the current draft/confirmed state.
 
 ```mermaid
 stateDiagram-v2
@@ -177,11 +177,24 @@ The internal debounce is 1.5 seconds through injectable `IMemoDraftDelay`. Each 
 
 `DrainForShutdownAsync` stops new timers, waits for in-flight work, attempts remaining drafts once, and returns `AllSaved` plus the retained failure snapshots. It does not alter the current close-confirmation flow: Stage 7 must call and present this result before application teardown. Synchronous disposal still cancels pending timers without claiming that drafts were flushed.
 
-### Editable Search memo Inspector
+### Editable Assets and Search memo Inspectors
 
-Stage 5 replaces only Search's read-only memo presenter with `EditableMemoInspectorViewModel` and `EditableMemoInspectorView`. An indexed asset must re-resolve to one complete package/index/source/name/Path-ID identity in the current catalog, and its package must not be open in Package Editor. Package/source rows, incomplete or stale results, ambiguous identities, unloaded packages, and editor conflicts remain disabled with an explicit explanation. Assets Inspector remains read-only.
+Stage 6 uses `EditableMemoInspectorViewModel` and `EditableMemoInspectorView` in both Assets and Search, backed by the single coordinator owned by `MainWindowViewModel`. `AssetListViewModel` reuses its Stage 1 lookup over normalized source path, exact asset name, and Path ID to obtain exactly one complete package/index/source/name/Path-ID identity. Duplicate matches across packages or logical serialized files are refused. Search revalidates its full result identity. Loose unindexed assets, package/source results, incomplete or stale identities, missing/unloaded packages, and editor conflicts remain disabled with an explanation. Eligibility is type-agnostic for existing index records; Texture2D/Sprite creation/import policy is unchanged.
 
-Selection calls `TrackAsync`, which captures the current whole-package fingerprint before exposing the multiline editor. Text changes update the shared coordinator, inherit its 1.5-second debounce, and surface Saved, Unsaved, Saving, Failed, Save Now, and Retry states. Leaving a result flushes the identity being left while presenting the new result independently; leaving Search also flushes its active identity. Completion events are identity-filtered, so an older save cannot replace another result's draft or status.
+```mermaid
+flowchart LR
+    Assets["Assets memo Inspector"] --> Drafts["One application MemoDraftCoordinator"]
+    Search["Search memo Inspector"] --> Drafts
+    Drafts --> Persist["Stage 3 coordinated transactional save"]
+    Persist --> Catalog["Verified catalog publication on UI thread"]
+    Catalog --> Assets
+    Catalog --> Search
+    Drafts -->|verified completion| Rows["Update exact existing Search rows"]
+```
+
+Selection calls `TrackAsync`, which captures the current whole-package fingerprint before exposing the multiline editor. Text changes update the shared coordinator, inherit its 1.5-second debounce, and surface Unavailable, Saved, Unsaved, Saving, Failed, Save Now, and Retry states. Leaving an asset/result or replacing an Assets session flushes the identity being left while presenting the next selection independently; leaving either workspace also requests a flush. Failed drafts remain available across Inspectors and require explicit Retry. Completion events are identity-filtered and applied on the UI thread using the coordinator's current snapshot, so queued notifications cannot restore an older draft for the same identity or change a different selection.
+
+Package Editor's ordinary selected-asset memo field is now a one-way, read-only multiline display; its direct Clear button is removed. Backend memo mutation APIs remain available to existing operations, and Apply Memo Copy still updates only the isolated editor clone until explicit Save. Pending editor changes are not migrated or discarded. New/imported references must first be saved, loaded in the catalog, and closed in Package Editor before individual Inspector editing can become eligible. Permanently ambiguous or incomplete identities cannot safely be individually edited; the UI explains this limitation, and existing safe bulk-copy operations remain available without bypassing ambiguity checks.
 
 The Stage 3 catalog publisher marshals the verified `PackageDocument` to the UI thread and replaces only the matching catalog item. Search revalidates the selected result against that fresh document but does not rerun, reorder, or remove snapshot results; criteria, package scope, result selection, and pending coordinator drafts remain intact. Package Editor's working clone and dirty state are never refreshed by this path.
 

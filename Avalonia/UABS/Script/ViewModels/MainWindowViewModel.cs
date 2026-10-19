@@ -46,7 +46,6 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
         _sessionFactory = sessionFactory;
         AssetsLayout = new AssetsWorkspaceLayoutViewModel();
         IPackageMemoResolver memoResolver = new PackageMemoResolver();
-        AssetList = new AssetListViewModel(memoResolver);
         Browser = new BrowserViewModel(
             directoryBrowserService ?? new DirectoryBrowserService(),
             filePicker,
@@ -70,6 +69,7 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
                 writeCoordinator,
                 editorSessionGuard: editorSessionGuard,
                 catalogPublisher: PublishMemoCatalogAsync));
+        AssetList = new AssetListViewModel(memoResolver, MemoDrafts, editorSessionGuard);
         Search = new SearchWorkspaceViewModel(
             Packages,
             searchService,
@@ -77,6 +77,7 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
             MemoDrafts,
             editorSessionGuard);
         Packages.PropertyChanged += PackagesOnPropertyChanged;
+        Packages.Editor.PropertyChanged += EditorOnPropertyChanged;
         UpdateAssetMemoCatalog();
         OpenFileCommand = new AsyncCommand(OpenFromPickerAsync);
         ShowAssetsCommand = new RelayCommand(() => SelectedWorkspaceIndex = 0);
@@ -108,6 +109,8 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
                 return;
             if (previous == 1 && value != 1)
                 _ = ObserveSearchMemoFlushAsync();
+            if (previous == 0 && value != 0)
+                _ = ObserveAssetsMemoFlushAsync();
         }
     }
 
@@ -244,6 +247,7 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
         AssetList.Dispose();
         Search.Dispose();
         Packages.PropertyChanged -= PackagesOnPropertyChanged;
+        Packages.Editor.PropertyChanged -= EditorOnPropertyChanged;
         Packages.Dispose();
         if (MemoDrafts is IDisposable disposableMemoDrafts)
             disposableMemoDrafts.Dispose();
@@ -284,6 +288,12 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
         AssetList.UpdateMemoCatalog(catalog);
     }
 
+    private void EditorOnPropertyChanged(object? sender, PropertyChangedEventArgs eventArgs)
+    {
+        if (eventArgs.PropertyName is nameof(PackageEditorViewModel.IsEditing) or nameof(PackageEditorViewModel.IsSaving))
+            AssetList.RefreshMemoEligibility();
+    }
+
     private async Task PublishMemoCatalogAsync(
         PackageDocument persistedPackage,
         CancellationToken cancellationToken)
@@ -311,6 +321,21 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
         catch (Exception exception)
         {
             Printer.PrintException("Search memo navigation flush failed.", exception);
+        }
+    }
+
+    private async Task ObserveAssetsMemoFlushAsync()
+    {
+        try
+        {
+            await AssetList.FlushActiveMemoForNavigationAsync(_lifetime.Token).ConfigureAwait(true);
+        }
+        catch (OperationCanceledException) when (_lifetime.IsCancellationRequested)
+        {
+        }
+        catch (Exception exception)
+        {
+            Printer.PrintException("Assets memo navigation flush failed.", exception);
         }
     }
 }

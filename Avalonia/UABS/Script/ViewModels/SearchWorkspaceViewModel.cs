@@ -462,7 +462,7 @@ public sealed class SearchWorkspaceViewModel : ViewModelBase, IDisposable
 
     private void EditorOnPropertyChanged(object? sender, PropertyChangedEventArgs eventArgs)
     {
-        if (eventArgs.PropertyName == nameof(PackageEditorViewModel.IsEditing))
+        if (eventArgs.PropertyName is nameof(PackageEditorViewModel.IsEditing) or nameof(PackageEditorViewModel.IsSaving))
             QueueMemoPresentation();
     }
 
@@ -477,9 +477,10 @@ public sealed class SearchWorkspaceViewModel : ViewModelBase, IDisposable
         }
 
         if (Dispatcher.UIThread.CheckAccess())
-            ApplyPersistedMemoToResults(draft.Identity, draft.ConfirmedMemo);
+            ApplyPersistedMemoToResults(draft.Identity, _memoDrafts.GetSnapshot(draft.Identity).ConfirmedMemo);
         else
-            Dispatcher.UIThread.Post(() => ApplyPersistedMemoToResults(draft.Identity, draft.ConfirmedMemo));
+            Dispatcher.UIThread.Post(() => ApplyPersistedMemoToResults(
+                draft.Identity, _memoDrafts.GetSnapshot(draft.Identity).ConfirmedMemo));
     }
 
     private void ApplyPersistedMemoToResults(PackageMemoIdentity identity, string? memo)
@@ -778,18 +779,6 @@ public sealed class SearchWorkspaceViewModel : ViewModelBase, IDisposable
                 selected.SourcePath,
                 selected.AssetName,
                 selected.PathId.Value));
-    }
-
-    private sealed class UnavailableMemoDraftCoordinator : IMemoDraftCoordinator
-    {
-        public event EventHandler<MemoDraftChangedEventArgs>? DraftChanged { add { } remove { } }
-        public MemoDraftSnapshot Track(PackageMemoIdentity identity, string? persistedMemo, string? packageRevision) => MemoDraftSnapshot.Unavailable;
-        public MemoDraftSnapshot Edit(PackageMemoIdentity identity, string? memo) => MemoDraftSnapshot.Unavailable;
-        public MemoDraftSnapshot GetSnapshot(PackageMemoIdentity? identity) => MemoDraftSnapshot.Unavailable;
-        public Task<MemoDraftSnapshot> SaveNowAsync(PackageMemoIdentity identity, CancellationToken cancellationToken = default) => Task.FromResult(MemoDraftSnapshot.Unavailable);
-        public Task<MemoDraftSnapshot> RetryAsync(PackageMemoIdentity identity, CancellationToken cancellationToken = default) => Task.FromResult(MemoDraftSnapshot.Unavailable);
-        public Task<MemoDraftSnapshot> FlushForNavigationAsync(PackageMemoIdentity identity, CancellationToken cancellationToken = default) => Task.FromResult(MemoDraftSnapshot.Unavailable);
-        public Task<MemoDraftDrainResult> DrainForShutdownAsync(CancellationToken cancellationToken = default) => Task.FromResult(new MemoDraftDrainResult([]));
     }
 
     private sealed record CriteriaSnapshot(

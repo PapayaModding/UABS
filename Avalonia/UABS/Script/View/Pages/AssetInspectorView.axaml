@@ -62,7 +62,7 @@
                                IsVisible="{Binding HasDetailsError}"
                                TextWrapping="Wrap"/>
 
-                    <page:ReadOnlyMemoInspectorView x:Name="AssetMemoInspector"
+                    <page:EditableMemoInspectorView x:Name="AssetMemoInspector"
                                                     DataContext="{Binding MemoInspector}"/>
                 </StackPanel>
             </Grid>

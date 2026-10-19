@@ -118,18 +118,25 @@ public sealed class MemoDraftCoordinator : IMemoDraftCoordinator, IDisposable, I
         CancellationToken cancellationToken = default)
     {
         ValidateIdentity(identity);
+        MemoDraftSnapshot observed = GetSnapshot(identity);
         string? packageRevision = await _persistence.CaptureRevisionAsync(
             identity.PackagePath!, cancellationToken).ConfigureAwait(false);
         cancellationToken.ThrowIfCancellationRequested();
         return packageRevision is null
             ? MemoDraftSnapshot.Unavailable
-            : Track(identity, persistedMemo, packageRevision);
+            : TrackCore(identity, persistedMemo, packageRevision, observed);
     }
 
     public MemoDraftSnapshot Track(
         PackageMemoIdentity identity,
         string? persistedMemo,
-        string? packageRevision)
+        string? packageRevision) => TrackCore(identity, persistedMemo, packageRevision);
+
+    private MemoDraftSnapshot TrackCore(
+        PackageMemoIdentity identity,
+        string? persistedMemo,
+        string? packageRevision,
+        MemoDraftSnapshot? observed = null)
     {
         ValidateIdentity(identity);
         MemoDraftSnapshot snapshot;
@@ -143,6 +150,12 @@ public sealed class MemoDraftCoordinator : IMemoDraftCoordinator, IDisposable, I
                 entry = new DraftEntry(identity, persistedMemo, packageRevision);
                 _drafts.Add(key, entry);
                 changed = true;
+            }
+            else if (observed is not null && entry.ToSnapshot() != observed)
+            {
+                // A save/edit or another Inspector advanced this identity while revision
+                // capture awaited I/O. Its older catalog value must not reset that state.
+                return entry.ToSnapshot();
             }
             else if (entry.State == MemoDraftSaveState.Saved
                      && (!string.Equals(entry.ConfirmedMemo, persistedMemo, StringComparison.Ordinal)

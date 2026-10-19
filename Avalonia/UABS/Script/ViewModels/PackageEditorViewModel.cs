@@ -289,16 +289,16 @@ public sealed class PackageEditorViewModel : ViewModelBase, IDisposable
     public bool IsMemoEditable => SelectedItem?.Asset is not null;
     public string MemoTargetDescription => SelectedItem switch
     {
-        null => "Select an asset row to view or edit its memo.",
+        null => "Select an asset row to view its memo.",
         { Asset: null } => "The legacy format has no package, directory, or source-level memo field.",
         var item => $"{item.Name} — {item.SourceName} — Path ID {item.PathId}"
     };
     public string MemoStorageDescription => SelectedItem?.Asset?.Memo switch
     {
-        null when SelectedItem?.Asset is not null => "Absent: no Memo field is stored. Typing or Clear writes a local asset memo.",
+        null when SelectedItem?.Asset is not null => "Absent: no Memo field is stored. Edit individual memos in Assets or Search after saving and closing this editor.",
         "" => "Empty: an explicit empty Memo value is stored on this asset.",
         not null => "Local: this Memo value is stored directly on the asset record.",
-        _ => "Memo editing is available only for asset rows."
+        _ => "Only asset rows have a stored memo."
     };
 
     public bool HasItems => Items.Count > 0;
@@ -932,7 +932,10 @@ public sealed class PackageEditorViewModel : ViewModelBase, IDisposable
         OnPropertyChanged(nameof(PackageName));
         OnPropertyChanged(nameof(DestinationDirectory));
         IsNew = isNew;
+        bool wasEditing = IsEditing;
         IsEditing = true;
+        if (wasEditing)
+            OnPropertyChanged(nameof(IsEditing));
         IsDirty = isDirty;
         Error = null;
         ProgressText = string.Empty;

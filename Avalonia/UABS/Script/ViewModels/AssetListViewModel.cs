@@ -40,14 +40,21 @@ public sealed class AssetListViewModel : ViewModelBase, IDisposable
     private bool _disposed;
     private readonly IPackageMemoResolver _memoResolver;
     private IReadOnlyList<PackageMemoCatalogEntry> _memoCatalog = [];
+    private readonly CancellationTokenSource _memoLifetime = new();
 
-    public AssetListViewModel(IPackageMemoResolver? memoResolver = null)
+    public AssetListViewModel(
+        IPackageMemoResolver? memoResolver = null,
+        IMemoDraftCoordinator? memoDraftCoordinator = null,
+        IPackageEditorSessionGuard? editorSessionGuard = null)
     {
         _memoResolver = memoResolver ?? new PackageMemoResolver();
-        MemoInspector = new ReadOnlyMemoInspectorViewModel();
+        MemoInspector = new EditableMemoInspectorViewModel(
+            memoDraftCoordinator ?? new UnavailableMemoDraftCoordinator(),
+            editorSessionGuard ?? new PackageEditorSessionGuard());
     }
 
-    public ReadOnlyMemoInspectorViewModel MemoInspector { get; }
+    public EditableMemoInspectorViewModel MemoInspector { get; }
+    public Task MemoTransitionTask { get; private set; } = Task.CompletedTask;
 
     public IReadOnlyList<AssetEntry> Assets
     {
@@ -118,7 +125,7 @@ public sealed class AssetListViewModel : ViewModelBase, IDisposable
             OnPropertyChanged(nameof(HasSelection));
             OnPropertyChanged(nameof(HasNoSelection));
             DetailsLoadingTask = LoadDetailsAsync(value);
-            RefreshMemo();
+            RefreshMemo(flushPrevious: true);
         }
     }
 
@@ -171,7 +178,7 @@ public sealed class AssetListViewModel : ViewModelBase, IDisposable
         DetailsError = null;
         IsDetailsLoading = false;
         Rebuild();
-        RefreshMemo();
+        RefreshMemo(flushPrevious: true);
     }
 
     public void UpdateMemoCatalog(IReadOnlyList<PackageMemoCatalogEntry> packages)
@@ -188,6 +195,9 @@ public sealed class AssetListViewModel : ViewModelBase, IDisposable
 
         _disposed = true;
         CancelDetails();
+        _memoLifetime.Cancel();
+        MemoInspector.Dispose();
+        _memoLifetime.Dispose();
     }
 
     private void Rebuild()
@@ -262,13 +272,46 @@ public sealed class AssetListViewModel : ViewModelBase, IDisposable
         _detailsCancellation = null;
     }
 
-    private void RefreshMemo()
+    public void RefreshMemoEligibility() => RefreshMemo();
+
+    public Task FlushActiveMemoForNavigationAsync(CancellationToken cancellationToken = default) =>
+        MemoInspector.FlushForNavigationAsync(cancellationToken);
+
+    private void RefreshMemo(bool flushPrevious = false)
+    {
+        PackageMemoResolution resolution = ResolveSelectedMemo();
+        PackageMemoIdentity? previousIdentity = flushPrevious || !resolution.IsAvailable
+            ? MemoInspector.Identity
+            : null;
+        MemoTransitionTask = ObserveMemoTransitionAsync(previousIdentity, resolution);
+    }
+
+    private async Task ObserveMemoTransitionAsync(PackageMemoIdentity? previousIdentity, PackageMemoResolution resolution)
+    {
+        try
+        {
+            Task flush = previousIdentity is null
+                ? Task.CompletedTask
+                : MemoInspector.FlushIdentityForNavigationAsync(previousIdentity, _memoLifetime.Token);
+            await Task.WhenAll(flush, MemoInspector.ShowAsync(resolution)).ConfigureAwait(true);
+        }
+        catch (OperationCanceledException) when (_memoLifetime.IsCancellationRequested)
+        {
+        }
+        catch (Exception exception)
+        {
+            Printer.PrintException("Assets memo transition failed.", exception);
+        }
+    }
+
+    private PackageMemoResolution ResolveSelectedMemo()
     {
         AssetEntry? selected = SelectedAsset;
         if (selected is null)
         {
-            MemoInspector.ShowNoSelection("Select an asset to inspect its package memo.");
-            return;
+            return new PackageMemoResolution(
+                PackageMemoResolutionStatus.Unsupported, null, null, null, null, null,
+                "Select an asset to edit its indexed package memo.");
         }
 
         bool ambiguousLogicalFileIdentity = _allAssets.Any(asset =>
@@ -277,12 +320,12 @@ public sealed class AssetListViewModel : ViewModelBase, IDisposable
             && string.Equals(asset.Name, selected.Name, StringComparison.Ordinal)
             && PackagePathComparer.Equals(asset.SourcePath, selected.SourcePath)
             && !string.Equals(asset.LogicalFile, selected.LogicalFile, StringComparison.Ordinal));
-        MemoInspector.Show(_memoResolver.ResolveAsset(
+        return _memoResolver.ResolveAsset(
             _memoCatalog,
             new AssetMemoLookup(
                 selected.SourcePath,
                 selected.Name,
                 selected.PathId,
-                ambiguousLogicalFileIdentity)));
+                ambiguousLogicalFileIdentity));
     }
 }
