@@ -31,6 +31,7 @@ How the legacy and replacement applications are structured, including implemente
 Interaction and workflow specifications, with current behavior separated from proposals:
 
 - [UI and workflow design](03_design/ui-and-workflow-design.md)
+- [UX redesign foundation and design audit](03_design/ux-redesign-foundation.md) — proposed four-workspace shell, shared inspector, behavior matrix, wireframes, and incremental sequence.
 
 ### 04 Systems
 
@@ -53,7 +54,9 @@ Evidence, migration tracking, risks, decisions, and implementation history:
 - [Milestone 05 report](05_audit/milestone-05-report.md)
 - [Milestone 06 report](05_audit/milestone-06-report.md)
 - [Milestone 07 report](05_audit/milestone-07-report.md)
+- [Milestone 7.4 stability report](05_audit/milestone-07-4-stability-report.md)
 - [Milestone 7.5 compatibility report](05_audit/milestone-07-5-compatibility-report.md)
+- [Milestone 08 memo report](05_audit/milestone-08-report.md)
 - [Legacy package format compatibility audit](05_audit/legacy-package-format-compatibility.md)
 - [Current Codex session handoff](05_audit/codex-session-handoff.md)
 - [Feature comparison](05_audit/feature-comparison.md)

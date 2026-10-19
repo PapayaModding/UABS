@@ -1,4 +1,5 @@
 using Avalonia.Controls;
+using System;
 using UABS.Services;
 using UABS.UnityAssets;
 using UABS.ViewModels;
@@ -27,7 +28,18 @@ public partial class MainWindow : Window
             new DirectoryBrowserService(),
             userConfirmationService: confirmations);
         DataContext = viewModel;
-        Opened += async (_, _) => await viewModel.InitializeAsync();
+        Opened += async (_, _) =>
+        {
+            try
+            {
+                await viewModel.InitializeAsync();
+            }
+            catch (Exception exception)
+            {
+                Printer.PrintException("Main window initialization failed.", exception);
+                viewModel.ReportUnexpectedFailure("Application initialization failed", exception);
+            }
+        };
         Closing += async (_, args) =>
         {
             if (_allowClose || !viewModel.Packages.Editor.IsDirty)
@@ -46,11 +58,31 @@ public partial class MainWindow : Window
                     Close();
                 }
             }
+            catch (OperationCanceledException)
+            {
+                args.Cancel = true;
+            }
+            catch (Exception exception)
+            {
+                args.Cancel = true;
+                Printer.PrintException("Close confirmation failed.", exception);
+                viewModel.ReportUnexpectedFailure("Close confirmation failed", exception);
+            }
             finally
             {
                 _closePromptActive = false;
             }
         };
-        Closed += (_, _) => viewModel.Dispose();
+        Closed += (_, _) =>
+        {
+            try
+            {
+                viewModel.Dispose();
+            }
+            catch (Exception exception)
+            {
+                Printer.PrintException("Application shutdown cleanup failed.", exception);
+            }
+        };
     }
 }

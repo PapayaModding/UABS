@@ -1,0 +1,243 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:page="clr-namespace:UABS.Page"
+             xmlns:vm="clr-namespace:UABS.ViewModels"
+             x:Class="UABS.Page.SearchWorkspaceView"
+             x:DataType="vm:SearchWorkspaceViewModel">
+    <UserControl.Resources>
+        <StreamGeometry x:Key="PanelChevronLeftGeometry">M 12,2 L 4,8 L 12,14 Z</StreamGeometry>
+        <StreamGeometry x:Key="PanelChevronRightGeometry">M 4,2 L 12,8 L 4,14 Z</StreamGeometry>
+    </UserControl.Resources>
+    <UserControl.Styles>
+        <Style Selector="Button.panelChevron">
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+        </Style>
+        <Style Selector="PathIcon.panelChevronIcon">
+            <Setter Property="Width" Value="12"/>
+            <Setter Property="Height" Value="12"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+    </UserControl.Styles>
+
+    <Grid x:Name="SearchRegionsGrid" Margin="12">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="{Binding Layout.ControlsColumnWidth}"
+                              MinWidth="{Binding Layout.ControlsColumnMinimumWidth}"
+                              MaxWidth="640"/>
+            <ColumnDefinition Width="{Binding Layout.ControlsSplitterColumnWidth}"/>
+            <ColumnDefinition Width="*" MinWidth="280"/>
+            <ColumnDefinition Width="{Binding Layout.InspectorSplitterColumnWidth}"/>
+            <ColumnDefinition Width="{Binding Layout.InspectorColumnWidth}"
+                              MinWidth="{Binding Layout.InspectorColumnMinimumWidth}"
+                              MaxWidth="640"/>
+        </Grid.ColumnDefinitions>
+
+        <Border x:Name="SearchControlsPanel" Grid.Column="0"
+                IsVisible="{Binding Layout.AreControlsVisible}"
+                BorderBrush="#C8C8C8" BorderThickness="1" CornerRadius="4" Padding="10">
+            <Grid RowDefinitions="Auto,*" RowSpacing="6">
+                <Grid ColumnDefinitions="*,Auto">
+                    <TextBlock Text="Search Controls" FontSize="18" FontWeight="SemiBold"
+                               VerticalAlignment="Center"/>
+                    <Button x:Name="SearchControlsCollapseButton"
+                            Classes="panelChevron"
+                            Grid.Column="1"
+                            Width="28" Height="28"
+                            Command="{Binding Layout.ToggleControlsCommand}"
+                            ToolTip.Tip="Collapse Search Controls"
+                            AutomationProperties.Name="Collapse Search Controls">
+                        <PathIcon Classes="panelChevronIcon"
+                                  Data="{StaticResource PanelChevronLeftGeometry}"/>
+                    </Button>
+                </Grid>
+
+                <ScrollViewer x:Name="SearchControlsScroller"
+                              Grid.Row="1"
+                              HorizontalScrollBarVisibility="Disabled"
+                              VerticalScrollBarVisibility="Auto"
+                              AllowAutoHide="True">
+                    <Border Padding="0,0,20,0">
+                        <StackPanel Spacing="8">
+                            <TextBlock Text="Package scope" FontWeight="SemiBold"/>
+                            <TextBox Watermark="Filter package names" Text="{Binding PackageFilter}"/>
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <Button Content="Select All" Command="{Binding SelectAllPackagesCommand}"/>
+                                <Button Content="Clear" Command="{Binding ClearPackagesCommand}"/>
+                            </StackPanel>
+                            <TextBlock Text="{Binding PackageSelectionSummary}" Foreground="#666666"/>
+                            <ListBox ItemsSource="{Binding VisiblePackageScopes}" MinHeight="100" MaxHeight="220">
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate x:DataType="vm:SearchPackageScopeItemViewModel">
+                                        <CheckBox Content="{Binding Name}" IsChecked="{Binding IsSelected, Mode=TwoWay}"
+                                                  ToolTip.Tip="{Binding Path}"/>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+                            <TextBlock Text="No packages match this filter." IsVisible="{Binding !HasVisiblePackages}"
+                                       Foreground="#666666" TextWrapping="Wrap"/>
+
+                            <Separator Margin="0,4"/>
+                            <TextBlock Text="Criteria" FontWeight="SemiBold"/>
+                            <TextBox x:Name="IncludeSearchTextBox" Watermark="Include terms (comma = OR)"
+                                     Text="{Binding IncludeText}" KeyDown="OnSearchFieldKeyDown"/>
+                            <TextBox Watermark="Exclude terms" Text="{Binding ExcludeText}"
+                                     KeyDown="OnSearchFieldKeyDown"/>
+                            <TextBox Watermark="Exact Path ID (optional)" Text="{Binding PathIdText}"
+                                     KeyDown="OnSearchFieldKeyDown"/>
+                            <ComboBox ItemsSource="{Binding FieldSelections}" SelectedItem="{Binding FieldSelection}"/>
+                            <CheckBox Content="Exact name" IsChecked="{Binding ExactText}"
+                                      ToolTip.Tip="Require whole-field equality for the selected name or metadata fields."/>
+                            <CheckBox Content="Search memos" IsChecked="{Binding SearchMemos}"
+                                      ToolTip.Tip="Add memo text to the selected searchable fields."/>
+                            <CheckBox Content="Memo only" IsChecked="{Binding MemoOnly}"
+                                      ToolTip.Tip="Restrict asset results to records with a nonempty memo."/>
+
+                            <TextBlock Text="Result kinds" FontWeight="SemiBold" Margin="0,4,0,0"/>
+                            <WrapPanel Orientation="Horizontal" ItemSpacing="10">
+                                <CheckBox Content="Packages" IsChecked="{Binding IncludePackageResults}"/>
+                                <CheckBox Content="Sources" IsChecked="{Binding IncludeSourceResults}"/>
+                                <CheckBox Content="Assets" IsChecked="{Binding IncludeAssetResults}"/>
+                            </WrapPanel>
+                            <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,4,0,0">
+                                <Button x:Name="SearchButton" Content="Search" Command="{Binding SearchCommand}"/>
+                                <Button Content="Cancel" Command="{Binding CancelSearchCommand}"
+                                        IsVisible="{Binding IsSearching}"/>
+                            </StackPanel>
+                            <TextBlock Text="Criteria changed — Search to update results."
+                                       IsVisible="{Binding CriteriaChanged}" Foreground="#8A5A00" TextWrapping="Wrap"/>
+                            <TextBlock Text="{Binding LastExecutedCriteria}" Foreground="#666666" TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </Border>
+                </ScrollViewer>
+            </Grid>
+        </Border>
+
+        <GridSplitter x:Name="SearchControlsSplitter"
+                      Grid.Column="1"
+                      ResizeDirection="Columns"
+                      ResizeBehavior="PreviousAndNext"
+                      Background="#C8C8C8"
+                      IsVisible="{Binding Layout.AreControlsVisible}"
+                      DragStarted="OnSearchControlsSplitterDragStarted"
+                      DragDelta="OnSearchControlsSplitterDragDelta"
+                      DragCompleted="OnSearchControlsSplitterDragCompleted"/>
+
+        <Grid Grid.Column="2" RowDefinitions="Auto,Auto,*" Margin="8,0" RowSpacing="6">
+            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                <StackPanel>
+                    <TextBlock Text="Search Results" FontSize="18" FontWeight="SemiBold"/>
+                    <TextBlock Text="{Binding Status}" Foreground="#666666" TextWrapping="Wrap"/>
+                </StackPanel>
+                <TextBlock Grid.Column="1" Text="{Binding ResultCount, StringFormat={}{0:N0} results}"
+                           VerticalAlignment="Center" FontWeight="SemiBold"/>
+            </Grid>
+            <ProgressBar Grid.Row="1" IsVisible="{Binding IsSearching}" IsIndeterminate="True" Height="4"/>
+            <Grid Grid.Row="2">
+                <DataGrid x:Name="ResultsGrid" Classes="assetList" AutoGenerateColumns="False" IsReadOnly="True"
+                          CanUserResizeColumns="True" GridLinesVisibility="Horizontal"
+                          ItemsSource="{Binding Results}" SelectedItem="{Binding SelectedResult}"
+                          LoadingRow="OnResultsGridLoadingRow">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Kind" Binding="{Binding Kind}" Width="85"/>
+                        <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="2*"/>
+                        <DataGridTextColumn Header="Package" Binding="{Binding PackageName}" Width="*"/>
+                        <DataGridTextColumn Header="Source" Binding="{Binding SourceName}" Width="*"/>
+                        <DataGridTextColumn Header="Path ID" Binding="{Binding PathId}" Width="110"/>
+                        <DataGridTextColumn Header="Memo" Binding="{Binding MemoSummary}" Width="*"/>
+                    </DataGrid.Columns>
+                </DataGrid>
+                <TextBlock Text="{Binding Status}" IsVisible="{Binding ShowEmptyState}"
+                           HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="420"
+                           Foreground="#666666" TextAlignment="Center" TextWrapping="Wrap"/>
+                <Button x:Name="SearchControlsRestoreHandle"
+                        Classes="panelChevron"
+                        Width="26" Height="56"
+                        HorizontalAlignment="Left" VerticalAlignment="Center"
+                        IsVisible="{Binding Layout.IsControlsRestoreHandleVisible}"
+                        Command="{Binding Layout.ToggleControlsCommand}"
+                        ToolTip.Tip="Restore Search Controls"
+                        AutomationProperties.Name="Restore Search Controls">
+                    <PathIcon Classes="panelChevronIcon"
+                              Data="{StaticResource PanelChevronRightGeometry}"/>
+                </Button>
+                <Button x:Name="SearchInspectorRestoreHandle"
+                        Classes="panelChevron"
+                        Width="26" Height="56"
+                        HorizontalAlignment="Right" VerticalAlignment="Center"
+                        IsVisible="{Binding Layout.IsInspectorRestoreHandleVisible}"
+                        Command="{Binding Layout.ToggleInspectorCommand}"
+                        ToolTip.Tip="Restore Search Inspector"
+                        AutomationProperties.Name="Restore Search Inspector">
+                    <PathIcon Classes="panelChevronIcon"
+                              Data="{StaticResource PanelChevronLeftGeometry}"/>
+                </Button>
+            </Grid>
+            <Border Grid.Row="2" Background="#FFF2F2" BorderBrush="#D94848" BorderThickness="1"
+                    CornerRadius="4" Padding="8" IsVisible="{Binding HasError}"
+                    VerticalAlignment="Top" Margin="8">
+                <TextBlock Text="{Binding Error}" Foreground="#9A2020" TextWrapping="Wrap"/>
+            </Border>
+        </Grid>
+
+        <GridSplitter x:Name="SearchInspectorSplitter"
+                      Grid.Column="3"
+                      ResizeDirection="Columns"
+                      ResizeBehavior="PreviousAndNext"
+                      Background="#C8C8C8"
+                      IsVisible="{Binding Layout.IsInspectorVisible}"
+                      DragStarted="OnSearchInspectorSplitterDragStarted"
+                      DragDelta="OnSearchInspectorSplitterDragDelta"
+                      DragCompleted="OnSearchInspectorSplitterDragCompleted"/>
+
+        <Border x:Name="SearchInspectorPanel" Grid.Column="4"
+                IsVisible="{Binding Layout.IsInspectorVisible}"
+                BorderBrush="#C8C8C8" BorderThickness="1" CornerRadius="4" Padding="12">
+            <Grid RowDefinitions="Auto,*" RowSpacing="10">
+                <Grid ColumnDefinitions="Auto,*">
+                    <Button x:Name="SearchInspectorCollapseButton"
+                            Classes="panelChevron"
+                            Width="28" Height="28"
+                            Command="{Binding Layout.ToggleInspectorCommand}"
+                            ToolTip.Tip="Collapse Search Inspector"
+                            AutomationProperties.Name="Collapse Search Inspector">
+                        <PathIcon Classes="panelChevronIcon"
+                                  Data="{StaticResource PanelChevronRightGeometry}"/>
+                    </Button>
+                    <TextBlock Grid.Column="1" Text="Inspector" FontSize="18" FontWeight="SemiBold"
+                               Margin="8,0,0,0" VerticalAlignment="Center"/>
+                </Grid>
+                <Grid Grid.Row="1">
+                    <TextBlock Text="Select a result to inspect indexed metadata. Detailed source inspection arrives in UX-3B."
+                               IsVisible="{Binding !HasSelectedResult}" Foreground="#666666"
+                               TextAlignment="Center" TextWrapping="Wrap"
+                               HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="250"/>
+                    <ScrollViewer IsVisible="{Binding HasSelectedResult}">
+                        <StackPanel Spacing="8">
+                            <TextBlock Text="{Binding SelectedResult.Name}" FontSize="17" FontWeight="SemiBold"
+                                       TextWrapping="Wrap"/>
+                            <TextBlock Text="{Binding SelectedResult.Kind, StringFormat=Kind: {0}}"/>
+                            <TextBlock Text="{Binding SelectedResult.PackageName, StringFormat=Package: {0}}" TextWrapping="Wrap"/>
+                            <TextBlock Text="{Binding SelectedResult.PackagePath, StringFormat=Package path: {0}}" TextWrapping="Wrap"/>
+                            <TextBlock Text="{Binding SelectedResult.IndexDirectory, StringFormat=Index: {0}}" TextWrapping="Wrap"/>
+                            <TextBlock Text="{Binding SelectedResult.SourceName, StringFormat=Source: {0}}" TextWrapping="Wrap"/>
+                            <TextBlock Text="{Binding SelectedResult.SourcePath, StringFormat=Source path: {0}}" TextWrapping="Wrap"/>
+                            <TextBlock Text="{Binding SelectedResult.CabCode, StringFormat=CAB: {0}}" TextWrapping="Wrap"/>
+                            <TextBlock Text="{Binding SelectedResult.PathId, StringFormat=Path ID: {0}}"/>
+                            <TextBlock Text="{Binding SelectedResult.MatchCategories, StringFormat=Matched: {0}}" TextWrapping="Wrap"/>
+                            <page:EditableMemoInspectorView x:Name="SearchMemoInspector"
+                                                            DataContext="{Binding MemoInspector}" Margin="0,4,0,0"/>
+                            <Border Background="#F7F9FC" BorderBrush="#C8D3E0" BorderThickness="1"
+                                    CornerRadius="4" Padding="8" Margin="0,8,0,0">
+                                <TextBlock Text="Metadata only — source loading, previews, and Show in Assets are deferred."
+                                           Foreground="#555555" TextWrapping="Wrap"/>
+                            </Border>
+                        </StackPanel>
+                    </ScrollViewer>
+                </Grid>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>

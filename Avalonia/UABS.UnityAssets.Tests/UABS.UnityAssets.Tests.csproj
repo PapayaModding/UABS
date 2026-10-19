@@ -8,6 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Avalonia.Headless.XUnit" Version="11.3.3" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.13.0" />
     <PackageReference Include="xunit" Version="2.9.3" />
     <PackageReference Include="xunit.runner.visualstudio" Version="3.1.5">
@@ -25,6 +26,7 @@
     <Content Include="Fixtures\aigirl.ab" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="Fixtures\aigirl.assets" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="Fixtures\LegacyPackage\**\*" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Fixtures\LegacyMemoPackage\**\*" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="..\UABS.UnityAssets\Resources\classdata.tpk">
       <Link>Resources\classdata.tpk</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

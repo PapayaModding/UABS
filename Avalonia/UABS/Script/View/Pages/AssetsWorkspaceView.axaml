@@ -1,0 +1,136 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:page="clr-namespace:UABS.Page"
+             xmlns:vm="clr-namespace:UABS.ViewModels"
+             x:Class="UABS.Page.AssetsWorkspaceView"
+             x:DataType="vm:MainWindowViewModel">
+    <UserControl.Resources>
+        <StreamGeometry x:Key="PanelChevronLeftGeometry">M 12,2 L 4,8 L 12,14 Z</StreamGeometry>
+        <StreamGeometry x:Key="PanelChevronRightGeometry">M 4,2 L 12,8 L 4,14 Z</StreamGeometry>
+    </UserControl.Resources>
+    <UserControl.Styles>
+        <Style Selector="Button.panelChevron">
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+        </Style>
+        <Style Selector="PathIcon.panelChevronIcon">
+            <Setter Property="Width" Value="12"/>
+            <Setter Property="Height" Value="12"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+    </UserControl.Styles>
+    <Grid RowDefinitions="Auto,*">
+        <Border Grid.Row="0" Background="White" BorderBrush="#D0D0D0" BorderThickness="0,0,0,1" Padding="8,6">
+            <TextBlock Text="Assets workspace" FontWeight="SemiBold" VerticalAlignment="Center"/>
+        </Border>
+
+        <Grid Grid.Row="1" x:Name="RegionsGrid">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="{Binding AssetsLayout.NavigatorColumnWidth}"
+                                  MinWidth="{Binding AssetsLayout.NavigatorColumnMinimumWidth}"
+                                  MaxWidth="640"/>
+                <ColumnDefinition Width="{Binding AssetsLayout.NavigatorSplitterColumnWidth}"/>
+                <ColumnDefinition Width="*" MinWidth="280"/>
+                <ColumnDefinition Width="{Binding AssetsLayout.InspectorSplitterColumnWidth}"/>
+                <ColumnDefinition Width="{Binding AssetsLayout.InspectorColumnWidth}"
+                                  MinWidth="{Binding AssetsLayout.InspectorColumnMinimumWidth}"
+                                  MaxWidth="640"/>
+            </Grid.ColumnDefinitions>
+
+            <Border x:Name="NavigatorPanel" Grid.Column="0"
+                    IsVisible="{Binding AssetsLayout.IsNavigatorVisible}"
+                    Background="#FAFAFA" BorderBrush="#D0D0D0" BorderThickness="0,0,1,0">
+                <Grid RowDefinitions="Auto,*">
+                    <Grid ColumnDefinitions="*,Auto" Margin="12,6,6,0">
+                        <TextBlock Text="Navigator" FontWeight="SemiBold" FontSize="15" VerticalAlignment="Center"/>
+                        <Button x:Name="NavigatorCollapseButton"
+                                Classes="panelChevron"
+                                Grid.Column="1"
+                                Width="28" Height="28"
+                                Command="{Binding AssetsLayout.ToggleNavigatorCommand}"
+                                ToolTip.Tip="Collapse Navigator"
+                                AutomationProperties.Name="Collapse Navigator">
+                            <PathIcon Classes="panelChevronIcon"
+                                      Data="{StaticResource PanelChevronLeftGeometry}"/>
+                        </Button>
+                    </Grid>
+                    <page:BrowserView Grid.Row="1" DataContext="{Binding Browser}"/>
+                </Grid>
+            </Border>
+
+            <GridSplitter x:Name="NavigatorSplitter"
+                          Grid.Column="1"
+                          ResizeDirection="Columns"
+                          ResizeBehavior="PreviousAndNext"
+                          Background="#D0D0D0"
+                          IsVisible="{Binding AssetsLayout.IsNavigatorVisible}"
+                          DragStarted="OnNavigatorSplitterDragStarted"
+                          DragDelta="OnNavigatorSplitterDragDelta"
+                          DragCompleted="OnNavigatorSplitterDragCompleted"/>
+
+            <Grid Grid.Column="2">
+                <Border Background="#F4F4F4">
+                    <Grid RowDefinitions="Auto,*">
+                        <TextBlock Text="Assets" FontWeight="SemiBold" FontSize="15" Margin="12,8,12,0"/>
+                        <page:FolderView Grid.Row="1"/>
+                    </Grid>
+                </Border>
+                <Button x:Name="NavigatorRestoreHandle"
+                        Classes="panelChevron"
+                        Width="26" Height="56"
+                        HorizontalAlignment="Left" VerticalAlignment="Center"
+                        IsVisible="{Binding AssetsLayout.IsNavigatorRestoreHandleVisible}"
+                        Command="{Binding AssetsLayout.ToggleNavigatorCommand}"
+                        ToolTip.Tip="Restore Navigator"
+                        AutomationProperties.Name="Restore Navigator">
+                    <PathIcon Classes="panelChevronIcon"
+                              Data="{StaticResource PanelChevronRightGeometry}"/>
+                </Button>
+                <Button x:Name="InspectorRestoreHandle"
+                        Classes="panelChevron"
+                        Width="26" Height="56"
+                        HorizontalAlignment="Right" VerticalAlignment="Center"
+                        IsVisible="{Binding AssetsLayout.IsInspectorRestoreHandleVisible}"
+                        Command="{Binding AssetsLayout.ToggleInspectorCommand}"
+                        ToolTip.Tip="Restore Inspector"
+                        AutomationProperties.Name="Restore Inspector">
+                    <PathIcon Classes="panelChevronIcon"
+                              Data="{StaticResource PanelChevronLeftGeometry}"/>
+                </Button>
+            </Grid>
+
+            <GridSplitter x:Name="InspectorSplitter"
+                          Grid.Column="3"
+                          ResizeDirection="Columns"
+                          ResizeBehavior="PreviousAndNext"
+                          Background="#D0D0D0"
+                          IsVisible="{Binding AssetsLayout.IsInspectorVisible}"
+                          DragStarted="OnInspectorSplitterDragStarted"
+                          DragDelta="OnInspectorSplitterDragDelta"
+                          DragCompleted="OnInspectorSplitterDragCompleted"/>
+
+            <Border x:Name="InspectorPanel" Grid.Column="4"
+                    IsVisible="{Binding AssetsLayout.IsInspectorVisible}"
+                    Background="#FAFAFA" BorderBrush="#D0D0D0" BorderThickness="1,0,0,0">
+                <Grid RowDefinitions="Auto,*">
+                    <Grid ColumnDefinitions="Auto,*" Margin="6,6,12,0">
+                        <Button x:Name="InspectorCollapseButton"
+                                Classes="panelChevron"
+                                Width="28" Height="28"
+                                Command="{Binding AssetsLayout.ToggleInspectorCommand}"
+                                ToolTip.Tip="Collapse Inspector"
+                                AutomationProperties.Name="Collapse Inspector">
+                            <PathIcon Classes="panelChevronIcon"
+                                      Data="{StaticResource PanelChevronRightGeometry}"/>
+                        </Button>
+                        <TextBlock Grid.Column="1" Text="Inspector" FontWeight="SemiBold" FontSize="15"
+                                   Margin="8,0,0,0" VerticalAlignment="Center"/>
+                    </Grid>
+                    <page:AssetInspectorView Grid.Row="1" DataContext="{Binding AssetList}"/>
+                </Grid>
+            </Border>
+        </Grid>
+    </Grid>
+</UserControl>

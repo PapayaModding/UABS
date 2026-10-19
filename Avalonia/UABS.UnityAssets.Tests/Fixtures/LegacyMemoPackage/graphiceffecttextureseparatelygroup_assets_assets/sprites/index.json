@@ -1,0 +1,21 @@
+[
+  {
+    "Name": "uniteffect_0.spriteatlas_66b2db9fb94b5bda5b7794c6ed82cf3f.bundle",
+    "Path": "\\\\?\\D:\\Git\\UABS\\UABS\\Assets\\TestResources\\__DoNotOverwrite__\\GameData\\graphiceffecttextureseparatelygroup_assets_assets\\sprites\\uniteffect_0.spriteatlas_66b2db9fb94b5bda5b7794c6ed82cf3f.bundle",
+    "CabCode": "CAB-c8b157fca857626dbba75589e140a72a",
+    "AssetInfos": [
+      {
+        "Name": "hook",
+        "PathId": -9195836073069537342,
+        "Memo": "钩爪"
+      },
+      {
+        "Name": "octopus_tentacles_59",
+        "PathId": -9215343698733690786
+      }
+    ],
+    "Dependencies": [
+      "cab-8aec1fae84b6a213e9d9089f91bdc9c1"
+    ]
+  }
+]

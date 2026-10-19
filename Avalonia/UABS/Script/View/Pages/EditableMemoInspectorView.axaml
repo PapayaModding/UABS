@@ -1,0 +1,34 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:UABS.ViewModels"
+             x:Class="UABS.Page.EditableMemoInspectorView"
+             x:DataType="vm:EditableMemoInspectorViewModel">
+    <Border Background="#F7F9FC" BorderBrush="#C8D3E0" BorderThickness="1"
+            CornerRadius="4" Padding="8">
+        <StackPanel Spacing="7">
+            <Grid ColumnDefinitions="*,Auto">
+                <TextBlock Text="Package memo" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                <TextBlock x:Name="MemoSaveStatus" Grid.Column="1" Text="{Binding StatusText}"
+                           Foreground="#526555" VerticalAlignment="Center"
+                           AutomationProperties.Name="Memo save status"/>
+            </Grid>
+            <TextBlock Text="{Binding PackageContext}" IsVisible="{Binding HasPackageContext}"
+                       Foreground="#555555" FontSize="12" TextWrapping="Wrap"/>
+            <TextBlock x:Name="MemoAvailabilityExplanation" Text="{Binding Explanation}"
+                       Foreground="#666666" FontSize="12" TextWrapping="Wrap"/>
+            <TextBox x:Name="MemoEditor" Text="{Binding MemoText, Mode=TwoWay}"
+                     IsEnabled="{Binding IsEditable}" AcceptsReturn="True"
+                     TextWrapping="Wrap" MinHeight="120" MaxHeight="280"
+                     ScrollViewer.VerticalScrollBarVisibility="Auto"
+                     AutomationProperties.Name="Asset memo"/>
+            <TextBlock Text="{Binding Error}" IsVisible="{Binding HasError}"
+                       Foreground="#9A2D2D" FontSize="12" TextWrapping="Wrap"/>
+            <StackPanel Orientation="Horizontal" Spacing="8">
+                <Button x:Name="MemoSaveNowButton" Content="Save Now"
+                        Command="{Binding SaveNowCommand}"/>
+                <Button x:Name="MemoRetryButton" Content="Retry"
+                        Command="{Binding RetryCommand}" IsVisible="{Binding CanRetry}"/>
+            </StackPanel>
+        </StackPanel>
+    </Border>
+</UserControl>

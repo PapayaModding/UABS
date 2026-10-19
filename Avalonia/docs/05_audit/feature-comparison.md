@@ -25,12 +25,12 @@ Legend: **Complete** means implemented in the target for the stated scope and ve
 | Image search | exact filename match | exact asset-name metadata search available; no image-content search | Behavior clarified | Present as filename/asset-name search, never image similarity |
 | Dependency lookup | AssetsTools + recursive package JSON scan | in-memory direct resolver plus selected-package/source inspection UI showing all candidates | Implemented direct workflow | Decide reverse lookup separately; keep original files read-only |
 | Reverse dependents | reader exists, UI unclear | none | Uncertain | Confirm product need before porting |
-| Memo editing | JSON read/write + coroutine debounce | Memo button only | Not Migrated | Stable identity, async save/debounce, atomic writes |
-| Memo inheritance | three-mode writer + controls | none | Reusable with fixes | Port into package service with validation/tests |
+| Memo editing | JSON read/write + coroutine debounce | asset memo panel on isolated editor document with explicit staged Save | Implemented | Complete desktop acceptance; keep absent/empty distinction and rich identity |
+| Memo inheritance | three-mode writer + controls | transactional Safe/Overwrite/Force package copy with conflict reporting | Implemented | No parent-directory semantics or persisted provenance exist in the schema |
 | Temporary result cache | copies whole bundles | none | Should Not Be Migrated | Virtual result references; optional explicit cache only |
 | Logging/errors | `Debug.Log` | static text-file `Printer` | Needs Redesign | `Microsoft.Extensions.Logging` and user-facing operation state |
 | Settings | relative constants | relative log/icon constants | Not Migrated | options + platform app-data paths |
-| Automated tests | custom scene runner | asset/browser/package/search/direct-dependency/editor xUnit tests, real Unity fixtures, legacy-format package fixture, Unity dependency audit | Milestone 7 automated scope verified | Add production package, multi-file bundle, large-catalog performance, and manual UI breadth |
+| Automated tests | custom scene runner | asset/browser/package/search/direct-dependency/editor/memo xUnit tests, real Unity fixtures, legacy-format package fixtures, Unity dependency audit | Milestone 8 automated scope verified | Add production memo corpus, multi-file bundle, large-catalog performance, and manual UI breadth |
 
 ## Name/behavior correspondences
 
@@ -40,8 +40,8 @@ Legend: **Complete** means implemented in the target for the stated scope and ve
 | `EntryInfoView` + `AssetEntryInfo` | `AssetsViewEntry` | Same row concept: name, `AssetClassID`, type label |
 | `AssetType2IconData` | `AssetTypeIconConvertor` | Avalonia correctly replaces ScriptableObject mapping with resource convention, though missing-icon fallback is needed |
 | `FolderViewType2IconData` | `FolderViewIconConvertor` | Same purpose; current file mapping is incomplete |
-| Unity top option buttons | `Toolbar` button labels | Visual names copied, behavior absent |
+| Unity top option buttons | Removed from the Avalonia shell | Implemented actions live in workspace-local controls and tabs; unimplemented decorative buttons are not shown |
 | Unity `Segue`/page GameObjects | `MainContent` | A suitable host exists, but no navigation state or views beyond folder prototype |
 | `LoadEntries2ScrollView` | Avalonia `DataGrid` | Native binding/virtualization can replace manual pooling |
 
-Bundle/serialized-file detection, loading, enumeration, session ownership, package infrastructure, metadata search, direct dependency resolution, read-only package inspection, and basic package creation/edit/save UI are migrated. Reverse-dependency lookup, memo persistence, texture, preview, and export remain deferred by design.
+Bundle/serialized-file detection, loading, enumeration, session ownership, package infrastructure, metadata search, direct dependency resolution, package creation/edit/save, and verified asset memo editing/copy are migrated. Reverse-dependency lookup, texture, preview, and export remain deferred by design.

@@ -5,6 +5,8 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using UABS.UnityAssets;
+using UABS.UnityAssets.Packages;
+using UABS.UnityAssets.Packages.Memos;
 
 namespace UABS.ViewModels;
 
@@ -36,6 +38,16 @@ public sealed class AssetListViewModel : ViewModelBase, IDisposable
     private bool _isDetailsLoading;
     private int _detailsVersion;
     private bool _disposed;
+    private readonly IPackageMemoResolver _memoResolver;
+    private IReadOnlyList<PackageMemoCatalogEntry> _memoCatalog = [];
+
+    public AssetListViewModel(IPackageMemoResolver? memoResolver = null)
+    {
+        _memoResolver = memoResolver ?? new PackageMemoResolver();
+        MemoInspector = new ReadOnlyMemoInspectorViewModel();
+    }
+
+    public ReadOnlyMemoInspectorViewModel MemoInspector { get; }
 
     public IReadOnlyList<AssetEntry> Assets
     {
@@ -103,9 +115,15 @@ public sealed class AssetListViewModel : ViewModelBase, IDisposable
             if (!SetField(ref _selectedAsset, value))
                 return;
 
+            OnPropertyChanged(nameof(HasSelection));
+            OnPropertyChanged(nameof(HasNoSelection));
             DetailsLoadingTask = LoadDetailsAsync(value);
+            RefreshMemo();
         }
     }
+
+    public bool HasSelection => SelectedAsset is not null;
+    public bool HasNoSelection => SelectedAsset is null;
 
     public AssetDetails? SelectedDetails
     {
@@ -147,10 +165,20 @@ public sealed class AssetListViewModel : ViewModelBase, IDisposable
         _allAssets = session.Assets;
         _selectedAsset = null;
         OnPropertyChanged(nameof(SelectedAsset));
+        OnPropertyChanged(nameof(HasSelection));
+        OnPropertyChanged(nameof(HasNoSelection));
         SelectedDetails = null;
         DetailsError = null;
         IsDetailsLoading = false;
         Rebuild();
+        RefreshMemo();
+    }
+
+    public void UpdateMemoCatalog(IReadOnlyList<PackageMemoCatalogEntry> packages)
+    {
+        ArgumentNullException.ThrowIfNull(packages);
+        _memoCatalog = packages;
+        RefreshMemo();
     }
 
     public void Dispose()
@@ -232,5 +260,29 @@ public sealed class AssetListViewModel : ViewModelBase, IDisposable
         _detailsCancellation?.Cancel();
         _detailsCancellation?.Dispose();
         _detailsCancellation = null;
+    }
+
+    private void RefreshMemo()
+    {
+        AssetEntry? selected = SelectedAsset;
+        if (selected is null)
+        {
+            MemoInspector.ShowNoSelection("Select an asset to inspect its package memo.");
+            return;
+        }
+
+        bool ambiguousLogicalFileIdentity = _allAssets.Any(asset =>
+            !ReferenceEquals(asset, selected)
+            && asset.PathId == selected.PathId
+            && string.Equals(asset.Name, selected.Name, StringComparison.Ordinal)
+            && PackagePathComparer.Equals(asset.SourcePath, selected.SourcePath)
+            && !string.Equals(asset.LogicalFile, selected.LogicalFile, StringComparison.Ordinal));
+        MemoInspector.Show(_memoResolver.ResolveAsset(
+            _memoCatalog,
+            new AssetMemoLookup(
+                selected.SourcePath,
+                selected.Name,
+                selected.PathId,
+                ambiguousLogicalFileIdentity)));
     }
 }

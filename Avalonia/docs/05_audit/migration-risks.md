@@ -34,12 +34,12 @@ BCn has a reusable decoder and ASTC has a native function, but ETC/ETC2/RGBA4444
 - `ReadDependencyInfo` makes the same first-item assumption.
 - CAB scanning reads the entire bundle into memory and returns a substring with `end - start - 1`, potentially truncating the CAB token.
 - exact search indexes `sKeys[0]` without validating that any keyword exists.
-- `InheritMemoWriter.GetIdentifyNameFromItemName()` slices at the last underscore without handling names that have none.
-- memo identity is bundle path + asset name; duplicate asset names and moved installations can mis-associate or lose memos.
+- Legacy `InheritMemoWriter.GetIdentifyNameFromItemName()` slices at the last underscore without handling names that have none. Milestone 8 preserves the heuristic but safely uses the complete stem when no underscore exists.
+- Legacy memo identity is bundle path + asset name and silently takes first matches. Milestone 8 direct editing adds package/index/Path-ID context in memory and refuses duplicate complete identities; moved paths and schema-level logical-file ambiguity remain limitations.
 - path containment uses string `StartsWith`, which can confuse sibling prefixes (for example `Cache` and `Cache2`).
 - Windows `GetLongPathName` P/Invoke and `\\?\` prefixing make the legacy browser adapter platform-specific.
 - UE-007 is replaced with an awaitable task/cancellation/progress workflow. Large scans are sequential and not resumable.
-- package directories are staged and swapped with a rollback backup, but multi-file directory replacement is not one filesystem-level atomic operation and concurrent writers are not locked.
+- package directories are staged and swapped with a rollback backup, but multi-file directory replacement is not one filesystem-level atomic operation. In-process writers now serialize by normalized package path; external processes remain outside that lock, and stale-document conflicts still require an explicit policy.
 - the replacement search service aggregates selected packages deterministically, but no large-catalog benchmark or UI paging strategy exists yet.
 - direct dependency resolution deliberately accepts only exact CAB matches or the verified one-character legacy truncation variant; malformed identifiers remain unresolved instead of using the legacy broad prefix match.
 - duplicate package records with the same normalized physical source path collapse to one candidate, but records with missing paths cannot be safely deduplicated and may produce ambiguity.
@@ -47,13 +47,14 @@ BCn has a reusable decoder and ASTC has a native function, but ETC/ETC2/RGBA4444
 - package creation/save now uses distinct source/destination selection, explicit overwrite confirmation, staged persistence, and verified reopening; package removal remains absent because the legacy recursive delete is unsafe.
 - package rediscovery now accepts a catalog root or an individual package directory, and source import uses verified file headers rather than extensions. Folder import is transactionally published and can explicitly recurse without following reparse points, but large-tree sequential scanning has no performance benchmark and native access-denied behavior remains platform-dependent.
 - real-world Milestone 7.3 validation loaded 15 nested bundles and 1,173 eligible references through the production service/ViewModel path without source copies or package writes. Current-folder scope and the editor-only-before-Save boundary are now explicit, but the exact native picker/click/Save workflow still needs a desktop-capable observation.
+- Milestone 7.4 prevents transient package-grid deselection from sharing the explicit abandon path, observes UI async-command and package-selection failures, clears cancellation owners safely, and suppresses stale asset-load publication. Historical intermittent crashes lack a crash dump, so these fixes do not prove that every possible crash is eliminated.
 
 ## Avalonia prototype risks
 
 - the new session/ViewModel boundary covers only the Open File vertical slice; future features must continue using it instead of accumulating in code-behind.
 - the prior code-generated dropdown and visual-tree lookup were removed; standard `MenuFlyout` command binding is now used.
 - toolbar buttons imply features that are not wired.
-- `Printer` can leave a newly created file handle open and resets logs each launch.
+- `Printer` previously leaked the new-file stream before append; Milestone 7.4 replaces it with serialized, handle-safe writes and stack-trace exception logging. Logs still reset each launch and do not rotate.
 - image converter caches never dispose bitmaps and assume every generated icon URI exists.
 - relative paths depend on working directory.
 - errors are surfaced in the browser/asset pages and 30 automated tests cover the current scope, but complete interactive picker/navigation/DataGrid behavior still needs manual verification.
@@ -73,7 +74,8 @@ BCn has a reusable decoder and ASTC has a native function, but ETC/ETC2/RGBA4444
 - Existing package JSON schema has no explicit version and stores absolute source paths.
 - “image search” behavior may not match user expectations.
 - Search semantics are OR-based with exclusions taking precedence; changing this silently would be a regression.
-- Memo inheritance's safe/overwrite/force semantics and bundle-name heuristic may be relied on by existing data.
+- Memo Safe/Overwrite/Force semantics and the bundle-name heuristic are characterized and retained. Duplicate heuristic matches are now visible conflicts rather than filesystem-order choices, which is a deliberate safety difference from Unity.
+- The package schema has no package/directory/source memo field or copy provenance; adding either requires a versioned format decision rather than silent legacy JSON changes.
 - It is unclear which Unity texture formats/games/platforms are required, so decoder scope cannot yet be finalized.
 - Copying search/dependency result bundles may have accidentally provided isolation from source files; direct-reference replacement should remain read-only.
 - Package models are mutable; search and dependency services snapshot relevant values per call, but concurrent mutation during snapshot creation is not coordinated.

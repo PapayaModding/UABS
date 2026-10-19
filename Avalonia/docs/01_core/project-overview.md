@@ -4,6 +4,8 @@
 
 UABS is a desktop tool for inspecting and managing content stored in Unity bundles and serialized asset files. The legacy application can browse files, enumerate assets, inspect metadata, preview and export supported textures and sprites, build package indexes, search packages, resolve dependencies, and maintain per-asset memos.
 
+The confirmed product direction prioritizes asset seeking and interactive inspection. Direct asset modding is not currently in scope. The proposed Avalonia-native UX foundation uses four retained workspaces—Assets, Search, Dependencies, and Packages—while preserving package compatibility and explicit Save; see the [UX redesign foundation](../03_design/ux-redesign-foundation.md). This is a proposed design, not implemented workspace behavior.
+
 The project is being migrated from a Unity 2021 application to a standalone .NET/Avalonia desktop application. The replacement must not require Unity to be installed.
 
 ## Repositories
@@ -45,6 +47,8 @@ flowchart LR
         Search --> Results["Virtual package/source/asset results"]
         Dependency["IPackageDependencyResolver"] --> Indexes
         Dependency --> Edges["Resolved / unresolved / ambiguous direct edges"]
+        Memo["IPackageMemoService"] --> Indexes
+        Memo --> MemoState["Asset memo state / copy results"]
         PackageUI["PackageManagementView / ViewModel"] --> Package
         PackageUI --> Search
         PackageUI --> Dependency
@@ -52,14 +56,14 @@ flowchart LR
 
     PackageUI --> Editor["PackageEditorViewModel"]
     Editor --> Package
+    Editor --> Memo
     VM --> Editor
     Infra -. planned .-> Images["Texture and sprite pipeline"]
-    VM -. planned .-> Memos["Memo lifecycle"]
 ```
 
 ## Current implementation status
 
-Milestones 1 through 7 are complete for their verified scope:
+Milestones 1 through 8 are complete for their automated scope:
 
 - deterministic core AssetsTools.NET and `classdata.tpk` deployment;
 - Unity bundle/serialized-file detection;
@@ -77,6 +81,8 @@ Milestones 1 through 7 are complete for their verified scope:
 - UI-independent direct package-dependency resolution with bounded CAB compatibility, structured ambiguity, duplicate-source deduplication, cancellation, and no source-file I/O.
 - an Avalonia package workspace for directory selection, catalog refresh, package contents, metadata search, and direct dependency inspection.
 - package creation from an empty state, isolated editing, real-source/selected-asset addition, hierarchy-preserving folder import, reference removal, explicit overwrite/discard confirmation, verified staged saving, and reopen/catalog refresh.
+- workspace/editor state preservation across navigation, observed asynchronous command failures, handle-safe diagnostic logging, and stale asset-load suppression from Milestone 7.4.
+- asset memo editing with explicit Save, missing/empty/value state, rich in-memory identity, and transactional Safe/Overwrite/Force package-to-package memo copy from Milestone 8.
 
 The graphical workflows still need a complete manual Windows interaction pass. A representative multi-serialized-file bundle fixture is also still needed.
 
@@ -91,7 +97,7 @@ The graphical workflows still need a complete manual Windows interaction pass. A
 | Preview and PNG export | Implemented with safety gaps | Not migrated |
 | Package indexing and search | Implemented | Backend plus catalog/contents/search and creation/edit/save UI implemented |
 | Dependency lookup | Implemented | Direct backend and inspection UI implemented; reverse lookup deferred |
-| Memo editing and inheritance | Implemented | Not migrated |
+| Memo editing and inheritance | Implemented | Implemented for verified asset fields and package-to-package copy; no directory-parent semantics exist |
 
 ## Technologies
 
@@ -112,12 +118,12 @@ Future image work may use additional standalone .NET/native codecs, but no futur
 5. **Direct dependency resolution:** backend implemented and tested; UI and reverse lookup deferred.
 6. **Avalonia package management UI:** browse, inspect, search, and direct-dependency UI implemented.
 7. **Package creation, editing, and saving UI:** implemented with safe first-package, selected-asset, overwrite, dirty-state, and reopen workflows.
-8. **Memo lifecycle.**
+8. **Memo lifecycle:** implemented and automated-test verified; desktop interaction remains to be observed.
 9. **Neutral texture/sprite decoding.**
 10. **Preview and safe export.**
 11. **Hardening, packaging, and retirement readiness.**
 
-See the [migration roadmap](../05_audit/migration-roadmap.md) for acceptance criteria and the [Milestone 07 report](../05_audit/milestone-07-report.md) for exact verification evidence.
+See the [migration roadmap](../05_audit/migration-roadmap.md) for acceptance criteria and the [Milestone 08 report](../05_audit/milestone-08-report.md) for current verification evidence.
 
 ## More detail
 

@@ -1,3 +1,17 @@
+using System.ComponentModel;
+using System.Globalization;
+using Avalonia;
+using Avalonia.Automation;
+using Avalonia.Collections;
+using Avalonia.Controls;
+using Avalonia.Headless;
+using Avalonia.Headless.XUnit;
+using Avalonia.Input;
+using Avalonia.Layout;
+using Avalonia.Media;
+using Avalonia.Styling;
+using Avalonia.VisualTree;
+using UABS.Page;
 using UABS.Services;
 using UABS.UnityAssets.Packages;
 using UABS.UnityAssets.Packages.Dependencies;
@@ -8,6 +22,252 @@ namespace UABS.UnityAssets.Tests;
 
 public sealed class PackageManagementViewModelTests
 {
+    [AvaloniaFact]
+    public void LoadedPackagesSidebar_UsesMinimumOvershootAndKeyboardRestore()
+    {
+        using PackageManagementViewModel viewModel = CreateViewModel();
+        viewModel.Layout.SidebarWidth = 390;
+        PackageManagementView view = new() { DataContext = viewModel };
+        Window window = new() { Width = 1200, Height = 760, Content = view };
+        window.Show();
+
+        try
+        {
+            Grid regions = Find<Grid>(view, "PackagesRegionsGrid");
+            GridSplitter splitter = Find<GridSplitter>(view, "PackagesSidebarSplitter");
+            Button collapse = Find<Button>(view, "PackagesSidebarCollapseButton");
+            Button restore = Find<Button>(view, "PackagesSidebarRestoreHandle");
+
+            Assert.Equal("Collapse Loaded Packages", AutomationProperties.GetName(collapse));
+            Assert.Equal("Restore Loaded Packages", AutomationProperties.GetName(restore));
+            Assert.NotNull(ToolTip.GetTip(collapse));
+            Assert.NotNull(ToolTip.GetTip(restore));
+            AssertIconCentered(collapse);
+
+            Drag(
+                window,
+                splitter,
+                PackagesWorkspaceLayoutViewModel.SidebarMinimumWidth - viewModel.Layout.SidebarWidth);
+            Assert.True(viewModel.Layout.IsSidebarVisible);
+            Assert.Equal(PackagesWorkspaceLayoutViewModel.SidebarMinimumWidth, viewModel.Layout.SidebarWidth);
+
+            viewModel.Layout.SidebarWidth = 390;
+            view.UpdateLayout();
+            Drag(
+                window,
+                splitter,
+                -(390 - PackagesWorkspaceLayoutViewModel.SidebarMinimumWidth
+                  + PackagesWorkspaceLayoutViewModel.CollapseThreshold + 8));
+
+            Assert.False(viewModel.Layout.IsSidebarVisible);
+            Assert.Equal(390, viewModel.Layout.SidebarWidth);
+            Assert.False(splitter.IsVisible);
+            Assert.Equal(0, regions.ColumnDefinitions[0].ActualWidth);
+            Assert.Equal(0, regions.ColumnDefinitions[1].ActualWidth);
+            Assert.True(restore.IsVisible);
+            AssertIconCentered(restore);
+            Assert.True(Find<Grid>(view, "PackageEditorRegion").Bounds.Width >= 520);
+
+            Assert.True(restore.Focus());
+            window.KeyPress(Key.Enter, RawInputModifiers.None, PhysicalKey.Enter, "\r");
+            window.KeyRelease(Key.Enter, RawInputModifiers.None, PhysicalKey.Enter, "\r");
+            view.UpdateLayout();
+
+            Assert.True(viewModel.Layout.IsSidebarVisible);
+            Assert.Equal(390, regions.ColumnDefinitions[0].ActualWidth, precision: 1);
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    [AvaloniaFact]
+    public async Task SidebarCollapseRestore_PreservesSelectionAndDirtyEditorState()
+    {
+        PackageDocument package = Document("one", Bundle("one.ab", "CAB-ONE", Asset("Hero", 7, "original")));
+        using PackageManagementViewModel viewModel = CreateViewModel(
+            packageService: new FakePackageService([Entry("one", package)]));
+        await viewModel.LoadCatalogAsync("catalog");
+        await viewModel.EditSelectedPackageAsync();
+        PackageCatalogItemViewModel selectedPackage = viewModel.SelectedPackage!;
+        PackageEditorItemViewModel selectedItem = viewModel.Editor.Items.Single(item =>
+            item.Kind == PackageEditorItemKind.Asset);
+        viewModel.Editor.SelectedItem = selectedItem;
+        viewModel.Editor.PackageName = "renamed";
+        viewModel.Editor.MemoText = "unsaved memo";
+        PackageManagementView view = new() { DataContext = viewModel };
+        Window window = new() { Width = 1200, Height = 760, Content = view };
+        window.Show();
+
+        try
+        {
+            Find<Button>(view, "PackagesSidebarCollapseButton").Command!.Execute(null);
+            view.UpdateLayout();
+            Find<Button>(view, "PackagesSidebarRestoreHandle").Command!.Execute(null);
+            view.UpdateLayout();
+
+            Assert.Same(selectedPackage, viewModel.SelectedPackage);
+            Assert.True(viewModel.Editor.IsEditing);
+            Assert.True(viewModel.Editor.IsDirty);
+            Assert.Equal("renamed", viewModel.Editor.PackageName);
+            Assert.Same(selectedItem, viewModel.Editor.SelectedItem);
+            Assert.Equal("unsaved memo", viewModel.Editor.MemoText);
+            Assert.Equal("unsaved memo", selectedItem.Memo);
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    [AvaloniaFact]
+    public async Task PackageGrids_UseSimplifiedColumnsAndRetainTechnicalDetails()
+    {
+        PackageDocument package = Document("one", Bundle("one.ab", "CAB-ONE", Asset("Hero", 7, "memo")));
+        using PackageManagementViewModel viewModel = CreateViewModel(
+            packageService: new FakePackageService([Entry("one", package)]));
+        await viewModel.LoadCatalogAsync("catalog");
+        PackageManagementView view = new() { DataContext = viewModel };
+        Window window = new() { Width = 1200, Height = 760, Content = view };
+        window.Show();
+
+        try
+        {
+            DataGrid contentsGrid = Find<DataGrid>(view, "PackageContentsGrid");
+            view.UpdateLayout();
+            AssertPackageKindColumn(contentsGrid);
+            AssertPackageKindIcons(contentsGrid);
+            Assert.Equal(["Source", "Asset (type unavailable)"],
+                viewModel.Contents.Select(item => item.TypeLabel));
+            PackageContentItem contentAsset = viewModel.Contents.Single(item => !item.IsSource);
+            viewModel.SelectedContent = contentAsset;
+            view.UpdateLayout();
+            string contentDetails = Find<TextBlock>(view, "SelectedContentTechnicalDetails").Text!;
+            Assert.Contains("CAB-ONE", contentDetails);
+            Assert.Contains("Path ID: 7", contentDetails);
+            Assert.Contains(contentAsset.SourcePath!, contentDetails);
+
+            await viewModel.EditSelectedPackageAsync();
+            view.UpdateLayout();
+
+            DataGrid editorGrid = Find<DataGrid>(view, "PackageEditorItemsGrid");
+            AssertPackageKindColumn(editorGrid);
+            AssertPackageKindIcons(editorGrid);
+            Button closeEditor = Find<Button>(view, "ClosePackageEditorButton");
+            Assert.Equal("Close Editor", closeEditor.Content);
+            Assert.Same(viewModel.Editor.CloseEditorCommand, closeEditor.Command);
+            PackageEditorItemViewModel editorAsset = viewModel.Editor.Items.Single(item => !item.IsSource);
+            viewModel.Editor.SelectedItem = editorAsset;
+            view.UpdateLayout();
+            string editorDetails = Find<TextBlock>(view, "EditorSelectedTechnicalDetails").Text!;
+            Assert.Contains("CAB-ONE", editorDetails);
+            Assert.Contains("Path ID: 7", editorDetails);
+            Assert.Contains(editorAsset.SourcePath, editorDetails);
+            Assert.Equal("memo", viewModel.Editor.MemoText);
+            Assert.False(viewModel.Editor.IsDirty);
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    [AvaloniaFact]
+    public async Task PackageAssetAndDependencyGrids_UseSharedThemeAwareAlternatingRowsAfterSort()
+    {
+        PackageBundleReference source = Bundle("zeta.ab", "CAB-Z", Asset("Zulu", 3), ["CAB-X", "CAB-DUP"]);
+        source.AssetInfos.AddRange(Enumerable.Range(10, 120).Select(index => Asset($"Asset {index:000}", index)));
+        PackageDocument package = Document(
+            "request",
+            source,
+            Bundle("alpha.ab", "CAB-A", Asset("Alpha", 1), ["CAB-MISSING"]));
+        PackageDocument candidates = Document(
+            "targets",
+            Bundle("x.ab", "CAB-X"),
+            Bundle("dup-one.ab", "CAB-DUP"),
+            Bundle("dup-two.ab", "CAB-DUP"));
+        using PackageManagementViewModel viewModel = CreateViewModel(
+            packageService: new FakePackageService([Entry("request", package), Entry("targets", candidates)]));
+        await viewModel.LoadCatalogAsync("catalog");
+        PackageManagementView view = new() { DataContext = viewModel };
+        Window window = new() { Width = 1400, Height = 850, Content = view };
+        window.Show();
+
+        try
+        {
+            window.RequestedThemeVariant = ThemeVariant.Light;
+            view.UpdateLayout();
+            DataGrid contents = Find<DataGrid>(view, "PackageContentsGrid");
+            Assert.Contains("assetList", contents.Classes);
+            AssertAlternatingRows(contents, "#F3F8F3", "#E8F2E9");
+            AssertBothThemeRows(window, view, contents);
+
+            contents.CollectionView.SortDescriptions.Add(DataGridSortDescription.FromPath(
+                "Name",
+                ListSortDirection.Ascending,
+                CultureInfo.InvariantCulture));
+            view.UpdateLayout();
+            AssertAlternatingRows(contents, "#F3F8F3", "#E8F2E9");
+
+            PackageContentItem distantItem = viewModel.Contents[90];
+            contents.ScrollIntoView(distantItem, null);
+            view.UpdateLayout();
+            Assert.Contains(contents.GetVisualDescendants().OfType<DataGridRow>(),
+                row => ReferenceEquals(row.DataContext, distantItem) && row.Index > 20);
+            AssertBothThemeRows(window, view, contents);
+
+            await viewModel.RefreshCatalogAsync();
+            view.UpdateLayout();
+            AssertAlternatingRows(contents, "#F3F8F3", "#E8F2E9");
+
+            Find<TabControl>(view, "PackageOverviewTabs").SelectedIndex = 1;
+            view.UpdateLayout();
+            DataGrid dependencies = Find<DataGrid>(view, "PackageDependenciesGrid");
+            Assert.Contains("assetList", dependencies.Classes);
+            AssertAlternatingRows(dependencies, "#F3F8F3", "#E8F2E9");
+            AssertBothThemeRows(window, view, dependencies);
+
+            viewModel.SelectedDependency = viewModel.DependencyResults.Single(result => result.CandidateCount == 2);
+            view.UpdateLayout();
+            DataGrid candidateGrid = Find<DataGrid>(view, "PackageDependencyCandidatesGrid");
+            Assert.Contains("assetList", candidateGrid.Classes);
+            AssertAlternatingRows(candidateGrid, "#F3F8F3", "#E8F2E9");
+            AssertBothThemeRows(window, view, candidateGrid);
+
+            await viewModel.EditSelectedPackageAsync();
+            view.UpdateLayout();
+            DataGrid editor = Find<DataGrid>(view, "PackageEditorItemsGrid");
+            Assert.Contains("assetList", editor.Classes);
+            AssertAlternatingRows(editor, "#F3F8F3", "#E8F2E9");
+            AssertBothThemeRows(window, view, editor);
+
+            DataGridRow editorRow = editor.GetVisualDescendants().OfType<DataGridRow>()
+                .First(row => row.Index >= 0);
+            Point hoverPoint = editorRow.TranslatePoint(new Point(70, editorRow.Bounds.Height / 2), window)!.Value;
+            window.MouseMove(hoverPoint, RawInputModifiers.None);
+            view.UpdateLayout();
+            Assert.True(editorRow.IsPointerOver);
+            AssertAlternatingRows(editor, "#F3F8F3", "#E8F2E9");
+            editor.SelectedItem = editorRow.DataContext;
+            view.UpdateLayout();
+            Assert.True(editorRow.IsSelected);
+            AssertAlternatingRows(editor, "#F3F8F3", "#E8F2E9");
+            window.MouseMove(new Point(window.Bounds.Width - 2, window.Bounds.Height - 2), RawInputModifiers.None);
+            view.UpdateLayout();
+            Assert.False(editorRow.IsPointerOver);
+            AssertAlternatingRows(editor, "#F3F8F3", "#E8F2E9");
+
+            window.RequestedThemeVariant = ThemeVariant.Dark;
+            view.UpdateLayout();
+            AssertAlternatingRows(editor, "#18231B", "#1E2C22");
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
     [Fact]
     public async Task ChoosePackageDirectory_LoadsPickerSelectionAndListsPackages()
     {
@@ -278,6 +538,28 @@ public sealed class PackageManagementViewModelTests
     }
 
     [Fact]
+    public async Task TransientNullCatalogSelection_DoesNotCloseCleanEditor()
+    {
+        PackageDocument package = Document("one", Bundle("one.ab", "CAB-ONE", Asset("One", 1)));
+        using PackageManagementViewModel viewModel = CreateViewModel(
+            packageService: new FakePackageService([Entry("one", package)]));
+        await viewModel.LoadCatalogAsync("catalog");
+        await viewModel.EditSelectedPackageAsync();
+        PackageEditorItemViewModel selected = viewModel.Editor.Items.Single(item =>
+            item.Kind == PackageEditorItemKind.Asset);
+        viewModel.Editor.SelectedItem = selected;
+
+        viewModel.SelectedPackage = null;
+        await Task.Yield();
+
+        Assert.Equal("one", viewModel.SelectedPackage!.Name);
+        Assert.True(viewModel.Editor.IsEditing);
+        Assert.False(viewModel.Editor.IsDirty);
+        Assert.Equal(2, viewModel.Editor.Items.Count);
+        Assert.Same(selected, viewModel.Editor.SelectedItem);
+    }
+
+    [Fact]
     public async Task AddSelectedAsset_UsesSelectedPackageWhenNoEditorIsOpen()
     {
         using PackageManagementViewModel viewModel = CreateViewModel(
@@ -304,6 +586,158 @@ public sealed class PackageManagementViewModelTests
             searchService ?? new PackageSearchService(),
             dependencyResolver ?? new PackageDependencyResolver(),
             confirmations);
+
+    private static T Find<T>(Control root, string name) where T : Control =>
+        root.FindControl<T>(name)
+        ?? throw new InvalidOperationException($"Control '{name}' was not created.");
+
+    private static void AssertPackageKindColumn(DataGrid grid)
+    {
+        DataGridTemplateColumn kindColumn = Assert.IsType<DataGridTemplateColumn>(grid.Columns[0]);
+        TextBlock header = Assert.IsType<TextBlock>(kindColumn.Header);
+
+        Assert.Equal(0, kindColumn.DisplayIndex);
+        Assert.Equal(string.Empty, header.Text);
+        Assert.Equal("Kind", AutomationProperties.GetName(header));
+        Assert.Equal("Kind", kindColumn.SortMemberPath);
+        Assert.False(kindColumn.CanUserResize);
+        Assert.True(grid.CanUserResizeColumns);
+        Assert.All(grid.Columns.Skip(1), column => Assert.True(column.CanUserResize));
+        Assert.Equal(52, kindColumn.ActualWidth, precision: 1);
+        Assert.Equal(4, grid.Columns.Count);
+        Assert.Equal("Name", grid.Columns[1].Header);
+        Assert.Equal("Type", grid.Columns[2].Header);
+        Assert.Equal("Memo", grid.Columns[3].Header);
+
+        grid.Columns[1].Width = new DataGridLength(280);
+        grid.UpdateLayout();
+        Assert.Equal(52, kindColumn.ActualWidth, precision: 1);
+    }
+
+    private static void AssertPackageKindIcons(DataGrid grid)
+    {
+        DataGridRow[] rows = grid.GetVisualDescendants()
+            .OfType<DataGridRow>()
+            .Where(row => row.Index >= 0)
+            .OrderBy(row => row.Index)
+            .ToArray();
+        Assert.Equal(2, rows.Length);
+
+        foreach (DataGridRow row in rows)
+        {
+            string kind = row.DataContext switch
+            {
+                PackageContentItem content => content.Kind.ToString(),
+                PackageEditorItemViewModel item => item.Kind.ToString(),
+                _ => throw new InvalidOperationException("Unexpected package grid row type.")
+            };
+            Grid host = row.GetVisualDescendants()
+                .OfType<Grid>()
+                .Single(control => control.Name == "PackageKindIconHost");
+            PathIcon icon = host.GetVisualDescendants()
+                .OfType<PathIcon>()
+                .Single(control => control.IsVisible);
+
+            Assert.Equal(kind, ToolTip.GetTip(host)?.ToString());
+            Assert.Equal(kind, AutomationProperties.GetName(host));
+            Assert.Equal(kind, AutomationProperties.GetName(icon));
+            Assert.Contains(kind == "Source" ? "packageSourceKindIcon" : "packageAssetKindIcon", icon.Classes);
+            Assert.Equal(18, icon.Bounds.Width, precision: 1);
+            Assert.Equal(18, icon.Bounds.Height, precision: 1);
+        }
+    }
+
+    private static void AssertAlternatingRows(DataGrid grid, string even, string odd)
+    {
+        DataGridRow[] rows = grid.GetVisualDescendants()
+            .OfType<DataGridRow>()
+            .Where(row => row.Index >= 0)
+            .OrderBy(row => row.Index)
+            .ToArray();
+        Assert.True(rows.Length >= 2);
+
+        foreach (DataGridRow row in rows)
+        {
+            bool isEven = row.Index % 2 == 0;
+            Assert.Equal(isEven, row.Classes.Contains("assetRowEven"));
+            Assert.Equal(!isEven, row.Classes.Contains("assetRowOdd"));
+            SolidColorBrush background = Assert.IsType<SolidColorBrush>(row.Background);
+            Assert.Equal(Color.Parse(isEven ? even : odd), background.Color);
+
+            // Validate the effective Fluent drawing layers, not just the row property:
+            // RowBorder paints the stripe, while transparent cells leave it visible.
+            Border rowBorder = row.GetVisualDescendants().OfType<Border>()
+                .Single(border => border.Name == "RowBorder");
+            Assert.Equal(background.Color, Assert.IsType<SolidColorBrush>(rowBorder.Background).Color);
+            Assert.Equal(1, rowBorder.Opacity);
+            Assert.True(rowBorder.Bounds.Width > 0);
+            foreach (DataGridCell cell in row.GetVisualDescendants().OfType<DataGridCell>())
+            {
+                AssertTransparent(cell.Background);
+                foreach (Border border in cell.GetVisualDescendants().OfType<Border>()
+                             .Where(border => border.Name == "CellBorder"))
+                    AssertTransparent(border.Background);
+            }
+
+            var overlay = row.GetVisualDescendants().OfType<Avalonia.Controls.Shapes.Rectangle>()
+                .Single(rectangle => rectangle.Name == "BackgroundRectangle");
+            if (row.IsSelected || row.IsPointerOver)
+            {
+                string expected = row.IsSelected
+                    ? row.IsPointerOver ? "#2F613F" : "#39724D"
+                    : grid.ActualThemeVariant == ThemeVariant.Dark ? "#2C4633" : "#CCE3D0";
+                Assert.Equal(Color.Parse(expected), Assert.IsType<SolidColorBrush>(overlay.Fill).Color);
+                Assert.Equal(1, overlay.Opacity);
+            }
+            else
+            {
+                AssertTransparent(overlay.Fill);
+            }
+        }
+    }
+
+    private static void AssertBothThemeRows(Window window, Control view, DataGrid grid)
+    {
+        window.RequestedThemeVariant = ThemeVariant.Dark;
+        view.UpdateLayout();
+        AssertAlternatingRows(grid, "#18231B", "#1E2C22");
+        window.RequestedThemeVariant = ThemeVariant.Light;
+        view.UpdateLayout();
+        AssertAlternatingRows(grid, "#F3F8F3", "#E8F2E9");
+    }
+
+    private static void AssertTransparent(IBrush? brush)
+    {
+        if (brush is not null)
+            Assert.Equal(0, Assert.IsType<SolidColorBrush>(brush).Color.A);
+    }
+
+    private static void AssertIconCentered(Button button)
+    {
+        Assert.Equal(HorizontalAlignment.Center, button.HorizontalContentAlignment);
+        Assert.Equal(VerticalAlignment.Center, button.VerticalContentAlignment);
+
+        PathIcon icon = Assert.IsType<PathIcon>(button.Content);
+        Point origin = icon.TranslatePoint(default, button)
+                       ?? throw new InvalidOperationException("Could not locate chevron icon.");
+        double horizontalDifference = Math.Abs((origin.X + (icon.Bounds.Width / 2)) - (button.Bounds.Width / 2));
+        double verticalDifference = Math.Abs((origin.Y + (icon.Bounds.Height / 2)) - (button.Bounds.Height / 2));
+
+        Assert.InRange(horizontalDifference, 0, 0.5);
+        Assert.InRange(verticalDifference, 0, 0.5);
+    }
+
+    private static void Drag(Window window, Control control, double horizontalDelta)
+    {
+        Point start = control.TranslatePoint(
+                          new Point(Math.Max(1, control.Bounds.Width / 2), Math.Max(1, control.Bounds.Height / 2)),
+                          window)
+                      ?? throw new InvalidOperationException("Could not locate splitter.");
+        Point end = new(start.X + horizontalDelta, start.Y);
+        window.MouseDown(start, MouseButton.Left, RawInputModifiers.None);
+        window.MouseMove(end, RawInputModifiers.LeftMouseButton);
+        window.MouseUp(end, MouseButton.Left, RawInputModifiers.None);
+    }
 
     private static PackageCatalogEntry Entry(string name, PackageDocument document) =>
         new(name, document.PackagePath!, document, null);

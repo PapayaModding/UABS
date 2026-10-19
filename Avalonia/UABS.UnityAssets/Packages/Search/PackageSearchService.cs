@@ -87,6 +87,8 @@ public sealed class PackageSearchService : IPackageSearchService
                         cancellationToken.ThrowIfCancellationRequested();
                         if (asset is null || (request.PathId is not null && asset.PathId != request.PathId.Value))
                             continue;
+                        if (request.RequireNonEmptyMemo && string.IsNullOrWhiteSpace(asset.Memo))
+                            continue;
                         if (request.PathId is not null && AssetIsExcluded(asset, request.Fields, excludeTerms, request.ExactText))
                             continue;
 

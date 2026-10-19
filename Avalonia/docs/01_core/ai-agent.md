@@ -2,7 +2,7 @@
 
 ## Required first reading
 
-Before significant implementation or architectural work, read this document and [project-overview.md](project-overview.md). Then inspect the [session handoff](../05_audit/codex-session-handoff.md), [migration roadmap](../05_audit/migration-roadmap.md), the latest [milestone report](../05_audit/milestone-07-report.md), and the subsystem or architecture documents relevant to the task.
+Before significant implementation or architectural work, read this document and [project-overview.md](project-overview.md). Then inspect the [session handoff](../05_audit/codex-session-handoff.md), [migration roadmap](../05_audit/migration-roadmap.md), the latest [milestone report](../05_audit/milestone-08-report.md), and the subsystem or architecture documents relevant to the task.
 
 Documentation is context, not a substitute for source inspection. Verify details against the current code before changing behavior. If code and documentation disagree, record the discrepancy and update the appropriate document as part of the authorized task.
 
@@ -71,6 +71,7 @@ Milestones 1 and 2 introduced:
 - `UABS.UnityAssets.Packages.Dependencies`: direct CAB dependency resolution over loaded metadata with resolved/unresolved/ambiguous outcomes, original-path provenance, duplicate-import collapsing, and cancellation.
 - `PackageManagementViewModel`/`PackageManagementView`: package-directory catalog, package contents, metadata search, and direct dependency presentation with cancellation and stale-result guards.
 - `PackageEditorViewModel`: first-package creation, isolated editing, selected-asset/source reference management, explicit destination/overwrite/discard interactions, staged save verification, and dirty-close protection.
+- `PackageMemoService` and the package editor memo panel: asset-level missing/empty/value state, rich in-memory identity, explicit-save editing, and transactional Safe/Overwrite/Force package-to-package memo copy. The legacy schema has no package/directory/source memo field or parent-directory inheritance.
 
 Only `UABS.UnityAssets` may directly depend on AssetsTools.NET. Avalonia Views and ViewModels must not own or expose AssetsTools.NET objects. See [current Avalonia architecture](../02_architecture/avalonia-architecture.md), [asset loading](../04_systems/asset-loading.md), and [package systems](../04_systems/package-search-dependency-memo.md).
 
@@ -88,7 +89,26 @@ Only `UABS.UnityAssets` may directly depend on AssetsTools.NET. Avalonia Views a
 
 ## Testing and verification
 
-Before running commands, inspect the solution, target frameworks, available SDKs, and relevant project files. Prefer focused tests first, then a solution build. Distinguish code regressions from environment restrictions or pre-existing failures.
+### Mandatory Debug startup builds and grid conventions
+
+- Routine development and verification must build the actual startup application in Debug: from `Avalonia`, run `dotnet build UABS/UABS.csproj -c Debug`. A solution build with `-c Debug` that includes this project is also valid; building supporting libraries alone is insufficient.
+- Before declaring UI changes ready for manual testing, confirm the successful Debug build contains those changes and identify `UABS/bin/Debug/net9.0/UABS.exe` as the launch target. Never substitute a successful Release build for failed Debug verification. If a running UABS instance locks Debug output, report the blocker and ask the user to close it normally; never terminate their process without explicit permission. Release builds are permitted when specifically requested, but do not replace Debug verification.
+- Affected asset-oriented grids must follow the [mandatory shared grid conventions](../03_design/ui-and-workflow-design.md#mandatory-shared-grid-conventions): an existing Kind/icon column is leftmost, icon-only, blank-header, fixed at 52 px, and non-resizable; relevant Assets, Search, and Packages grids use shared green zebra rows and theme resources. Reuse equivalent icon mappings; do not add meaningless Kind columns or workspace-specific palettes.
+- Whenever creating or changing an affected grid, check applicable Kind configuration, shared zebra styling, selection/hover precedence, and parity after collection changes or virtualized reuse, then confirm the Debug startup build. Report compilation, automated style/layout checks, and actual visual observation separately. Existing implementation gaps are not exceptions to the standard; document them without expanding an unrelated task.
+
+Documentation-only edits require documentation validation, not an application build or full regression suite.
+
+### Risk-Based Verification and Token Efficiency
+
+Classify work by its highest relevant risk and verify proportionately:
+
+- **Micro-fix:** Small, localized, low-risk changes. Inspect only the necessary context, make the smallest edit, and run focused validation only. New tests, documentation updates, and full-suite runs are not mandatory unless the change exposes meaningful risk.
+- **Small feature:** Scoped functionality or UI behavior. Run relevant tests and a build; add regression tests for meaningful behavioral risks.
+- **Milestone / high-risk change:** Architecture, persistence, concurrency, asset loading, package operations, or major UI changes. Run the full regression suite and relevant audits, and update affected documentation.
+
+Prefer concise command output and final reports. Reuse established, verified repository context instead of repeatedly exploring the entire codebase. Batch several micro-fixes when practical and perform one full verification before a major commit or milestone acceptance. Escalate verification when unexpected behavior, failures, or broader dependencies appear. Never skip necessary safety checks to save tokens, weaken or delete existing tests, or bypass the Git and desktop-control restrictions below.
+
+When relevant context is not already established, inspect the solution, target frameworks, available SDKs, and affected project files before running commands. Prefer focused tests first and distinguish code regressions from environment restrictions or pre-existing failures.
 
 For asset work, cover the relevant subset of:
 
@@ -136,6 +156,14 @@ Prefer checkpoints with a buildable solution, prior tests passing, no accidental
 Because interruptions can occur without warning, keep checkpoints frequent even when no limit is visible. If context, token, usage, or execution capacity appears constrained, stop starting features, finish the smallest active unit if feasible, leave source files syntactically complete, run the most relevant verification, and update the handoff with unfinished work. Do not claim an exact remaining budget unless the system exposes it, and never call a milestone complete merely because the session is ending.
 
 If work must stop incomplete, the final response must contain **Safe Checkpoint — Continuation Required** with completed work, remaining tasks, latest build/test results, known issues, whether the app is safe to run, the handoff location, and the next exact action.
+
+## User-Driven UI Verification and Computer-Control Restrictions
+
+Desktop visual and interactive verification is user-driven by default. Do not automatically launch or use computer-control tools, move the pointer, type into native applications, open file/folder pickers, or capture desktop screenshots merely because a task requests verification or a smoke test. A general instruction to verify an implementation does not authorize desktop control, and approval from an earlier task or milestone never carries forward.
+
+Computer control requires the user's explicit permission for each specific desktop-control task. Without that permission, use normal automated tests, builds, XAML compilation/validation, and noninteractive diagnostics, then provide a concise manual UI checklist for the user. Do not start a computer-use session solely to inspect appearance.
+
+Reports must distinguish (1) automated verification, (2) behavior the user has manually verified and reported, and (3) behavior that remains unverified. Keep UI verification proportionate so it does not consume excessive context or jeopardize a recoverable checkpoint.
 
 ## Scope control
 

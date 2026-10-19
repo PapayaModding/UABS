@@ -4,7 +4,7 @@
              xmlns:vm="clr-namespace:UABS.ViewModels"
              x:Class="UABS.Page.FolderView"
              x:DataType="vm:MainWindowViewModel">
-    <Grid RowDefinitions="Auto,Auto,Auto,Auto,*,Auto" Margin="8,12,12,12" RowSpacing="8">
+    <Grid RowDefinitions="Auto,Auto,Auto,Auto,*" Margin="8" RowSpacing="8">
         <Border Grid.Row="0" Background="White" BorderBrush="#D0D0D0" BorderThickness="1" CornerRadius="4" Padding="10,7">
             <Grid ColumnDefinitions="Auto,*" ColumnSpacing="8">
                 <TextBlock Text="Open file:" FontWeight="SemiBold"/>
@@ -29,16 +29,19 @@
         </Grid>
 
         <Grid Grid.Row="4">
-            <DataGrid AutoGenerateColumns="False"
+            <DataGrid x:Name="AssetsGrid"
+                      Classes="assetList"
+                      AutoGenerateColumns="False"
                       CanUserResizeColumns="True"
                       CanUserSortColumns="True"
                       GridLinesVisibility="Horizontal"
                       IsReadOnly="True"
                       ItemsSource="{Binding AssetList.Assets}"
                       SelectedItem="{Binding AssetList.SelectedAsset}"
+                      LoadingRow="OnAssetGridLoadingRow"
                       HeadersVisibility="Column">
                 <DataGrid.Columns>
-                    <DataGridTemplateColumn Header="" Width="42">
+                    <DataGridTemplateColumn Header="" Width="42" CanUserResize="False">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate x:DataType="assets:AssetEntry">
                                 <Image Source="{Binding Type, Converter={StaticResource AssetTypeIconConvertor}}"
@@ -62,22 +65,5 @@
             </Border>
         </Grid>
 
-        <Border Grid.Row="5" Background="White" BorderBrush="#D0D0D0" BorderThickness="1" CornerRadius="4" Padding="10">
-            <Grid RowDefinitions="Auto,Auto,Auto">
-                <TextBlock Text="Asset details" FontWeight="SemiBold"/>
-                <ProgressBar Grid.Row="1" IsVisible="{Binding AssetList.IsDetailsLoading}" IsIndeterminate="True" Height="3" Margin="0,6"/>
-                <Grid Grid.Row="2" ColumnDefinitions="Auto,*,Auto,*" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="8" RowSpacing="3"
-                      IsVisible="{Binding AssetList.HasDetails}">
-                    <TextBlock Text="Name:" FontWeight="SemiBold"/><TextBlock Grid.Column="1" Text="{Binding AssetList.SelectedDetails.Name}"/>
-                    <TextBlock Grid.Column="2" Text="Type:" FontWeight="SemiBold"/><TextBlock Grid.Column="3" Text="{Binding AssetList.SelectedDetails.Type}"/>
-                    <TextBlock Grid.Row="1" Text="Path ID:" FontWeight="SemiBold"/><TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding AssetList.SelectedDetails.PathId}"/>
-                    <TextBlock Grid.Row="1" Grid.Column="2" Text="Size:" FontWeight="SemiBold"/><TextBlock Grid.Row="1" Grid.Column="3" Text="{Binding AssetList.SelectedDetails.ByteSize}"/>
-                    <TextBlock Grid.Row="2" Text="Unity:" FontWeight="SemiBold"/><TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding AssetList.SelectedDetails.UnityVersion}"/>
-                    <TextBlock Grid.Row="2" Grid.Column="2" Text="Source file:" FontWeight="SemiBold"/><TextBlock Grid.Row="2" Grid.Column="3" Text="{Binding AssetList.SelectedDetails.LogicalFile}"/>
-                </Grid>
-                <TextBlock Grid.Row="2" Text="{Binding AssetList.DetailsError}" Foreground="#9A2020"
-                           IsVisible="{Binding AssetList.HasDetailsError}" TextWrapping="Wrap"/>
-            </Grid>
-        </Border>
     </Grid>
 </UserControl>

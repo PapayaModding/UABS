@@ -1,0 +1,21 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:UABS.ViewModels"
+             x:Class="UABS.Page.ReadOnlyMemoInspectorView"
+             x:DataType="vm:ReadOnlyMemoInspectorViewModel">
+    <Border Background="#F7F9FC" BorderBrush="#C8D3E0" BorderThickness="1"
+            CornerRadius="4" Padding="8">
+        <StackPanel Spacing="5">
+            <TextBlock Text="Package memo" FontWeight="SemiBold"/>
+            <TextBlock x:Name="MemoStateText" Text="{Binding StateText}" TextWrapping="Wrap"/>
+            <TextBlock x:Name="MemoPackageContext" Text="{Binding PackageContext}"
+                       IsVisible="{Binding HasPackageContext}" Foreground="#555555"
+                       FontSize="12" TextWrapping="Wrap"/>
+            <TextBlock x:Name="FullMemoText" Text="{Binding MemoText}"
+                       IsVisible="{Binding HasMemoValue}" TextWrapping="Wrap"
+                       AutomationProperties.Name="Stored package memo"/>
+            <TextBlock x:Name="MemoDiagnostic" Text="{Binding Diagnostic}"
+                       Foreground="#666666" FontSize="12" TextWrapping="Wrap"/>
+        </StackPanel>
+    </Border>
+</UserControl>

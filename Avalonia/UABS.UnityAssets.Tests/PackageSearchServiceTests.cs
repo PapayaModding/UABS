@@ -76,6 +76,31 @@ public sealed class PackageSearchServiceTests
     }
 
     [Fact]
+    public void Search_MemoOnlyFiltersAssetsIndependentlyFromMemoTextMatching()
+    {
+        PackageSearchRequest withoutMemoText = new("portrait")
+        {
+            Fields = PackageSearchFields.AssetName,
+            ResultKinds = PackageSearchResultKinds.Asset,
+            RequireNonEmptyMemo = true
+        };
+        PackageSearchRequest withMemoText = new("scarlet")
+        {
+            Fields = PackageSearchFields.AssetName | PackageSearchFields.Memo,
+            ResultKinds = PackageSearchResultKinds.Asset,
+            RequireNonEmptyMemo = true
+        };
+
+        IReadOnlyList<PackageSearchResult> nameResults = _service.Search(CreateSources(), withoutMemoText);
+        PackageSearchResult memoResult = Assert.Single(_service.Search(CreateSources(), withMemoText));
+
+        Assert.Equal(2, nameResults.Count);
+        Assert.All(nameResults, result => Assert.False(string.IsNullOrWhiteSpace(result.Memo)));
+        Assert.Equal("Alpha Portrait", memoResult.AssetName);
+        Assert.Equal(PackageSearchMatchCategory.Memo, memoResult.MatchCategories);
+    }
+
+    [Fact]
     public void Search_FindsSourcePathWithoutRequiringItToExist()
     {
         PackageSearchRequest request = new("missing-sources\\alpha")

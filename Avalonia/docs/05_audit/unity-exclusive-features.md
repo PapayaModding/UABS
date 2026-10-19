@@ -24,7 +24,7 @@ Status meanings:
 | UE-005 | Application lifecycle and scene-wide composition | `MonoBehaviour`, `Awake`, `FindObjectsOfType`, `GameObject` | Explicit Avalonia composition/lifetime | `REPLACED` | None; preserve boundary |
 | UE-006 | Native file/folder dialogs | Unity StandaloneFileBrowser plugin | Avalonia `StorageProvider` adapter | `REPLACED` | None; preserve boundary |
 | UE-007 | Package-build threading and UI completion | Raw `Thread` plus `UnityMainThreadDispatcher.Update` | Awaitable package service with cancellation/progress and staged persistence | `REPLACED` | None; preserve presentation boundary |
-| UE-008 | Memo editing and debounce lifecycle | Coroutine, `WaitForSeconds`, TMP focus/events | No memo editor | `NOT_IMPLEMENTED` | Before Phase 5 memo work |
+| UE-008 | Memo editing and debounce lifecycle | Coroutine, `WaitForSeconds`, TMP focus/events | MVVM editor state plus explicit staged package Save | `PARTIALLY_REPLACED` | Desktop acceptance before `REPLACED` |
 
 ## Replacement decision flow
 
@@ -142,13 +142,14 @@ flowchart TD
 - **Legacy source:** `Assets/Script/UI/BundleView/MemoField.cs`; `Start`, `ManualEnterMemo`, `Debounce`, `DebounceRoutine`, and `HandleDebouncedInput`.
 - **Unity dependency:** `MonoBehaviour`, `Coroutine`, `StartCoroutine`/`StopCoroutine`, `WaitForSeconds`, TMP input focus/events, serialized colors, and Unity UI interactability.
 - **Why Unity is required:** Input state and delayed writes are driven by Unity components and coroutine timing.
-- **Existing Avalonia implementation:** None; memo UI remains disabled.
-- **Behavior to preserve:** Selection-aware memo loading, explicit package target, cancellation-safe debounce, no stale write after selection/package change, error visibility, and interruption-safe persistence.
-- **Migration status:** `NOT_IMPLEMENTED`.
-- **Replacement:** `REQUIRES_DISCUSSION`.
-- **Candidate categories:** ViewModel-bound text state with cancellation-token debounce; explicit Save command; hybrid autosave with dirty state; repository-managed write queue.
-- **Compatibility/performance considerations:** Write frequency, atomic JSON replacement, concurrent edits, crash recovery, stale selection identity, focus-loss semantics, and existing package compatibility.
-- **Open questions:** Is autosave required, or should Save be explicit? What debounce interval and failure/dirty-state UI are expected? Are undo/backups required?
+- **Existing Avalonia implementation:** `PackageMemoService` plus `PackageEditorViewModel`/`PackageManagementView` asset memo state and explicit package-to-package Safe/Overwrite/Force copy. The service is UI-neutral and works only on loaded package metadata.
+- **Behavior preserved:** Selection-aware memo loading, explicit source/target package and copy mode, missing-versus-empty values, no stale publication after selection/editor changes, dirty/error UI, cancellation, and staged Save/reopen recovery.
+- **Migration status:** `PARTIALLY_REPLACED`.
+- **Replacement:** Avalonia two-way MVVM editing updates only the isolated working document. There is no coroutine, debounce timer, focus-loss write, background save queue, or per-keystroke disk I/O. The existing explicit package Save is the sole persistence boundary.
+- **Verification:** Neutral service and ViewModel tests cover rich identity, duplicate Path IDs, selection/workspace changes, all three copy modes, ambiguity, cancellation, save/reopen, save failure, unknown fields, and empty indexes. A minimized representation from the genuine legacy memo fixture preserves `钩爪` and an omitted memo through disposable save/reopen.
+- **Compatibility/performance considerations:** The unversioned schema records only the final asset memo and cannot retain inheritance provenance or logical serialized-file identity. Duplicate complete identities are reported rather than resolved by legacy first-match order. Production `OWL` packages contain no memo corpus.
+- **Open questions:** No policy decision blocks the implemented explicit-save behavior. Mark `REPLACED` only after the memo panel and copy controls complete desktop acceptance; decide separately whether undo or a versioned future schema is desired.
+- **Inline annotation:** `UABS.UnityAssets/Packages/Memos/PackageMemoService.cs`.
 
 ## Explicit exclusions and watch items
 

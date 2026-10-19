@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using UABS.Services;
 using UABS.UnityAssets;
 using UABS.UnityAssets.Packages;
+using UABS.UnityAssets.Packages.Memos;
 
 namespace UABS.ViewModels;
 
@@ -17,7 +18,7 @@ public enum PackageEditorItemKind
     Asset
 }
 
-public sealed class PackageEditorItemViewModel
+public sealed class PackageEditorItemViewModel : ViewModelBase
 {
     internal PackageEditorItemViewModel(
         PackageIndex index,
@@ -33,6 +34,8 @@ public sealed class PackageEditorItemViewModel
     internal PackageBundleReference Source { get; }
     internal PackageAssetReference? Asset { get; }
     public PackageEditorItemKind Kind => Asset is null ? PackageEditorItemKind.Source : PackageEditorItemKind.Asset;
+    public bool IsSource => Kind == PackageEditorItemKind.Source;
+    public string TypeLabel => IsSource ? "Source" : "Asset (type unavailable)";
     public string Name => Asset?.Name ?? Source.Name;
     public string SourceName => Source.Name;
     public string SourcePath => Source.Path;
@@ -40,6 +43,11 @@ public sealed class PackageEditorItemViewModel
     public long? PathId => Asset?.PathId;
     public string? Memo => Asset?.Memo;
     public string IndexDirectory => Index.RelativeDirectory;
+    public string TechnicalDetails => IsSource
+        ? $"CAB: {CabCode} · Original path: {SourcePath} · Index: {IndexDirectory}"
+        : $"Source: {SourceName} · CAB: {CabCode} · Path ID: {PathId} · Original path: {SourcePath} · Index: {IndexDirectory}";
+
+    internal void NotifyMemoChanged() => OnPropertyChanged(nameof(Memo));
 }
 
 public sealed class PackageEditorViewModel : ViewModelBase, IDisposable
@@ -47,10 +55,14 @@ public sealed class PackageEditorViewModel : ViewModelBase, IDisposable
     private readonly IFilePickerService _filePicker;
     private readonly IUserConfirmationService _confirmations;
     private readonly IPackageService _packageService;
+    private readonly IPackageMemoService _memoService;
+    private readonly IPackageWriteCoordinator _writeCoordinator;
+    private readonly IPackageEditorSessionController? _editorSessionController;
     private readonly Func<string, PackageDocument, Task>? _saved;
     private readonly CancellationTokenSource _lifetime = new();
     private CancellationTokenSource? _saveCancellation;
     private CancellationTokenSource? _importCancellation;
+    private CancellationTokenSource? _memoCancellation;
     private PackageDocument? _workingDocument;
     private IReadOnlyList<PackageEditorItemViewModel> _items = [];
     private PackageEditorItemViewModel? _selectedItem;
@@ -65,6 +77,9 @@ public sealed class PackageEditorViewModel : ViewModelBase, IDisposable
     private bool _isSaving;
     private bool _isImporting;
     private bool _includeSubfolders;
+    private bool _isApplyingMemos;
+    private bool _loadingMemo;
+    private string _memoText = string.Empty;
     private int _editVersion;
     private bool _disposed;
 
@@ -72,11 +87,17 @@ public sealed class PackageEditorViewModel : ViewModelBase, IDisposable
         IFilePickerService filePicker,
         IUserConfirmationService confirmations,
         IPackageService packageService,
-        Func<string, PackageDocument, Task>? saved = null)
+        Func<string, PackageDocument, Task>? saved = null,
+        IPackageMemoService? memoService = null,
+        IPackageWriteCoordinator? writeCoordinator = null,
+        IPackageEditorSessionController? editorSessionController = null)
     {
         _filePicker = filePicker;
         _confirmations = confirmations;
         _packageService = packageService;
+        _memoService = memoService ?? new PackageMemoService();
+        _writeCoordinator = writeCoordinator ?? new PackageWriteCoordinator();
+        _editorSessionController = editorSessionController;
         _saved = saved;
         NewCommand = new AsyncCommand(() => StartNewAsync());
         ChooseDestinationCommand = new AsyncCommand(ChooseDestinationAsync, () => IsEditing && !IsOperationRunning);
@@ -86,6 +107,8 @@ public sealed class PackageEditorViewModel : ViewModelBase, IDisposable
         SaveCommand = new AsyncCommand(SaveAsync, () => IsEditing && !IsOperationRunning);
         CancelSaveCommand = new RelayCommand(CancelCurrentOperation, () => IsOperationRunning);
         DiscardCommand = new AsyncCommand(DiscardAsync, () => IsEditing && !IsOperationRunning);
+        CloseEditorCommand = new AsyncCommand(CloseEditorAsync, () => IsEditing && !IsOperationRunning);
+        ClearMemoCommand = new RelayCommand(ClearSelectedMemo, () => IsMemoEditable && !IsOperationRunning);
     }
 
     public AsyncCommand NewCommand { get; }
@@ -96,6 +119,8 @@ public sealed class PackageEditorViewModel : ViewModelBase, IDisposable
     public AsyncCommand SaveCommand { get; }
     public RelayCommand CancelSaveCommand { get; }
     public AsyncCommand DiscardCommand { get; }
+    public AsyncCommand CloseEditorCommand { get; }
+    public RelayCommand ClearMemoCommand { get; }
 
     public IReadOnlyList<PackageEditorItemViewModel> Items
     {
@@ -119,7 +144,14 @@ public sealed class PackageEditorViewModel : ViewModelBase, IDisposable
         set
         {
             if (SetField(ref _selectedItem, value))
+            {
                 RemoveSelectedCommand.NotifyCanExecuteChanged();
+                LoadSelectedMemo();
+                OnPropertyChanged(nameof(IsMemoEditable));
+                OnPropertyChanged(nameof(MemoTargetDescription));
+                OnPropertyChanged(nameof(MemoStorageDescription));
+                ClearMemoCommand.NotifyCanExecuteChanged();
+            }
         }
     }
 
@@ -226,7 +258,48 @@ public sealed class PackageEditorViewModel : ViewModelBase, IDisposable
         }
     }
 
-    public bool IsOperationRunning => IsSaving || IsImporting;
+    public bool IsApplyingMemos
+    {
+        get => _isApplyingMemos;
+        private set
+        {
+            if (SetField(ref _isApplyingMemos, value))
+            {
+                OnPropertyChanged(nameof(IsOperationRunning));
+                NotifyCommands();
+            }
+        }
+    }
+
+    public bool IsOperationRunning => IsSaving || IsImporting || IsApplyingMemos;
+
+    public string MemoText
+    {
+        get => _memoText;
+        set
+        {
+            value ??= string.Empty;
+            if (!SetField(ref _memoText, value) || _loadingMemo || !IsMemoEditable)
+                return;
+
+            SetSelectedMemo(value);
+        }
+    }
+
+    public bool IsMemoEditable => SelectedItem?.Asset is not null;
+    public string MemoTargetDescription => SelectedItem switch
+    {
+        null => "Select an asset row to view or edit its memo.",
+        { Asset: null } => "The legacy format has no package, directory, or source-level memo field.",
+        var item => $"{item.Name} — {item.SourceName} — Path ID {item.PathId}"
+    };
+    public string MemoStorageDescription => SelectedItem?.Asset?.Memo switch
+    {
+        null when SelectedItem?.Asset is not null => "Absent: no Memo field is stored. Typing or Clear writes a local asset memo.",
+        "" => "Empty: an explicit empty Memo value is stored on this asset.",
+        not null => "Local: this Memo value is stored directly on the asset record.",
+        _ => "Memo editing is available only for asset rows."
+    };
 
     public bool HasItems => Items.Count > 0;
     public bool HasError => !string.IsNullOrWhiteSpace(Error);
@@ -247,6 +320,7 @@ public sealed class PackageEditorViewModel : ViewModelBase, IDisposable
             return false;
 
         _workingDocument = new PackageDocument([new PackageIndex(string.Empty)]);
+        _editorSessionController?.SetActivePackage(null);
         SetEditorValues(string.Empty, suggestedDestination ?? string.Empty, isNew: true, isDirty: true);
         Status = "New empty package. Enter a name, choose a destination, and optionally add assets.";
         return true;
@@ -269,6 +343,7 @@ public sealed class PackageEditorViewModel : ViewModelBase, IDisposable
             return false;
 
         _workingDocument = package.CloneForEditing();
+        _editorSessionController?.SetActivePackage(package.PackagePath);
         string destination = package.PackagePath is null ? string.Empty : Path.GetDirectoryName(package.PackagePath) ?? string.Empty;
         SetEditorValues(packageName, destination, isNew: false, isDirty: false);
         Status = $"Editing {packageName}. Changes are isolated until Save completes and the package is reopened.";
@@ -510,10 +585,12 @@ public sealed class PackageEditorViewModel : ViewModelBase, IDisposable
         Status = $"Removed {selected.Name}. Save to persist this change.";
     }
 
-    public async Task SaveAsync()
+    public async Task SaveAsync() => await SaveCoreAsync().ConfigureAwait(true);
+
+    private async Task<bool> SaveCoreAsync()
     {
         if (_workingDocument is null || IsOperationRunning)
-            return;
+            return false;
 
         Error = null;
         string? validation = ValidatePackageName(PackageName);
@@ -521,13 +598,13 @@ public sealed class PackageEditorViewModel : ViewModelBase, IDisposable
         {
             Error = validation;
             Status = "Correct the package information before saving.";
-            return;
+            return false;
         }
         if (string.IsNullOrWhiteSpace(DestinationDirectory))
         {
             Error = "Choose a package destination directory before saving.";
             Status = "A destination is required.";
-            return;
+            return false;
         }
 
         string parent;
@@ -544,7 +621,7 @@ public sealed class PackageEditorViewModel : ViewModelBase, IDisposable
         {
             Error = $"The package destination is invalid: {exception.Message}";
             Status = "Correct the package destination before saving.";
-            return;
+            return false;
         }
 
         bool overwrite = Directory.Exists(target);
@@ -559,7 +636,7 @@ public sealed class PackageEditorViewModel : ViewModelBase, IDisposable
             if (!confirmed)
             {
                 Status = "Save cancelled; no files were changed.";
-                return;
+                return false;
             }
         }
 
@@ -575,25 +652,39 @@ public sealed class PackageEditorViewModel : ViewModelBase, IDisposable
         });
 
         IsSaving = true;
+        _editorSessionController?.SetActivePackage(target);
         Status = $"Saving {PackageName.Trim()}...";
+        bool savedCurrentVersion = false;
         try
         {
-            await _packageService.SaveAsync(snapshot, target, overwrite, progress, token);
-            PackageDocument reopened = await _packageService.LoadAsync(target, cancellationToken: CancellationToken.None);
+            await _writeCoordinator.ExecutePackageWriteAsync(
+                target,
+                async coordinatedToken =>
+                {
+                    int? cleanVersion = null;
+                    await _packageService.SaveAsync(snapshot, target, overwrite, progress, coordinatedToken);
+                    PackageDocument reopened = await _packageService.LoadAsync(
+                        target,
+                        cancellationToken: CancellationToken.None);
 
-            if (editVersion == _editVersion)
-            {
-                _workingDocument = reopened.CloneForEditing();
-                SetEditorValues(Path.GetFileName(target), parent, isNew: false, isDirty: false);
-                Status = $"Saved and verified {Path.GetFileName(target)}.";
-            }
-            else
-            {
-                Status = "The saved snapshot was verified, but newer unsaved edits remain.";
-            }
+                    if (editVersion == _editVersion)
+                    {
+                        _workingDocument = reopened.CloneForEditing();
+                        SetEditorValues(Path.GetFileName(target), parent, isNew: false, isDirty: false);
+                        cleanVersion = _editVersion;
+                        Status = $"Saved and verified {Path.GetFileName(target)}.";
+                    }
+                    else
+                    {
+                        Status = "The saved snapshot was verified, but newer unsaved edits remain.";
+                    }
 
-            if (_saved is not null)
-                await _saved(target, reopened);
+                    if (_saved is not null)
+                        await _saved(target, reopened);
+
+                    savedCurrentVersion = cleanVersion == _editVersion && !IsDirty;
+                },
+                token);
         }
         catch (OperationCanceledException) when (token.IsCancellationRequested)
         {
@@ -614,6 +705,8 @@ public sealed class PackageEditorViewModel : ViewModelBase, IDisposable
             _saveCancellation = null;
             IsSaving = false;
         }
+
+        return savedCurrentVersion;
     }
 
     public void CancelSave() => CancelCurrentOperation();
@@ -622,11 +715,102 @@ public sealed class PackageEditorViewModel : ViewModelBase, IDisposable
     {
         _saveCancellation?.Cancel();
         _importCancellation?.Cancel();
+        _memoCancellation?.Cancel();
+    }
+
+    public async Task ApplyMemoInheritanceAsync(
+        string sourcePackageName,
+        PackageDocument source,
+        PackageMemoInheritanceMode mode)
+    {
+        ArgumentNullException.ThrowIfNull(source);
+        if (_workingDocument is null || IsOperationRunning)
+            return;
+
+        int version = _editVersion;
+        PackageMemoIdentity? selection = CreateMemoIdentity(SelectedItem);
+        PackageDocument sourceSnapshot = source.CloneForEditing();
+        PackageDocument targetSnapshot = _workingDocument.CloneForEditing();
+        _memoCancellation = CancellationTokenSource.CreateLinkedTokenSource(_lifetime.Token);
+        CancellationToken token = _memoCancellation.Token;
+        Error = null;
+        IsApplyingMemos = true;
+        Status = $"Applying {mode} memo inheritance from {sourcePackageName}...";
+        try
+        {
+            PackageMemoInheritanceResult result = await Task.Run(
+                () => _memoService.Inherit(sourceSnapshot, targetSnapshot, mode, token),
+                token);
+            token.ThrowIfCancellationRequested();
+            if (version != _editVersion)
+                return;
+
+            if (result.ChangedCount > 0)
+            {
+                _workingDocument = result.Document;
+                RefreshItems(selection);
+                MarkDirty();
+            }
+
+            Status = $"Memo inheritance complete: {result.ChangedCount:N0} changed, "
+                + $"{result.UnchangedCount:N0} already equal, {result.SkippedByModeCount:N0} skipped by {mode}, "
+                + $"{result.MissingMatchCount:N0} unmatched, {result.AmbiguousMatchCount:N0} ambiguous."
+                + (result.ChangedCount > 0 ? " Save to persist these memo changes." : string.Empty);
+            if (result.Issues.Count > 0)
+                Error = $"{result.Issues.Count:N0} inheritance conflict(s) were left unchanged. First: {result.Issues[0].Diagnostic}";
+        }
+        catch (OperationCanceledException) when (token.IsCancellationRequested)
+        {
+            Status = "Memo inheritance cancelled; no inheritance results were applied.";
+        }
+        catch (Exception exception) when (exception is InvalidOperationException or ArgumentException)
+        {
+            Error = exception.Message;
+            Status = "Memo inheritance failed; no inheritance results were applied.";
+        }
+        finally
+        {
+            _memoCancellation?.Dispose();
+            _memoCancellation = null;
+            IsApplyingMemos = false;
+        }
     }
 
     public async Task DiscardAsync()
     {
         await TryAbandonAsync("Discard package changes?").ConfigureAwait(true);
+    }
+
+    public async Task CloseEditorAsync()
+    {
+        if (!IsEditing || IsOperationRunning)
+            return;
+
+        if (!IsDirty)
+        {
+            CloseEditor();
+            return;
+        }
+
+        UnsavedChangesChoice choice = await _confirmations.ConfirmSaveDiscardCancelAsync(
+            "Close Package Editor?",
+            "This package has unsaved changes. Save them before closing, discard them, or keep editing?",
+            _lifetime.Token).ConfigureAwait(true);
+
+        switch (choice)
+        {
+            case UnsavedChangesChoice.Save:
+                if (await SaveCoreAsync().ConfigureAwait(true))
+                    CloseEditor();
+                break;
+            case UnsavedChangesChoice.Discard:
+                CloseEditor();
+                break;
+            case UnsavedChangesChoice.Cancel:
+                break;
+            default:
+                throw new ArgumentOutOfRangeException(nameof(choice), choice, null);
+        }
     }
 
     public Task<bool> ConfirmCloseAsync() => ConfirmAbandonAsync("Close UABS with unsaved package changes?");
@@ -639,8 +823,11 @@ public sealed class PackageEditorViewModel : ViewModelBase, IDisposable
         _lifetime.Cancel();
         _saveCancellation?.Cancel();
         _importCancellation?.Cancel();
+        _memoCancellation?.Cancel();
         _saveCancellation?.Dispose();
         _importCancellation?.Dispose();
+        _memoCancellation?.Dispose();
+        _editorSessionController?.SetActivePackage(null);
         _lifetime.Dispose();
     }
 
@@ -756,6 +943,7 @@ public sealed class PackageEditorViewModel : ViewModelBase, IDisposable
 
     private void CloseEditor()
     {
+        _editorSessionController?.SetActivePackage(null);
         _workingDocument = null;
         _packageName = string.Empty;
         _destinationDirectory = string.Empty;
@@ -772,13 +960,86 @@ public sealed class PackageEditorViewModel : ViewModelBase, IDisposable
         _editVersion++;
     }
 
-    private void RefreshItems()
+    private void RefreshItems(PackageMemoIdentity? selection = null)
     {
         Items = _workingDocument?.Indexes.SelectMany(index => index.Bundles.SelectMany(source =>
                 new[] { new PackageEditorItemViewModel(index, source, null) }
                     .Concat(source.AssetInfos.Select(asset => new PackageEditorItemViewModel(index, source, asset)))))
             .ToArray() ?? [];
+        if (selection is not null)
+        {
+            PackageEditorItemViewModel[] matches = Items.Where(item => item.Asset is not null
+                && string.Equals(item.IndexDirectory, selection.IndexDirectory, StringComparison.OrdinalIgnoreCase)
+                && PackagePathComparer.Equals(item.SourcePath, selection.SourcePath)
+                && item.Asset.PathId == selection.PathId
+                && string.Equals(item.Asset.Name, selection.AssetName, StringComparison.Ordinal))
+                .Take(2)
+                .ToArray();
+            SelectedItem = matches.Length == 1 ? matches[0] : null;
+        }
     }
+
+    private void LoadSelectedMemo()
+    {
+        _loadingMemo = true;
+        try
+        {
+            MemoText = SelectedItem?.Asset?.Memo ?? string.Empty;
+        }
+        finally
+        {
+            _loadingMemo = false;
+        }
+    }
+
+    private void ClearSelectedMemo()
+    {
+        if (!IsMemoEditable || IsOperationRunning)
+            return;
+        SetSelectedMemo(string.Empty);
+        _loadingMemo = true;
+        try
+        {
+            if (!SetField(ref _memoText, string.Empty, nameof(MemoText)))
+                OnPropertyChanged(nameof(MemoText));
+        }
+        finally
+        {
+            _loadingMemo = false;
+        }
+    }
+
+    private void SetSelectedMemo(string value)
+    {
+        if (_workingDocument is null || SelectedItem?.Asset is null)
+            return;
+
+        PackageMemoIdentity identity = CreateMemoIdentity(SelectedItem)!;
+        try
+        {
+            if (!_memoService.SetLocalMemo(_workingDocument, identity, value))
+                return;
+            SelectedItem.NotifyMemoChanged();
+            OnPropertyChanged(nameof(MemoStorageDescription));
+            MarkDirty();
+            Status = "Memo changed in the editor. Save the package to persist it.";
+            Error = null;
+        }
+        catch (InvalidOperationException exception)
+        {
+            Error = exception.Message;
+            LoadSelectedMemo();
+        }
+    }
+
+    private PackageMemoIdentity? CreateMemoIdentity(PackageEditorItemViewModel? item) => item?.Asset is null
+        ? null
+        : new PackageMemoIdentity(
+            _workingDocument?.PackagePath,
+            item.IndexDirectory,
+            item.SourcePath,
+            item.Asset.Name,
+            item.Asset.PathId);
 
     private void MarkDirty()
     {
@@ -797,6 +1058,8 @@ public sealed class PackageEditorViewModel : ViewModelBase, IDisposable
         SaveCommand.NotifyCanExecuteChanged();
         CancelSaveCommand.NotifyCanExecuteChanged();
         DiscardCommand.NotifyCanExecuteChanged();
+        CloseEditorCommand.NotifyCanExecuteChanged();
+        ClearMemoCommand.NotifyCanExecuteChanged();
     }
 
     private static string? ValidatePackageName(string value)

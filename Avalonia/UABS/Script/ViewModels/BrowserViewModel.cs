@@ -17,13 +17,18 @@ public sealed class BrowserViewModel : ViewModelBase, IDisposable
     private readonly List<string> _backHistory = [];
     private readonly List<string> _forwardHistory = [];
     private CancellationTokenSource? _navigationCancellation;
+    private CancellationTokenSource? _activationCancellation;
+    private Task _activationTask = Task.CompletedTask;
+    private string? _activatingPath;
     private IReadOnlyList<BrowserEntry> _entries = [];
     private BrowserEntry? _selectedEntry;
     private string _currentPath = string.Empty;
     private string _locationInput = string.Empty;
     private string? _errorMessage;
     private bool _isLoading;
+    private bool _isActivating;
     private int _navigationVersion;
+    private int _activationVersion;
     private bool _initialized;
     private bool _disposed;
 
@@ -52,7 +57,11 @@ public sealed class BrowserViewModel : ViewModelBase, IDisposable
     public IReadOnlyList<BrowserEntry> Entries
     {
         get => _entries;
-        private set => SetField(ref _entries, value);
+        private set
+        {
+            if (SetField(ref _entries, value))
+                OnPropertyChanged(nameof(ShowEmptyMessage));
+        }
     }
 
     public BrowserEntry? SelectedEntry
@@ -74,6 +83,7 @@ public sealed class BrowserViewModel : ViewModelBase, IDisposable
             {
                 OnPropertyChanged(nameof(HasCurrentPath));
                 OnPropertyChanged(nameof(CanGoUp));
+                OnPropertyChanged(nameof(ShowEmptyMessage));
                 RefreshCommand.NotifyCanExecuteChanged();
                 UpCommand.NotifyCanExecuteChanged();
             }
@@ -96,7 +106,10 @@ public sealed class BrowserViewModel : ViewModelBase, IDisposable
         private set
         {
             if (SetField(ref _errorMessage, value))
+            {
                 OnPropertyChanged(nameof(HasError));
+                OnPropertyChanged(nameof(ShowEmptyMessage));
+            }
         }
     }
 
@@ -105,10 +118,21 @@ public sealed class BrowserViewModel : ViewModelBase, IDisposable
     public bool IsLoading
     {
         get => _isLoading;
-        private set => SetField(ref _isLoading, value);
+        private set
+        {
+            if (SetField(ref _isLoading, value))
+                OnPropertyChanged(nameof(ShowEmptyMessage));
+        }
+    }
+
+    public bool IsActivating
+    {
+        get => _isActivating;
+        private set => SetField(ref _isActivating, value);
     }
 
     public bool HasCurrentPath => !string.IsNullOrWhiteSpace(CurrentPath);
+    public bool ShowEmptyMessage => HasCurrentPath && !IsLoading && !HasError && Entries.Count == 0;
     public bool CanGoBack => _backHistory.Count > 0;
     public bool CanGoForward => _forwardHistory.Count > 0;
     public bool CanGoUp => HasCurrentPath && Directory.GetParent(CurrentPath) is not null;
@@ -150,12 +174,38 @@ public sealed class BrowserViewModel : ViewModelBase, IDisposable
         return parent is null ? Task.CompletedTask : NavigateCoreAsync(parent.FullName, NavigationKind.New);
     }
 
+    public Task ActivateEntryAsync(BrowserEntry? entry)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        if (entry is null)
+            return Task.CompletedTask;
+
+        if (!_activationTask.IsCompleted
+            && string.Equals(_activatingPath, entry.FullPath, StringComparison.OrdinalIgnoreCase))
+        {
+            return _activationTask;
+        }
+
+        _activationCancellation?.Cancel();
+        var cancellation = new CancellationTokenSource();
+        _activationCancellation = cancellation;
+        _activatingPath = entry.FullPath;
+        int version = ++_activationVersion;
+        IsActivating = true;
+        _activationTask = ActivateCoreAsync(entry, cancellation, version);
+        return _activationTask;
+    }
+
     public void Dispose()
     {
         if (_disposed)
             return;
 
         _disposed = true;
+        _activationVersion++;
+        _activationCancellation?.Cancel();
+        _activationCancellation?.Dispose();
+        _activationCancellation = null;
         _navigationCancellation?.Cancel();
         _navigationCancellation?.Dispose();
     }
@@ -177,19 +227,52 @@ public sealed class BrowserViewModel : ViewModelBase, IDisposable
         }
     }
 
-    private async Task OpenSelectedAsync()
-    {
-        BrowserEntry? selected = SelectedEntry;
-        if (selected is null)
-            return;
+    private Task OpenSelectedAsync() => ActivateEntryAsync(SelectedEntry);
 
-        if (selected.IsDirectory)
-            await NavigateAsync(selected.FullPath);
-        else
-            await _openFile(selected.FullPath, CancellationToken.None);
+    private async Task ActivateCoreAsync(
+        BrowserEntry entry,
+        CancellationTokenSource cancellation,
+        int version)
+    {
+        try
+        {
+            if (entry.IsDirectory)
+            {
+                await NavigateCoreAsync(entry.FullPath, NavigationKind.New, cancellation.Token);
+            }
+            else
+            {
+                CancelPendingNavigation();
+                await _openFile(entry.FullPath, cancellation.Token);
+            }
+        }
+        catch (OperationCanceledException) when (cancellation.IsCancellationRequested)
+        {
+        }
+        catch (Exception exception)
+        {
+            if (version == _activationVersion)
+            {
+                ErrorMessage = $"The selected item could not be opened: {exception.Message}";
+                Printer.PrintException("Filesystem item activation failed.", exception);
+            }
+        }
+        finally
+        {
+            cancellation.Dispose();
+            if (version == _activationVersion)
+            {
+                _activationCancellation = null;
+                _activatingPath = null;
+                IsActivating = false;
+            }
+        }
     }
 
-    private async Task NavigateCoreAsync(string path, NavigationKind kind)
+    private async Task NavigateCoreAsync(
+        string path,
+        NavigationKind kind,
+        CancellationToken cancellationToken = default)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
         if (string.IsNullOrWhiteSpace(path))
@@ -197,7 +280,7 @@ public sealed class BrowserViewModel : ViewModelBase, IDisposable
 
         _navigationCancellation?.Cancel();
         _navigationCancellation?.Dispose();
-        _navigationCancellation = new CancellationTokenSource();
+        _navigationCancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         CancellationToken token = _navigationCancellation.Token;
         int version = ++_navigationVersion;
         IsLoading = true;
@@ -229,6 +312,15 @@ public sealed class BrowserViewModel : ViewModelBase, IDisposable
             if (version == _navigationVersion)
                 IsLoading = false;
         }
+    }
+
+    private void CancelPendingNavigation()
+    {
+        _navigationVersion++;
+        _navigationCancellation?.Cancel();
+        _navigationCancellation?.Dispose();
+        _navigationCancellation = null;
+        IsLoading = false;
     }
 
     private void CommitHistory(NavigationKind kind, string destination)

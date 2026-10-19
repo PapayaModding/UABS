@@ -1,5 +1,6 @@
 using UABS.Services;
 using UABS.UnityAssets.Packages;
+using UABS.UnityAssets.Packages.Memos;
 using UABS.ViewModels;
 
 namespace UABS.UnityAssets.Tests;
@@ -131,6 +132,95 @@ public sealed class PackageEditorViewModelTests
     }
 
     [Fact]
+    public async Task CloseEditor_CleanSessionClosesAndReleasesGuardWithoutPrompt()
+    {
+        PackageEditorSessionGuard guard = new();
+        QueueCloseConfirmation confirmations = new();
+        PackageDocument package = Document("clean", Asset("Hero", 10));
+        using PackageEditorViewModel editor = CreateEditor(
+            confirmations: confirmations,
+            editorSessionController: guard);
+        await editor.StartEditAsync("clean", package);
+        Assert.True(guard.IsPackageOpen(package.PackagePath!));
+
+        await editor.CloseEditorAsync();
+
+        Assert.False(editor.IsEditing);
+        Assert.False(guard.IsPackageOpen(package.PackagePath!));
+        Assert.Equal(0, confirmations.CloseCalls);
+    }
+
+    [Fact]
+    public async Task CloseEditor_DirtySavePersistsThenClosesAndReleasesGuard()
+    {
+        using TemporaryDirectory temporary = new();
+        string target = Path.Combine(temporary.Path, "memo");
+        PackageService service = new();
+        await service.SaveAsync(Document("memo", Asset("Hero", 10, "old")), target, overwrite: true);
+        PackageDocument package = await service.LoadAsync(target);
+        PackageEditorSessionGuard guard = new();
+        QueueCloseConfirmation confirmations = new(UnsavedChangesChoice.Save) { ConfirmResult = true };
+        using PackageEditorViewModel editor = CreateEditor(
+            service: service,
+            confirmations: confirmations,
+            editorSessionController: guard);
+        await editor.StartEditAsync("memo", package);
+        editor.SelectedItem = editor.Items.Single(item => item.Kind == PackageEditorItemKind.Asset);
+        editor.MemoText = "saved while closing";
+
+        await editor.CloseEditorAsync();
+
+        PackageDocument reopened = await service.LoadAsync(target);
+        Assert.False(editor.IsEditing);
+        Assert.False(guard.IsPackageOpen(target));
+        Assert.Equal("saved while closing", reopened.Bundles.Single().AssetInfos.Single().Memo);
+    }
+
+    [Fact]
+    public async Task CloseEditor_DirtySaveFailureKeepsEditorDirtyAndGuardActive()
+    {
+        using TemporaryDirectory temporary = new();
+        string target = Path.Combine(temporary.Path, "failure");
+        ControlledPackageService service = new(saveError: new IOException("disk full"));
+        PackageEditorSessionGuard guard = new();
+        using PackageEditorViewModel editor = CreateEditor(
+            service: service,
+            confirmations: new QueueCloseConfirmation(UnsavedChangesChoice.Save),
+            editorSessionController: guard);
+        await editor.StartEditAsync("failure", new PackageDocument([new PackageIndex(string.Empty)], target));
+        editor.PackageName = "changed";
+
+        await editor.CloseEditorAsync();
+
+        Assert.True(editor.IsEditing);
+        Assert.True(editor.IsDirty);
+        Assert.Contains("disk full", editor.Error!, StringComparison.OrdinalIgnoreCase);
+        Assert.True(guard.IsPackageOpen(Path.Combine(temporary.Path, "changed")));
+    }
+
+    [Theory]
+    [InlineData(UnsavedChangesChoice.Discard, false)]
+    [InlineData(UnsavedChangesChoice.Cancel, true)]
+    public async Task CloseEditor_DirtyDiscardOrCancelUsesExplicitChoice(
+        UnsavedChangesChoice choice,
+        bool remainsOpen)
+    {
+        PackageEditorSessionGuard guard = new();
+        PackageDocument package = Document("choice", Asset("Hero", 10));
+        using PackageEditorViewModel editor = CreateEditor(
+            confirmations: new QueueCloseConfirmation(choice),
+            editorSessionController: guard);
+        await editor.StartEditAsync("choice", package);
+        editor.PackageName = "changed";
+
+        await editor.CloseEditorAsync();
+
+        Assert.Equal(remainsOpen, editor.IsEditing);
+        Assert.Equal(remainsOpen, editor.IsDirty);
+        Assert.Equal(remainsOpen, guard.IsPackageOpen(package.PackagePath!));
+    }
+
+    [Fact]
     public async Task AddMissingSource_ShowsErrorAndKeepsEditorConsistent()
     {
         QueuePicker picker = new(files: [Path.Combine(Path.GetTempPath(), $"missing-{Guid.NewGuid():N}.assets")]);
@@ -161,6 +251,37 @@ public sealed class PackageEditorViewModelTests
     }
 
     [Fact]
+    public async Task ExplicitSaveUsesCoordinatorThroughVerificationAndPublication()
+    {
+        using TemporaryDirectory temporary = new();
+        ControlledPackageService service = new();
+        TrackingWriteCoordinator coordinator = new();
+        bool callbackObservedLock = false;
+        using PackageEditorViewModel editor = CreateEditor(
+            service: service,
+            saved: (_, _) =>
+            {
+                callbackObservedLock = coordinator.IsExecuting;
+                return Task.CompletedTask;
+            },
+            writeCoordinator: coordinator);
+        await editor.StartNewAsync();
+        editor.PackageName = "coordinated";
+        editor.DestinationDirectory = temporary.Path;
+
+        Assert.Equal(0, coordinator.Calls);
+        Assert.Equal(0, service.SaveCalls);
+
+        await editor.SaveAsync();
+
+        Assert.Equal(1, coordinator.Calls);
+        Assert.Equal(Path.Combine(temporary.Path, "coordinated"), coordinator.LastPath);
+        Assert.Equal(1, service.SaveCalls);
+        Assert.True(callbackObservedLock);
+        Assert.False(editor.IsDirty);
+    }
+
+    [Fact]
     public async Task CancelSave_CancelsOneOperationAndRetainsChanges()
     {
         using TemporaryDirectory temporary = new();
@@ -181,6 +302,41 @@ public sealed class PackageEditorViewModelTests
     }
 
     [Fact]
+    public async Task CancelWhileWaitingForPackageLockDoesNotStartWriter()
+    {
+        using TemporaryDirectory temporary = new();
+        string target = Path.Combine(temporary.Path, "waiting");
+        PackageWriteCoordinator coordinator = new();
+        TaskCompletionSource holderEntered = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource releaseHolder = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        Task holder = coordinator.ExecutePackageWriteAsync(
+            target,
+            async _ =>
+            {
+                holderEntered.SetResult();
+                await releaseHolder.Task;
+            });
+        await holderEntered.Task;
+
+        ControlledPackageService service = new();
+        using PackageEditorViewModel editor = CreateEditor(service: service, writeCoordinator: coordinator);
+        await editor.StartNewAsync();
+        editor.PackageName = "waiting";
+        editor.DestinationDirectory = temporary.Path;
+
+        Task save = editor.SaveAsync();
+        editor.CancelSave();
+        await save;
+
+        Assert.Equal(0, service.SaveCalls);
+        Assert.True(editor.IsDirty);
+        Assert.Contains("cancelled", editor.Status, StringComparison.OrdinalIgnoreCase);
+        releaseHolder.SetResult();
+        await holder;
+        Assert.Equal(0, coordinator.TrackedPathCount);
+    }
+
+    [Fact]
     public async Task MultipleRapidSaveAttempts_StartOnlyOneWrite()
     {
         using TemporaryDirectory temporary = new();
@@ -197,6 +353,27 @@ public sealed class PackageEditorViewModelTests
         await first;
 
         Assert.Equal(1, service.SaveCalls);
+    }
+
+    [Fact]
+    public async Task EditArrivingDuringCoordinatedSaveRemainsDirtyAfterVerification()
+    {
+        using TemporaryDirectory temporary = new();
+        ControlledPackageService service = new(blockSave: true);
+        using PackageEditorViewModel editor = CreateEditor(service: service);
+        await editor.StartNewAsync();
+        editor.PackageName = "snapshot";
+        editor.DestinationDirectory = temporary.Path;
+
+        Task save = editor.SaveAsync();
+        await service.SaveStarted.Task;
+        editor.PackageName = "newer edit";
+        service.ReleaseSave.SetResult();
+        await save;
+
+        Assert.True(editor.IsDirty);
+        Assert.Equal("newer edit", editor.PackageName);
+        Assert.Contains("newer unsaved edits", editor.Status, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
@@ -500,15 +677,163 @@ public sealed class PackageEditorViewModelTests
         Assert.Empty(editor.Items);
     }
 
+    [Fact]
+    public async Task MemoEdit_SurvivesSelectionChangesAndDoesNotMutateLoadedPackage()
+    {
+        PackageDocument original = Document("memo", Asset("First", 1, "old"), Asset("Second", 2));
+        using PackageEditorViewModel editor = CreateEditor();
+        await editor.StartEditAsync("memo", original);
+        PackageEditorItemViewModel first = editor.Items.Single(item => item.Name == "First");
+        PackageEditorItemViewModel second = editor.Items.Single(item => item.Name == "Second");
+
+        editor.SelectedItem = first;
+        editor.MemoText = "unsaved text";
+        editor.SelectedItem = second;
+        editor.SelectedItem = first;
+
+        Assert.Equal("unsaved text", editor.MemoText);
+        Assert.Equal("unsaved text", first.Memo);
+        Assert.True(editor.IsDirty);
+        Assert.Equal("old", original.Bundles.Single().AssetInfos[0].Memo);
+    }
+
+    [Fact]
+    public async Task MemoEditor_ExplainsUnsupportedSourceRowsWithoutChangingState()
+    {
+        PackageDocument original = Document("memo", Asset("Asset", 1, "kept"));
+        using PackageEditorViewModel editor = CreateEditor();
+        await editor.StartEditAsync("memo", original);
+
+        editor.SelectedItem = editor.Items.Single(item => item.Kind == PackageEditorItemKind.Source);
+        editor.MemoText = "ignored";
+
+        Assert.False(editor.IsMemoEditable);
+        Assert.Contains("no package, directory, or source-level", editor.MemoTargetDescription, StringComparison.OrdinalIgnoreCase);
+        Assert.False(editor.IsDirty);
+        Assert.Equal("kept", original.Bundles.Single().AssetInfos[0].Memo);
+    }
+
+    [Fact]
+    public async Task ClearMemo_WritesExplicitEmptyValue()
+    {
+        PackageDocument original = Document("memo", Asset("Asset", 1));
+        using PackageEditorViewModel editor = CreateEditor();
+        await editor.StartEditAsync("memo", original);
+        editor.SelectedItem = editor.Items.Single(item => item.Kind == PackageEditorItemKind.Asset);
+
+        editor.ClearMemoCommand.Execute(null);
+
+        Assert.Equal(string.Empty, editor.SelectedItem.Memo);
+        Assert.Contains("explicit empty", editor.MemoStorageDescription, StringComparison.OrdinalIgnoreCase);
+        Assert.True(editor.IsDirty);
+    }
+
+    [Fact]
+    public async Task MemoEdit_SaveAndFreshReopen_PreservesValue()
+    {
+        using TemporaryDirectory temporary = new();
+        PackageService service = new();
+        PackageDocument original = Document("memo", Asset("Asset", 1));
+        using PackageEditorViewModel editor = CreateEditor(service: service);
+        await editor.StartEditAsync("memo", original);
+        editor.DestinationDirectory = temporary.Path;
+        editor.SelectedItem = editor.Items.Single(item => item.Kind == PackageEditorItemKind.Asset);
+        editor.MemoText = "persisted";
+
+        await editor.SaveAsync();
+        PackageDocument reopened = await service.LoadAsync(Path.Combine(temporary.Path, "memo"));
+
+        Assert.False(editor.IsDirty);
+        Assert.Equal("persisted", reopened.Bundles.Single().AssetInfos.Single().Memo);
+    }
+
+    [Fact]
+    public async Task MemoEdit_SaveFailureRetainsTextAndDirtyState()
+    {
+        using TemporaryDirectory temporary = new();
+        ControlledPackageService service = new(saveError: new IOException("disk full"));
+        using PackageEditorViewModel editor = CreateEditor(service: service);
+        await editor.StartEditAsync("memo", Document("memo", Asset("Asset", 1)));
+        editor.DestinationDirectory = temporary.Path;
+        editor.SelectedItem = editor.Items.Single(item => item.Kind == PackageEditorItemKind.Asset);
+        editor.MemoText = "keep after failure";
+
+        await editor.SaveAsync();
+
+        Assert.True(editor.IsDirty);
+        Assert.Equal("keep after failure", editor.MemoText);
+        Assert.Equal("keep after failure", editor.SelectedItem.Memo);
+    }
+
+    [Fact]
+    public async Task MemoInheritance_PublishesTransactionalResultAndKeepsSelection()
+    {
+        PackageDocument target = new([
+            new PackageIndex("", [new PackageBundleReference
+            {
+                Name = "atlas_new.bundle",
+                Path = @"C:\game\new.bundle",
+                AssetInfos = [Asset("Asset", 2)]
+            }])
+        ], @"C:\packages\target");
+        PackageDocument source = new([
+            new PackageIndex("", [new PackageBundleReference
+            {
+                Name = "atlas_old.bundle",
+                Path = @"C:\game\old.bundle",
+                AssetInfos = [Asset("Asset", 1, "copied")]
+            }])
+        ], @"C:\packages\source");
+        using PackageEditorViewModel editor = CreateEditor();
+        await editor.StartEditAsync("target", target);
+        editor.SelectedItem = editor.Items.Single(item => item.Kind == PackageEditorItemKind.Asset);
+
+        await editor.ApplyMemoInheritanceAsync("source", source, PackageMemoInheritanceMode.Safe);
+
+        Assert.True(editor.IsDirty);
+        Assert.NotNull(editor.SelectedItem);
+        Assert.Equal("copied", editor.SelectedItem!.Memo);
+        Assert.Equal("copied", editor.MemoText);
+        Assert.Contains("1 changed", editor.Status, StringComparison.OrdinalIgnoreCase);
+        Assert.Null(target.Bundles.Single().AssetInfos.Single().Memo);
+    }
+
+    [Fact]
+    public async Task MemoInheritance_CancelOperationDoesNotPublishPartialResult()
+    {
+        BlockingMemoService memos = new();
+        PackageDocument target = Document("target", Asset("Asset", 1));
+        PackageDocument source = Document("source", Asset("Asset", 2, "source memo"));
+        using PackageEditorViewModel editor = CreateEditor(memoService: memos);
+        await editor.StartEditAsync("target", target);
+        editor.SelectedItem = editor.Items.Single(item => item.Kind == PackageEditorItemKind.Asset);
+
+        Task inheritance = editor.ApplyMemoInheritanceAsync("source", source, PackageMemoInheritanceMode.Safe);
+        await memos.Started.Task;
+        editor.CancelCurrentOperation();
+        await inheritance;
+
+        Assert.False(editor.IsApplyingMemos);
+        Assert.False(editor.IsDirty);
+        Assert.Null(editor.SelectedItem!.Memo);
+        Assert.Contains("cancelled", editor.Status, StringComparison.OrdinalIgnoreCase);
+    }
+
     private static PackageEditorViewModel CreateEditor(
         IFilePickerService? picker = null,
         IPackageService? service = null,
-        QueueConfirmation? confirmations = null,
-        Func<string, PackageDocument, Task>? saved = null) => new(
+        IUserConfirmationService? confirmations = null,
+        Func<string, PackageDocument, Task>? saved = null,
+        IPackageMemoService? memoService = null,
+        IPackageWriteCoordinator? writeCoordinator = null,
+        IPackageEditorSessionController? editorSessionController = null) => new(
             picker ?? new QueuePicker(),
             confirmations ?? new QueueConfirmation(true),
             service ?? new PackageService(),
-            saved);
+            saved,
+            memoService,
+            writeCoordinator,
+            editorSessionController);
 
     private static PackageDocument Document(string name, params PackageAssetReference[] assets) => new([
         new PackageIndex(string.Empty, [new PackageBundleReference
@@ -519,7 +844,12 @@ public sealed class PackageEditorViewModelTests
         }])
     ], $@"C:\packages\{name}");
 
-    private static PackageAssetReference Asset(string name, long pathId) => new() { Name = name, PathId = pathId };
+    private static PackageAssetReference Asset(string name, long pathId, string? memo = null) => new()
+    {
+        Name = name,
+        PathId = pathId,
+        Memo = memo
+    };
 
     private sealed class QueuePicker(IEnumerable<string>? files = null, IEnumerable<string>? folders = null) : IFilePickerService
     {
@@ -542,6 +872,29 @@ public sealed class PackageEditorViewModelTests
         }
     }
 
+    private sealed class QueueCloseConfirmation(params UnsavedChangesChoice[] choices) : IUserConfirmationService
+    {
+        private readonly Queue<UnsavedChangesChoice> _choices = new(choices);
+        public bool ConfirmResult { get; init; }
+        public int CloseCalls { get; private set; }
+
+        public Task<bool> ConfirmAsync(
+            string title,
+            string message,
+            string confirmText,
+            string cancelText,
+            CancellationToken cancellationToken = default) => Task.FromResult(ConfirmResult);
+
+        public Task<UnsavedChangesChoice> ConfirmSaveDiscardCancelAsync(
+            string title,
+            string message,
+            CancellationToken cancellationToken = default)
+        {
+            CloseCalls++;
+            return Task.FromResult(_choices.Count > 0 ? _choices.Dequeue() : UnsavedChangesChoice.Cancel);
+        }
+    }
+
     private sealed class ControlledPackageService(
         bool blockSave = false,
         Exception? saveError = null,
@@ -551,6 +904,7 @@ public sealed class PackageEditorViewModelTests
         Exception? folderError = null) : IPackageService
     {
         public TaskCompletionSource SaveStarted { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public TaskCompletionSource ReleaseSave { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
         public TaskCompletionSource ReferenceStarted { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
         public TaskCompletionSource ReleaseReference { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
         public TaskCompletionSource FolderStarted { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -567,7 +921,7 @@ public sealed class PackageEditorViewModelTests
             if (saveError is not null)
                 throw saveError;
             if (blockSave)
-                await Task.Delay(Timeout.InfiniteTimeSpan, cancellationToken);
+                await ReleaseSave.Task.WaitAsync(cancellationToken);
         }
 
         public Task<PackageDocument> LoadAsync(string packagePath, IProgress<PackageProgress>? progress = null, CancellationToken cancellationToken = default) =>
@@ -603,6 +957,72 @@ public sealed class PackageEditorViewModelTests
         public Task<PackageDocument> BuildAndSaveAsync(string sourceRoot, string targetPath, bool overwrite = false, IProgress<PackageProgress>? progress = null, CancellationToken cancellationToken = default) => throw new NotSupportedException();
         public Task<IReadOnlyList<PackageSummary>> ListAsync(string packageParentPath, CancellationToken cancellationToken = default) => throw new NotSupportedException();
         public Task<IReadOnlyList<PackageCatalogEntry>> ReadCatalogAsync(string packageParentPath, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+    }
+
+    private sealed class TrackingWriteCoordinator : IPackageWriteCoordinator
+    {
+        public int Calls { get; private set; }
+        public string? LastPath { get; private set; }
+        public bool IsExecuting { get; private set; }
+
+        public async Task ExecutePackageWriteAsync(
+            string packagePath,
+            Func<CancellationToken, Task> operation,
+            CancellationToken cancellationToken = default)
+        {
+            Calls++;
+            LastPath = packagePath;
+            IsExecuting = true;
+            try
+            {
+                await operation(cancellationToken);
+            }
+            finally
+            {
+                IsExecuting = false;
+            }
+        }
+
+        public async Task<TResult> ExecutePackageWriteAsync<TResult>(
+            string packagePath,
+            Func<CancellationToken, Task<TResult>> operation,
+            CancellationToken cancellationToken = default)
+        {
+            Calls++;
+            LastPath = packagePath;
+            IsExecuting = true;
+            try
+            {
+                return await operation(cancellationToken);
+            }
+            finally
+            {
+                IsExecuting = false;
+            }
+        }
+    }
+
+    private sealed class BlockingMemoService : IPackageMemoService
+    {
+        public TaskCompletionSource Started { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public PackageMemoReadResult Read(PackageDocument package, PackageMemoIdentity identity) =>
+            throw new NotSupportedException();
+
+        public bool SetLocalMemo(PackageDocument package, PackageMemoIdentity identity, string? value) =>
+            throw new NotSupportedException();
+
+        public PackageMemoInheritanceResult Inherit(
+            PackageDocument source,
+            PackageDocument target,
+            PackageMemoInheritanceMode mode,
+            CancellationToken cancellationToken = default)
+        {
+            Started.TrySetResult();
+            cancellationToken.WaitHandle.WaitOne();
+            cancellationToken.ThrowIfCancellationRequested();
+            throw new InvalidOperationException("Expected cancellation.");
+        }
     }
 
     private sealed class TemporaryDirectory : IDisposable

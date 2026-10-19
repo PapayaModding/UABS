@@ -43,7 +43,7 @@ Do not expose `Texture2D`, Avalonia `Bitmap`, controls, or AssetsTools.NET insta
 - `IPackageService`: implemented for build/load/validate/list/save with progress, cancellation, explicit overwrite, and staged replacement.
 - `IPackageSearchService`: implemented as a cancellable in-memory query over loaded package models with package/source/asset result snapshots and no copied files.
 - `IPackageDependencyResolver`: implemented direct lookup; a reverse-dependency service remains subject to product approval.
-- `IMemoRepository`: read/write/inherit memo data atomically.
+- `IPackageMemoService`: implemented for rich asset identity, missing/empty/value state, local editor mutation, and transactional Safe/Overwrite/Force package copy. Disk persistence remains owned by `IPackageService`.
 - `IAssetExportService`: export selected assets with collision/error reporting.
 - `IAppPathProvider`: user package, cache, logs, and classdata locations.
 
@@ -56,7 +56,7 @@ Suggested ViewModels:
 - `MainWindowViewModel`: current page/session, global operation status, navigation commands.
 - `BrowserViewModel`: current location and `ObservableCollection<BrowseEntryViewModel>`.
 - `AssetListViewModel`: asset rows, sorting/filtering/selection, open-detail command.
-- `AssetDetailsViewModel`: metadata, memo, preview loading state.
+- `AssetDetailsViewModel`: metadata and future preview loading state; persisted package memo editing currently belongs to `PackageEditorViewModel` because Save is a package transaction.
 - `SearchViewModel`, `DependencyViewModel`, `PackageViewModel`, `ExportViewModel`.
 
 Views should contain templates and small UI-only behaviors. File dialogs require a platform service created from the active `TopLevel.StorageProvider`; ViewModels call the abstraction, not Avalonia APIs directly. Use Avalonia collection virtualization rather than manual row pools.

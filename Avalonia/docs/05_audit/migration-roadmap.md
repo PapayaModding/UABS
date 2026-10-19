@@ -1,6 +1,6 @@
 # Migration Roadmap
 
-Statuses in this document describe the Avalonia migration as of 2026-10-17. Milestones 1 and 2 implemented the asset dependency/session and browser/list/details slices. Milestone 3 implemented package persistence, Milestone 4 package metadata search, Milestone 5 direct dependency resolution, Milestone 6 read-only package presentation, and Milestone 7 package creation/edit/save presentation. Milestone 7.1 corrected saved-package rediscovery and header-based import; Milestone 7.2 adds explicit safe recursive folder import and complete zero-result diagnostics; Milestone 7.3 verifies the production import path against a real nested bundle tree and makes scope and unsaved editor state explicit. Milestone 7.5 corrects the audited editor index-layout mismatch under the approved practical-interoperability policy. Milestone 7.4 stability work remains paused at its verified baseline.
+Statuses in this document describe the Avalonia migration as of 2026-10-17. Milestones 1 and 2 implemented the asset dependency/session and browser/list/details slices. Milestone 3 implemented package persistence, Milestone 4 package metadata search, Milestone 5 direct dependency resolution, Milestone 6 read-only package presentation, and Milestone 7 package creation/edit/save presentation. Milestone 7.1 corrected saved-package rediscovery and header-based import; Milestone 7.2 adds explicit safe recursive folder import and complete zero-result diagnostics; Milestone 7.3 verifies the production import path against a real nested bundle tree and makes scope and unsaved editor state explicit. Milestone 7.5 corrects the audited editor index-layout mismatch under the approved practical-interoperability policy. Milestone 7.4 now corrects workspace state loss, async-command/logger crash hazards, cancellation ownership, and stale asset-load publication.
 
 ## Phase 0 — Establish a reproducible baseline
 
@@ -102,11 +102,11 @@ Statuses in this document describe the Avalonia migration as of 2026-10-17. Mile
 
 **Unity sources:** `MemoReader`, `MemoWriter`, `InheritMemoWriter`, `MemoField`, memo package/mode controls.
 
-**Avalonia targets:** `IMemoRepository`, memo editor state, package-selection and inheritance UI.
+**Avalonia targets:** `IPackageMemoService`, memo editor state, package-selection and inheritance UI.
 
 **Move/reuse:** safe/overwrite/force semantics and legacy JSON compatibility.
 
-**Rewrite:** identity model, atomic writes, async debounce, validation, concurrency, undo/backups as approved.
+**Rewrite:** rich in-memory identity, transactional copy, validation, cancellation, and explicit staged Save. Coroutine debounce/autosave is intentionally not reproduced.
 
 **Dependency:** Phase 3; asset details from Phase 2.
 
@@ -114,7 +114,7 @@ Statuses in this document describe the Avalonia migration as of 2026-10-17. Mile
 
 **Completion criteria:** characterization tests for all modes; edits survive reload; interrupted write cannot corrupt package; UI makes target package and overwrite mode explicit.
 
-**Unity-exclusive decision gate:** review [UE-008](unity-exclusive-features.md) and decide explicit save versus cancellation-safe autosave, dirty/error UI, and write-recovery policy before implementing memo editing.
+**Unity-exclusive decision gate:** resolved in favor of MVVM editing plus explicit staged package Save. UE-008 remains partially replaced until desktop acceptance is observed.
 
 ## Phase 6 — Neutral texture and sprite decoding
 
@@ -213,10 +213,11 @@ flowchart LR
 - [x] **P3.4 Package/search UI** — `PackageManagementViewModel` and `PackageManagementView` provide resilient catalog loading, source/asset contents, service-backed search, and direct-dependency inspection without copied-result caches.
 - [x] **P3.5 Package editor UI** — Empty first-package creation, deep-copy editing, catalog-root or direct-package rediscovery, header-based single-file import, transactional current-folder or safe recursive folder import, actionable import counts/zero-result diagnostics, persistent content and saved-state summary, current-asset addition, reference removal, distinct destination selection, explicit overwrite/discard confirmation, staged save, verification reload, dirty-state protection, and application-close protection are implemented without source copies.
 - [x] **P3.6 Legacy creation-layout compatibility** — Editor folder import preserves source-relative placement for supported sources, existing flat/hierarchical/empty indexes and serialized paths survive, safe normal/extended Windows paths share an internal identity, and full-versus-one-character-truncated CAB resolution remains bounded and ambiguity-safe. Genuine 422-index save/reload evidence supplements distributable focused tests. See [compatibility audit](legacy-package-format-compatibility.md) and [Milestone 7.5 report](milestone-07-5-compatibility-report.md).
+- [x] **P3.7 Application stability and state preservation** — Persistent workspace composition is regression-tested for clean/dirty/active-import navigation; transient grid deselection cannot abandon the editor; cancellation owners are disposed safely; async command/window failures are observed and logged; and stale asset loads cannot replace newer sessions. See [Milestone 7.4 report](milestone-07-4-stability-report.md).
 - [x] **P4.1 Direct dependency service** — `IPackageDependencyResolver` resolves direct CAB declarations over loaded metadata into immutable resolved/unresolved/ambiguous results, preserves original-path provenance, collapses duplicate imports by physical path, and performs no source I/O.
 - [ ] **P4.2 Reverse dependency decision** — Source: `DependentReader`; destination: approved service or documented omission; depends on product answer; complete when decision is recorded and tested if retained.
-- [ ] **P5.1 Memo repository** — Source: `MemoReader`/`MemoWriter`; destination: atomic repository; depends on P3.1; complete with duplicate/missing/interruption cases.
-- [ ] **P5.2 Memo inheritance** — Source: `InheritMemoWriter`; destination: package service/VM; depends on P5.1; complete with Safe/Overwrite/Force tests.
+- [x] **P5.1 Memo service/editor** — `IPackageMemoService` plus the package editor distinguish missing/empty/value state, use rich package/index/source/name/Path-ID identity, preserve edits across selection/workspace changes, and persist only through staged Save/reopen. Unsupported package/directory/source ownership is explicit.
+- [x] **P5.2 Memo inheritance** — Transactional package-to-package Safe/Overwrite/Force copy preserves same-relative-index and legacy bundle-name semantics, hardens underscore-free names, reports duplicate matches, supports cancellation, and is integrated into the editor.
 - [ ] **P6.1 Raw texture data reader** — Source: `ImageReader.GetImageData`/pointer logic; destination: infrastructure; depends on P1.3; complete for inline, external, and archive data.
 - [ ] **P6.0 Unity-exclusive replacement decisions** — Review UE-001/UE-002; record decoder, neutral image, crop/pad, platform, licensing, fidelity, and performance decisions before implementation.
 - [ ] **P6.2 Decoder matrix** — Source: format branches/BCn/ASTC/Unity ETC; destination: decoder adapters; depends on P6.1/P0; complete only for golden-tested formats.
@@ -228,7 +229,7 @@ flowchart LR
 
 ## Recommended next implementation task
 
-Resume the paused Milestone 7.4 stability investigation before beginning any new feature milestone. Its first step is composition-level clean/dirty/active-import state-preservation coverage. Keep P4.2 reverse-dependency lookup and UE-008 memo identity/save policy as explicit product decisions.
+Milestone 8 is complete for its automated scope. Perform an uninterrupted desktop acceptance pass for memo editing/copy when practical. The next feature milestone should be Phase 6 neutral texture/sprite decoding only after the UE-001/UE-002 library, fidelity, licensing, and packaging decisions; P4.2 reverse-dependency lookup remains a separate product decision.
 
 ## Milestone 2 status note
 

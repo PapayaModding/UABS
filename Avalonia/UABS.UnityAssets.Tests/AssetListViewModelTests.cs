@@ -1,4 +1,6 @@
 using UABS.UnityAssets;
+using UABS.UnityAssets.Packages;
+using UABS.UnityAssets.Packages.Memos;
 using UABS.ViewModels;
 
 namespace UABS.UnityAssets.Tests;
@@ -95,6 +97,46 @@ public sealed class AssetListViewModelTests
         Assert.Null(list.SelectedAsset);
         Assert.Null(list.SelectedDetails);
         Assert.Same(newAsset, Assert.Single(list.Assets));
+    }
+
+    [Fact]
+    public void SelectionAndCatalogChangesRefreshReadOnlyMemoIndependently()
+    {
+        AssetEntry asset = new("Hero Script", "TextAsset", 49, 7, 100, "main.assets", @"C:\game\source.ab");
+        using FakeSession session = new([asset]);
+        using AssetListViewModel list = new();
+        list.ReplaceSession(session);
+        list.SelectedAsset = asset;
+
+        Assert.Equal(PackageMemoResolutionStatus.NoMatch, list.MemoInspector.Status);
+
+        PackageDocument package = new([
+            new PackageIndex(string.Empty, [new PackageBundleReference
+            {
+                Name = "source.ab",
+                Path = asset.SourcePath,
+                AssetInfos = [new PackageAssetReference { Name = asset.Name, PathId = asset.PathId, Memo = "full memo" }]
+            }])
+        ], @"C:\packages\alpha");
+        list.UpdateMemoCatalog([new PackageMemoCatalogEntry("Alpha", package.PackagePath!, package)]);
+
+        Assert.Equal(PackageMemoResolutionStatus.Available, list.MemoInspector.Status);
+        Assert.Equal("full memo", list.MemoInspector.MemoText);
+        list.UpdateMemoCatalog([]);
+        Assert.Equal(PackageMemoResolutionStatus.NoMatch, list.MemoInspector.Status);
+    }
+
+    [Fact]
+    public void DuplicateLogicalFileIdentityIsNotReportedAsUnique()
+    {
+        AssetEntry first = new("Hero", "Texture2D", 28, 7, 100, "one.assets", @"C:\game\source.ab");
+        AssetEntry second = first with { LogicalFile = "two.assets" };
+        using FakeSession session = new([first, second]);
+        using AssetListViewModel list = new();
+        list.ReplaceSession(session);
+        list.SelectedAsset = first;
+
+        Assert.Equal(PackageMemoResolutionStatus.Ambiguous, list.MemoInspector.Status);
     }
 
     private static AssetEntry Entry(string name, string type, int classId, long pathId, uint size) =>

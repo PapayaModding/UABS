@@ -2,7 +2,7 @@
 
 ## Current status
 
-The Unity-independent package model, reader, validator, builder, safe writer, resilient catalog service, metadata search service, and direct dependency resolver are implemented in `UABS.UnityAssets.Packages`. Avalonia catalog/content/search/direct-dependency presentation and package creation/edit/save are implemented through `PackageManagementViewModel`, `PackageEditorViewModel`, and `PackageManagementView`. Milestones 7.1–7.3 add fresh-service rediscovery, header-based source detection, transactional current-folder or recursive folder import, and explicit scope/save-state diagnostics verified against a real nested bundle tree. Milestone 7.5 preserves source-relative index placement during folder import and introduces non-I/O Windows path identity compatible with stored normal and extended spellings. Reverse-dependency lookup and memo editing/inheritance remain deferred.
+The Unity-independent package model, reader, validator, builder, safe writer, resilient catalog service, metadata search service, direct dependency resolver, and memo service are implemented in `UABS.UnityAssets.Packages`. Avalonia catalog/content/direct-dependency presentation, package creation/edit/save, asset memo editing, and package-to-package memo copy are implemented through `PackageManagementViewModel`, `PackageEditorViewModel`, and `PackageManagementView`. UX-3A moves general package metadata search into the dedicated `SearchWorkspaceViewModel`/`SearchWorkspaceView` while sharing the existing catalog and search service. Reverse-dependency lookup remains deferred.
 
 ## Verified legacy format
 
@@ -42,12 +42,15 @@ flowchart LR
     Search --> Results["Virtual metadata results"]
     Dependency["IPackageDependencyResolver"] --> Models
     Dependency --> DirectResults["Resolved / unresolved / ambiguous"]
+    Memo["IPackageMemoService"] --> Models
+    Memo --> MemoResult["Local value / transactional inheritance result"]
     PackageUI["PackageManagementViewModel"] --> Service
     Editor["PackageEditorViewModel"] --> Service
     Editor --> Confirm["Destination and confirmation services"]
     PackageUI --> Search
     PackageUI --> Dependency
-    Memo["Memo repository"] -. deferred .-> JSON
+    Editor --> Memo
+    Service --> JSON
     UI["PackageManagementView"] --> Editor
 ```
 
@@ -75,6 +78,137 @@ Imported rows exist only in the editor's isolated document until an explicit Sav
 `PackageService.CreateAsync` builds source-relative indexes and retains empty directories. Folder scanning also returns source-relative mappings for supported imports, and `PackageEditorViewModel` adds genuinely new sources to those indexes. Existing records remain in their current indexes, including flat layouts, and existing empty indexes survive save/reopen. Scanning does not create new empty indexes. The application therefore targets practical interoperability rather than exact reproduction of every Unity writer quirk.
 
 `PackagePathComparer` provides identity-only comparison for normal and extended Windows drive/UNC paths. It performs lexical normalization with `Path.GetFullPath` only for fully qualified paths, never probes the filesystem or resolves links, and never changes the serialized `Path`. Unsupported device namespaces and malformed input are not collapsed. The same identity is used for editor duplicate detection and dependency-candidate deduplication.
+
+## Implemented memo semantics
+
+Legacy source tracing establishes a narrower model than a general hierarchical note system:
+
+- only `AssetInfos[]` entries own `Memo`;
+- package directories, index directories, and source records have no memo field;
+- a missing/JSON-null value and an explicit empty string are distinct persisted states;
+- clearing the legacy text field writes `"Memo": ""`;
+- direct legacy lookup uses source `Path` plus asset `Name`; and
+- legacy “inheritance” copies values between two package versions at the same relative index path. It is not parent-to-child directory inheritance.
+
+`PackageMemoService` uses package path, index-relative directory, normalized source-path identity, asset name, and Path ID for direct editing. This prevents equal Path IDs in different sources from colliding without adding any persisted identifier. If the complete identity is duplicated, the operation reports ambiguity and changes nothing.
+
+Stage 1 read-only Inspector integration adds `PackageMemoResolver` over the same neutral metadata. Search asset results are revalidated by their complete package provenance rather than trusting a stale result snapshot. Assets selections search the loaded catalog by normalized source path, exact asset name, and Path ID without restricting Unity class ID. Exactly one match is required: no match, duplicate package records, incomplete/stale provenance, non-asset Search results, and duplicate logical-file identities are shown as distinct unavailable states. The shared Inspector presenter displays the complete stored memo and package context while preserving missing versus explicit-empty storage. Resolution is synchronous, performs no I/O, never edits a package document, and remains independent in Assets and Search.
+
+The unversioned `AssetInfos` shape is already type-agnostic: `Name`, `PathId`, and optional `Memo` can represent any indexed Unity asset without a schema revision, and source/index/package provenance supplies the rest of the resolver identity. Current package creation, folder import, and Add Selected intentionally enumerate only Texture2D (28) and Sprite (213), however. Supporting newly indexed arbitrary types therefore requires a separate indexing change: remove those creation/editor filters, enumerate every session asset into the existing `AssetInfos` fields, preserve the current logical-file selection check, and retain ambiguity rejection where a bundle has duplicate name/Path-ID identities across logical files. No new serialized field is required for unambiguous records; a future schema field would be required only to represent otherwise ambiguous logical-file identities.
+
+```mermaid
+flowchart TD
+    Selection["Selected editor row"] --> Kind{"Asset row?"}
+    Kind -->|No| Unsupported["Read-only: format has no memo field"]
+    Kind -->|Yes| Identity["Package + index + source path + name + Path ID"]
+    Identity --> Working["Isolated PackageDocument clone"]
+    Working --> Dirty["Dirty editor state"]
+    Dirty --> Coordinate["Package-path write coordinator"]
+    Coordinate --> Save["Explicit staged package Save"]
+    Save --> Reload["Fresh package reload under same lock"]
+    Reload --> Clean["Mark clean only after verification"]
+    Dirty -->|Discard| Original["Reload/retain saved catalog document"]
+
+    Keystroke["Memo keystroke"] -. no disk write .-> Working
+```
+
+Memo text is written to the isolated editor document as the user types, so row selection and Assets/Packages workspace changes cannot lose it. No package file is written on a keystroke or focus change. The existing package Save transaction snapshots all pending edits, writes a sibling staging directory, swaps only after successful preparation, reloads the result, and retains newer or failed edits as dirty.
+
+### Package write coordination
+
+`MainWindowViewModel` owns one application-lifetime `IPackageWriteCoordinator` and injects it through the Packages workspace into `PackageEditorViewModel`. Directly composed editors receive their own coordinator by default. The coordinator keys a reference-counted asynchronous semaphore by `PackagePathComparer.GetIdentity`, so normal/extended Windows spellings of the same path serialize while different package paths remain independent. Entries include holders and waiters and are removed and disposed when their final user leaves; there is no global package lock or unbounded per-path registry.
+
+The editor acquires coordination only after explicit Save validation and overwrite confirmation. Its exclusive operation includes staged `IPackageService.SaveAsync`, uncancelled verification reload, current-generation publication, and the catalog-saved callback. Cancellation while waiting never invokes the operation, and every success, failure, or cancellation path releases the entry. `PackageService` continues honoring cancellation during staging and immediately before commit; once its destructive directory-swap sequence begins, it performs rollback or completes without another cancellation checkpoint. The coordinator itself has no disposal lifecycle, so application shutdown cannot dispose a semaphore still used by an active operation; existing editor shutdown cancellation remains unchanged.
+
+This coordinator provides in-process mutual exclusion, not freshness merging or cross-process filesystem locking. It does not save automatically or reconcile stale working documents.
+
+### Transactional memo-only persistence
+
+`PackageMemoPersistenceService` is the Stage 3 backend for changing one asset memo without deriving a target from UI selection. Its immutable request carries the complete Stage 1 identity, desired text, expected original memo (including the distinction between `null` and empty), and an optional whole-package revision. Under the shared package-path coordinator it fingerprints the complete package directory, reloads the latest document, resolves exactly one asset, verifies both revision and expected memo, edits an isolated clone, checks the fingerprint again, and uses the existing staged `PackageService` overwrite transaction. It then reloads the package without cancellation, verifies the exact value and stable saved revision, and invokes an optional catalog-publication callback before releasing coordination.
+
+```mermaid
+sequenceDiagram
+    participant Caller
+    participant Memo as Memo persistence
+    participant Lock as Package coordinator
+    participant Disk as Package directory
+    participant Writer as Transactional writer
+    participant Catalog
+
+    Caller->>Memo: Exact identity + draft + preconditions
+    Memo->>Lock: Acquire normalized package path
+    Memo->>Disk: Fingerprint and load latest package
+    Memo->>Memo: Resolve unique asset and check original memo
+    Memo->>Disk: Recheck whole-package fingerprint
+    Memo->>Writer: Save isolated one-memo clone
+    Writer->>Disk: Stage, swap, or roll back
+    Memo->>Disk: Reload and verify exact memo
+    Memo->>Catalog: Publish fresh verified document (optional)
+    Memo-->>Caller: Structured result retaining draft
+```
+
+Outcomes distinguish saved, unchanged, missing package/asset, ambiguous identity, revision conflict, active Package Editor, write failure, verification failure, catalog-publication failure, and cancellation before commit. The result retains the request so a later UI can preserve and retry a failed draft; verification or publication failures also identify that the disk transaction already completed. Cancellation is honored while waiting and throughout pre-commit staging. Once `PackageService` enters its directory-swap sequence it completes or restores the backup before returning.
+
+`PackageEditorSessionGuard` records the Package Editor's active package independently of dirty state. Memo-only persistence rejects that same path even when the editor is clean, while other packages remain eligible. It never publishes into or replaces the editor's working clone, so unrelated dirty state and the editor's explicit-Save semantics remain unchanged. Stage 5 also uses this guard as Search Inspector eligibility: opening or closing Package Editor immediately re-resolves the selected result without discarding its coordinator-owned draft.
+
+The revision is a SHA-256 fingerprint over every regular file's normalized relative path, length, and content plus directory paths; reparse points are excluded. It detects package changes outside any single `index.json`, but it is not an operating-system lock. An external process that ignores UABS coordination can still modify the directory after the final pre-commit check and race the transactional replacement. The service reports conflicts rather than merging or silently retrying, and cross-process locking remains deferred.
+
+### Application-lifetime memo drafts
+
+Stage 4 adds one application-owned `MemoDraftCoordinator`; Stage 5 connects it only to the Search Inspector. Drafts are keyed by normalized package/source paths plus index directory, exact asset name, and Path ID, so changing selection or workspace cannot retarget a pending save. Each entry retains draft and confirmed text, the confirmed package fingerprint, a monotonic draft revision, structured failure details, and an observable snapshot. Missing (`null`) and explicitly empty memo text remain distinct.
+
+```mermaid
+stateDiagram-v2
+    [*] --> Unavailable: no exact editable identity
+    Unavailable --> Saved: track exact identity
+    Saved --> Unsaved: edit differs from confirmed value
+    Unsaved --> Saved: edit returns to confirmed value
+    Unsaved --> Saving: debounce / Save Now / flush
+    Saving --> Saved: same revision verified
+    Saving --> Unsaved: newer revision exists
+    Saving --> Failed: persistence rejected or failed
+    Failed --> Unsaved: user edits retained draft
+    Failed --> Saving: explicit Retry / Save Now
+```
+
+The internal debounce is 1.5 seconds through injectable `IMemoDraftDelay`. Each edit cancels the preceding delay; timer cancellation never supplies the transaction token, so it cannot cancel a save that already started. Per-asset gates coalesce equivalent overlapping requests, while `PackageWriteCoordinator` remains the authoritative same-package disk serialization boundary. Stage 3 `Saved` or `Unchanged` results update confirmed content. A verified disk save followed by catalog-publication failure also advances the confirmed baseline but remains Failed until explicit Retry republishes the already-persisted snapshot. A completion for an older draft revision may update that revision's confirmed baseline but cannot mark newer text Saved.
+
+`SaveNowAsync` bypasses the delay, `RetryAsync` is the explicit recovery path for a Failed draft, and `FlushForNavigationAsync` saves pending work for the identity being left without consulting the new selection. A previously Failed draft is retained during ordinary navigation rather than entering an automatic retry loop. Package Editor exclusion is surfaced as an actionable Failed snapshot while drafts for other packages remain eligible.
+
+`DrainForShutdownAsync` stops new timers, waits for in-flight work, attempts remaining drafts once, and returns `AllSaved` plus the retained failure snapshots. It does not alter the current close-confirmation flow: Stage 7 must call and present this result before application teardown. Synchronous disposal still cancels pending timers without claiming that drafts were flushed.
+
+### Editable Search memo Inspector
+
+Stage 5 replaces only Search's read-only memo presenter with `EditableMemoInspectorViewModel` and `EditableMemoInspectorView`. An indexed asset must re-resolve to one complete package/index/source/name/Path-ID identity in the current catalog, and its package must not be open in Package Editor. Package/source rows, incomplete or stale results, ambiguous identities, unloaded packages, and editor conflicts remain disabled with an explicit explanation. Assets Inspector remains read-only.
+
+Selection calls `TrackAsync`, which captures the current whole-package fingerprint before exposing the multiline editor. Text changes update the shared coordinator, inherit its 1.5-second debounce, and surface Saved, Unsaved, Saving, Failed, Save Now, and Retry states. Leaving a result flushes the identity being left while presenting the new result independently; leaving Search also flushes its active identity. Completion events are identity-filtered, so an older save cannot replace another result's draft or status.
+
+The Stage 3 catalog publisher marshals the verified `PackageDocument` to the UI thread and replaces only the matching catalog item. Search revalidates the selected result against that fresh document but does not rerun, reorder, or remove snapshot results; criteria, package scope, result selection, and pending coordinator drafts remain intact. Package Editor's working clone and dirty state are never refreshed by this path.
+
+Search result rows retain their original identity and ordering, but their memo presentation is observable rather than permanently frozen. A coordinator completion updates every existing row with the same complete package/index/source/name/Path-ID identity only when the completion reports verified `Saved` or `Unchanged` persistence. Failed or conflicted attempts leave the last confirmed row memo unchanged. The update is marshalled to the UI thread and does not replace the result collection, rerun matching, or change selection; missing (`null`) and explicit-empty (`""`) values remain distinct in the row model.
+
+### Package-to-package memo copy
+
+The source package and mode are explicit in the editor. The service clones the target, computes the complete result away from the UI thread, and publishes it only if the editor generation is still current. Cancellation or failure publishes nothing.
+
+```mermaid
+flowchart LR
+    Source["Source package snapshot"] --> SameIndex["Same relative index path"]
+    Target["Target editor snapshot"] --> SameIndex
+    SameIndex --> Bundle["Unique legacy bundle-name identity"]
+    Bundle --> Asset["Unique exact asset name"]
+    Asset --> Mode{"Mode"}
+    Mode -->|Safe| Safe["Nonblank source; blank target"]
+    Mode -->|Overwrite| Overwrite["Nonblank source"]
+    Mode -->|Force| Force["Copy value including empty/missing"]
+    Safe --> Candidate["Transactional target candidate"]
+    Overwrite --> Candidate
+    Force --> Candidate
+    Bundle -->|Duplicate| Conflict["Report ambiguity; leave unchanged"]
+    Asset -->|Duplicate| Conflict
+```
+
+The legacy bundle identity removes the file extension and suffix following the last underscore. The replacement preserves that compatibility heuristic, handles names without underscores, and refuses duplicate bundle/asset matches instead of selecting the first filesystem result. Copied values become ordinary local asset memos; the unversioned schema has no inheritance-provenance field.
 
 ## Implemented metadata search
 
@@ -108,6 +242,15 @@ Matching semantics:
 - an empty text query returns no results unless a Path ID is supplied;
 - null/missing optional values never match and do not fail a search;
 - package, source-file, and asset result kinds and searchable fields can be filtered explicitly.
+- `RequireNonEmptyMemo` filters only asset candidates and is independent from whether `Memo` is included as a searchable text field.
+
+### Dedicated Search presentation
+
+`SearchWorkspaceViewModel` observes the successfully loaded package catalog and builds an explicit multi-package scope. The first nonempty catalog is selected by default; later additions are left unselected so a refresh cannot silently broaden an already understood scope. Package name filtering affects only presentation, while Select All and Clear affect the complete scope.
+
+An explicit Search command creates one immutable request snapshot. Editing criteria preserves the existing results and marks them stale until the next explicit run. Each run cancels the prior token and uses a generation check before publishing merged results, errors, or completion state. Invalid criteria clears the result set and reports validation instead of invoking the service. Search memos adds the memo field; Memo only maps separately to `RequireNonEmptyMemo`.
+
+The dedicated View uses the established `assetList` DataGrid styling and retains package/source identity in every row. The right side remains source-metadata-only, but eligible indexed asset results now expose the Stage 5 multiline memo editor after exact catalog revalidation. Package/source results clearly report that they do not own asset memos, and unloaded, changed, incomplete, ambiguous, or Package-Editor-owned identities remain unavailable. It does not open referenced Unity files, create cache copies, navigate Assets, or decode media; those remain explicit deferred scopes.
 
 Sorting supports package name, index directory, source name/path, asset name, Path ID, and match category in either direction. Path IDs are compared numerically. Stable identity fields provide deterministic tie-breaking. Results are newly allocated read-only snapshots; dependency collections are copied and cannot mutate the package model.
 
@@ -150,7 +293,7 @@ The legacy `FindDeriveInfoInPackage.FindInPackageByCabCode` rereads all package 
 
 ## Implemented Avalonia package workflow
 
-`PackageManagementViewModel` composes `IPackageService`, `IPackageSearchService`, and `IPackageDependencyResolver`; none of their algorithms are duplicated in presentation code. Catalog, search, and dependency operations use separate cancellation sources and generation checks. Results from superseded selection or search requests are ignored.
+`PackageManagementViewModel` composes `IPackageService`, `IPackageSearchService`, and `IPackageDependencyResolver`; none of their algorithms are duplicated in presentation code. Its catalog and dependency operations use separate cancellation sources and generation checks. `SearchWorkspaceViewModel` shares the same search service and consumes the catalog as a read-only scope source; superseded Search requests are ignored.
 
 The ViewModel exposes read-only presentation snapshots for package rows and flattened source/asset content rows. Search results preserve the service's package/source provenance. Dependency presentation wraps, but does not reinterpret, status or candidates. `ResolveForPackageAsync` builds candidate lookup data from the whole loaded catalog while emitting request edges only for the selected package.
 
@@ -198,9 +341,7 @@ Legacy `WriteUserPackage.CreateAndSaveNewPackage` is `async void`, starts an unt
 
 ## Legacy consumers still deferred
 
-Legacy `DependentReader` performs reverse lookup and remains a separate product decision. `MemoReader`, `MemoWriter`, and `InheritMemoWriter` identify memos by source path plus asset name rather than path ID.
-
-Memo behaviors remain unimplemented. Future navigation must use the original paths already present in dependency/search results rather than reproduce the legacy `External/UABS_System_Cache` bundle-copy behavior.
+Legacy `DependentReader` performs reverse lookup and remains a separate product decision. Memo editing and copy are implemented; there is deliberately no directory-parent inheritance, memo autosave, or invented package/source memo field.
 
 ## Remaining risks
 
@@ -209,9 +350,11 @@ Memo behaviors remain unimplemented. Future navigation must use the original pat
 - Package creation performs a second AssetsTools.NET open to read first-file dependencies; large-tree performance is not benchmarked.
 - The format cannot retain per-logical-file provenance for multi-serialized-file bundles.
 - The legacy CAB reader drops the last printable character due to an off-by-one substring length. The new writer emits the full token; the resolver permits only a one-character length difference, and broader production fixtures should confirm this compatibility rule.
-- Concurrent writers are not coordinated with a process-wide/package lock.
+- UABS package writes sharing the application coordinator serialize by normalized path, but external processes are not locked and can race after the memo service's final pre-commit fingerprint.
 - Asset type and per-logical-file provenance cannot be searched until a compatible schema extension exists.
 - Search is a linear in-memory scan with per-query result allocation; no large-catalog benchmark has been run.
-- Reverse dependencies, memo persistence, and schema upgrades remain separate milestones.
+- Reverse dependencies and schema upgrades remain separate milestones.
+- The legacy format cannot record memo provenance, logical serialized-file identity, or resolve genuinely duplicated complete asset identities.
+- Production `OWL` packages contain no memos; compatibility evidence combines source tracing, a minimized representation of the genuine legacy memo test package, and disposable save/reopen automation rather than a production-memo corpus.
 
 See [Milestone 06 report](../05_audit/milestone-06-report.md), [migration roadmap](../05_audit/migration-roadmap.md), and [open questions](../05_audit/open-questions.md).

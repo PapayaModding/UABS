@@ -84,6 +84,8 @@ public sealed class PackageSearchRequest
 
     public bool ExactText { get; init; }
 
+    public bool RequireNonEmptyMemo { get; init; }
+
     public long? PathId { get; init; }
 
     public PackageSearchSortField SortBy { get; init; } = PackageSearchSortField.PackageName;

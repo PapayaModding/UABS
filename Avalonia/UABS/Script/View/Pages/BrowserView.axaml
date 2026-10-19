@@ -4,6 +4,10 @@
              xmlns:vm="clr-namespace:UABS.ViewModels"
              x:Class="UABS.Page.BrowserView"
              x:DataType="vm:BrowserViewModel">
+    <UserControl.Resources>
+        <StreamGeometry x:Key="NavigatorFolderGeometry">M 1,5 L 8,5 L 10,7 L 19,7 L 19,17 L 1,17 Z</StreamGeometry>
+        <StreamGeometry x:Key="NavigatorFileGeometry">M 4,1 L 12,1 L 18,7 L 18,19 L 4,19 Z</StreamGeometry>
+    </UserControl.Resources>
     <Grid RowDefinitions="Auto,Auto,Auto,*,Auto" Margin="12,12,4,12" RowSpacing="8">
         <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="6">
             <Button Content="Back" Command="{Binding BackCommand}"/>
@@ -20,22 +24,62 @@
 
         <ProgressBar Grid.Row="2" IsVisible="{Binding IsLoading}" IsIndeterminate="True" Height="4"/>
 
-        <DataGrid Grid.Row="3"
-                  AutoGenerateColumns="False"
-                  CanUserResizeColumns="True"
-                  CanUserSortColumns="True"
-                  GridLinesVisibility="Horizontal"
-                  IsReadOnly="True"
-                  ItemsSource="{Binding Entries}"
-                  SelectedItem="{Binding SelectedEntry}"
-                  HeadersVisibility="Column">
-            <DataGrid.Columns>
-                <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="2*"/>
-                <DataGridTextColumn Header="Kind" Binding="{Binding Kind}" Width="75"/>
-                <DataGridTextColumn Header="Size" Binding="{Binding Size}" Width="65"/>
-                <DataGridTextColumn Header="Modified" Binding="{Binding LastModified}" Width="*"/>
-            </DataGrid.Columns>
-        </DataGrid>
+        <Grid Grid.Row="3">
+            <DataGrid x:Name="EntriesGrid"
+                      Classes="navigatorList"
+                      AutoGenerateColumns="False"
+                      CanUserResizeColumns="True"
+                      CanUserSortColumns="True"
+                      GridLinesVisibility="Horizontal"
+                      IsReadOnly="True"
+                      ItemsSource="{Binding Entries}"
+                      SelectedItem="{Binding SelectedEntry}"
+                      LoadingRow="OnEntriesGridLoadingRow"
+                      Tapped="OnEntriesTapped"
+                      HeadersVisibility="Column">
+                <DataGrid.Columns>
+                    <DataGridTemplateColumn SortMemberPath="Kind"
+                                            Width="52"
+                                            CanUserResize="False"
+                                            CanUserSort="False">
+                        <DataGridTemplateColumn.Header>
+                            <TextBlock Text="" AutomationProperties.Name="Kind"/>
+                        </DataGridTemplateColumn.Header>
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate x:DataType="models:BrowserEntry">
+                                <Grid x:Name="KindIconHost"
+                                      Width="20" Height="20"
+                                      HorizontalAlignment="Center"
+                                      VerticalAlignment="Center"
+                                      ToolTip.Tip="{Binding Kind}"
+                                      AutomationProperties.Name="{Binding Kind}">
+                                    <PathIcon Classes="navigatorKindIcon navigatorFolderKindIcon"
+                                              Data="{StaticResource NavigatorFolderGeometry}"
+                                              IsVisible="{Binding IsDirectory}"
+                                              AutomationProperties.Name="Directory"/>
+                                    <PathIcon Classes="navigatorKindIcon navigatorFileKindIcon"
+                                              Data="{StaticResource NavigatorFileGeometry}"
+                                              IsVisible="{Binding !IsDirectory}"
+                                              AutomationProperties.Name="File"/>
+                                </Grid>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                    <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="2*"/>
+                    <DataGridTextColumn Header="Size" Binding="{Binding Size}" Width="65"/>
+                    <DataGridTextColumn Header="Modified" Binding="{Binding LastModified}" Width="*"/>
+                </DataGrid.Columns>
+            </DataGrid>
+
+            <TextBlock x:Name="EmptyFolderMessage"
+                       Text="No supported Unity asset files found in this folder."
+                       IsVisible="{Binding ShowEmptyMessage}"
+                       HorizontalAlignment="Center"
+                       VerticalAlignment="Center"
+                       TextAlignment="Center"
+                       TextWrapping="Wrap"
+                       Margin="24"/>
+        </Grid>
 
         <Grid Grid.Row="4" RowDefinitions="Auto,Auto" RowSpacing="6">
             <Button Content="Open Selected" Command="{Binding OpenSelectedCommand}" HorizontalAlignment="Right"/>

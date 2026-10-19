@@ -1,0 +1,81 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:page="clr-namespace:UABS.Page"
+             xmlns:vm="clr-namespace:UABS.ViewModels"
+             x:Class="UABS.Page.AssetInspectorView"
+             x:DataType="vm:AssetListViewModel">
+    <Grid RowDefinitions="*,Auto" Margin="8" RowSpacing="10">
+        <ScrollViewer Grid.Row="0">
+            <Grid>
+                <TextBlock x:Name="NoSelectionMessage"
+                           Text="Select an asset to inspect its metadata."
+                           IsVisible="{Binding HasNoSelection}"
+                           TextWrapping="Wrap"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Center"
+                           Margin="16"/>
+
+                <StackPanel x:Name="SelectedAssetPanel" IsVisible="{Binding HasSelection}" Spacing="8">
+                    <TextBlock Text="Selected asset" FontWeight="SemiBold" FontSize="15"/>
+
+                    <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto"
+                          ColumnSpacing="8" RowSpacing="5">
+                        <TextBlock Text="Name:" FontWeight="SemiBold"/>
+                        <TextBlock x:Name="SelectedAssetName" Grid.Column="1" Text="{Binding SelectedAsset.Name}" TextWrapping="Wrap"/>
+
+                        <TextBlock Grid.Row="1" Text="Type:" FontWeight="SemiBold"/>
+                        <TextBlock x:Name="SelectedAssetType" Grid.Row="1" Grid.Column="1" Text="{Binding SelectedAsset.Type}" TextWrapping="Wrap"/>
+
+                        <TextBlock Grid.Row="2" Text="Class ID:" FontWeight="SemiBold"/>
+                        <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding SelectedAsset.ClassId}"/>
+
+                        <TextBlock Grid.Row="3" Text="Path ID:" FontWeight="SemiBold"/>
+                        <TextBlock x:Name="SelectedAssetPathId" Grid.Row="3" Grid.Column="1" Text="{Binding SelectedAsset.PathId}"/>
+
+                        <TextBlock Grid.Row="4" Text="Size:" FontWeight="SemiBold"/>
+                        <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding SelectedAsset.ByteSize}"/>
+
+                        <TextBlock Grid.Row="5" Text="Logical file:" FontWeight="SemiBold"/>
+                        <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding SelectedAsset.LogicalFile}" TextWrapping="Wrap"/>
+
+                        <TextBlock Grid.Row="6" Text="Source path:" FontWeight="SemiBold"/>
+                        <TextBlock Grid.Row="6" Grid.Column="1" Text="{Binding SelectedAsset.SourcePath}" TextWrapping="Wrap"/>
+                    </Grid>
+
+                    <ProgressBar IsVisible="{Binding IsDetailsLoading}" IsIndeterminate="True" Height="3"/>
+
+                    <Grid IsVisible="{Binding HasDetails}"
+                          ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto"
+                          ColumnSpacing="8" RowSpacing="5">
+                        <TextBlock Text="File kind:" FontWeight="SemiBold"/>
+                        <TextBlock x:Name="SelectedFileKind" Grid.Column="1" Text="{Binding SelectedDetails.FileKind}"/>
+
+                        <TextBlock Grid.Row="1" Text="Unity version:" FontWeight="SemiBold"/>
+                        <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding SelectedDetails.UnityVersion}"/>
+
+                        <TextBlock Grid.Row="2" Text="Logical files:" FontWeight="SemiBold"/>
+                        <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding SelectedDetails.LogicalFileCount}"/>
+                    </Grid>
+
+                    <TextBlock Text="{Binding DetailsError}"
+                               Foreground="#9A2020"
+                               IsVisible="{Binding HasDetailsError}"
+                               TextWrapping="Wrap"/>
+
+                    <page:ReadOnlyMemoInspectorView x:Name="AssetMemoInspector"
+                                                    DataContext="{Binding MemoInspector}"/>
+                </StackPanel>
+            </Grid>
+        </ScrollViewer>
+
+        <Border Grid.Row="1" Background="White" BorderBrush="#D0D0D0" BorderThickness="1"
+                CornerRadius="4" Padding="10">
+            <StackPanel Spacing="4">
+                <TextBlock Text="Preview" FontWeight="SemiBold"/>
+                <TextBlock x:Name="PreviewPlaceholder"
+                           Text="Asset-specific preview is not available yet."
+                           TextWrapping="Wrap"/>
+            </StackPanel>
+        </Border>
+    </Grid>
+</UserControl>

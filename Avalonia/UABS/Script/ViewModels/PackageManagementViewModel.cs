@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -9,6 +10,7 @@ using UABS.Services;
 using UABS.UnityAssets;
 using UABS.UnityAssets.Packages;
 using UABS.UnityAssets.Packages.Dependencies;
+using UABS.UnityAssets.Packages.Memos;
 using UABS.UnityAssets.Packages.Search;
 
 namespace UABS.ViewModels;
@@ -39,7 +41,14 @@ public sealed record PackageContentItem(
     string? SourcePath,
     string? CabCode,
     long? PathId,
-    string? Memo);
+    string? Memo)
+{
+    public bool IsSource => Kind == PackageContentKind.Source;
+    public string TypeLabel => IsSource ? "Source" : "Asset (type unavailable)";
+    public string TechnicalDetails => IsSource
+        ? $"CAB: {CabCode} · Original path: {SourcePath} · Index: {IndexDirectory}"
+        : $"Source: {SourceName} · CAB: {CabCode} · Path ID: {PathId} · Original path: {SourcePath} · Index: {IndexDirectory}";
+}
 
 public sealed class PackageCatalogItemViewModel
 {
@@ -135,6 +144,8 @@ public sealed class PackageManagementViewModel : ViewModelBase, IDisposable
     private PackageContentItem? _selectedContent;
     private PackageSearchResult? _selectedSearchResult;
     private PackageDependencyResultViewModel? _selectedDependency;
+    private PackageCatalogItemViewModel? _memoInheritanceSource;
+    private PackageMemoInheritanceMode _memoInheritanceMode = PackageMemoInheritanceMode.Safe;
     private string _packageDirectory = string.Empty;
     private string _catalogStatus = "Choose a directory containing package folders.";
     private string? _catalogError;
@@ -154,6 +165,7 @@ public sealed class PackageManagementViewModel : ViewModelBase, IDisposable
     private int _catalogVersion;
     private int _searchVersion;
     private int _dependencyVersion;
+    private int _selectionVersion;
     private bool _disposed;
 
     public PackageManagementViewModel(
@@ -161,7 +173,9 @@ public sealed class PackageManagementViewModel : ViewModelBase, IDisposable
         IPackageService packageService,
         IPackageSearchService searchService,
         IPackageDependencyResolver dependencyResolver,
-        IUserConfirmationService? confirmations = null)
+        IUserConfirmationService? confirmations = null,
+        IPackageWriteCoordinator? writeCoordinator = null,
+        IPackageEditorSessionController? editorSessionController = null)
     {
         _filePicker = filePicker;
         _packageService = packageService;
@@ -171,13 +185,20 @@ public sealed class PackageManagementViewModel : ViewModelBase, IDisposable
             filePicker,
             confirmations ?? new DenyConfirmationService(),
             packageService,
-            OnPackageSavedAsync);
+            OnPackageSavedAsync,
+            writeCoordinator: writeCoordinator,
+            editorSessionController: editorSessionController);
         ChoosePackageDirectoryCommand = new AsyncCommand(ChoosePackageDirectoryAsync);
         RefreshCatalogCommand = new AsyncCommand(RefreshCatalogAsync, () => HasPackageDirectory);
         SearchCommand = new AsyncCommand(SearchAsync, () => HasLoadedPackages);
         NewPackageCommand = new AsyncCommand(StartNewPackageAsync);
         EditPackageCommand = new AsyncCommand(EditSelectedPackageAsync, () => SelectedPackage?.IsAvailable == true);
+        ApplyMemoInheritanceCommand = new AsyncCommand(
+            ApplyMemoInheritanceAsync,
+            () => Editor.IsEditing && !Editor.IsOperationRunning && MemoInheritanceSource?.IsAvailable == true);
+        Editor.PropertyChanged += EditorOnPropertyChanged;
         SearchFields = Enum.GetValues<PackageSearchFieldSelection>();
+        MemoInheritanceModes = Enum.GetValues<PackageMemoInheritanceMode>();
     }
 
     public AsyncCommand ChoosePackageDirectoryCommand { get; }
@@ -185,8 +206,11 @@ public sealed class PackageManagementViewModel : ViewModelBase, IDisposable
     public AsyncCommand SearchCommand { get; }
     public AsyncCommand NewPackageCommand { get; }
     public AsyncCommand EditPackageCommand { get; }
+    public AsyncCommand ApplyMemoInheritanceCommand { get; }
+    public PackagesWorkspaceLayoutViewModel Layout { get; } = new();
     public PackageEditorViewModel Editor { get; }
     public IReadOnlyList<PackageSearchFieldSelection> SearchFields { get; }
+    public IReadOnlyList<PackageMemoInheritanceMode> MemoInheritanceModes { get; }
 
     public IReadOnlyList<PackageCatalogItemViewModel> Packages
     {
@@ -198,6 +222,7 @@ public sealed class PackageManagementViewModel : ViewModelBase, IDisposable
                 OnPropertyChanged(nameof(HasPackages));
                 OnPropertyChanged(nameof(HasLoadedPackages));
                 SearchCommand.NotifyCanExecuteChanged();
+                ApplyMemoInheritanceCommand.NotifyCanExecuteChanged();
             }
         }
     }
@@ -227,7 +252,15 @@ public sealed class PackageManagementViewModel : ViewModelBase, IDisposable
         {
             if (ReferenceEquals(_selectedPackage, value))
                 return;
+            if (value is null && _selectedPackage is not null && Editor.IsEditing)
+            {
+                // A DataGrid can transiently clear selection while its workspace is detached.
+                // Navigation must not share the explicit package-switch/abandon path.
+                OnPropertyChanged(nameof(SelectedPackage));
+                return;
+            }
             _selectionTask = ChangePackageSelectionAsync(value);
+            _ = ObserveSelectionAsync(_selectionTask);
         }
     }
 
@@ -258,6 +291,22 @@ public sealed class PackageManagementViewModel : ViewModelBase, IDisposable
             if (SetField(ref _selectedDependency, value))
                 OnPropertyChanged(nameof(HasSelectedDependency));
         }
+    }
+
+    public PackageCatalogItemViewModel? MemoInheritanceSource
+    {
+        get => _memoInheritanceSource;
+        set
+        {
+            if (SetField(ref _memoInheritanceSource, value))
+                ApplyMemoInheritanceCommand.NotifyCanExecuteChanged();
+        }
+    }
+
+    public PackageMemoInheritanceMode MemoInheritanceMode
+    {
+        get => _memoInheritanceMode;
+        set => SetField(ref _memoInheritanceMode, value);
     }
 
     public string PackageDirectory
@@ -409,8 +458,7 @@ public sealed class PackageManagementViewModel : ViewModelBase, IDisposable
         if (Editor.IsEditing && !await Editor.TryAbandonAsync("Reload the package catalog?").ConfigureAwait(true))
             return;
 
-        _catalogCancellation?.Cancel();
-        _catalogCancellation?.Dispose();
+        CancelAndDispose(ref _catalogCancellation);
         _catalogCancellation = CancellationTokenSource.CreateLinkedTokenSource(_lifetime.Token);
         CancellationToken token = _catalogCancellation.Token;
         int version = ++_catalogVersion;
@@ -480,7 +528,21 @@ public sealed class PackageManagementViewModel : ViewModelBase, IDisposable
 
     private async Task ChangePackageSelectionAsync(PackageCatalogItemViewModel? package)
     {
-        if (Editor.IsEditing && !await Editor.TryAbandonAsync("Switch packages?").ConfigureAwait(true))
+        int version = ++_selectionVersion;
+        bool canSwitch;
+        try
+        {
+            canSwitch = !Editor.IsEditing
+                || await Editor.TryAbandonAsync("Switch packages?").ConfigureAwait(true);
+        }
+        catch (OperationCanceledException) when (_lifetime.IsCancellationRequested)
+        {
+            return;
+        }
+
+        if (version != _selectionVersion)
+            return;
+        if (!canSwitch)
         {
             OnPropertyChanged(nameof(SelectedPackage));
             return;
@@ -490,6 +552,22 @@ public sealed class PackageManagementViewModel : ViewModelBase, IDisposable
         OnPropertyChanged(nameof(SelectedPackage));
         EditPackageCommand.NotifyCanExecuteChanged();
         await ApplyPackageSelectionAsync(package);
+    }
+
+    private async Task ObserveSelectionAsync(Task selection)
+    {
+        try
+        {
+            await selection.ConfigureAwait(true);
+        }
+        catch (OperationCanceledException) when (_lifetime.IsCancellationRequested)
+        {
+        }
+        catch (Exception exception)
+        {
+            CatalogError = $"Package selection failed: {exception.Message}";
+            Printer.PrintException("Package selection failed.", exception);
+        }
     }
 
     public Task<bool> StartNewPackageAsync() => Editor.StartNewAsync(HasPackageDirectory ? PackageDirectory : null);
@@ -512,6 +590,50 @@ public sealed class PackageManagementViewModel : ViewModelBase, IDisposable
 
     public Task<bool> ConfirmCloseAsync() => Editor.ConfirmCloseAsync();
 
+    internal void PublishPersistedMemoPackage(PackageDocument persistedPackage)
+    {
+        ArgumentNullException.ThrowIfNull(persistedPackage);
+        if (string.IsNullOrWhiteSpace(persistedPackage.PackagePath))
+            return;
+
+        int index = -1;
+        for (int candidate = 0; candidate < Packages.Count; candidate++)
+        {
+            if (PackagePathComparer.Equals(Packages[candidate].Path, persistedPackage.PackagePath))
+            {
+                index = candidate;
+                break;
+            }
+        }
+        if (index < 0)
+            return;
+
+        PackageCatalogItemViewModel previous = Packages[index];
+        PackageCatalogItemViewModel updated = new(new PackageCatalogEntry(
+            previous.Name,
+            previous.Path,
+            persistedPackage,
+            null));
+        PackageCatalogItemViewModel[] catalog = Packages.ToArray();
+        catalog[index] = updated;
+        Packages = catalog;
+
+        if (ReferenceEquals(SelectedPackage, previous))
+        {
+            _selectedPackage = updated;
+            OnPropertyChanged(nameof(SelectedPackage));
+            EditPackageCommand.NotifyCanExecuteChanged();
+            _selectionTask = ApplyPackageSelectionAsync(updated);
+        }
+    }
+
+    public Task ApplyMemoInheritanceAsync() => MemoInheritanceSource?.Package is null
+        ? Task.CompletedTask
+        : Editor.ApplyMemoInheritanceAsync(
+            MemoInheritanceSource.Name,
+            MemoInheritanceSource.Package,
+            MemoInheritanceMode);
+
     private async Task OnPackageSavedAsync(string targetPath, PackageDocument package)
     {
         if (Editor.IsDirty)
@@ -527,8 +649,7 @@ public sealed class PackageManagementViewModel : ViewModelBase, IDisposable
 
     private Task ApplyPackageSelectionAsync(PackageCatalogItemViewModel? package)
     {
-        _dependencyCancellation?.Cancel();
-        _dependencyCancellation?.Dispose();
+        CancelAndDispose(ref _dependencyCancellation);
         int version = ++_dependencyVersion;
         SelectedContent = null;
         SelectedDependency = null;
@@ -557,8 +678,7 @@ public sealed class PackageManagementViewModel : ViewModelBase, IDisposable
     public async Task SearchAsync()
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
-        _searchCancellation?.Cancel();
-        _searchCancellation?.Dispose();
+        CancelAndDispose(ref _searchCancellation);
         _searchCancellation = CancellationTokenSource.CreateLinkedTokenSource(_lifetime.Token);
         CancellationToken token = _searchCancellation.Token;
         int version = ++_searchVersion;
@@ -618,15 +738,22 @@ public sealed class PackageManagementViewModel : ViewModelBase, IDisposable
             return;
 
         _disposed = true;
+        Editor.PropertyChanged -= EditorOnPropertyChanged;
         _lifetime.Cancel();
-        _catalogCancellation?.Cancel();
-        _searchCancellation?.Cancel();
-        _dependencyCancellation?.Cancel();
-        _catalogCancellation?.Dispose();
-        _searchCancellation?.Dispose();
-        _dependencyCancellation?.Dispose();
+        CancelAndDispose(ref _catalogCancellation);
+        CancelAndDispose(ref _searchCancellation);
+        CancelAndDispose(ref _dependencyCancellation);
         Editor.Dispose();
         _lifetime.Dispose();
+    }
+
+    private void EditorOnPropertyChanged(object? sender, PropertyChangedEventArgs eventArgs)
+    {
+        if (eventArgs.PropertyName is nameof(PackageEditorViewModel.IsEditing)
+            or nameof(PackageEditorViewModel.IsOperationRunning))
+        {
+            ApplyMemoInheritanceCommand.NotifyCanExecuteChanged();
+        }
     }
 
     private async Task LoadDependenciesAsync(
@@ -691,6 +818,24 @@ public sealed class PackageManagementViewModel : ViewModelBase, IDisposable
             return false;
         pathId = value;
         return true;
+    }
+
+    private static void CancelAndDispose(ref CancellationTokenSource? source)
+    {
+        CancellationTokenSource? current = source;
+        source = null;
+        if (current is null)
+            return;
+
+        try
+        {
+            current.Cancel();
+        }
+        catch (ObjectDisposedException)
+        {
+            // A completing operation may have disposed the same source first.
+        }
+        current.Dispose();
     }
 
     private static PackageSearchFields MapSearchFields(PackageSearchFieldSelection selection) => selection switch

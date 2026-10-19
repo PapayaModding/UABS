@@ -39,7 +39,7 @@ For all 6,671 matched source records:
 - The Avalonia CAB is exactly one final character longer than the Unity CAB. This matches the legacy scanner's source-verified `end - start - 1` defect; there were no other CAB differences.
 - Every Unity record's index directory equals its source directory relative to `...\StreamingAssets\aa\StandaloneWindows64`.
 
-Neither real data set contains a `Memo` value, so memo field persistence is established by the schema fixture and source, not by these two production directories.
+Neither production data set contains a `Memo` value. Milestone 8 supplements source tracing with the genuine read-only Unity test package under `External_Test/UABS_TestResources`, where asset `hook` stores `"Memo": "钩爪"`, plus a minimized committed representation used for disposable save/reopen verification. This establishes legacy memo shape without claiming a production-memo corpus.
 
 ## Legacy format specification
 
@@ -93,7 +93,7 @@ Both choices preserve more information. The legacy dependency comparator accepts
 | Unity search | Source-compatible | Reader recursively enumerates `*.json` and expects the same field names |
 | Unity direct dependency lookup | Source-compatible, with legacy ambiguity | Full Avalonia CAB values satisfy the legacy prefix comparator; the legacy reader returns the first match |
 | Unity memo read/write | Schema-compatible; Avalonia identity comparison corrected | Avalonia treats safe normal/extended path variants as equal without changing stored text; the unchanged Unity implementation still has its own exact-spelling behavior |
-| Unity memo inheritance | Compatible for newly imported non-empty source directories with matching roots | Folder import now recreates source-relative index placement; pre-existing flat packages are not migrated and newly discovered empty directories are not emitted |
+| Unity memo inheritance | Compatible for matching relative indexes with explicit safety hardening | Milestone 8 retains Safe/Overwrite/Force and the legacy bundle-name heuristic, handles underscore-free names, and reports duplicate bundle/asset matches instead of selecting the first |
 | Exact Unity writer reproduction | Deliberately not a goal | New empty indexes, forced extended paths, and truncated CAB output remain excluded from the practical policy |
 
 The Unity application was not executed against `OWL`; Unity-consumer findings above are based on direct source tracing and the verified serialized fields. They must not be described as a completed Unity UI acceptance test.
@@ -149,7 +149,7 @@ The implementation session did not write either real package. The disposable rou
 
 ## Unity-exclusive features requiring decisions
 
-No new Unity-runtime requirement was found. Package construction depends on AssetsTools.NET metadata inspection, which already has a standalone replacement under UE-007. The compatibility decisions here concern persisted layout and legacy quirks, not a requirement to install or run Unity. UE-008 remains relevant because memo identity and inheritance behavior must be decided before memo implementation.
+No new Unity-runtime requirement was found. Package construction depends on AssetsTools.NET metadata inspection, which already has a standalone replacement under UE-007. The compatibility decisions here concern persisted layout and legacy quirks, not a requirement to install or run Unity. Milestone 8 resolved UE-008's identity, package-copy, and explicit-save policy in code; the finding remains `PARTIALLY_REPLACED` only until the user completes desktop acceptance of the new controls.
 
 ## Implementation status
 

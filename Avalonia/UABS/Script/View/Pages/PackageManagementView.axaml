@@ -3,6 +3,26 @@
              xmlns:vm="clr-namespace:UABS.ViewModels"
              x:Class="UABS.Page.PackageManagementView"
              x:DataType="vm:PackageManagementViewModel">
+    <UserControl.Resources>
+        <StreamGeometry x:Key="PackagesChevronLeftGeometry">M 12,2 L 4,8 L 12,14 Z</StreamGeometry>
+        <StreamGeometry x:Key="PackagesChevronRightGeometry">M 4,2 L 12,8 L 4,14 Z</StreamGeometry>
+        <StreamGeometry x:Key="PackageSourceGeometry">M 1,5 L 8,5 L 10,7 L 19,7 L 19,17 L 1,17 Z</StreamGeometry>
+        <StreamGeometry x:Key="PackageAssetGeometry">M 4,1 L 12,1 L 18,7 L 18,19 L 4,19 Z</StreamGeometry>
+    </UserControl.Resources>
+    <UserControl.Styles>
+        <Style Selector="Button.packagePanelChevron">
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+        </Style>
+        <Style Selector="PathIcon.packagePanelChevronIcon">
+            <Setter Property="Width" Value="12"/>
+            <Setter Property="Height" Value="12"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+    </UserControl.Styles>
+
     <Grid RowDefinitions="Auto,Auto,*" Margin="12" RowSpacing="8">
         <Grid Grid.Row="0" ColumnDefinitions="Auto,Auto,Auto,Auto,*" ColumnSpacing="8">
             <Button Content="Open Package Catalog..." Command="{Binding ChoosePackageDirectoryCommand}"
@@ -23,9 +43,30 @@
             </Border>
         </Grid>
 
-        <Grid Grid.Row="2" ColumnDefinitions="330,4,*">
-            <Grid RowDefinitions="Auto,*" Margin="0,0,8,0" RowSpacing="6">
-                <TextBlock Text="Packages" FontWeight="SemiBold"/>
+        <Grid x:Name="PackagesRegionsGrid" Grid.Row="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="{Binding Layout.SidebarColumnWidth}"
+                                  MinWidth="{Binding Layout.SidebarColumnMinimumWidth}"
+                                  MaxWidth="640"/>
+                <ColumnDefinition Width="{Binding Layout.SplitterColumnWidth}"/>
+                <ColumnDefinition Width="*" MinWidth="520"/>
+            </Grid.ColumnDefinitions>
+
+            <Grid x:Name="LoadedPackagesSidebar" RowDefinitions="Auto,*" Margin="0,0,8,0" RowSpacing="6"
+                  IsVisible="{Binding Layout.IsSidebarVisible}">
+                <Grid ColumnDefinitions="*,Auto">
+                    <TextBlock Text="Packages" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                    <Button x:Name="PackagesSidebarCollapseButton"
+                            Classes="packagePanelChevron"
+                            Grid.Column="1"
+                            Width="28" Height="28"
+                            Command="{Binding Layout.ToggleSidebarCommand}"
+                            ToolTip.Tip="Collapse Loaded Packages"
+                            AutomationProperties.Name="Collapse Loaded Packages">
+                        <PathIcon Classes="packagePanelChevronIcon"
+                                  Data="{StaticResource PackagesChevronLeftGeometry}"/>
+                    </Button>
+                </Grid>
                 <DataGrid Grid.Row="1" AutoGenerateColumns="False" IsReadOnly="True"
                           CanUserResizeColumns="True" GridLinesVisibility="Horizontal"
                           ItemsSource="{Binding Packages}" SelectedItem="{Binding SelectedPackage}">
@@ -37,24 +78,57 @@
                 </DataGrid>
             </Grid>
 
-            <GridSplitter Grid.Column="1" ResizeDirection="Columns" Background="#D0D0D0"/>
+            <GridSplitter x:Name="PackagesSidebarSplitter"
+                          Grid.Column="1"
+                          ResizeDirection="Columns"
+                          ResizeBehavior="PreviousAndNext"
+                          Background="#D0D0D0"
+                          IsVisible="{Binding Layout.IsSidebarVisible}"
+                          DragStarted="OnPackagesSidebarSplitterDragStarted"
+                          DragDelta="OnPackagesSidebarSplitterDragDelta"
+                          DragCompleted="OnPackagesSidebarSplitterDragCompleted"/>
 
-            <Grid Grid.Column="2" RowDefinitions="Auto,*" Margin="8,0,0,0" RowSpacing="6">
+            <Grid x:Name="PackageEditorRegion" Grid.Column="2" RowDefinitions="Auto,*" Margin="8,0,0,0" RowSpacing="6">
                 <TextBlock Text="{Binding SelectedPackageStatus}" TextWrapping="Wrap"/>
-                <TabControl Grid.Row="1" IsVisible="{Binding Editor.IsEditorClosed}">
+                <TabControl x:Name="PackageOverviewTabs" Grid.Row="1" IsVisible="{Binding Editor.IsEditorClosed}">
                     <TabItem Header="Contents">
                         <Grid RowDefinitions="*,Auto" Margin="8" RowSpacing="8">
-                            <DataGrid AutoGenerateColumns="False" IsReadOnly="True" CanUserResizeColumns="True"
+                            <DataGrid x:Name="PackageContentsGrid"
+                                      Classes="assetList packageKindList"
+                                      AutoGenerateColumns="False" IsReadOnly="True" CanUserResizeColumns="True"
                                       GridLinesVisibility="Horizontal" ItemsSource="{Binding Contents}"
-                                      SelectedItem="{Binding SelectedContent}">
+                                      SelectedItem="{Binding SelectedContent}"
+                                      LoadingRow="OnPackageGridLoadingRow">
                                 <DataGrid.Columns>
-                                    <DataGridTextColumn Header="Kind" Binding="{Binding Kind}" Width="80"/>
+                                    <DataGridTemplateColumn SortMemberPath="Kind"
+                                                            Width="52"
+                                                            CanUserResize="False">
+                                        <DataGridTemplateColumn.Header>
+                                            <TextBlock Text="" AutomationProperties.Name="Kind"/>
+                                        </DataGridTemplateColumn.Header>
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate x:DataType="vm:PackageContentItem">
+                                                <Grid x:Name="PackageKindIconHost"
+                                                      Width="20" Height="20"
+                                                      HorizontalAlignment="Center"
+                                                      VerticalAlignment="Center"
+                                                      ToolTip.Tip="{Binding Kind}"
+                                                      AutomationProperties.Name="{Binding Kind}">
+                                                    <PathIcon Classes="packageKindIcon packageSourceKindIcon"
+                                                              Data="{StaticResource PackageSourceGeometry}"
+                                                              IsVisible="{Binding IsSource}"
+                                                              AutomationProperties.Name="Source"/>
+                                                    <PathIcon Classes="packageKindIcon packageAssetKindIcon"
+                                                              Data="{StaticResource PackageAssetGeometry}"
+                                                              IsVisible="{Binding !IsSource}"
+                                                              AutomationProperties.Name="Asset"/>
+                                                </Grid>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
                                     <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="2*"/>
-                                    <DataGridTextColumn Header="Source" Binding="{Binding SourceName}" Width="*"/>
-                                    <DataGridTextColumn Header="CAB" Binding="{Binding CabCode}" Width="*"/>
-                                    <DataGridTextColumn Header="Path ID" Binding="{Binding PathId}" Width="100"/>
-                                    <DataGridTextColumn Header="Memo" Binding="{Binding Memo}" Width="*"/>
-                                    <DataGridTextColumn Header="Original path" Binding="{Binding SourcePath}" Width="2*"/>
+                                    <DataGridTextColumn Header="Type" Binding="{Binding TypeLabel}" Width="160"/>
+                                    <DataGridTextColumn Header="Memo" Binding="{Binding Memo}" Width="2*"/>
                                 </DataGrid.Columns>
                             </DataGrid>
                             <Border Grid.Row="1" Background="White" BorderBrush="#D0D0D0" BorderThickness="1"
@@ -62,49 +136,13 @@
                                 <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="8">
                                     <TextBlock Text="Selected:" FontWeight="SemiBold"/>
                                     <TextBlock Grid.Column="1" Text="{Binding SelectedContent.Name}"/>
-                                    <TextBlock Grid.Row="1" Text="Source path:" FontWeight="SemiBold"/>
-                                    <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding SelectedContent.SourcePath}" TextWrapping="Wrap"/>
-                                    <TextBlock Grid.Row="2" Text="Index:" FontWeight="SemiBold"/>
-                                    <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding SelectedContent.IndexDirectory}"/>
+                                    <TextBlock Grid.Row="1" Text="Type:" FontWeight="SemiBold"/>
+                                    <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding SelectedContent.TypeLabel}"/>
+                                    <TextBlock Grid.Row="2" Text="Technical details:" FontWeight="SemiBold"/>
+                                    <TextBlock x:Name="SelectedContentTechnicalDetails"
+                                               Grid.Row="2" Grid.Column="1"
+                                               Text="{Binding SelectedContent.TechnicalDetails}" TextWrapping="Wrap"/>
                                 </Grid>
-                            </Border>
-                        </Grid>
-                    </TabItem>
-
-                    <TabItem Header="Search">
-                        <Grid RowDefinitions="Auto,Auto,Auto,*,Auto" Margin="8" RowSpacing="7">
-                            <Grid ColumnDefinitions="2*,2*,120,130,Auto,Auto" ColumnSpacing="6">
-                                <TextBox Watermark="Include terms (comma = OR)" Text="{Binding SearchText}"/>
-                                <TextBox Grid.Column="1" Watermark="Exclude terms" Text="{Binding ExcludedSearchText}"/>
-                                <TextBox Grid.Column="2" Watermark="Exact Path ID" Text="{Binding SearchPathIdText}"/>
-                                <ComboBox Grid.Column="3" ItemsSource="{Binding SearchFields}" SelectedItem="{Binding SearchField}"/>
-                                <CheckBox Grid.Column="4" Content="Exact text" IsChecked="{Binding SearchExact}" VerticalAlignment="Center"/>
-                                <Button Grid.Column="5" Content="Search" Command="{Binding SearchCommand}"/>
-                            </Grid>
-                            <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="12">
-                                <CheckBox Content="Packages" IsChecked="{Binding SearchPackages}"/>
-                                <CheckBox Content="Sources" IsChecked="{Binding SearchSources}"/>
-                                <CheckBox Content="Assets" IsChecked="{Binding SearchAssets}"/>
-                                <TextBlock Text="Case-insensitive; exclusions win; empty text requires a Path ID."
-                                           Foreground="#666666" VerticalAlignment="Center"/>
-                            </StackPanel>
-                            <ProgressBar Grid.Row="2" IsVisible="{Binding IsSearching}" IsIndeterminate="True" Height="4"/>
-                            <DataGrid Grid.Row="3" AutoGenerateColumns="False" IsReadOnly="True" CanUserResizeColumns="True"
-                                      GridLinesVisibility="Horizontal" ItemsSource="{Binding SearchResults}"
-                                      SelectedItem="{Binding SelectedSearchResult}">
-                                <DataGrid.Columns>
-                                    <DataGridTextColumn Header="Kind" Binding="{Binding Kind}" Width="80"/>
-                                    <DataGridTextColumn Header="Package" Binding="{Binding PackageName}" Width="*"/>
-                                    <DataGridTextColumn Header="Source" Binding="{Binding SourceName}" Width="*"/>
-                                    <DataGridTextColumn Header="Asset" Binding="{Binding AssetName}" Width="*"/>
-                                    <DataGridTextColumn Header="Path ID" Binding="{Binding PathId}" Width="100"/>
-                                    <DataGridTextColumn Header="Matched" Binding="{Binding MatchCategories}" Width="*"/>
-                                    <DataGridTextColumn Header="Original path" Binding="{Binding SourcePath}" Width="2*"/>
-                                </DataGrid.Columns>
-                            </DataGrid>
-                            <Border Grid.Row="4" Background="#FFF2F2" BorderBrush="#D94848" BorderThickness="1"
-                                    CornerRadius="4" Padding="8" IsVisible="{Binding HasSearchError}">
-                                <TextBlock Text="{Binding SearchError}" Foreground="#9A2020" TextWrapping="Wrap"/>
                             </Border>
                         </Grid>
                     </TabItem>
@@ -116,9 +154,12 @@
                                 <TextBlock Text="Select a source row in Contents to filter; asset rows use their source provenance."
                                            Foreground="#666666"/>
                             </StackPanel>
-                            <DataGrid Grid.Row="1" AutoGenerateColumns="False" IsReadOnly="True" CanUserResizeColumns="True"
+                            <DataGrid x:Name="PackageDependenciesGrid"
+                                      Classes="assetList"
+                                      Grid.Row="1" AutoGenerateColumns="False" IsReadOnly="True" CanUserResizeColumns="True"
                                       GridLinesVisibility="Horizontal" ItemsSource="{Binding DependencyResults}"
-                                      SelectedItem="{Binding SelectedDependency}">
+                                      SelectedItem="{Binding SelectedDependency}"
+                                      LoadingRow="OnPackageGridLoadingRow">
                                 <DataGrid.Columns>
                                     <DataGridTextColumn Header="Requested CAB" Binding="{Binding RequestedCabCode}" Width="*"/>
                                     <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="100"/>
@@ -130,9 +171,12 @@
                             </DataGrid>
                             <TextBlock Grid.Row="2" Text="Candidate records (all are shown when ambiguous)" FontWeight="SemiBold"
                                        IsVisible="{Binding HasSelectedDependency}"/>
-                            <DataGrid Grid.Row="3" AutoGenerateColumns="False" IsReadOnly="True" CanUserResizeColumns="True"
+                            <DataGrid x:Name="PackageDependencyCandidatesGrid"
+                                      Classes="assetList"
+                                      Grid.Row="3" AutoGenerateColumns="False" IsReadOnly="True" CanUserResizeColumns="True"
                                       GridLinesVisibility="Horizontal" ItemsSource="{Binding SelectedDependency.Candidates}"
-                                      IsVisible="{Binding HasSelectedDependency}">
+                                      IsVisible="{Binding HasSelectedDependency}"
+                                      LoadingRow="OnPackageGridLoadingRow">
                                 <DataGrid.Columns>
                                     <DataGridTextColumn Header="Package" Binding="{Binding PackageName}" Width="*"/>
                                     <DataGridTextColumn Header="Source" Binding="{Binding SourceName}" Width="*"/>
@@ -147,10 +191,15 @@
 
                 <Border Grid.Row="1" IsVisible="{Binding Editor.IsEditing}" Background="White"
                         BorderBrush="#C8C8C8" BorderThickness="1" CornerRadius="4" Padding="12">
-                    <Grid RowDefinitions="Auto,Auto,Auto,Auto,*,Auto,Auto" RowSpacing="9">
-                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                    <Grid RowDefinitions="Auto,Auto,Auto,Auto,*,Auto,Auto,Auto" RowSpacing="9">
+                        <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
                             <TextBlock Text="Package Editor" FontSize="20" FontWeight="SemiBold"/>
-                            <Border Grid.Column="1" Background="#FFF3CD" CornerRadius="4" Padding="8,4">
+                            <Button x:Name="ClosePackageEditorButton"
+                                    Grid.Column="1"
+                                    Content="Close Editor"
+                                    Command="{Binding Editor.CloseEditorCommand}"
+                                    ToolTip.Tip="Close the Package Editor; unsaved changes require Save, Discard, or Cancel."/>
+                            <Border Grid.Column="2" Background="#FFF3CD" CornerRadius="4" Padding="8,4">
                                 <TextBlock Text="{Binding Editor.UnsavedIndicator}" FontWeight="SemiBold"/>
                             </Border>
                         </Grid>
@@ -186,16 +235,42 @@
 
                         <Grid Grid.Row="4" RowDefinitions="Auto,*" RowSpacing="4">
                             <TextBlock Text="{Binding Editor.EditorContentsSummary}" FontWeight="SemiBold"/>
-                            <DataGrid Grid.Row="1" AutoGenerateColumns="False" IsReadOnly="True" CanUserResizeColumns="True"
+                            <DataGrid x:Name="PackageEditorItemsGrid"
+                                      Classes="assetList packageKindList"
+                                      Grid.Row="1" AutoGenerateColumns="False" IsReadOnly="True" CanUserResizeColumns="True"
                                       GridLinesVisibility="Horizontal" ItemsSource="{Binding Editor.Items}"
-                                      SelectedItem="{Binding Editor.SelectedItem}">
+                                      SelectedItem="{Binding Editor.SelectedItem}"
+                                      LoadingRow="OnPackageGridLoadingRow">
                                 <DataGrid.Columns>
-                                    <DataGridTextColumn Header="Kind" Binding="{Binding Kind}" Width="80"/>
+                                    <DataGridTemplateColumn SortMemberPath="Kind"
+                                                            Width="52"
+                                                            CanUserResize="False">
+                                        <DataGridTemplateColumn.Header>
+                                            <TextBlock Text="" AutomationProperties.Name="Kind"/>
+                                        </DataGridTemplateColumn.Header>
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate x:DataType="vm:PackageEditorItemViewModel">
+                                                <Grid x:Name="PackageKindIconHost"
+                                                      Width="20" Height="20"
+                                                      HorizontalAlignment="Center"
+                                                      VerticalAlignment="Center"
+                                                      ToolTip.Tip="{Binding Kind}"
+                                                      AutomationProperties.Name="{Binding Kind}">
+                                                    <PathIcon Classes="packageKindIcon packageSourceKindIcon"
+                                                              Data="{StaticResource PackageSourceGeometry}"
+                                                              IsVisible="{Binding IsSource}"
+                                                              AutomationProperties.Name="Source"/>
+                                                    <PathIcon Classes="packageKindIcon packageAssetKindIcon"
+                                                              Data="{StaticResource PackageAssetGeometry}"
+                                                              IsVisible="{Binding !IsSource}"
+                                                              AutomationProperties.Name="Asset"/>
+                                                </Grid>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
                                     <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="2*"/>
-                                    <DataGridTextColumn Header="Source" Binding="{Binding SourceName}" Width="*"/>
-                                    <DataGridTextColumn Header="CAB" Binding="{Binding CabCode}" Width="*"/>
-                                    <DataGridTextColumn Header="Path ID" Binding="{Binding PathId}" Width="100"/>
-                                    <DataGridTextColumn Header="Original path" Binding="{Binding SourcePath}" Width="2*"/>
+                                    <DataGridTextColumn Header="Type" Binding="{Binding TypeLabel}" Width="160"/>
+                                    <DataGridTextColumn Header="Memo" Binding="{Binding Memo}" Width="2*"/>
                                 </DataGrid.Columns>
                             </DataGrid>
                             <TextBlock Grid.Row="1" Text="{Binding Editor.EmptyStateText}" IsVisible="{Binding !Editor.HasItems}"
@@ -203,13 +278,66 @@
                                        Foreground="#666666" TextWrapping="Wrap" MaxWidth="520"/>
                         </Grid>
 
-                        <TextBlock Grid.Row="5" Text="{Binding Editor.ProgressText}" Foreground="#666666"/>
-                        <Border Grid.Row="6" Background="#FFF2F2" BorderBrush="#D94848" BorderThickness="1"
+                        <Border Grid.Row="5" Background="#F7F9FC" BorderBrush="#C8D3E0" BorderThickness="1"
+                                CornerRadius="4" Padding="10">
+                            <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto" RowSpacing="6">
+                                <TextBlock Text="Asset Memo" FontWeight="SemiBold"/>
+                                <TextBlock Grid.Row="1" Text="{Binding Editor.MemoTargetDescription}"
+                                           Foreground="#555555" TextWrapping="Wrap"/>
+                                <TextBlock x:Name="EditorSelectedTechnicalDetails"
+                                           Grid.Row="2" Text="{Binding Editor.SelectedItem.TechnicalDetails}"
+                                           Foreground="#555555" TextWrapping="Wrap"/>
+                                <Grid Grid.Row="3" ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                                    <TextBox Text="{Binding Editor.MemoText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                             IsEnabled="{Binding Editor.IsMemoEditable}" AcceptsReturn="True"
+                                             TextWrapping="Wrap" MinHeight="64"
+                                             Watermark="Select an asset row to edit its memo"/>
+                                    <Button Grid.Column="1" Content="Clear" Command="{Binding Editor.ClearMemoCommand}"
+                                            VerticalAlignment="Top"
+                                            ToolTip.Tip="Stores an explicit empty Memo value, matching the legacy editor."/>
+                                </Grid>
+                                <Grid Grid.Row="4" ColumnDefinitions="*,Auto,170,Auto,110,Auto" ColumnSpacing="8">
+                                    <TextBlock Text="{Binding Editor.MemoStorageDescription}" TextWrapping="Wrap"
+                                               Foreground="#555555" VerticalAlignment="Center"/>
+                                    <TextBlock Grid.Column="1" Text="Copy from package" VerticalAlignment="Center"/>
+                                    <ComboBox Grid.Column="2" ItemsSource="{Binding Packages}"
+                                              SelectedItem="{Binding MemoInheritanceSource, Mode=TwoWay}">
+                                        <ComboBox.ItemTemplate>
+                                            <DataTemplate x:DataType="vm:PackageCatalogItemViewModel">
+                                                <TextBlock Text="{Binding Name}"/>
+                                            </DataTemplate>
+                                        </ComboBox.ItemTemplate>
+                                    </ComboBox>
+                                    <TextBlock Grid.Column="3" Text="Mode" VerticalAlignment="Center"/>
+                                    <ComboBox Grid.Column="4" ItemsSource="{Binding MemoInheritanceModes}"
+                                              SelectedItem="{Binding MemoInheritanceMode, Mode=TwoWay}"/>
+                                    <Button Grid.Column="5" Content="Apply Memo Copy"
+                                            Command="{Binding ApplyMemoInheritanceCommand}"
+                                            ToolTip.Tip="Copies matching asset memos into the editor only. Save is still required."/>
+                                </Grid>
+                            </Grid>
+                        </Border>
+
+                        <TextBlock Grid.Row="6" Text="{Binding Editor.ProgressText}" Foreground="#666666"/>
+                        <Border Grid.Row="7" Background="#FFF2F2" BorderBrush="#D94848" BorderThickness="1"
                                 CornerRadius="4" Padding="8" IsVisible="{Binding Editor.HasError}">
                             <TextBlock Text="{Binding Editor.Error}" Foreground="#9A2020" TextWrapping="Wrap"/>
                         </Border>
                     </Grid>
                 </Border>
+
+                <Button x:Name="PackagesSidebarRestoreHandle"
+                        Classes="packagePanelChevron"
+                        Grid.RowSpan="2"
+                        Width="26" Height="56"
+                        HorizontalAlignment="Left" VerticalAlignment="Center"
+                        IsVisible="{Binding Layout.IsRestoreHandleVisible}"
+                        Command="{Binding Layout.ToggleSidebarCommand}"
+                        ToolTip.Tip="Restore Loaded Packages"
+                        AutomationProperties.Name="Restore Loaded Packages">
+                    <PathIcon Classes="packagePanelChevronIcon"
+                              Data="{StaticResource PackagesChevronRightGeometry}"/>
+                </Button>
             </Grid>
         </Grid>
     </Grid>

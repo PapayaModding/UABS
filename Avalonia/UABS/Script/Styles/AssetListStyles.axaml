@@ -1,0 +1,108 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Styles.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.ThemeDictionaries>
+                <ResourceDictionary x:Key="Default">
+                    <SolidColorBrush x:Key="AssetListRowEvenBrush" Color="#F3F8F3"/>
+                    <SolidColorBrush x:Key="AssetListRowOddBrush" Color="#E8F2E9"/>
+                    <SolidColorBrush x:Key="NavigatorRowEvenBrush" Color="#F5F9F5"/>
+                    <SolidColorBrush x:Key="NavigatorRowOddBrush" Color="#EEF5EE"/>
+                    <SolidColorBrush x:Key="AssetWorkspaceRowHoverBrush" Color="#CCE3D0"/>
+                    <SolidColorBrush x:Key="AssetWorkspaceRowSelectedBrush" Color="#39724D"/>
+                    <SolidColorBrush x:Key="AssetWorkspaceRowSelectedHoverBrush" Color="#2F613F"/>
+                    <SolidColorBrush x:Key="AssetWorkspaceRowSelectedForegroundBrush" Color="#FFFFFF"/>
+                    <SolidColorBrush x:Key="NavigatorFolderIconBrush" Color="#A66B00"/>
+                    <SolidColorBrush x:Key="NavigatorFileIconBrush" Color="#2563A8"/>
+                </ResourceDictionary>
+                <ResourceDictionary x:Key="Dark">
+                    <SolidColorBrush x:Key="AssetListRowEvenBrush" Color="#18231B"/>
+                    <SolidColorBrush x:Key="AssetListRowOddBrush" Color="#1E2C22"/>
+                    <SolidColorBrush x:Key="NavigatorRowEvenBrush" Color="#1A271E"/>
+                    <SolidColorBrush x:Key="NavigatorRowOddBrush" Color="#203024"/>
+                    <SolidColorBrush x:Key="AssetWorkspaceRowHoverBrush" Color="#2C4633"/>
+                    <SolidColorBrush x:Key="AssetWorkspaceRowSelectedBrush" Color="#39724D"/>
+                    <SolidColorBrush x:Key="AssetWorkspaceRowSelectedHoverBrush" Color="#2F613F"/>
+                    <SolidColorBrush x:Key="AssetWorkspaceRowSelectedForegroundBrush" Color="#FFFFFF"/>
+                    <SolidColorBrush x:Key="NavigatorFolderIconBrush" Color="#F1B84B"/>
+                    <SolidColorBrush x:Key="NavigatorFileIconBrush" Color="#8CB4E8"/>
+                </ResourceDictionary>
+            </ResourceDictionary.ThemeDictionaries>
+        </ResourceDictionary>
+    </Styles.Resources>
+
+    <Style Selector="DataGrid.assetList DataGridRow.assetRowEven">
+        <Setter Property="Background" Value="{DynamicResource AssetListRowEvenBrush}"/>
+    </Style>
+    <Style Selector="DataGrid.assetList DataGridRow.assetRowOdd">
+        <Setter Property="Background" Value="{DynamicResource AssetListRowOddBrush}"/>
+    </Style>
+    <Style Selector="DataGrid.assetList DataGridRow:pointerover /template/ Rectangle#BackgroundRectangle">
+        <Setter Property="Fill" Value="{DynamicResource AssetWorkspaceRowHoverBrush}"/>
+        <Setter Property="Opacity" Value="1"/>
+    </Style>
+    <Style Selector="DataGrid.assetList DataGridRow:selected /template/ Rectangle#BackgroundRectangle">
+        <Setter Property="Fill" Value="{DynamicResource AssetWorkspaceRowSelectedBrush}"/>
+        <Setter Property="Opacity" Value="1"/>
+    </Style>
+    <Style Selector="DataGrid.assetList DataGridRow:selected:pointerover /template/ Rectangle#BackgroundRectangle">
+        <Setter Property="Fill" Value="{DynamicResource AssetWorkspaceRowSelectedHoverBrush}"/>
+        <Setter Property="Opacity" Value="1"/>
+    </Style>
+    <Style Selector="DataGrid.assetList DataGridRow:selected DataGridCell">
+        <Setter Property="Foreground" Value="{DynamicResource AssetWorkspaceRowSelectedForegroundBrush}"/>
+    </Style>
+
+    <Style Selector="DataGrid.navigatorList DataGridRow.navigatorRowEven">
+        <Setter Property="Background" Value="{DynamicResource NavigatorRowEvenBrush}"/>
+    </Style>
+    <Style Selector="DataGrid.navigatorList DataGridRow.navigatorRowOdd">
+        <Setter Property="Background" Value="{DynamicResource NavigatorRowOddBrush}"/>
+    </Style>
+    <Style Selector="DataGrid.navigatorList DataGridRow:pointerover /template/ Rectangle#BackgroundRectangle">
+        <Setter Property="Fill" Value="{DynamicResource AssetWorkspaceRowHoverBrush}"/>
+        <Setter Property="Opacity" Value="1"/>
+    </Style>
+    <Style Selector="DataGrid.navigatorList DataGridRow:selected /template/ Rectangle#BackgroundRectangle">
+        <Setter Property="Fill" Value="{DynamicResource AssetWorkspaceRowSelectedBrush}"/>
+        <Setter Property="Opacity" Value="1"/>
+    </Style>
+    <Style Selector="DataGrid.navigatorList DataGridRow:selected:pointerover /template/ Rectangle#BackgroundRectangle">
+        <Setter Property="Fill" Value="{DynamicResource AssetWorkspaceRowSelectedHoverBrush}"/>
+        <Setter Property="Opacity" Value="1"/>
+    </Style>
+    <Style Selector="DataGrid.navigatorList DataGridRow:selected DataGridCell">
+        <Setter Property="Foreground" Value="{DynamicResource AssetWorkspaceRowSelectedForegroundBrush}"/>
+    </Style>
+    <Style Selector="DataGrid.navigatorList PathIcon.navigatorKindIcon">
+        <Setter Property="Width" Value="18"/>
+        <Setter Property="Height" Value="18"/>
+        <Setter Property="HorizontalAlignment" Value="Center"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+    </Style>
+    <Style Selector="DataGrid.navigatorList PathIcon.navigatorFolderKindIcon">
+        <Setter Property="Foreground" Value="{DynamicResource NavigatorFolderIconBrush}"/>
+    </Style>
+    <Style Selector="DataGrid.navigatorList PathIcon.navigatorFileKindIcon">
+        <Setter Property="Foreground" Value="{DynamicResource NavigatorFileIconBrush}"/>
+    </Style>
+    <Style Selector="DataGrid.navigatorList DataGridRow:selected PathIcon.navigatorKindIcon">
+        <Setter Property="Foreground" Value="{DynamicResource AssetWorkspaceRowSelectedForegroundBrush}"/>
+    </Style>
+
+    <Style Selector="DataGrid.packageKindList PathIcon.packageKindIcon">
+        <Setter Property="Width" Value="18"/>
+        <Setter Property="Height" Value="18"/>
+        <Setter Property="HorizontalAlignment" Value="Center"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+    </Style>
+    <Style Selector="DataGrid.packageKindList PathIcon.packageSourceKindIcon">
+        <Setter Property="Foreground" Value="{DynamicResource NavigatorFolderIconBrush}"/>
+    </Style>
+    <Style Selector="DataGrid.packageKindList PathIcon.packageAssetKindIcon">
+        <Setter Property="Foreground" Value="{DynamicResource NavigatorFileIconBrush}"/>
+    </Style>
+    <Style Selector="DataGrid.packageKindList DataGridRow:selected PathIcon.packageKindIcon">
+        <Setter Property="Foreground" Value="{DynamicResource AssetWorkspaceRowSelectedForegroundBrush}"/>
+    </Style>
+</Styles>

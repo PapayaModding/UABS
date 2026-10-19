@@ -15,12 +15,16 @@ class Program
         Printer.RemoveAllFromDefaultLogTxt();
         AppDomain.CurrentDomain.UnhandledException += (sender, e) =>
         {
-            Printer.Print("Unhandled exception: " + e.ExceptionObject);
+            if (e.ExceptionObject is Exception exception)
+                Printer.PrintException("Unhandled application exception.", exception);
+            else
+                Printer.Print("Unhandled application exception object: " + e.ExceptionObject);
         };
 
         TaskScheduler.UnobservedTaskException += (sender, e) =>
         {
-            Printer.Print("Unobserved task exception: " + e.Exception);
+            Printer.PrintException("Unobserved task exception.", e.Exception);
+            e.SetObserved();
         };
 
         // ! Used for converting color in unity to Avalonia.

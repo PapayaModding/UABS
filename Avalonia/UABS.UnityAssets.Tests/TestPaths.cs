@@ -8,6 +8,8 @@ internal static class TestPaths
 
     public static string LegacyPackageFixture => Path.Combine(AppContext.BaseDirectory, "Fixtures", "LegacyPackage");
 
+    public static string LegacyMemoPackageFixture => Path.Combine(AppContext.BaseDirectory, "Fixtures", "LegacyMemoPackage");
+
     public static string ClassData => Path.Combine(AppContext.BaseDirectory, "Resources", "classdata.tpk");
 
     public static string MissingFile => Path.Combine(AppContext.BaseDirectory, "Fixtures", "missing.bundle");
