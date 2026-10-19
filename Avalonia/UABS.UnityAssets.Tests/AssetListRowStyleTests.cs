@@ -128,7 +128,7 @@ public sealed class AssetListRowStyleTests
     }
 
     [AvaloniaFact]
-    public async Task AssetKindIconColumn_IsFixedWhileOtherColumnsRemainResizable()
+    public async Task AssetKindIconColumn_UsesBoundedResizingWhileOtherColumnsRemainResizable()
     {
         IReadOnlyList<AssetEntry> assets = CreateAssets(4);
         using MainWindowViewModel viewModel = await CreateViewModelAsync(assets);
@@ -138,20 +138,21 @@ public sealed class AssetListRowStyleTests
         {
             DataGridTemplateColumn kindColumn = Assert.IsType<DataGridTemplateColumn>(grid.Columns[0]);
             Assert.Equal(string.Empty, kindColumn.Header);
-            Assert.False(kindColumn.CanUserResize);
+            Assert.True(kindColumn.CanUserResize);
             Assert.True(grid.CanUserResizeColumns);
             Assert.All(grid.Columns.Skip(1), column => Assert.True(column.CanUserResize));
-            Assert.Equal(42, kindColumn.ActualWidth, precision: 1);
+            Assert.Equal(52, kindColumn.ActualWidth, precision: 1);
 
             grid.Columns[1].Width = new DataGridLength(320);
             view.UpdateLayout();
 
-            Assert.Equal(42, kindColumn.ActualWidth, precision: 1);
+            Assert.Equal(52, kindColumn.ActualWidth, precision: 1);
             DataGridRow firstRow = FindRow(grid, assets[0]);
             DataGridCell kindCell = firstRow.GetVisualDescendants().OfType<DataGridCell>().First();
             Image icon = kindCell.GetVisualDescendants().OfType<Image>().Single();
             Assert.Equal(24, icon.Bounds.Width, precision: 1);
             Assert.Equal(24, icon.Bounds.Height, precision: 1);
+            KindColumnAssertions.VerifyBoundedResizing(grid);
         }
         finally
         {

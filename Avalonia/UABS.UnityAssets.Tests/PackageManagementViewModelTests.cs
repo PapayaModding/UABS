@@ -600,7 +600,7 @@ public sealed class PackageManagementViewModelTests
         Assert.Equal(string.Empty, header.Text);
         Assert.Equal("Kind", AutomationProperties.GetName(header));
         Assert.Equal("Kind", kindColumn.SortMemberPath);
-        Assert.False(kindColumn.CanUserResize);
+        Assert.True(kindColumn.CanUserResize);
         Assert.True(grid.CanUserResizeColumns);
         Assert.All(grid.Columns.Skip(1), column => Assert.True(column.CanUserResize));
         Assert.Equal(52, kindColumn.ActualWidth, precision: 1);
@@ -612,6 +612,7 @@ public sealed class PackageManagementViewModelTests
         grid.Columns[1].Width = new DataGridLength(280);
         grid.UpdateLayout();
         Assert.Equal(52, kindColumn.ActualWidth, precision: 1);
+        KindColumnAssertions.VerifyBoundedResizing(grid);
     }
 
     private static void AssertPackageKindIcons(DataGrid grid)

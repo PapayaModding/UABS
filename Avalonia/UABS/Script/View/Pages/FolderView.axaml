@@ -41,11 +41,13 @@
                       LoadingRow="OnAssetGridLoadingRow"
                       HeadersVisibility="Column">
                 <DataGrid.Columns>
-                    <DataGridTemplateColumn Header="" Width="42" CanUserResize="False">
+                    <DataGridTemplateColumn Header="" Width="52" MinWidth="0" MaxWidth="80" CanUserResize="True"
+                                            CellTheme="{StaticResource KindIconCellTheme}">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate x:DataType="assets:AssetEntry">
                                 <Image Source="{Binding Type, Converter={StaticResource AssetTypeIconConvertor}}"
                                        Width="24" Height="24" Stretch="Uniform"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center"
                                        RenderOptions.BitmapInterpolationMode="HighQuality"/>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>

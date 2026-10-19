@@ -1,5 +1,8 @@
+using System.ComponentModel;
+using System.Globalization;
 using Avalonia;
 using Avalonia.Automation;
+using Avalonia.Collections;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Headless;
@@ -316,6 +319,67 @@ public sealed class SearchWorkspaceViewModelTests
             Assert.Same(target, search.SelectedResult);
             Assert.Equal(80, targetRow.Index);
             Assert.Contains("assetRowEven", targetRow.Classes);
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    [AvaloniaFact]
+    public async Task KindColumnUsesSharedIconsAndBoundedResizingForEverySearchResultKind()
+    {
+        using PackageManagementViewModel packages = CreatePackages(new FakePackageService([
+            Entry("Alpha", Document("alpha", Bundle("source.ab", Asset("Hero", 7, "memo"))))
+        ]));
+        using SearchWorkspaceViewModel search = new(packages, new PackageSearchService());
+        await packages.LoadCatalogAsync("catalog");
+        search.IncludeText = "Alpha,source,Hero";
+        await search.SearchAsync();
+        SearchWorkspaceView view = new() { DataContext = search };
+        Window window = new() { Width = 1400, Height = 760, Content = view };
+        window.Show();
+        try
+        {
+            view.UpdateLayout();
+            DataGrid grid = Find<DataGrid>(view, "ResultsGrid");
+            DataGridTemplateColumn kind = Assert.IsType<DataGridTemplateColumn>(grid.Columns[0]);
+            TextBlock header = Assert.IsType<TextBlock>(kind.Header);
+            Assert.Equal(string.Empty, header.Text);
+            Assert.Equal("Kind", AutomationProperties.GetName(header));
+            Assert.Equal("Kind", kind.SortMemberPath);
+            Assert.True(kind.CanUserSort);
+            var converter = Assert.IsType<AssetTypeIconConvertor>(Application.Current!.Resources["AssetTypeIconConvertor"]);
+            DataGridRow[] rows = grid.GetVisualDescendants().OfType<DataGridRow>().Where(row => row.Index >= 0).ToArray();
+            Assert.Equal(3, rows.Length);
+            foreach (DataGridRow row in rows)
+            {
+                SearchResultItemViewModel result = Assert.IsType<SearchResultItemViewModel>(row.DataContext);
+                DataGridCell cell = row.GetVisualDescendants().OfType<DataGridCell>().First();
+                Image icon = cell.GetVisualDescendants().OfType<Image>().Single();
+                Assert.Same(converter.Convert(result.Kind, typeof(object), null, CultureInfo.InvariantCulture), icon.Source);
+                Assert.Equal(result.Kind.ToString(), ToolTip.GetTip(icon)?.ToString());
+                Assert.Equal(result.Kind.ToString(), AutomationProperties.GetName(icon));
+                Point center = icon.TranslatePoint(new Point(icon.Bounds.Width / 2, icon.Bounds.Height / 2), cell)!.Value;
+                Assert.Equal(cell.Bounds.Width / 2, center.X, precision: 1);
+                Assert.Equal(cell.Bounds.Height / 2, center.Y, precision: 1);
+                if (result.Kind == PackageSearchResultKind.Asset)
+                    Assert.Same(converter.Convert("Unknown", typeof(object), null, CultureInfo.InvariantCulture), icon.Source);
+            }
+
+            SearchResultItemViewModel selected = search.Results.Single(result => result.Kind == PackageSearchResultKind.Asset);
+            grid.SelectedItem = selected;
+            KindColumnAssertions.VerifyBoundedResizing(grid);
+            grid.CollectionView.SortDescriptions.Add(DataGridSortDescription.FromPath(
+                "Kind", ListSortDirection.Descending, CultureInfo.InvariantCulture));
+            view.UpdateLayout();
+            Assert.Same(selected, search.SelectedResult);
+            DataGridRow[] sortedRows = grid.GetVisualDescendants().OfType<DataGridRow>()
+                .Where(row => row.Index >= 0).OrderBy(row => row.Index).ToArray();
+            Assert.Equal([PackageSearchResultKind.Asset, PackageSearchResultKind.SourceFile, PackageSearchResultKind.Package],
+                sortedRows.Select(row => Assert.IsType<SearchResultItemViewModel>(row.DataContext).Kind));
+            Assert.All(sortedRows, row => Assert.Contains(row.Index % 2 == 0 ? "assetRowEven" : "assetRowOdd", row.Classes));
+            Assert.Equal("memo", selected.Memo);
         }
         finally
         {

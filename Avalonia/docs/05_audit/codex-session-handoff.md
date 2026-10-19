@@ -2,7 +2,31 @@
 
 **Updated:** 2026-10-19
 
-**Current task:** Memo Integration Stage 6 - editable Assets Inspector and shared drafts
+**Current task:** Kind-column full hiding and native restoration
+
+### Kind full-hide checkpoint
+
+- Preserved all unstaged/untracked work from the prior Kind-column task; HEAD remains `94532b8` and the index is untouched. The checkpoint below is historical and its 20 px minimum is superseded here.
+- Explicit `MinWidth="0"` on the five existing Kind columns overrides Avalonia's inherited grid minimum without changing other columns. Defaults remain 52 px, maxima 80 px, and native resizing remains enabled. No custom drag handlers or new controls were added.
+- Headless pointer tests verify zero actual column width, zero-width clipped or invisible virtualized Kind cells, and restoration to 52 px by dragging the next header's left edge (normally Name). This works in Assets, Search, Navigator, Package Contents, and Package Editor.
+- Final Debug startup build passes with **0 warnings/errors**; the Debug solution build also passes. The four sizing tests and broader affected UI/memo focused suite pass **69/69**. A new full-suite run is unnecessary for this five-column minimum override; the prior shared-style/converter task's full **340/340** result remains historical evidence, not a new run.
+- Changed only the four grid XAML files (five Kind columns), shared sizing test helper, policy/design minimum/restoration wording, and this handoff. Documentation checks pass for the three changed documents (21 local links/anchors and balanced fences); normal worktree/index whitespace checks and new-helper checks pass. Existing unstaged icon/style/test work remains intact, with no staging or commits.
+- Manual acceptance: launch the current Debug executable, drag each Kind column's right edge fully left until no icon/column width remains, then restore it by dragging the left edge of the next header (normally Name) to the right. Verify ordinary resizing and selection/hover remain comfortable. No desktop control or real package writes occurred.
+
+**Current verification state:** Full hiding/restoration is implemented using native Avalonia sizing and covered by headless tests; visible desktop acceptance remains pending. Do not begin another task automatically.
+
+### Kind-column final checkpoint
+
+- Started from clean HEAD `94532b8`; all prior Stage 6 work was already committed. Search used an 85 px text column, so its XAML had no icon template or converter binding.
+- Search now reuses `AssetTypeIconConvertor` and existing folder/file/neutral-asset images; no Unity type is inferred or metadata changed. Kind remains the first blank-header sortable column.
+- Assets, Search, Navigator, Package Contents, and Package Editor Kind columns now default to 52 px, allow user resizing, and cap at 80 px without a custom minimum. Dependency and candidate grids have no Kind column and are unchanged. Shared `KindIconCellTheme` derives from Fluent and clips narrow cell contents.
+- Real headless header-drag checks pass across all five grids: effective minimum 20 px (Avalonia's untouched grid default), maximum 80 px, and reopening by the same native header edge. No complete collapse or new restoration UI is introduced. Four focused grid tests pass, including shared Search icons, accessibility, centering, sorting, selection, and parity.
+- Changed areas: `AssetTypeIconConvertor.cs`, `AssetListStyles.axaml`, Assets/Search/Navigator/Packages grid XAML, four existing UI test files plus new `KindColumnAssertions.cs`, `ai-agent.md`, UI workflow design, and this handoff. No memo, persistence, package-model, indexing, editor-lifecycle, or grid-parity logic changed.
+- Mandatory Debug startup and solution builds pass with **0 warnings/errors**. Focused affected UI/memo tests pass **69/69**. Since the converter and cell theme are shared infrastructure, the full Debug suite was run and passes **340/340** with 0 skipped. Git whitespace checks pass with informational LF-to-CRLF warnings only; all changes are unstaged and the Git index remains unchanged. No legacy Unity, genuine package, fixture, desktop, or screenshot operations occurred.
+- Documentation validation passes: **33 Markdown files, 98 local links/anchors, 42 Mermaid blocks**, and balanced fences. The policy/design documents contain no remaining operative fixed-width Kind rule.
+- Policies now supersede the old fixed-width rule and document the measured minimum. Manual visual acceptance remains pending: launch `E:\Projects\UABS\Avalonia\UABS\bin\Debug\net9.0\UABS.exe`, check Search Package/SourceFile/Asset icons, drag each Kind header to its smallest and largest widths and widen it again, and check ordinary-width centering, clipping, selection, and hover in light/dark themes. No new restoration interface is needed at the native 20 px limit.
+
+**Current verification state:** Complete, buildable in Debug, regression-tested, and ready for user visual acceptance. Review and commit only on explicit authorization; do not begin another UX or memo stage automatically.
 
 ### Stage 6 final checkpoint
 

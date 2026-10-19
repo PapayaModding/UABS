@@ -174,7 +174,7 @@ public sealed class NavigatorRowStyleTests
             Assert.Equal(string.Empty, kindHeader.Text);
             Assert.Equal("Kind", AutomationProperties.GetName(kindHeader));
             Assert.Equal("Kind", kindColumn.SortMemberPath);
-            Assert.False(kindColumn.CanUserResize);
+            Assert.True(kindColumn.CanUserResize);
             Assert.False(kindColumn.CanUserSort);
             Assert.True(grid.CanUserResizeColumns);
             Assert.All(grid.Columns.Skip(1), column => Assert.True(column.CanUserResize));
@@ -183,6 +183,7 @@ public sealed class NavigatorRowStyleTests
             grid.Columns[1].Width = new DataGridLength(280);
             view.UpdateLayout();
             Assert.Equal(52, kindColumn.ActualWidth, precision: 1);
+            KindColumnAssertions.VerifyBoundedResizing(grid);
 
             window.RequestedThemeVariant = ThemeVariant.Dark;
             view.UpdateLayout();

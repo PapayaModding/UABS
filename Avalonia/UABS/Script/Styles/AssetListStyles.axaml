@@ -2,6 +2,10 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <Styles.Resources>
         <ResourceDictionary>
+            <ControlTheme x:Key="KindIconCellTheme" TargetType="DataGridCell"
+                          BasedOn="{StaticResource {x:Type DataGridCell}}">
+                <Setter Property="ClipToBounds" Value="True"/>
+            </ControlTheme>
             <ResourceDictionary.ThemeDictionaries>
                 <ResourceDictionary x:Key="Default">
                     <SolidColorBrush x:Key="AssetListRowEvenBrush" Color="#F3F8F3"/>

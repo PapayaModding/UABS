@@ -40,7 +40,10 @@
                 <DataGrid.Columns>
                     <DataGridTemplateColumn SortMemberPath="Kind"
                                             Width="52"
-                                            CanUserResize="False"
+                                            MinWidth="0"
+                                            MaxWidth="80"
+                                            CanUserResize="True"
+                                            CellTheme="{StaticResource KindIconCellTheme}"
                                             CanUserSort="False">
                         <DataGridTemplateColumn.Header>
                             <TextBlock Text="" AutomationProperties.Name="Kind"/>

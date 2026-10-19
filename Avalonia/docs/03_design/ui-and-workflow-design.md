@@ -12,7 +12,21 @@ If UABS locks Debug output, stop that build attempt, report the lock, and ask th
 
 ### Kind/icon column
 
-Where an asset-oriented grid includes a Kind/icon column, it must be the first displayed column, use an appropriate icon rather than visible Kind text, have a blank header, and stay fixed at **52 px** with per-column `CanUserResize="False"`. Neighboring columns keep their existing resize behavior and must not change its width. Center icons horizontally and vertically with consistent sizing and spacing; retain meaningful tooltips and accessible names, including an accessible `Kind` header where supported.
+Where an asset-oriented grid includes a Kind/icon column, use the following standard, which supersedes the earlier fixed-width/non-resizable rule:
+
+| Property | Required convention |
+| --- | --- |
+| Position | First displayed column, far left |
+| Header/content | Blank visible header; appropriate icon instead of Kind text |
+| Default width | `Width="52"` (pixels, not star/stretch sizing) |
+| Maximum width | Per-column `MaxWidth="80"` |
+| User resizing | Per-column `CanUserResize="True"`; keep the grid's resize capability enabled |
+| Minimum width | Explicit per-column `MinWidth="0"` on Kind only; leave the grid and other columns' minimums unchanged |
+| Narrow content | Icon may clip or disappear; never overflow adjacent columns |
+
+Center icons horizontally and vertically at ordinary widths; retain meaningful tooltips and accessible names, including an accessible `Kind` header where supported. Neighboring columns retain their existing resize behavior. The shared `KindIconCellTheme` in `AssetListStyles.axaml` derives from Fluent's standard `DataGridCell` theme and enables cell-bound clipping without replacing its template, focus, or state visuals.
+
+In Avalonia DataGrid **11.3.3**, an unset column minimum inherits the grid's **20 px** `MinColumnWidth`, even though the column minimum property's default reads as 0. Setting `MinWidth="0"` explicitly on Kind overrides that inheritance and enables the native **0–80 px** range. At zero, Kind cells are either arranged at zero width with clipping or virtualized out, so no icon remains visible. To restore Kind, drag the **left edge of the next visible column header (normally Name)** to the right: Avalonia's built-in resize hit testing targets the preceding zero-width column. Headless pointer tests verify hiding and restoration across Assets, Search, Navigator, Package Contents, and Package Editor. No grid-wide minimum override, custom drag handling, or new Hide/Restore control is required.
 
 Reuse the existing asset-type icon converter/resources and shared icon styles in `UABS/Script/Styles/AssetListStyles.axaml`; equivalent asset types must not acquire independent workspace mappings. Use an accurate neutral icon when type information is unavailable rather than guessing from filenames or Path IDs. This convention applies to the Assets Kind/icon column, Search result Kind, Navigator Kind, Package Contents, Package Editor asset rows, and future equivalent columns. It does not require adding Kind to dependency records, catalog lists, or other grids without meaningful asset-kind information.
 
@@ -35,9 +49,9 @@ The Fluent `RowBorder` paints the base stripe; the existing `BackgroundRectangle
 
 ### Required verification and current gaps
 
-For every affected grid change, check the applicable Kind/icon position, content, 52 px width, blank header, and resizing behavior; shared zebra resources; selected/hover precedence; and parity through relevant sorting/filtering/refresh/virtualization paths. Build the Debug startup application before reporting readiness for manual UI acceptance. Apply the [risk-based verification policy](../01_core/ai-agent.md#risk-based-verification-and-token-efficiency): focused tests should inspect effective template layers when relevant, and a successful build is compilation evidence, not visual acceptance. Report actual visual observation only when performed under the repository's desktop-control rules or reported by the user.
+For every affected grid change, check the applicable Kind/icon position, content, 52 px default, blank header, 80 px maximum, enabled resizing, Kind-only zero minimum, fully hidden/clipped icons at zero, and native adjacent-header restoration; shared zebra resources; selected/hover precedence; and parity through relevant sorting/filtering/refresh/virtualization paths. Build the Debug startup application before reporting readiness for manual UI acceptance. Apply the [risk-based verification policy](../01_core/ai-agent.md#risk-based-verification-and-token-efficiency): focused tests should inspect effective template layers when relevant, and a successful build is compilation evidence, not visual acceptance. Report actual visual observation only when performed under the repository's desktop-control rules or reported by the user.
 
-Known implementation gaps at adoption: `FolderView.axaml` still uses a fixed **42 px** Assets icon column, and `SearchWorkspaceView.axaml` still uses an **85 px**, labeled, textual Kind column. Both differ from the new 52 px icon-only standard and require separately scoped UI corrections. Navigator and Package Contents/Editor already use blank-header fixed 52 px icon columns. The Packages source now opts into the shared zebra style, but manual visual acceptance of the correct current Debug executable remains pending. This documentation change does not modify any controls or mark those gaps resolved.
+Assets, Search, Navigator, Package Contents, and Package Editor now use the bounded-resizing convention. Direct Dependencies and dependency candidates have no Kind column and gain none. Search uses the existing `AssetTypeIconConvertor` and icon cache/resources: `folder.png` for Package, `file.png` for SourceFile, and `asset-unknown.png` for Asset because the current package index has no reliable Unity type field. Underlying Kind values and sorting remain intact; no type is inferred from filenames or Path IDs. Assets retains the same converter's existing Unity-type mapping. Manual visual acceptance of these changes remains user-driven.
 
 ## Current Avalonia workflow — implemented
 
@@ -69,7 +83,7 @@ The filesystem Navigator uses an opt-in companion row style that is slightly sof
 
 Navigator precedence is selected-hover, selected, hover, then alternating base. Realized rows derive parity from their current displayed index during row loading, so column sorting, directory navigation, refresh, and virtualized container reuse cannot leave stale stripes. The Fluent keyboard-focus rectangles remain available, and this presentation layer does not distinguish files from folders by background or alter row activation.
 
-The compact 52 px `Kind` column is leftmost and presents a centered 18 px vector folder or folded-corner document instead of repeating `Directory` / `File` as visible cell text. Its header is visually empty but automation-named `Kind`; the column is fixed-width and cannot be click-sorted, while its retained `SortMemberPath` still supports programmatic Kind sorting. The remaining Name, Size, and Modified columns keep their order and resize behavior. The light palette uses `#A66B00` / `#2563A8`; dark mode uses `#F1B84B` / `#8CB4E8`, and selection changes either icon to white. Tooltips and automation names preserve the `Directory` / `File` meaning, and clicking an icon still selects and activates its containing row through the existing path.
+The leftmost `Kind` column defaults to 52 px and presents a centered 18 px vector folder or folded-corner document instead of repeating `Directory` / `File` as visible cell text. Its header is visually empty but automation-named `Kind`; it follows the shared bounded-resizing convention and cannot be click-sorted, while its retained `SortMemberPath` still supports programmatic Kind sorting. The remaining Name, Size, and Modified columns keep their order and resize behavior. The light palette uses `#A66B00` / `#2563A8`; dark mode uses `#F1B84B` / `#8CB4E8`, and selection changes either icon to white. Tooltips and automation names preserve the `Directory` / `File` meaning, and clicking an icon still selects and activates its containing row through the existing path.
 
 ```mermaid
 stateDiagram-v2
