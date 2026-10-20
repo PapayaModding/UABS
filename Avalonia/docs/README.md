@@ -59,6 +59,7 @@ Evidence, migration tracking, risks, decisions, and implementation history:
 - [Milestone 08 memo report](05_audit/milestone-08-report.md)
 - [Legacy package format compatibility audit](05_audit/legacy-package-format-compatibility.md)
 - [Package Format V2 architecture audit and storage benchmark](05_audit/package-format-v2-architecture-audit.md) — proposed clean-break indexing/storage design; no production migration.
+- [Package V2 .NET SQLite validation spike](05_audit/package-format-v2-dotnet-sqlite-spike.md) — isolated provider, metadata, search/federation and memo transaction evidence; no production replacement.
 - [Current Codex session handoff](05_audit/codex-session-handoff.md)
 - [Feature comparison](05_audit/feature-comparison.md)
 - [Legacy feature inventory](05_audit/legacy-feature-inventory.md)

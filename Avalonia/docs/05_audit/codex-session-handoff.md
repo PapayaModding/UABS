@@ -2,7 +2,18 @@
 
 **Updated:** 2026-10-20
 
-**Current task:** Package Format V2 architecture audit and disposable storage benchmark (analysis only)
+**Current task:** Isolated Package V2 .NET SQLite validation spike
+
+### .NET SQLite spike checkpoint
+
+- Started from clean `d0a6834`; previous V2 audit is preserved. Current work is under `experiments/PackageV2.SqliteSpike` and docs only; no solution membership, production dependencies/services, legacy Unity or real package changes.
+- Microsoft.Data.Sqlite 10.0.12 / SQLitePCLRaw bundle 2.1.12 restored from the local cache. Normal directory creation needed a parent-folder write grant, which was obtained; normal editing/build now succeeds.
+- Final Debug spike + infrastructure-reference build passes with zero warnings/errors; **60 executable assertions pass**, including all-class real fixtures, Unicode/null memo semantics, exact transactions, competing writers, rollback/FTS consistency, cancellation, selection scope, pagination, sidecars and unload/move. These are not 60 new production xUnit tests. Startup app/production suite were not rerun because their code, solution and dependencies are unchanged.
+- Sequential 10k/100k/1M benchmarks and three fresh-process probes per size completed. All 36 first/plain/FTS full-record comparisons per size plus federation/attachment/save assertions pass. Raw ignored results live in `experiments/PackageV2.SqliteSpike/artifacts/`; final IDs and all measurements are in the report.
+- At 1M, eight DBs with FTS total 161.84 MiB; selective substring ~22.7 ms, verified memo update ~11.7 ms. Broad materialized queries remain slow/memory-heavy (~2.8 GiB aggregate process peak); a direct 100-row page is ~1.4 ms versus ~141 ms when forcing broad FTS candidates. Bounded federation 4 improves this synthetic workload but is not a universal setting.
+- Report and index complete: [package-format-v2-dotnet-sqlite-spike.md](package-format-v2-dotnet-sqlite-spike.md). Remaining product risks: logical-file ordinal/raw-name API gaps, Unicode/collation versioning and mixed-language performance, selectivity-aware planning/global paging, package revisions/editor/catalog integration, RID testing and crash recovery. Stage 7 remains deferred.
+- Final doc/whitespace/scope checks pass: four documents, 42 local links, balanced fences/one reviewed Mermaid block. Local experiment ignore rules explicitly expose its `.csproj` despite the root Unity ignore, while keeping `bin/obj/artifacts` ignored. Git index remains unchanged; no commit/stage/reset/clean occurred.
+- Next: approve a separate V2 schema/identity/extraction-contract milestone; do not replace persistence, migrate real packages or implement UI automatically. Spike is verified buildable in Debug; historical full app tests below are not renewed evidence of production buildability.
 
 ### Package V2 audit checkpoint
 
