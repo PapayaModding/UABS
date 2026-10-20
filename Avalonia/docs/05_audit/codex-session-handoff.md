@@ -2,7 +2,27 @@
 
 **Updated:** 2026-10-20
 
-**Current task:** Isolated Package V2 .NET SQLite validation spike
+**Current task:** Package V2 architecture approval and implementation-roadmap finalization (documentation only)
+
+### V2 approved design checkpoint
+
+- Preserved the existing two unstaged docs and untracked V2 specification at HEAD `3159778`; index was empty and remains untouched. Only those same three documentation files changed. No production/spike code, fixture, legacy Unity, original source or real package changes.
+- **D1–D8 approved by the user, 2026-10-20.** The [V2 contract](../03_design/package-format-v2-design.md) now supersedes provisional audit/spike recommendations; approved DDL and identity keys are unchanged.
+- D3: intentional same-package reindex preserves package UUID but creates a generation; committed memos transfer only across the same verified source identity/bytes/revision, original logical ordinal and unique Path ID. No changed/unverified-source transfer or name/CAB matching; protect pending/failed drafts and explicitly back up the old generation.
+- D5: invalid revision vectors stop paging/count jobs; retain displayed rows/selection/scroll and synchronize all exact verified memo deltas, mark stale, and offer explicit **Refresh Search**. Never silently rerun, remove/reorder rows or append newer-revision pages.
+- Section 6 defines correctness-equivalent Search/performance gates: 10k/100k/1M, short Chinese/mixed-language, many-package, first/late-page, broad-result/memory and build/size measurements. Repetition methods are specified; numeric budgets remain **pending calibration/approval**, not claimed measurements. Historical spike/audit results remain qualified baselines.
+- Six separately reviewable gates cover extractor fixtures → standalone storage → exact bounded Search → memo/editor adapters → separately approved production integration → separately approved final retirement. **Next:** obtain an explicit request for gate 1, neutral extraction contracts and real multi-logical-file/duplicate-CAB fixture validation; do not start it automatically.
+- V2 production is **not started**; V1 remains working and must be preserved until separately authorized/verified replacement. Global editor leases are not approved; Memo Stage 7 shutdown/crash-recovery safeguards remain deferred. Remaining risks: real identity/version/GUID fixtures, Unicode/global-sort and many-package budgets, native/RID/filesystem faults, concurrency/publication integration.
+- Final checks pass: **3 documents, 48 local links/anchors**, balanced fences and 2 syntax-reviewed Mermaid blocks (no renderer); design SQL SHA-256 unchanged. Staged/unstaged and untracked-spec whitespace checks pass; only informational LF/CRLF notices. No conflict markers or non-documentation changes; index remains empty.
+- Design SQL retains its prior 27-check validation; app builds/full suites were not rerun for this docs-only change. Production buildability is not newly verified. No desktop control, staging or commit.
+
+### V2 design specification checkpoint (historical; approval superseded above)
+
+- Started clean at `3159778`; prior spike/audit work is committed and preserved. Only docs are being edited; no production or spike code/schema, real package, Unity or fixture changes are authorized.
+- Completed [package-format-v2-design.md](../03_design/package-format-v2-design.md): immutable package/generation/source/revision/directory-ordinal/Path-ID keys; provisional normalized STRICT DDL; ambiguous/incomplete row retention; exact .NET text semantics; optional derived caches; bounded keyset federation, revision invalidation and memo/editor/portability contracts.
+- A disposable external Debug validator executes the actual fenced SQL with the existing spike provider/Store helper in memory. **27 checks pass** on native SQLite 3.53.3/.NET 9.0.5, including corrected pre-AFTER-trigger memo-clearing checks and RETURNING timing, FK/version constraints, ambiguity and nullable Unicode keysets. Scratch: `C:\Users\kolynlin\Documents\Codex\2026-10-16\files-pasted-by-the-user-i\package-v2-contract-validation`. No repository code/project or package schema was changed.
+- D1–D8 remain provisional pending user review; V2 production remains unimplemented. Next action is review/approval, particularly revision-scoped logical ordinals, Unicode scan/cache performance, reindex memo carry-forward, stale pagination/count UX and row-versus-package conflict scope. Do not start production replacement or Memo Stage 7 automatically.
+- Updated only the specification, docs index and this handoff. Documentation/whitespace/scope checks finalize the task; existing spike build/tests below remain historical evidence, not renewed production buildability verification.
 
 ### .NET SQLite spike checkpoint
 

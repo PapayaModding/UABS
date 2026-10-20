@@ -31,6 +31,7 @@ How the legacy and replacement applications are structured, including implemente
 Interaction and workflow specifications, with current behavior separated from proposals:
 
 - [UI and workflow design](03_design/ui-and-workflow-design.md)
+- [Package Format V2 identity, schema and Search contract](03_design/package-format-v2-design.md) — approved D1–D8 architecture, performance acceptance gates and separately authorized implementation roadmap; production V2 remains unimplemented.
 - [UX redesign foundation and design audit](03_design/ux-redesign-foundation.md) — proposed four-workspace shell, shared inspector, behavior matrix, wireframes, and incremental sequence.
 
 ### 04 Systems
