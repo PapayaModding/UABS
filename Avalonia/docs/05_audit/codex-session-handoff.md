@@ -1,8 +1,19 @@
 # Codex Session Handoff
 
-**Updated:** 2026-10-19
+**Updated:** 2026-10-20
 
-**Current task:** Kind-column full hiding and native restoration
+**Current task:** Package Format V2 architecture audit and disposable storage benchmark (analysis only)
+
+### Package V2 audit checkpoint
+
+- Started from clean `593fd10`; staged/unstaged/untracked work was absent. Prior Kind-column work is committed; historical checkpoints below are retained.
+- No application changes, migration, new production dependency, real-package writes or desktop interaction are authorized. V2 has no backward-compatibility requirement, but existing data must remain untouched.
+- Confirmed current writer limits new references to Texture2D/Sprite and discards class/type/logical-file metadata; the asset-session enumeration already carries these without media decoding. Legacy package indexing instead calls `GetBaseField` for each indexed asset.
+- Working report: [package-format-v2-architecture-audit.md](package-format-v2-architecture-audit.md). Disposable harness/results live outside Git at `C:\Users\kolynlin\Documents\Codex\2026-10-16\files-pasted-by-the-user-i\package-v2-benchmark`.
+- Final isolated 10k/100k/1M prototypes pass 13-query full-result hash equivalence across nested JSON, compact JSON, SQLite B-tree and SQLite trigram variants; separate post-load secondary-index/header-read measurements also completed. Main repeated timings are medians of three, with fresh-process/OS-cache-warm observations explicitly distinguished from physical cold I/O.
+- Report complete: proposed all-class metadata-first indexing, package/generation/source/logical-file/Path-ID identity, bounded federation, Stage 2–6 memo adaptation, risks and incremental approval gates. At 1M total assets, compact JSON is 116.42 MiB versus SQLite 176.91 MiB / trigram 209.54 MiB; SQLite selective lookups and memo updates win, broad materialized searches do not. Recommended SQLite is conditional on product decisions and a .NET/provider/real-metadata validation spike, not an approved implementation.
+- Changed only this handoff, the new report, and the documentation index. The old architecture/system docs contain historical pre-auto-save statements; current source was inspected instead of treating those as current behavior. No production source, project/dependency, fixture, legacy Unity or genuine package changes occurred.
+- Production source is unchanged; no application build/regression suite was run for this analysis-only task. Earlier build results below remain historical, not new buildability evidence. Documentation links/fences and Git whitespace/scope checks are the relevant final checks. Exact next step: obtain the report's storage/Unicode/generation/location/paging decisions, then authorize a separate V2 contract/provider spike. Do not implement V2, migrate packages, or begin Memo Stage 7 automatically.
 
 ### Kind full-hide checkpoint
 
