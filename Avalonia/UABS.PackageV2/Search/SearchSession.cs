@@ -48,6 +48,7 @@ internal sealed class Registration(SearchRegistration value, IReadOnlyList<Searc
     private bool _active = true;
     private int _users;
     internal long SchemaVersion { get; init; }
+    internal IReadOnlyDictionary<string, string?> ConstantSortValues { get; init; } = new Dictionary<string, string?>();
     internal bool Active { get { lock (_gate) return _active; } }
     internal IDisposable Lease()
     {

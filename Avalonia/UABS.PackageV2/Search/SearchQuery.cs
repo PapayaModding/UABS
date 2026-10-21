@@ -49,9 +49,9 @@ internal static class SearchQuery
         string prefix = Param(Key(new(reg.Package.PackageId, reg.Package.GenerationId, PackageSearchResultKind.Package, null, null, null, null)));
         // Prefix ends in the four empty source/revision/ordinal slots; construct actual keys explicitly below.
         string baseKey = Param(reg.Package.PackageId.ToString("N").ToUpperInvariant() + "|" + reg.Package.GenerationId.ToString("N").ToUpperInvariant() + "|");
-        string Match(string expression, PackageSearchFields field) => r.Fields.HasFlag(field)
+        string Match(string expression, PackageSearchFields field) => session.Include.Length > 0 && r.Fields.HasFlag(field)
             ? $"uabs_match({expression},{(int)field})" : "0";
-        string Exclude(string expression, PackageSearchFields field) => r.Fields.HasFlag(field) ? $"uabs_exclude({expression})" : "0";
+        string Exclude(string expression, PackageSearchFields field) => session.Exclude.Length > 0 && r.Fields.HasFlag(field) ? $"uabs_exclude({expression})" : "0";
         string SourceKey = $"{baseKey}||hex(s.source_uuid)||'|'||hex(s.source_revision_uuid)||'||'";
         string AssetKeySql = $"{baseKey}||hex(s.source_uuid)||'|'||hex(s.source_revision_uuid)||'|'||printf('%010d',f.directory_ordinal)||'|'||printf('%010d',a.table_ordinal)";
         List<string> branches = [];
@@ -68,12 +68,12 @@ internal static class SearchQuery
             if (r.Fields.HasFlag(PackageSearchFields.CabCode))
             {
                 matches.Add($"CASE WHEN EXISTS(SELECT 1 FROM logical_file f WHERE f.source_id=s.source_id AND uabs_match(f.cab_name,32)<>0) THEN 32 ELSE 0 END");
-                excluded.Add("EXISTS(SELECT 1 FROM logical_file f WHERE f.source_id=s.source_id AND uabs_exclude(f.cab_name)<>0)");
+                if (session.Exclude.Length > 0) excluded.Add("EXISTS(SELECT 1 FROM logical_file f WHERE f.source_id=s.source_id AND uabs_exclude(f.cab_name)<>0)");
             }
             if (r.Fields.HasFlag(PackageSearchFields.Dependency))
             {
                 matches.Add("CASE WHEN EXISTS(SELECT 1 FROM dependency d JOIN logical_file f ON f.file_id=d.file_id WHERE f.source_id=s.source_id AND (uabs_match(d.raw_path,256)|uabs_match(d.raw_virtual_path,256)|uabs_match(d.raw_cab,256))<>0) THEN 256 ELSE 0 END");
-                excluded.Add("EXISTS(SELECT 1 FROM dependency d JOIN logical_file f ON f.file_id=d.file_id WHERE f.source_id=s.source_id AND (uabs_exclude(d.raw_path)|uabs_exclude(d.raw_virtual_path)|uabs_exclude(d.raw_cab))<>0)");
+                if (session.Exclude.Length > 0) excluded.Add("EXISTS(SELECT 1 FROM dependency d JOIN logical_file f ON f.file_id=d.file_id WHERE f.source_id=s.source_id AND (uabs_exclude(d.raw_path)|uabs_exclude(d.raw_virtual_path)|uabs_exclude(d.raw_cab))<>0)");
             }
             branches.Add($"SELECT 1,({string.Join('|', matches)}),({string.Join('|', excluded)}),{packageName},{packagePath},s.index_directory,s.original_name,s.original_path,NULL,NULL,NULL,NULL,s.source_uuid,s.source_revision_uuid,NULL,NULL,0,NULL,0,{SourceKey} FROM source s");
         }
@@ -106,7 +106,9 @@ internal static class SearchQuery
         string sql = "WITH candidates(kind,categories,excluded,package_name,package_path,index_directory,source_name,source_path,asset_name,path_id,class_id,type_name,source_uuid,source_revision,directory_ordinal,table_ordinal,memo_revision,identity_status,asset_id,row_key) AS("
             + string.Join(" UNION ALL ", branches) + ") SELECT " + (count ? "COUNT(*)" : "*")
             + " FROM candidates WHERE excluded=0 AND categories<>0";
-        if (session.Include.Length > 0)
+        // Without a numeric/identity match category, an asset's nonzero categories already prove
+        // name/memo matching. Re-evaluating the bitmask repeats managed UDF/string conversions.
+        if (session.Include.Length > 0 && (r.PathId is not null || r.AssetIdentity is not null))
             sql += " AND (kind<>2 OR (categories & 192)<>0)";
         if (!count)
         {
@@ -121,23 +123,40 @@ internal static class SearchQuery
                 ("source_path COLLATE uabs_order", after?.SourcePath, false), ("asset_name COLLATE uabs_order", after?.AssetName, false),
                 ("path_id", after?.PathId, false), ("kind", after is null ? null : (object)(long)after.Key.Kind, false),
                 ("row_key COLLATE BINARY", after is null ? null : Key(after.Key), false) });
+            bool packageRows = r.PathId is null && r.AssetIdentity is null && r.ResultKinds.HasFlag(PackageSearchResultKinds.Package);
+            bool TryConstant(string expression, out object? constant)
+            {
+                string column = expression.Split(' ')[0];
+                if (column == "package_name") { constant = reg.Package.Name; return true; }
+                if (column == "package_path") { constant = reg.Path; return true; }
+                if (!packageRows && registration.ConstantSortValues.TryGetValue(column, out string? value))
+                { constant = value; return true; }
+                constant = null; return false;
+            }
             if (after is not null)
             {
                 List<string> disjunction = [], equal = [];
                 foreach (var key in keys)
                 {
+                    if (TryConstant(key.Sql, out object? constant))
+                    {
+                        int comparison = Value(constant, key.Value);
+                        if (comparison == 0) continue;
+                        if (key.Desc ? comparison < 0 : comparison > 0)
+                            disjunction.Add(equal.Count == 0 ? "1=1" : "(" + string.Join(" AND ", equal) + ")");
+                        break; // this constant is unequal: no deeper lexicographic equality is possible
+                    }
                     string parameter = Param(key.Value);
                     string later = key.Desc ? $"(({key.Sql} IS NULL AND {parameter} IS NOT NULL) OR {key.Sql} < {parameter})"
                         : $"(({parameter} IS NULL AND {key.Sql} IS NOT NULL) OR {key.Sql} > {parameter})";
                     disjunction.Add("(" + string.Join(" AND ", equal.Append(later)) + ")");
                     equal.Add($"({key.Sql} IS {parameter})");
                 }
-                sql += " AND (" + string.Join(" OR ", disjunction) + ")";
+                sql += " AND (" + (disjunction.Count == 0 ? "0=1" : string.Join(" OR ", disjunction)) + ")";
             }
             // Package name/path are constants within this database. Keep them in global continuation
             // predicates, but do not invoke managed collations on constants during the local sort.
-            var localKeys = keys.Where(k => !k.Sql.StartsWith("package_name", StringComparison.Ordinal)
-                && !k.Sql.StartsWith("package_path", StringComparison.Ordinal)).DistinctBy(k => k.Sql);
+            var localKeys = keys.Where(k => !TryConstant(k.Sql, out _)).DistinctBy(k => k.Sql);
             sql += " ORDER BY " + string.Join(',', localKeys.Select(k => k.Sql + (k.Desc ? " DESC" : " ASC"))) + " LIMIT " + Param(limit);
         }
         command.CommandText = sql;

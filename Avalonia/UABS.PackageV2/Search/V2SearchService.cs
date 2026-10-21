@@ -22,7 +22,8 @@ public sealed class V2SearchService
     {
         _options = options ?? new(); _observe = observe;
         if (_options.Workers is < 1 or > 4 || _options.MaxSelectedPackages is < 1 or > 128
-            || _options.MaxPredicateEvaluations < 1 || (_options.OperationTimeout is TimeSpan t && (t <= TimeSpan.Zero || t > TimeSpan.FromMinutes(10))))
+            || _options.MaxPredicateEvaluations < 1 || _options.MaxSqliteValueBytes < 1024 || _options.MaxBufferedTextBytes < 1
+            || (_options.OperationTimeout is TimeSpan t && (t <= TimeSpan.Zero || t > TimeSpan.FromMinutes(10))))
             throw new ArgumentOutOfRangeException(nameof(options));
         _workers = new(_options.Workers, _options.Workers);
     }
@@ -35,6 +36,7 @@ public sealed class V2SearchService
             string fullPath = Path.GetFullPath(path);
             return await Worker(token, () => {
                 using SqliteConnection c = StorageSchema.Open(fullPath, true);
+                SetValueLimit(c);
                 using var interrupt = token.Register(() => SQLitePCL.raw.sqlite3_interrupt(c.Handle));
                 using StorageSql sql = new(c); sql.Exec("BEGIN");
                 PackageInfo info = StorageSchema.Validate(c, false, token);
@@ -49,18 +51,33 @@ public sealed class V2SearchService
                     warnings.Add(new("DependencyEvidence", "Raw dependency declarations are not resolved targets; dependency enrichment may be incomplete.", id));
                 if (!info.DerivedFieldsCompatible) warnings.Add(new("RawTextFallback", "Derived text profile is unsupported; use authoritative raw .NET predicates.", id));
                 long schemaVersion = sql.Number("PRAGMA schema_version");
+                // Canonical source columns are NOT NULL. Equal BINARY min/max proves exact constancy,
+                // not a guessed case-insensitive equality. Captured under this generation/revision.
+                Dictionary<string, string?> constants = [];
+                using (SqliteDataReader columns = sql.Command("SELECT MIN(index_directory),MAX(index_directory),MIN(original_name),MAX(original_name),MIN(original_path),MAX(original_path) FROM source").ExecuteReader())
+                {
+                    columns.Read(); string[] aliases = ["index_directory", "source_name", "source_path"];
+                    for (int i = 0; i < aliases.Length; i++)
+                    {
+                        string? min = columns.IsDBNull(i * 2) ? null : columns.GetString(i * 2);
+                        string? max = columns.IsDBNull(i * 2 + 1) ? null : columns.GetString(i * 2 + 1);
+                        if (string.Equals(min, max, StringComparison.Ordinal)) constants.Add(aliases[i], min);
+                    }
+                }
                 sql.Exec("COMMIT"); token.ThrowIfCancellationRequested();
                 SearchRegistration value = new(id, fullPath, locationEpoch, info);
                 lock (_gate)
                 {
                     if (_registrations.Values.Any(r => r.Value.Package.PackageId == info.PackageId))
                         return new SearchRegistrationResult(SearchStatus.RegistrationConflict, null, "A package UUID is already registered; unload it before registering an alias/copy.");
-                    _registrations.Add(id, new(value, warnings.AsReadOnly()) { SchemaVersion = schemaVersion });
+                    _registrations.Add(id, new(value, warnings.AsReadOnly()) { SchemaVersion = schemaVersion,
+                        ConstantSortValues = new System.Collections.ObjectModel.ReadOnlyDictionary<string, string?>(constants) });
                 }
                 return new SearchRegistrationResult(SearchStatus.Success, value, "Read-only package registered.");
             }).ConfigureAwait(false);
         }
-        catch (Exception e) { return new(token.IsCancellationRequested ? SearchStatus.Cancelled : SearchStatus.InvalidPackage, null, e.Message); }
+        catch (Exception e) { return new(token.IsCancellationRequested ? SearchStatus.Cancelled : IsValueLimit(e)
+            ? SearchStatus.BudgetExceeded : SearchStatus.InvalidPackage, null, e.Message); }
     }
 
     public async Task<bool> UnloadAsync(Guid registrationId)
@@ -117,7 +134,12 @@ public sealed class V2SearchService
                             Candidate candidate = new(SearchQuery.Row(reader, registration), reader.GetInt64(18), registration);
                             lock (merge)
                             {
-                                best.Add(candidate); if (best.Count > pageSize + 1) best.Remove(best.Max!);
+                                if (best.Add(candidate))
+                                {
+                                    long delta = TextBytes(candidate.Row);
+                                    if (best.Count > pageSize + 1) { Candidate removed = best.Max!; best.Remove(removed); delta -= TextBytes(removed.Row); }
+                                    operation.RetainText(delta);
+                                }
                                 int peak; do { peak = PeakBufferedCandidates; if (best.Count <= peak) break; }
                                 while (Interlocked.CompareExchange(ref _peakBufferedCandidates, best.Count, peak) != peak);
                             }
@@ -135,7 +157,9 @@ public sealed class V2SearchService
                         operation.Token.ThrowIfCancellationRequested();
                         using SqliteDataReader reader = sql.Command("SELECT memo,memo_revision FROM asset WHERE asset_id=@p0", item.AssetId).ExecuteReader();
                         if (!reader.Read() || reader.GetInt64(1) != item.Row.MemoRevision) throw new StaleSearchException();
-                        item.Row = item.Row with { Memo = reader.IsDBNull(0) ? null : reader.GetString(0) };
+                        string? memo = reader.IsDBNull(0) ? null : reader.GetString(0);
+                        operation.RetainText((long)(memo?.Length ?? 0) * sizeof(char));
+                        item.Row = item.Row with { Memo = memo };
                     }
                     Verify(c, group.Key); sql.Exec("COMMIT");
                 }))).ConfigureAwait(false);
@@ -202,6 +226,7 @@ public sealed class V2SearchService
         await Worker(linked.Token, () => {
             using IDisposable lease = registration.Lease();
             using SqliteConnection c = StorageSchema.Open(registration.Value.Path, true);
+            SetValueLimit(c);
             using var interrupt = linked.Token.Register(() => SQLitePCL.raw.sqlite3_interrupt(c.Handle));
             using (StorageSql sql = new(c)) { sql.Exec("PRAGMA cache_size=-4096"); sql.Exec("PRAGMA temp_store=FILE"); sql.Exec("PRAGMA query_only=ON"); }
             _observe?.Invoke(SearchBoundary.WorkerStarted, registration.Value.Path);
@@ -222,6 +247,12 @@ public sealed class V2SearchService
         c.CreateFunction<string?, int>("uabs_type", value => { Check(); return string.Equals(value, session.Request.TypeName, StringComparison.OrdinalIgnoreCase) ? 1 : 0; });
         c.CreateCollation("uabs_order", (a, b) => { Check(); _observe?.Invoke(SearchBoundary.SortComparison, path); operation.Token.ThrowIfCancellationRequested(); return SearchQuery.Text(a, b); });
     }
+    private void SetValueLimit(SqliteConnection connection) =>
+        SQLitePCL.raw.sqlite3_limit(connection.Handle, SQLitePCL.raw.SQLITE_LIMIT_LENGTH, _options.MaxSqliteValueBytes);
+    private static bool IsValueLimit(Exception error) => error is SqliteException { SqliteErrorCode: SQLitePCL.raw.SQLITE_TOOBIG };
+    private static long TextBytes(SearchResult row) => ((long)row.PackageName.Length + row.PackagePath.Length
+        + (row.IndexDirectory?.Length ?? 0) + (row.SourceName?.Length ?? 0) + (row.SourcePath?.Length ?? 0)
+        + (row.AssetName?.Length ?? 0) + (row.TypeName?.Length ?? 0) + (row.Memo?.Length ?? 0)) * sizeof(char);
     private static void Verify(SqliteConnection c, Registration registration)
     {
         if (!registration.Active) throw new StaleSearchException();
@@ -246,7 +277,7 @@ public sealed class V2SearchService
     {
         if (session.IsStale || error is StaleSearchException) { session.Invalidate(); return SearchStatus.StaleCursor; }
         if (token.IsCancellationRequested || session.Token.IsCancellationRequested) return SearchStatus.Cancelled;
-        if (operation.Token.IsCancellationRequested) return SearchStatus.BudgetExceeded;
+        if (operation.Token.IsCancellationRequested || IsValueLimit(error)) return SearchStatus.BudgetExceeded;
         return error is IOException or SqliteException or UnauthorizedAccessException ? SearchStatus.Unavailable : SearchStatus.Failed;
     }
     private static SearchPage Failure(SearchSession session, SearchStatus status, SearchCursor? cursor, string message) =>
@@ -263,15 +294,22 @@ public sealed class V2SearchService
     {
         private readonly CancellationTokenSource _stop;
         private readonly long _max;
+        private readonly long _maxText;
         private long _steps;
+        private long _textBytes;
         internal CancellationToken Token => _stop.Token;
         internal Operation(SearchSession session, CancellationToken token, SearchOptions options)
         {
-            _max = options.MaxPredicateEvaluations;
-            _stop = CancellationTokenSource.CreateLinkedTokenSource(session.Token, token);
+            _max = options.MaxPredicateEvaluations; _maxText = options.MaxBufferedTextBytes;
+            // Any selected registration invalidates the whole captured vector. Stop peers/queued work,
+            // not just the unloaded package's local handle, before awaiting the federation barrier.
+            _stop = CancellationTokenSource.CreateLinkedTokenSource(new[] { session.Token, token }
+                .Concat(session.Registrations.Select(r => r.UnloadToken)).ToArray());
             _stop.CancelAfter(options.OperationTimeout ?? TimeSpan.FromSeconds(30));
         }
         internal void Step() { if (Interlocked.Increment(ref _steps) > _max) _stop.Cancel(); Token.ThrowIfCancellationRequested(); }
+        internal void RetainText(long delta)
+        { if (Interlocked.Add(ref _textBytes, delta) > _maxText) _stop.Cancel(); Token.ThrowIfCancellationRequested(); }
         public void Dispose() => _stop.Dispose();
     }
 }

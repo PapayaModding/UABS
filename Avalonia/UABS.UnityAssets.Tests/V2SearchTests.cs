@@ -17,14 +17,18 @@ public sealed class V2SearchTests
         internal static readonly string?[] Names = ["Hero", "hero", "钩爪", "甲钩爪乙", "Éclair", "e\u0301clair", "😀Hero", "İstanbul", "ıstanbul", null, "", "texture blocked", "音声", "duplicate", "duplicate", "\tHero", "ＡＢＣ", "ẞß"];
         internal static readonly string?[] Memos = [null, "", "\u2003", "memo approved", "钩爪 memo", "😀备注", "blocked", " "];
         internal async Task Add(int count = 36, string name = "Package", bool partial = false, bool duplicateNames = false,
-            Func<int, string?>? nameFactory = null)
+            Func<int, string?>? nameFactory = null, int sourceCount = 1)
         {
             int number = Packages.Count;
             string path = Path.Combine(DirectoryPath, $"package-{number}.uabs.sqlite");
             string source = Path.Combine(DirectoryPath, $"source-{number}.bundle");
             PackageBuildRequest request = new(path, Guid.NewGuid(), Guid.NewGuid(), name,
                 [new("game", DirectoryPath, OperatingSystem.IsWindows() ? "windows-lexical-v1" : "posix-lexical-v1")],
-                [new(0, Path.GetFileName(source), "characters", new(source, Guid.NewGuid(), Guid.NewGuid()))], partial);
+                Enumerable.Range(0, sourceCount).Select(s => {
+                    string file = s == 0 ? source : source + "-" + s;
+                    return new BuildSource(0, Path.GetFileName(file), s == 0 ? "characters" : "characters-other",
+                        new(file, Guid.NewGuid(), Guid.NewGuid()));
+                }).ToArray(), partial);
             var result = await new PackageBuilder(new Extractor(count, partial, duplicateNames, nameFactory)).BuildAsync(request);
             Assert.True(result.Succeeded, result.Message);
             // Fixture-only memo seeding exercises the canonical triggers; no production memo API is introduced.
@@ -40,8 +44,10 @@ public sealed class V2SearchTests
             }
             List<PackageAssetReference> assets = Enumerable.Range(0, count).Select(i => new PackageAssetReference {
                 Name = (nameFactory is null ? AssetName(i, duplicateNames) : nameFactory(i))!, PathId = PathId(i), Memo = Memos[i % Memos.Length] }).ToList();
-            var legacy = new PackageSearchSource(name, new PackageDocument([new PackageIndex("characters", [new() {
-                Name = Path.GetFileName(source), Path = source, CabCode = "CAB-shared", Dependencies = ["archive:/dep/CAB-raw"], AssetInfos = assets }])], path));
+            var indexes = request.Sources.GroupBy(s => s.IndexDirectory).Select(group => new PackageIndex(group.Key,
+                group.Select(s => new PackageBundleReference { Name = Path.GetFileName(s.Request.Path), Path = s.Request.Path,
+                    CabCode = "CAB-shared", Dependencies = ["archive:/dep/CAB-raw"], AssetInfos = assets.Select(a => a.Clone()).ToList() })));
+            var legacy = new PackageSearchSource(name, new PackageDocument(indexes, path));
             Packages.Add((path, legacy));
         }
         internal static string? AssetName(int i, bool duplicateNames) => duplicateNames ? "asset" : i < Names.Length ? Names[i] : "asset_" + i.ToString("D8");
@@ -370,6 +376,72 @@ public sealed class V2SearchTests
         cancelled.Cancel(); Assert.Equal(SearchStatus.Cancelled, (await service.ReadPageAsync(cancelled, page.NextCursor)).Status);
         using var invalid = Session(service, new("hero"), registrations); invalid.Invalidate();
         Assert.Equal(SearchStatus.StaleCursor, (await service.ReadPageAsync(invalid)).Status); Assert.Single(page.Rows);
+    }
+
+    [Theory]
+    [InlineData(PackageSearchSortField.PackageName)] [InlineData(PackageSearchSortField.SourceName)]
+    [InlineData(PackageSearchSortField.SourcePath)] [InlineData(PackageSearchSortField.IndexDirectory)]
+    [InlineData(PackageSearchSortField.AssetName)] [InlineData(PackageSearchSortField.PathId)] [InlineData(PackageSearchSortField.MatchCategory)]
+    public async Task ConstantSortFolding_MixedSourcesAndPackageNullsPreserveV1Order(PackageSearchSortField field)
+    {
+        using Corpus corpus = new(); await corpus.Add(sourceCount: 3); await corpus.Add(name: "package");
+        V2SearchService service = new(); var registrations = await Register(service, corpus);
+        foreach (var direction in Enum.GetValues<PackageSearchSortDirection>())
+        foreach (var kinds in new[] { PackageSearchResultKinds.Asset, PackageSearchResultKinds.All })
+        {
+            SearchRequest request = new("hero,memo,Package,characters,source", SortBy: field, SortDirection: direction, ResultKinds: kinds);
+            using var session = Session(service, request, registrations.Reverse().ToArray());
+            var actual = await Exhaust(service, session, 3);
+            var expected = new PackageSearchService().Search(corpus.Packages.Select(p => p.Legacy).ToArray(), new(request.Query) {
+                SortBy = field, SortDirection = direction, ResultKinds = kinds });
+            Assert.Equal(expected.Select(Signature), actual.Select(Signature));
+        }
+    }
+
+    [Theory]
+    [InlineData(8, 1)] [InlineData(32, 2)] [InlineData(128, 4)]
+    public async Task LargeSelections_ExhaustExactlyWithBoundedWorkers(int packages, int workers)
+    {
+        using Corpus corpus = new();
+        for (int p = 0; p < packages; p++)
+        { bool matches = p % 4 != 0; await corpus.Add(8, "Package " + p.ToString("D3"), nameFactory: _ => matches ? "asset" : "negative"); }
+        V2SearchService service = new(new(Workers: workers)); var registrations = await Register(service, corpus);
+        using var session = Session(service, new("asset", Fields: PackageSearchFields.AssetName, ResultKinds: PackageSearchResultKinds.Asset), registrations.Reverse().ToArray());
+        var actual = await Exhaust(service, session, 100);
+        var expected = new PackageSearchService().Search(corpus.Packages.Select(p => p.Legacy).ToArray(), new("asset") {
+            Fields = PackageSearchFields.AssetName, ResultKinds = PackageSearchResultKinds.Asset });
+        Assert.Equal(expected.Select(Signature), actual.Select(Signature));
+        Assert.Equal(packages * 3 / 4 * 8, actual.Count); Assert.InRange(service.PeakWorkers, 1, workers);
+        Assert.InRange(service.PeakBufferedCandidates, 1, 101); Assert.Equal(0, service.ActiveWorkers);
+    }
+
+    [Theory]
+    [InlineData(false)] [InlineData(true)]
+    public async Task TextResourceLimits_ReturnBudgetFailureNotTruncatedSuccess(bool nativeLimit)
+    {
+        using Corpus corpus = new(); await corpus.Add();
+        if (nativeLimit) Edit(corpus.Packages[0].Path, "UPDATE asset SET memo=replace(hex(zeroblob(3000)),'0','长') WHERE table_ordinal=0");
+        V2SearchService service = new(nativeLimit ? new(MaxSqliteValueBytes: 4096) : new(MaxBufferedTextBytes: 1));
+        var registered = await service.RegisterAsync(corpus.Packages[0].Path);
+        if (nativeLimit && registered.Status == SearchStatus.BudgetExceeded) { Assert.Null(registered.Registration); return; }
+        Assert.Equal(SearchStatus.Success, registered.Status);
+        using var session = Session(service, new("hero", Fields: PackageSearchFields.AssetName, ResultKinds: PackageSearchResultKinds.Asset), registered.Registration!);
+        var page = await service.ReadPageAsync(session); Assert.Equal(SearchStatus.BudgetExceeded, page.Status);
+        Assert.Empty(page.Rows); Assert.Null(page.NextCursor); Assert.Equal(SearchCountKind.Unknown, page.Count.Kind);
+        Assert.Equal(0, service.ActiveWorkers);
+    }
+
+    [Fact]
+    public async Task EmittedMemoBudget_IsGlobalAndPreservesFullTextWhenWithinBudget()
+    {
+        using Corpus corpus = new(); await corpus.Add();
+        Edit(corpus.Packages[0].Path, "UPDATE asset SET memo=replace(hex(zeroblob(2000)),'0','字') WHERE table_ordinal=0");
+        V2SearchService constrained = new(new(MaxBufferedTextBytes: 4096)); var registrations = await Register(constrained, corpus);
+        using var session = Session(constrained, new(PathId: -77, Fields: PackageSearchFields.None, ResultKinds: PackageSearchResultKinds.Asset), registrations);
+        Assert.Equal(SearchStatus.BudgetExceeded, (await constrained.ReadPageAsync(session)).Status);
+        V2SearchService roomy = new(); var room = await Register(roomy, corpus);
+        using var valid = Session(roomy, session.Criteria, room);
+        Assert.Equal(4000, Assert.Single(await Exhaust(roomy, valid)).Memo!.Length);
     }
 
     [Fact]
