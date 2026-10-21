@@ -62,6 +62,7 @@ Evidence, migration tracking, risks, decisions, and implementation history:
 - [Package Format V2 architecture audit and storage benchmark](05_audit/package-format-v2-architecture-audit.md) — proposed clean-break indexing/storage design; no production migration.
 - [Package V2 Gate 1 metadata extraction](05_audit/package-format-v2-gate-01-extraction.md) — isolated all-asset extractor, source verification and measured tests; real multi-file identity acceptance remains open.
 - [Package V2 Gate 2 storage](05_audit/package-format-v2-gate-02-storage.md) — isolated canonical SQLite builder/read-only reader, publication safety, admission and storage measurements; no production integration.
+- [Package V2 Gate 3 isolated Search](05_audit/package-format-v2-gate-03-search.md) — Search/federation API, correctness, bounded pagination and verification/acceptance evidence; no production UI integration.
 - [Package V2 .NET SQLite validation spike](05_audit/package-format-v2-dotnet-sqlite-spike.md) — isolated provider, metadata, search/federation and memo transaction evidence; no production replacement.
 - [Current Codex session handoff](05_audit/codex-session-handoff.md)
 - [Feature comparison](05_audit/feature-comparison.md)
