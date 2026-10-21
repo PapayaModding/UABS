@@ -8,12 +8,18 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UABS.UnityAssets", "UABS.Un
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UABS.UnityAssets.Tests", "UABS.UnityAssets.Tests\UABS.UnityAssets.Tests.csproj", "{F282999E-5B84-485A-9C32-0B954009BF97}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UABS.PackageV2", "UABS.PackageV2\UABS.PackageV2.csproj", "{D3BD6811-FF6A-4E98-9A10-2A6E3067B2EA}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{D3BD6811-FF6A-4E98-9A10-2A6E3067B2EA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D3BD6811-FF6A-4E98-9A10-2A6E3067B2EA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D3BD6811-FF6A-4E98-9A10-2A6E3067B2EA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D3BD6811-FF6A-4E98-9A10-2A6E3067B2EA}.Release|Any CPU.Build.0 = Release|Any CPU
 		{9A90C255-20E0-7DA0-63BA-3102F5DED82E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{9A90C255-20E0-7DA0-63BA-3102F5DED82E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9A90C255-20E0-7DA0-63BA-3102F5DED82E}.Release|Any CPU.ActiveCfg = Release|Any CPU

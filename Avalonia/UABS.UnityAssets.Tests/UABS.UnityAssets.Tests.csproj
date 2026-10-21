@@ -19,6 +19,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\UABS.UnityAssets\UABS.UnityAssets.csproj" />
+    <ProjectReference Include="..\UABS.PackageV2\UABS.PackageV2.csproj" />
     <ProjectReference Include="..\UABS\UABS.csproj" />
     <!-- Existing vendored parser, used only to construct disposable metadata fixtures. -->
     <Reference Include="AssetsTools.NET">
