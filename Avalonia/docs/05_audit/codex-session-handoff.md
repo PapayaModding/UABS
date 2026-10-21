@@ -1,10 +1,20 @@
 # Codex Session Handoff
 
-**Updated:** 2026-10-20
+**Updated:** 2026-10-21
 
-**Current task:** Package V2 Gate 2 — isolated SQLite builder and read-only reader
+**Current task:** Package V2 Gate 2A — approved dependency-path amendment (no Gate 3)
 
-### V2 Gate 2 recovery checkpoint
+### V2 Gate 2A checkpoint
+
+- Started at clean `5505cbb`; index empty. Normal Avalonia write access granted. Preserve the committed Gate 2 implementation and all subsequent work; no production/legacy/package-data edits.
+- User explicitly approved the pre-release V2.0 amendment on 2026-10-20: nullable `dependency.raw_virtual_path`, exact original serialized spelling in `raw_path`, unchanged CAB/GUID/type/order. Keep manifest 2.0 / user_version 20000; structural admission rejects earlier missing-column files, with no migration.
+- Schema/design and builder mapping updated; focused regression cases added for independent/NULL/empty/Unicode paths, normalized-path non-substitution, order/evidence and old-schema rejection. Generic reader pages and canonical structural validation already include the new column without a separate DTO/API.
+- **Final verified state:** Debug storage/test/startup and solution builds pass with **0 warnings/errors**. Focused standalone **49/49**; full in-process xUnit **412 run, 0 failed/skipped, 12.46 s**. These are not VSTest results; the previously blocked transport was not repeatedly retried or bypassed. No benchmark reruns.
+- **Files changed:** `UABS.PackageV2/{Schema.sql,PackageBuilder.cs}`, `UABS.UnityAssets.Tests/V2StorageTests.cs`, design, storage report and this handoff (six tracked unstaged files, empty index). No reader/DTO branch required: generic dependency pages expose the new column, canonical structural signatures enforce it. Original/virtual NULL/empty/Unicode/spelling, CAB/GUID/type/order, missing-original rejection and old-schema read-only rejection all pass.
+- Canonical DDL equality, three-assembly zero-Unity/production-isolation audit, genuine fixture hashes, protected-path scope, staged/unstaged whitespace/conflict and documentation checks pass: **3 docs / 24 local links/anchors**, balanced fences, three syntax-reviewed Mermaid blocks (not rendered). Removed only the newly generated test log; disposable artifacts are empty. Repository is verified buildable; nothing staged/committed.
+- **Next exact action:** review/accept isolated Gate 2/2A. No unfinished Gate 2A implementation. Genuine multi-file/duplicate-CAB/version identity and native/filesystem faults remain prerequisites for production reliance; VSTest transport still needs an authorized functioning environment. Historical scale measurements below predate this schema amendment. Obtain a separate explicit Gate 3 request before Search work; no production integration, memo adapters, migration or Stage 7.
+
+### V2 Gate 2 recovery checkpoint (historical; Gate 2A above supersedes schema status)
 
 - **Final verified checkpoint:** implementation, builds, scale measurements and documentation are complete for isolated Gate 2. The [storage report](package-format-v2-gate-02-storage.md) is authoritative for detailed evidence/limitations. Worktree remains unstaged/uncommitted at `921de5f`; prior files preserved, no V1/Gate 1/approved DDL or legacy/package-data changes.
 - Final Debug storage/test/startup builds: **0 warnings/errors**. Final standalone focused harness **41/41**; standard in-process xUnit executor ran the **full assembly: 404 passed, 0 failed/skipped, 12.61 s**, including zero-Unity and headless regression tests. These are **not VSTest results**. Initial VSTest 33/33 is historical; exactly one resume-focused VSTest attempt stalled without results and was cancelled, with no retries or permission bypass. Normal VSTest transport remains unavailable.

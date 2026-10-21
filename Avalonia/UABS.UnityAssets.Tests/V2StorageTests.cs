@@ -19,7 +19,8 @@ public sealed class V2StorageTests(Xunit.Abstractions.ITestOutputHelper output)
         public void Dispose() => Directory.Delete(DirectoryPath, true);
     }
     private sealed class SyntheticExtractor(int assets = 6, int files = 2,
-        V2ExtractionStatus status = V2ExtractionStatus.Complete, bool duplicates = true, bool virtualPath = false) : IV2MetadataExtractor
+        V2ExtractionStatus status = V2ExtractionStatus.Complete, bool duplicates = true,
+        Func<V2Dependency, V2Dependency>? dependencyMap = null) : IV2MetadataExtractor
     {
         public async Task<V2ExtractionResult> ExtractAsync(V2ExtractionRequest request,
             Func<IReadOnlyList<V2MetadataRecord>, CancellationToken, ValueTask> receive, V2ExtractionOptions? options = null,
@@ -43,8 +44,10 @@ public sealed class V2StorageTests(Xunit.Abstractions.ITestOutputHelper output)
                     await Emit(new V2Asset(ordinal, i, id, i == 2 ? 1234567 : 28, i == 2 ? 1 : 0, null, i * 32L, 16,
                         V2IdentityStatus.Addressable, name, name is null ? V2NameStatus.Failed : V2NameStatus.Present, i == 2 ? null : "Texture2D"));
                 }
-                await Emit(new V2Dependency(ordinal, "external_file", 0, null, "CAB-duplicate", "CAB-duplicate", virtualPath ? "unmapped:/evidence" : "", "CAB-duplicate", "010203048090A0B0FFFFFFFF11223344", 1));
-                await Emit(new V2Dependency(ordinal, "external_file", 1, null, "", "", "", null, new string('0', 32), 0));
+                V2Dependency dependency = new(ordinal, "external_file", 0, null, "CAB-duplicate", "CAB-duplicate", "", "CAB-duplicate", "010203048090A0B0FFFFFFFF11223344", 1);
+                dependency = dependencyMap is null ? dependency : dependencyMap(dependency);
+                await Emit(dependency);
+                await Emit(new V2Dependency(ordinal, "external_file", dependency.Kind == "external_file" ? 1 : 0, null, "", "", "", null, new string('0', 32), 0));
                 await Emit(new V2Diagnostic(ordinal, 0, "name", "name-failed", "Synthetic optional-name failure."));
                 await Emit(new V2LogicalFile(ordinal, "CAB-duplicate", "CAB-duplicate", "2022.3.57f1", 22, true, assets, assets,
                     status == V2ExtractionStatus.Partial ? status : V2ExtractionStatus.Complete, V2DependencyStatus.Complete));
@@ -234,11 +237,57 @@ public sealed class V2StorageTests(Xunit.Abstractions.ITestOutputHelper output)
         Assert.False((await new PackageBuilder(new SyntheticExtractor()).BuildAsync(request)).Succeeded); Assert.Empty(Directory.GetFiles(f.DirectoryPath));
     }
 
-    [Fact]
-    public async Task UnrepresentableGate1Evidence_IsRejectedRatherThanDroppedOrChangingSchema()
+    [Theory]
+    [InlineData("external_file", "resources/unity_builtin_extra", "archive:/different/CAB-virtual")]
+    [InlineData("external_file", "library/unity default resources", null)]
+    [InlineData("external_file", "Mixed/Original\\CAB-Case", "")]
+    [InlineData("external_file", "资源/原始路径", "虚拟:/目录/资源")]
+    [InlineData("external_file", "", "virtual:/nonempty")]
+    [InlineData("external_file", null, null)]
+    [InlineData("assetbundle_dependency", "verbatim/Bundle依赖", "")]
+    public async Task DependencyPaths_RoundTripIndependentRawEvidence(string kind, string? original, string? virtualPath)
     {
-        using Fixture f = new(); var request = f.Request(); var result = await new PackageBuilder(new SyntheticExtractor(virtualPath: true)).BuildAsync(request);
-        Assert.False(result.Succeeded); Assert.Contains("schema review", result.Message); Assert.False(File.Exists(request.Destination));
+        using Fixture f = new(); var request = f.Request();
+        var extractor = new SyntheticExtractor(dependencyMap: d => d with {
+            Kind = kind, Path = kind == "assetbundle_dependency" ? original : original is null ? null : "Resources/normalized",
+            OriginalPath = kind == "external_file" ? original : null, VirtualPath = virtualPath });
+        var result = await new PackageBuilder(extractor).BuildAsync(request);
+        Assert.True(result.Succeeded, result.Message);
+        using PackageReader reader = await Open(request.Destination);
+        var dependencies = await reader.ReadMetadataAsync(MetadataTable.Dependencies);
+        Assert.Equal(kind == "external_file" ? new long[] { 0, 1, 0, 1 } : new long[] { 0, 0, 0, 0 },
+            dependencies.Select(d => (long)d.Values["declaration_ordinal"]!));
+        foreach (var dependency in dependencies.Where(d => d.Values["raw_cab"] is not null))
+        {
+            Assert.Equal(original, dependency.Values["raw_path"]);
+            Assert.Equal(virtualPath, dependency.Values["raw_virtual_path"]);
+            Assert.Equal("CAB-duplicate", dependency.Values["raw_cab"]);
+            Assert.Equal("010203048090A0B0FFFFFFFF11223344", Convert.ToHexString((byte[])dependency.Values["guid_bytes"]!));
+            Assert.Equal(1L, dependency.Values["external_type"]);
+        }
+        Assert.All(dependencies.Where(d => d.Values["raw_cab"] is null), d => {
+            Assert.Equal("", d.Values["raw_path"]); Assert.Equal("", d.Values["raw_virtual_path"]); });
+    }
+
+    [Fact]
+    public async Task MissingOriginalEvidence_DoesNotSubstituteNormalizedPath()
+    {
+        using Fixture f = new(); var request = f.Request();
+        var result = await new PackageBuilder(new SyntheticExtractor(dependencyMap: d => d with { OriginalPath = null })).BuildAsync(request);
+        Assert.Equal(StorageStatus.ValidationFailure, result.Status); Assert.Contains("original serialized path evidence", result.Message);
+        Assert.False(File.Exists(request.Destination));
+    }
+
+    [Fact]
+    public async Task PreAmendmentSchema_MissingVirtualPath_IsRejectedWithoutModification()
+    {
+        using Fixture f = new(); var request = f.Request();
+        Assert.True((await new PackageBuilder(new SyntheticExtractor()).BuildAsync(request)).Succeeded);
+        Edit(request.Destination, "ALTER TABLE dependency DROP COLUMN raw_virtual_path");
+        byte[] before = SHA256.HashData(File.ReadAllBytes(request.Destination));
+        var admission = await PackageReader.OpenAsync(request.Destination);
+        Assert.Equal(StorageStatus.InvalidPackage, admission.Status); Assert.Null(admission.Reader);
+        Assert.Equal(before, SHA256.HashData(File.ReadAllBytes(request.Destination)));
     }
 
     [Theory]

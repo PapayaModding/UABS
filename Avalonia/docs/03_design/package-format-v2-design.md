@@ -171,6 +171,7 @@ CREATE TABLE dependency (
     declaration_ordinal INTEGER NOT NULL CHECK(declaration_ordinal >= 0),
     declaring_asset_path_id INTEGER,
     raw_path TEXT,
+    raw_virtual_path TEXT,
     raw_cab TEXT,
     guid_bytes BLOB CHECK(guid_bytes IS NULL OR length(guid_bytes) = 16),
     external_type INTEGER,
@@ -228,7 +229,7 @@ COMMIT;
 | logical_file | All directory occurrences, including failed readable candidates. CAB is nullable/nonunique. Delete child data only while constructing/rebuilding a generation. |
 | asset_type | Per-file serialized type metadata, not one global Class-ID→script-type dictionary. NULL local index permits unresolved type observations. |
 | asset | One row per readable table entry. Class ID is stored directly for filtering, even unknown numeric IDs; NULL means genuinely unavailable. Type FK cannot point into another logical file. Validate non-null class agreement with type metadata. |
-| dependency | Ordered raw declarations including empty/malformed strings; never discard evidence after failed resolution. External metadata ordinal is zero-based; a PPtr external file ID would map through its separately defined 1-based convention. |
+| dependency | Ordered raw declarations including empty/malformed strings; `raw_path` retains original serialized spelling and nullable `raw_virtual_path` independently retains virtual evidence (NULL differs from empty). Preserve `raw_cab`, GUID and external type. Never discard evidence after failed resolution. External metadata ordinal is zero-based; a PPtr external file ID would map through its separately defined 1-based convention. |
 | indexing_issue | At most one direct owner; all NULL means package-wide. Stable code plus bounded message, not entire payload/stack dumps. |
 
 `memo NULL` = missing; `memo=''` = explicitly empty; whitespace is retained verbatim. Memos stay on the asset row: a separate 1:1 memo table is not justified by the spike. Derived `memo_nonblank` is recomputed by the registered versioned .NET function. Do not add a pre-update CHECK tying it to the new memo value while relying on an AFTER trigger: such a check rejects clearing a previously nonblank memo before the trigger runs. Its semantic consistency is checked after trigger completion/on admission; supported APIs never update it independently. `name_ascii_key` exists only for printable ASCII raw names and contains ASCII-uppercase bytes; otherwise NULL. It is validated on publication, not computed by Unicode-unsafe `lower()`.
@@ -240,6 +241,10 @@ The addressable-path unique index prevents two addressable duplicates but does n
 Child FKs cascade only with a deliberate generation rebuild; asset→type is RESTRICT. Delete assets before types/files when rebuilding. Supported published-package writers change memos only; structural changes create a new generation. Foreign keys alone do not validate counts/status/fingerprints/derived flags.
 
 ### 3.2 Version admission
+
+**Explicitly approved pre-release amendment (Gate 2A, 2026-10-20):** add nullable `dependency.raw_virtual_path TEXT`; external-file `raw_path` comes from Gate 1 `OriginalPath`, never parser-normalized `Path`. AssetBundle dependency strings remain verbatim `Path`. Preserve virtual NULL versus explicit empty and existing CAB/GUID/type/order evidence without recomputing it. Reject a non-null external locator lacking original serialized evidence rather than inventing raw spelling; when both original and locator are unavailable, retain NULL. D1–D8 otherwise remain unchanged.
+
+V2 has not entered production, so this explicitly approved amendment finalizes provisional **V2.0** directly: retain manifest 2.0, application ID and `user_version=20000`. Structural admission rejects pre-amendment files lacking `raw_virtual_path`, even when version markers match. No compatibility fallback, automatic upgrade or legacy migration; disposable pre-release outputs must be rebuilt explicitly.
 
 Open existing files without `ReadWriteCreate`; verify SQLite signature, `application_id`, `user_version=20000`, manifest 2.0, expected tables/columns/constraints/triggers/indexes and text-contract support before exposing editing. Unknown major/minor/features are rejected, not silently opened writable; raw inspection may be a separate explicit tool. A recognized contract with an unsupported `derived_text_profile` is different: correct read-only raw scans remain possible while **all** profile-derived keys/flags/caches are ignored; saving requires explicit derivative revalidation under an approved runtime profile. There is no automatic legacy or future-version migration. Use a structural schema comparison, not a hash of whitespace in `sqlite_schema.sql`. `quick_check` plus FK/semantic validation runs off UI on first admission and after detected file replacement; publication uses full integrity/FK validation. Corruption reports an unavailable package and never auto-repairs/deletes it.
 
@@ -417,7 +422,7 @@ Reuse classification: unchanged View bindings/generic command-dispatch behavior 
 
 ## 10. Approved decisions D1–D8
 
-**All eight decisions formally approved by the user, 2026-10-20.** Approval freezes architecture, not evidence still to be collected, numeric performance thresholds or permission to implement. No material conflict with the existing DDL was found; its SQL is unchanged. Earlier audit/spike recommendations are historical, not competing policy.
+**All eight decisions formally approved by the user, 2026-10-20.** Approval freezes architecture, not evidence still to be collected, numeric performance thresholds or permission to implement. Gate 2A's separately approved pre-release dependency-path amendment is recorded in section 3.2; no other D1–D8 decision changes. Earlier audit/spike recommendations are historical, not competing policy.
 
 | ID | Approved contract | Evidence still required / boundary |
 | --- | --- | --- |
@@ -430,7 +435,9 @@ Reuse classification: unchanged View bindings/generic command-dispatch behavior 
 | D7 — Approved | Every discoverable table entry, raw nullable names/status and available unknown Class IDs; no generated searchable fallback or full content decoding. Ambiguous/incomplete identities read-only; partial coverage publication needs explicit acknowledgement and differentiated enrichment warnings. | Real malformed/partial/version fixtures and completeness checks; missing optional enrichment must not be mislabeled missing asset coverage. |
 | D8 — Approved | Clean V2.0 admission rejects unsupported schema; no legacy migration, automatic upgrades, speculative compatibility layer, decoder redesign or unrelated UI. | Memo Stage 7 normal-shutdown/crash-recovery safeguards remain deferred by user decision, not solved by SQLite durability. |
 
-## 11. Implementation gates (not started)
+## 11. Implementation gates and authorization
+
+Current isolated Gate 1/Gate 2/2A evidence and limitations are recorded in the [Gate 2 storage report](../05_audit/package-format-v2-gate-02-storage.md). Production V2 and Gate 3 have not started; the acceptance requirements below remain applicable, not automatically satisfied by an isolated implementation.
 
 Each gate is separately reviewable and requires its own explicit implementation request. D1–D8 approval authorizes **none** of these implementations. Preserve the working V1 production path until a separately authorized replacement is verified; no implicit conversion, real-data overwrite or removal. Failed/unmet evidence blocks promotion, not a silent scope expansion.
 
@@ -442,6 +449,8 @@ Each gate is separately reviewable and requires its own explicit implementation 
 6. **Final acceptance, benchmarking and legacy-format retirement.** Dependencies: accepted gate 5 and separate authorization for removal of old production-format code. Scope: equivalent-result performance report, fault/deployment matrix, complete docs and deliberately scoped retirement—not deletion of old user packages or a migration layer. Tests: full regression and zero-Unity audit, native packaging, build/read/search/memo/editor/publication failures and user acceptance. Performance: all section 6 calibrated budgets with retained artifacts, repeated representative real metadata and many-package workloads; explain regressions and unresolved platform limits. Safety: backups and user data untouched; no unsupported-platform or Stage 7 recovery claims. **Exit/approval:** explicit acceptance of evidence and retirement diff; unmet gates stay open and V1 stays available until removal is authorized/verified.
 
 ## 12. Design validation record
+
+Gate 2A supersedes the historical unchanged-DDL/hash statements below only for the approved `raw_virtual_path` addition and original-path mapping. The [Gate 2 storage report](../05_audit/package-format-v2-gate-02-storage.md) records current schema equality, admission/round-trip and regression verification; earlier hashes/measurements are not assertions about the amended schema.
 
 - Source/API references were checked against `3159778`, including production Search matching/sorting, package/memo contracts and the actual vendored AssetsTools.NET metadata types. Prior audit/spike timings remain historical evidence, not new benchmarks.
 - Executed this document's SQL block in an in-memory database using the existing spike's `Store.Exec`, Microsoft.Data.Sqlite 10.0.12 / native SQLite **3.53.3**, **.NET 9.0.5**. A disposable Debug validator outside the repository passed **27 checks**: header/version/FK/UUID constraints; duplicate CAB/name/Path-ID cases; logical/type ownership; incomplete/ambiguous rows; NULL/empty/Unicode-whitespace memo transitions; no-op/stale updates; revision-trigger rollback; and nullable Unicode keysets with ascending/descending primaries and ascending ties. Integrity/FK checks pass.

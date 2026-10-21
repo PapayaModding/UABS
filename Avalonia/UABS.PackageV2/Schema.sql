@@ -102,6 +102,7 @@ CREATE TABLE dependency (
     declaration_ordinal INTEGER NOT NULL CHECK(declaration_ordinal >= 0),
     declaring_asset_path_id INTEGER,
     raw_path TEXT,
+    raw_virtual_path TEXT,
     raw_cab TEXT,
     guid_bytes BLOB CHECK(guid_bytes IS NULL OR length(guid_bytes) = 16),
     external_type INTEGER,

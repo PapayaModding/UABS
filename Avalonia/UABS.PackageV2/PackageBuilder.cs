@@ -259,10 +259,12 @@ public sealed class PackageBuilder(IV2MetadataExtractor extractor, Action<BuildB
                         asset.Name, asset.NameStatus.ToString().ToLowerInvariant(), StorageSchema.AsciiKey(asset.Name));
                     break;
                 case V2Dependency dependency:
-                    if ((!string.IsNullOrEmpty(dependency.OriginalPath) && dependency.OriginalPath != dependency.Path) || !string.IsNullOrEmpty(dependency.VirtualPath))
-                        throw new InvalidDataException("Gate 1 external original/virtual path evidence cannot be represented losslessly in canonical V2.0; schema review required.");
-                    sql.Exec("INSERT INTO dependency(file_id,relation_kind,declaration_ordinal,declaring_asset_path_id,raw_path,raw_cab,guid_bytes,external_type) VALUES(@p0,@p1,@p2,@p3,@p4,@p5,@p6,@p7)",
-                        id, dependency.Kind, dependency.DeclarationOrdinal, dependency.DeclaringAssetPathId, dependency.Path,
+                    // External Path can be parser-normalized; never substitute it for serialized evidence.
+                    if (dependency.Kind == "external_file" && dependency.OriginalPath is null && dependency.Path is not null)
+                        throw new InvalidDataException("External dependency original serialized path evidence is unavailable; normalized path cannot replace it.");
+                    string? rawPath = dependency.Kind == "external_file" ? dependency.OriginalPath : dependency.Path;
+                    sql.Exec("INSERT INTO dependency(file_id,relation_kind,declaration_ordinal,declaring_asset_path_id,raw_path,raw_virtual_path,raw_cab,guid_bytes,external_type) VALUES(@p0,@p1,@p2,@p3,@p4,@p5,@p6,@p7,@p8)",
+                        id, dependency.Kind, dependency.DeclarationOrdinal, dependency.DeclaringAssetPathId, rawPath, dependency.VirtualPath,
                         dependency.CabEvidence, dependency.GuidHex is null ? null : Convert.FromHexString(dependency.GuidHex), dependency.ExternalType);
                     break;
                 default: throw new InvalidDataException("Unknown extraction record.");
