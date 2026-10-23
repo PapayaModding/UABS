@@ -2,7 +2,15 @@
 
 **Updated:** 2026-10-23
 
-**Current task:** record approved Phase1 decisions P1-D1–P1-D5 — documentation only (2026-10-23).
+**Current task:** Phase1B implementation contract audit — documentation only, complete (2026-10-23).
+
+### Phase1B — contract audit; implementation not authorized
+
+- Baseline `efe97e0`, clean worktree/index at entry. Created [Phase1B implementation contract](v2-recovery-phase-01b-implementation-contract.md); updated roadmap and this handoff only. Existing P1-D1–P1-D5 remain binding; all17 issues remain Reported. No source/XAML/tests/schema/package/legacy changes, builds, regression runs or desktop control.
+- Confirmed: source identity/storage supports schema-free source projection; current SourceFile Search does not aggregate asset hits, and indexed Assets pages all package assets without exact selected-source scope. Existing directory Back/Forward is not source/workspace history. Asset-only filters/result-kind controls cannot silently become source semantics.
+- Proposed query: one outer source row with correlated same-child predicates before global ordering/keyset paging/federation; retain600/128 bounds, lifecycle checks, Unicode semantics and D5. Existing asset fast-path timings do not establish source-query performance. No bundle memo values may be borrowed from children.
+- **Next exact action:** obtain decisions B1 source eligibility, B2 control/branch/exclusion mapping, B3 destination/history/stale/failed-draft policy, B4 source-header meanings, then a separately scoped implementation request. Six proposed checkpoints are in the audit. Do not start Phase1 implementation, bundle memo storage, schema work or V1 retirement automatically.
+- Verification scope: local documentation links/anchors, Markdown/Mermaid fence structure and source references; unchanged17 Reported rows; staged/unstaged whitespace/conflict and protected-path review. No new buildability/test claim: executable source is unchanged from baseline, not rebuilt in this documentation task. Index remains untouched; three documentation paths are the only intended changes.
 
 ### Phase 1 Approved Decisions
 

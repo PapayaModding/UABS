@@ -13,6 +13,8 @@ Related sources of truth: [AI policy](../01_core/ai-agent.md), [current UI/workf
 
 The current implementation intentionally includes individual indexed assets, per-asset memos, V1 support, and restricted V2 global sorting. The requirements below propose changes to those boundaries; they do not rewrite historical reports or establish that existing design decisions were implementation defects. In particular, current UI documentation describes Search-to-Assets as deferred; calling for its restoration records the desired legacy workflow, not proof that a previously implemented Avalonia action was removed.
 
+[Phase1B implementation contract audit](v2-recovery-phase-01b-implementation-contract.md) maps actual controls, source eligibility, pre-page aggregation, global sorting, exact navigation/history and workspace/model boundaries. Before implementation, approve B1 source-kind/status inclusion, B2 existing-control and direct-source/child predicate interactions, B3 navigation/history/stale/failed-draft policies, and B4 source-header mappings. Its six dependency-ordered checkpoints are proposals, not implementation authorization; P1-D1–P1-D5 remain binding and all17 issues remain Reported.
+
 ## Mandatory compatibility contract
 
 **Existing functionality and UI behavior are protected by default.** For every implementation:
