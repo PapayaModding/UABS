@@ -48,7 +48,7 @@ public static class V2SearchIntegrationMeasurements
         }
         ui.SelectAllPackagesCommand.Execute(null); V2SearchIntegrationTests.AssetsOnly(ui); ui.FieldSelection = SearchWorkspaceFieldSelection.Assets; ui.IncludeText = "asset";
         timer.Restart(); await ui.SearchAsync(); double uiFirst = timer.Elapsed.TotalMilliseconds; Assert.Null(ui.Error); Assert.Equal(100, ui.Results.Count);
-        timer.Restart(); await ui.NextPageAsync(); Assert.Null(ui.Error); Assert.Equal(100, ui.Results.Count);
+        timer.Restart(); await ui.NextPageAsync(); Assert.Null(ui.Error); Assert.Equal(200, ui.Results.Count);
         Console.WriteLine($"GATE5B_UI first_including_search_admission_ms={uiFirst:F2} next_ms={timer.Elapsed.TotalMilliseconds:F2} retained_rows={ui.Results.Count} total_indexed={assets}");
         using var cancellation = new CancellationTokenSource(); var interrupted = new System.Diagnostics.Stopwatch();
         await using (var operation = await V2SearchOperation.OpenAsync(scope, new("asset"), default,
@@ -97,19 +97,27 @@ public sealed class V2SearchIntegrationTests
         Assert.Equal(entry.LocationEpoch, search.SelectedResult.V2Revision!.LocationEpoch);
         Assert.Contains("Memo revision:", search.SelectedResult.V2Details);
         Assert.Throws<InvalidOperationException>(() => search.SelectedResult.Result); // No fabricated V1 persistence target.
+        // Verify the continuation contract before attaching a live viewport. A grid
+        // at the top correctly cancels an obsolete forward prefetch; actual native
+        // scroll triggering/cancellation is covered by V2SearchInfiniteScrollTests.
+        await search.NextPageAsync(); Assert.Null(search.Error); Assert.Equal(200, search.Results.Count);
+        Assert.Equal(firstKeys, search.Results.Take(100).Select(r => r.V2Result!.Key));
+        Assert.DoesNotContain(search.Results.Skip(100), r => firstKeys.Contains(r.V2Result!.Key));
+        await search.NextPageAsync(); Assert.Null(search.Error); Assert.Equal(232, search.Results.Count);
+        Assert.False(search.CanReadNextPage); Assert.Contains("232 exact", search.CountSummary);
+        Assert.Equal(232, search.Results.Select(r => r.V2Result!.Key).Distinct().Count());
         var view = new SearchWorkspaceView { DataContext = search }; var window = new Window { Content = view, Width = 1400, Height = 800 }; window.Show();
         try
         {
             var grid = view.FindControl<DataGrid>("ResultsGrid")!; window.UpdateLayout();
             Assert.Contains("assetList", grid.Classes); Assert.Equal(52, grid.Columns[0].Width.Value); Assert.Equal(0, grid.Columns[0].MinWidth); Assert.Equal(80, grid.Columns[0].MaxWidth);
             Assert.True(grid.Columns[0].CanUserResize); Assert.Empty(((TextBlock)grid.Columns[0].Header!).Text!);
-            Assert.Same(search.NextPageCommand, view.FindControl<Button>("NextSearchPageButton")!.Command);
+            Assert.Null(view.FindControl<Button>("NextSearchPageButton"));
+            Assert.Same(search.RetryPageCommand, view.FindControl<Button>("RetrySearchPageButton")!.Command);
+            Assert.False(grid.CanUserSortColumns); // never sort a bounded V2 fragment as though it were the full query
             Assert.Same(search.RefreshSearchCommand, view.FindControl<Button>("RefreshSearchButton")!.Command);
             Assert.True(view.FindControl<SelectableTextBlock>("V2SearchDetails")!.IsVisible);
             Assert.False(view.FindControl<EditableMemoInspectorView>("SearchMemoInspector")!.IsEffectivelyVisible);
-            await search.NextPageAsync(); Assert.Equal(100, search.Results.Count);
-            Assert.DoesNotContain(search.Results, r => firstKeys.Contains(r.V2Result!.Key));
-            await search.NextPageAsync(); Assert.Equal(32, search.Results.Count); Assert.False(search.CanReadNextPage); Assert.Contains("232 exact", search.CountSummary);
         }
         finally { window.Close(); }
     }
@@ -267,7 +275,8 @@ public sealed class V2SearchIntegrationTests
             await reached.Task.WaitAsync(TimeSpan.FromSeconds(15)); search.Deactivate(); release.Set(); await next; await search.ActivateAsync();
             Assert.Same(rows, search.Results); Assert.Same(selected, search.SelectedResult); Assert.False(search.IsStale); Assert.True(search.CanReadNextPage);
             Assert.Contains("Cancelled", search.Error); Assert.Equal("asset", search.IncludeText); Assert.False(search.Layout.AreControlsVisible);
-            await search.NextPageAsync(); Assert.Equal(100, search.Results.Count); Assert.NotSame(rows, search.Results);
+            await search.NextPageAsync(); Assert.Equal(200, search.Results.Count); Assert.Same(rows, search.Results);
+            Assert.Same(selected, search.SelectedResult);
         }
         finally { release.Set(); await next; }
     }

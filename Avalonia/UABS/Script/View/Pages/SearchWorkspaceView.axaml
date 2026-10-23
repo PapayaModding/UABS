@@ -141,11 +141,13 @@
                 <TextBlock Grid.Column="1" Text="{Binding CountSummary}" MaxWidth="230" TextWrapping="Wrap"
                            VerticalAlignment="Center" FontWeight="SemiBold"/>
             </Grid>
-            <ProgressBar Grid.Row="1" IsVisible="{Binding IsSearching}" IsIndeterminate="True" Height="4"/>
+            <ProgressBar Grid.Row="1" IsVisible="{Binding IsInitialSearching}" IsIndeterminate="True" Height="4"/>
             <Grid Grid.Row="2">
                 <DataGrid x:Name="ResultsGrid" Classes="assetList" AutoGenerateColumns="False" IsReadOnly="True"
                           CanUserResizeColumns="True" GridLinesVisibility="Horizontal"
-                          ItemsSource="{Binding Results}" SelectedItem="{Binding SelectedResult}"
+                          CanUserSortColumns="{Binding CanSortResultsLocally}"
+                          ItemsSource="{Binding Results}" SelectedItem="{Binding SelectedResult, Mode=OneWay}"
+                          SelectionChanged="OnResultSelectionChanged"
                           LoadingRow="OnResultsGridLoadingRow">
                     <DataGrid.Columns>
                         <DataGridTemplateColumn SortMemberPath="Kind" Width="52" MinWidth="0" MaxWidth="80" CanUserResize="True"
@@ -203,7 +205,9 @@
             </Border>
             <StackPanel Grid.Row="3" Orientation="Horizontal" Spacing="8">
                 <Button x:Name="RefreshSearchButton" Content="Refresh Search" Command="{Binding RefreshSearchCommand}"/>
-                <Button x:Name="NextSearchPageButton" Content="Next V2 page (100)" Command="{Binding NextPageCommand}"/>
+                <Button x:Name="RetrySearchPageButton" Content="Retry loading" Command="{Binding RetryPageCommand}" IsVisible="{Binding CanRetryPage}"/>
+                <TextBlock Text="Loading more…" IsVisible="{Binding IsLoadingPage}" VerticalAlignment="Center"/>
+                <TextBlock Text="Selected result retained outside this window" IsVisible="{Binding IsSelectionOutsideWindow}" TextWrapping="Wrap" VerticalAlignment="Center"/>
                 <TextBlock Text="Stale — refresh required" IsVisible="{Binding IsStale}" VerticalAlignment="Center"/>
             </StackPanel>
         </Grid>

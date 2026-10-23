@@ -88,6 +88,13 @@ public sealed class SearchResultItemViewModel : ViewModelBase
     public PackageSearchResult Result => _legacyResult ?? throw new InvalidOperationException("V2 rows must use V2Result, never V1 memo/persistence APIs.");
     public SearchResult? V2Result { get; private set; }
     public SearchRevision? V2Revision { get; private set; }
+    internal bool SameOccurrence(SearchResult result, SearchRevision revision) => V2Result?.Key == result.Key
+        && V2Revision?.LocationEpoch == revision.LocationEpoch;
+    internal void RefreshOccurrence(SearchResult result, SearchRevision revision)
+    {
+        V2Result = result; V2Revision = revision; Memo = result.Memo;
+        OnPropertyChanged(nameof(V2Result)); OnPropertyChanged(nameof(V2Revision)); OnPropertyChanged(nameof(V2Details));
+    }
     internal void ApplyVerifiedV2Memo(V2MemoPublication publication)
     {
         if (V2Result is not { } row || V2Revision?.LocationEpoch != publication.Registration.LocationEpoch) return;
@@ -170,7 +177,14 @@ public sealed class SearchWorkspaceViewModel : ViewModelBase, IDisposable
     private readonly IPackageMemoResolver _memoResolver;
     private Task _memoTransitionTask = Task.CompletedTask;
     private V2SearchOperation? _v2Operation;
-    private SearchCursor? _v2Cursor;
+    private V2SearchWindow? _v2Window;
+    private CriteriaSnapshot? _v2Criteria;
+    private long? _failedPage;
+    private int _loadingDirection;
+    private bool _viewportCancelled;
+    private bool _workspaceActive = true;
+    private bool _isLoadingPage;
+    private long _lastViewportStart = -1;
     private bool _isStale;
     private string _countSummary = "0 loaded";
     private string _warnings = "";
@@ -201,6 +215,7 @@ public sealed class SearchWorkspaceViewModel : ViewModelBase, IDisposable
         SearchCommand = new AsyncCommand(SearchAsync);
         RefreshSearchCommand = new AsyncCommand(SearchAsync);
         NextPageCommand = new AsyncCommand(NextPageAsync, () => CanReadNextPage);
+        RetryPageCommand = new AsyncCommand(RetryPageAsync, () => CanRetryPage);
         CancelSearchCommand = new RelayCommand(CancelSearch, () => IsSearching);
         SelectAllPackagesCommand = new RelayCommand(() => SetAllPackages(true), () => PackageScopes.Count > 0);
         ClearPackagesCommand = new RelayCommand(() => SetAllPackages(false), () => SelectedPackageCount > 0);
@@ -216,8 +231,20 @@ public sealed class SearchWorkspaceViewModel : ViewModelBase, IDisposable
     public AsyncCommand SearchCommand { get; }
     public AsyncCommand RefreshSearchCommand { get; }
     public AsyncCommand NextPageCommand { get; }
+    public AsyncCommand RetryPageCommand { get; }
+    public event Action? ResultWindowChanging;
+    public event Action? ResultWindowChanged;
+    public V2SearchWindow? ResultWindow => _v2Window;
+    public bool IsV2Search => _v2Operation is not null;
+    public bool CanSortResultsLocally => !IsV2Search && (Results.Count == 0 || !Results[0].IsV2);
+    public bool IsUpdatingResultWindow => _v2Window?.IsChanging == true;
+    public bool IsLoadingPage { get => _isLoadingPage; private set { SetField(ref _isLoadingPage, value); OnPropertyChanged(nameof(IsInitialSearching)); } }
+    public bool IsInitialSearching => IsSearching && !IsLoadingPage;
+    public bool CanRetryPage => _failedPage.HasValue && !IsSearching && !IsStale && _v2Operation is not null;
     public bool IsStale { get => _isStale; private set { SetField(ref _isStale, value); NotifyPaging(); } }
-    public bool CanReadNextPage => _v2Cursor is not null && !IsStale && !IsSearching;
+    public bool CanReadNextPage => _v2Window?.CanForward == true && !IsStale && !IsSearching;
+    public bool CanReadPreviousPage => _v2Window?.CanBackward == true && !IsStale && !IsSearching;
+    public bool IsSelectionOutsideWindow => IsV2Search && SelectedResult is not null && !Results.Contains(SelectedResult);
     public bool IsV2ResultSelected => SelectedResult?.IsV2 == true;
     public bool CanShowMemoEditor => !IsV2ResultSelected || _v2Memos is not null;
     public string CountSummary { get => _countSummary; private set => SetField(ref _countSummary, value); }
@@ -225,7 +252,14 @@ public sealed class SearchWorkspaceViewModel : ViewModelBase, IDisposable
     public bool HasWarnings => Warnings.Length > 0;
     public string ClassIdText { get => _classIdText; set => SetCriteriaField(ref _classIdText, value ?? ""); }
     public string TypeNameText { get => _typeNameText; set => SetCriteriaField(ref _typeNameText, value ?? ""); }
-    private void NotifyPaging() { OnPropertyChanged(nameof(CanReadNextPage)); NextPageCommand?.NotifyCanExecuteChanged(); }
+    private void NotifyPaging()
+    {
+        OnPropertyChanged(nameof(CanReadNextPage)); OnPropertyChanged(nameof(CanReadPreviousPage));
+        OnPropertyChanged(nameof(CanRetryPage)); OnPropertyChanged(nameof(ResultCount)); OnPropertyChanged(nameof(HasResults));
+        OnPropertyChanged(nameof(IsSelectionOutsideWindow)); OnPropertyChanged(nameof(ShowEmptyState));
+        OnPropertyChanged(nameof(IsV2Search)); OnPropertyChanged(nameof(CanSortResultsLocally));
+        NextPageCommand?.NotifyCanExecuteChanged(); RetryPageCommand?.NotifyCanExecuteChanged();
+    }
     public RelayCommand CancelSearchCommand { get; }
     public RelayCommand SelectAllPackagesCommand { get; }
     public RelayCommand ClearPackagesCommand { get; }
@@ -274,12 +308,14 @@ public sealed class SearchWorkspaceViewModel : ViewModelBase, IDisposable
         get => _selectedResult;
         set
         {
+            if (IsUpdatingResultWindow) return;
             PackageMemoIdentity? previousIdentity = MemoInspector.Identity;
             if (SetField(ref _selectedResult, value))
             {
                 OnPropertyChanged(nameof(HasSelectedResult));
                 OnPropertyChanged(nameof(IsV2ResultSelected));
                 OnPropertyChanged(nameof(CanShowMemoEditor));
+                OnPropertyChanged(nameof(IsSelectionOutsideWindow));
                 QueueMemoPresentation(flushIdentity: previousIdentity);
             }
         }
@@ -364,6 +400,7 @@ public sealed class SearchWorkspaceViewModel : ViewModelBase, IDisposable
             {
                 CancelSearchCommand.NotifyCanExecuteChanged();
                 NotifyPaging();
+                OnPropertyChanged(nameof(IsInitialSearching));
                 OnPropertyChanged(nameof(ShowEmptyState));
             }
         }
@@ -425,6 +462,7 @@ public sealed class SearchWorkspaceViewModel : ViewModelBase, IDisposable
         ObjectDisposedException.ThrowIf(_disposed, this);
         CancelAndDisposeSearch();
         int version = ++_searchVersion;
+        IsLoadingPage = false;
         IsSearching = false;
         Error = null;
 
@@ -548,13 +586,16 @@ public sealed class SearchWorkspaceViewModel : ViewModelBase, IDisposable
                 return;
             }
             _v2Operation = operation;
+            _v2Criteria = criteria;
+            var window = _v2Window = new V2SearchWindow((cursor, ct) => operation.ReadPageAsync(cursor, token: ct));
+            window.Changing += () => { if (ReferenceEquals(Results, window.Rows)) ResultWindowChanging?.Invoke(); };
+            window.Changed += () => { if (ReferenceEquals(Results, window.Rows)) ResultWindowChanged?.Invoke(); };
+            _failedPage = null; _lastViewportStart = -1; NotifyPaging();
             operation.Invalidated += OnV2Invalidated;
-            var page = await operation.ReadPageAsync(token: owned.Token);
+            var page = await window.ReadAsync(0, owned.Token);
             if (version != _searchVersion || _v2Operation != operation) return;
             if (operation.Session.IsStale) { MarkV2Stale(); return; }
-            if (!PublishV2Page(page)) return;
-            _executedCriteria = criteria; LastExecutedCriteria = CreateCriteriaSummary(criteria);
-            HasExecutedSearch = true; UpdateCriteriaChanged();
+            if (!PublishV2Page(page, 0)) return;
         }
         catch (OperationCanceledException) when (owned.IsCancellationRequested)
         { if (version == _searchVersion) Status = "Search cancelled; previous rows were preserved."; }
@@ -569,45 +610,85 @@ public sealed class SearchWorkspaceViewModel : ViewModelBase, IDisposable
 
     public async Task NextPageAsync()
     {
-        if (!CanReadNextPage || _v2Operation is not { } operation) return;
+        if (CanReadNextPage) await LoadWindowPageAsync(_v2Window!.EndPage + 1);
+    }
+    public Task PreviousPageAsync() => CanReadPreviousPage ? LoadWindowPageAsync(_v2Window!.StartPage - 1) : Task.CompletedTask;
+    private Task RetryPageAsync() => CanRetryPage ? LoadWindowPageAsync(_failedPage!.Value) : Task.CompletedTask;
+
+    public Task ReportViewportAsync(int first, int last)
+    {
+        if (!_workspaceActive || _disposed || IsStale || HasError || _v2Window is not { } window || first < 0 || last < first) return Task.CompletedTask;
+        long global = window.StartIndex + first;
+        bool backward = _lastViewportStart >= 0 && global < _lastViewportStart;
+        _lastViewportStart = global;
+        int direction = backward && first < V2SearchWindow.PrefetchRows && window.CanBackward ? -1
+            : last >= window.Rows.Count - V2SearchWindow.PrefetchRows && window.CanForward ? 1
+            : first < V2SearchWindow.PrefetchRows && window.CanBackward ? -1 : 0;
+        if (IsSearching)
+        {
+            if (IsLoadingPage && ((_loadingDirection > 0 && last < window.Rows.Count - V2SearchWindow.PrefetchRows)
+                || (_loadingDirection < 0 && first >= V2SearchWindow.PrefetchRows)))
+            { _viewportCancelled = true; _searchCancellation?.Cancel(); }
+            return Task.CompletedTask;
+        }
+        return direction == 0 ? Task.CompletedTask : LoadWindowPageAsync(direction < 0 ? window.StartPage - 1 : window.EndPage + 1);
+    }
+
+    private async Task LoadWindowPageAsync(long pageIndex)
+    {
+        if (IsSearching || IsStale || _v2Operation is not { } operation || _v2Window is not { } window) return;
         int version = _searchVersion;
         _searchCancellation = CancellationTokenSource.CreateLinkedTokenSource(_lifetime.Token);
-        var owned = _searchCancellation; IsSearching = true; Error = null;
+        var owned = _searchCancellation; _loadingDirection = pageIndex < window.StartPage ? -1 : 1; _viewportCancelled = false;
+        IsLoadingPage = true; IsSearching = true; Error = null;
         try
         {
-            var page = await operation.ReadPageAsync(_v2Cursor, token: owned.Token);
-            if (version == _searchVersion && operation == _v2Operation)
-            { if (operation.Session.IsStale) MarkV2Stale(); else PublishV2Page(page); }
+            var page = await window.ReadAsync(pageIndex, owned.Token);
+            if (version == _searchVersion && operation == _v2Operation && window == _v2Window)
+            { if (operation.Session.IsStale) MarkV2Stale(); else if (!_viewportCancelled) PublishV2Page(page, pageIndex); }
         }
+        catch (OperationCanceledException) { if (version == _searchVersion && !_viewportCancelled) { Error = "Cancelled page; rows retained. Retry to continue."; _failedPage = pageIndex; } }
         catch (Exception e)
-        { if (version == _searchVersion) Error = "V2 page failed; previous rows/cursor preserved: " + e.Message; }
+        { if (version == _searchVersion) { Error = "V2 page failed; previous rows/checkpoints preserved: " + e.Message; _failedPage = pageIndex; } }
         finally
         {
-            if (version == _searchVersion) { _searchCancellation = null; IsSearching = false; }
+            if (version == _searchVersion) { _searchCancellation = null; IsSearching = false; IsLoadingPage = false; NotifyPaging(); }
             owned.Dispose();
         }
     }
 
-    private bool PublishV2Page(SearchPage page)
+    private bool PublishV2Page(SearchPage page, long pageIndex)
     {
         if (page.Status != SearchStatus.Success)
         {
             if (page.Status == SearchStatus.StaleCursor) MarkV2Stale();
             Error = $"{page.Status}: " + string.Join("; ", page.Diagnostics.Select(d => d.Message));
+            _failedPage = pageIndex;
             Status = "Page not published; previous rows and cursor preserved.";
             return false;
         }
-        // One page is retained, never an ObservableCollection of the complete result universe.
-        Results = page.Rows.Select(r => new SearchResultItemViewModel(r,
-            page.Revisions.Single(v => v.PackageId == r.Key.PackageId && v.GenerationId == r.Key.GenerationId))).ToArray();
-        SelectedResult = null; _v2Cursor = page.NextCursor;
-        CountSummary = page.Count.Kind == SearchCountKind.Exact
-            ? $"{Results.Count:N0} on page / {page.Count.Value:N0} exact indexed matches"
-            : $"{Results.Count:N0} on page / at least {page.Count.Value:N0} indexed matches";
+        var window = _v2Window!;
+        bool replacing = !ReferenceEquals(Results, window.Rows);
+        window.Apply(pageIndex, page, (r, revision) => {
+            if (SelectedResult is { } selected && selected.SameOccurrence(r, revision))
+            { selected.RefreshOccurrence(r, revision); return selected; }
+            return new SearchResultItemViewModel(r, revision);
+        });
+        Results = window.Rows;
+        if (SelectedResult?.IsV2 != true) SelectedResult = null;
+        if (replacing) OnPropertyChanged(nameof(SelectedResult));
+        _failedPage = null;
+        CountSummary = $"{window.StartIndex + (Results.Count == 0 ? 0 : 1):N0}–{window.StartIndex + Results.Count:N0} displayed / "
+            + (window.ExactCount is long exact ? $"{exact:N0} exact indexed matches" : $"at least {window.SeenRows:N0} indexed matches");
         Warnings = string.Join("\n", page.Diagnostics.GroupBy(d => (d.Code, d.Message))
             .Select(g => $"{g.Key.Code} ({g.Count()} package warning(s)): {g.Key.Message}"));
         OnPropertyChanged(nameof(HasWarnings));
-        Status = "V2 indexed metadata only · global package ordering · column sorting is current-page only.";
+        Status = "V2 · scroll to load either direction · bounded600-row window · global keyset order.";
+        if (_v2Criteria is { } criteria)
+        {
+            _executedCriteria = criteria; LastExecutedCriteria = CreateCriteriaSummary(criteria);
+            HasExecutedSearch = true; UpdateCriteriaChanged();
+        }
         Error = null; NotifyPaging(); return true;
     }
 
@@ -615,6 +696,7 @@ public sealed class SearchWorkspaceViewModel : ViewModelBase, IDisposable
     {
         if (_disposed) return;
         foreach (var row in Results) row.ApplyVerifiedV2Memo(publication);
+        if (IsSelectionOutsideWindow) SelectedResult?.ApplyVerifiedV2Memo(publication);
         if (_v2Operation?.Session.Revisions.Any(r => r.LocationEpoch == publication.Registration.LocationEpoch
             && r.PackageId == publication.Change.Target.PackageId && r.GenerationId == publication.Change.Target.GenerationId
             && r.CatalogRevision < publication.Change.CatalogRevision) == true)
@@ -631,12 +713,13 @@ public sealed class SearchWorkspaceViewModel : ViewModelBase, IDisposable
     private void MarkV2Stale()
     {
         IsStale = true;
-        Status = "V2 results are stale. Refresh Search explicitly; displayed rows are retained.";
+        Status = "Search snapshot changed. Saved memos are shown; rows and selection stay put. Refresh Search when ready to continue scrolling.";
         CountSummary = $"{Results.Count:N0} displayed · stale count";
     }
 
     public async Task ActivateAsync()
     {
+        _workspaceActive = true;
         var operation = _v2Operation;
         if (operation is null) return;
         try
@@ -648,11 +731,11 @@ public sealed class SearchWorkspaceViewModel : ViewModelBase, IDisposable
         catch (Exception e) { if (!_disposed && operation == _v2Operation) { MarkV2Stale(); Error = e.Message; } }
     }
 
-    public void Deactivate() => CancelSearch();
+    public void Deactivate() { _workspaceActive = false; CancelSearch(); }
     public Task RetirementTask { get; private set; } = Task.CompletedTask;
     private void RetireV2Operation()
     {
-        var operation = _v2Operation; _v2Operation = null; _v2Cursor = null; NotifyPaging();
+        var operation = _v2Operation; _v2Operation = null; _v2Window = null; _v2Criteria = null; _failedPage = null; NotifyPaging();
         if (operation is null) return;
         operation.Invalidated -= OnV2Invalidated;
         RetirementTask = ObserveRetirementAsync(operation);
