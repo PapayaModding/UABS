@@ -48,6 +48,7 @@ Focused subsystem documentation:
 Evidence, migration tracking, risks, decisions, and implementation history:
 
 - [Migration roadmap](05_audit/migration-roadmap.md)
+- [V2 UI and workflow recovery roadmap](05_audit/v2-ui-workflow-recovery-roadmap.md) — all17 user-reported requirements, protected behavior contract, proposed phases, open decisions and separate automated/manual acceptance tracking; not implementation authorization.
 - [Milestone 01 report](05_audit/milestone-01-report.md)
 - [Milestone 02 report](05_audit/milestone-02-report.md)
 - [Milestone 03 report](05_audit/milestone-03-report.md)

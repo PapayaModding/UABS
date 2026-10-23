@@ -2,7 +2,15 @@
 
 **Updated:** 2026-10-23
 
-**Current task:** V2 Gate5G.1 supported global Search header sorting — implementation and automated verification complete; manual Debug acceptance pending (2026-10-23).
+**Current task:** preserve the V2 UI/workflow recovery roadmap — documentation only (2026-10-23).
+
+### V2 recovery roadmap — documentation checkpoint
+
+- Baseline `4bb4bc8` (committed Gate5G.1); worktree/index clean at entry. Created [v2-ui-workflow-recovery-roadmap.md](v2-ui-workflow-recovery-roadmap.md) with all17 reported issues, intended behavior, scope, proposed priority/dependencies/acceptance criteria, status table, five proposed phases and open decisions. All17 remain **Reported / Not yet resolved under this roadmap**; no fresh desktop observations or fixes claimed.
+- Added concise protected-behavior guidance/reference to `docs/01_core/ai-agent.md` and a documentation-index entry. Only these four documentation files are in scope. Preserved historical Gate5G.1 evidence below; its manual Debug acceptance remains pending.
+- Bundle/source identity and aggregation, bundle memo storage, appropriate global Name/Memo semantics, Search → Assets interaction, V1 parity decisions and system-icon mode require further scoped decisions/inspection. Proposed V2-only/no-migration direction is recorded, not immediate V1 deletion permission. Existing schema/D5/drafts and useful workflows stay protected.
+- Verified four documentation files/93 local links and anchors, balanced fences, whitespace/conflicts, all17 issue headings and structured fields, and all17 Reported status rows. Git whitespace checks pass; three modified tracked docs and one new untracked roadmap, empty index. No source/XAML/package/Unity changes, build/test runs, desktop control, staging, commits or other Git mutations. Historical buildability/tests below were not rerun for this docs-only task.
+- **Next exact action:** review the roadmap/decisions, then explicitly authorize a bounded issue investigation or implementation slice. Do not automatically start Phase1, shared-grid refactoring or V1 retirement. Update issue evidence and separate automated/manual acceptance as work proceeds.
 
 ### Gate5G.1 — final verified checkpoint
 

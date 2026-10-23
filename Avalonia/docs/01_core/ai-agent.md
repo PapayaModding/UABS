@@ -168,3 +168,9 @@ Reports must distinguish (1) automated verification, (2) behavior the user has m
 ## Scope control
 
 Treat requested analysis, diagnosis, implementation, and documentation work as different authorization levels. Do not turn a documentation task into source refactoring, or a diagnostic task into an implementation. Ask only when a decision would create a major architectural conflict, destructive change, compatibility break, or unavoidable product choice; otherwise follow the documented architecture and keep the change narrow.
+
+### UI and workflow compatibility
+
+**Existing functionality and UI behavior are protected by default.** For UI/workflow tasks, read the [V2 recovery roadmap](../05_audit/v2-ui-workflow-recovery-roadmap.md), inspect affected workflows and identify comparable workspaces before editing. Preserve unrequested controls, commands, columns, layouts, defaults and navigation; never disable a feature to simplify another or silently introduce extra columns/actions. Cross-workspace consistency does not authorize modifying every workspace, and the roadmap's proposed phases are not automatic implementation permission.
+
+Keep changes small/reviewable, obtain direction before resolving behavior conflicts or broadening scope, test existing as well as new behavior, and report user-visible additions, removals, preserved and intentionally changed behavior. Visible UI changes require user-operated Debug acceptance separately from automated verification. Preserve all existing Git, desktop-control, safety and verification restrictions; V1 retirement and new bundle-memo/sort semantics require their own approved implementation decisions.
