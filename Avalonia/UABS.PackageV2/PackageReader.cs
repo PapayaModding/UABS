@@ -1,5 +1,7 @@
 using System.Collections.ObjectModel;
 using Microsoft.Data.Sqlite;
+using UABS.PackageV2.Memos;
+using UABS.UnityAssets.Packages;
 
 namespace UABS.PackageV2;
 
@@ -9,15 +11,24 @@ public sealed class PackageReader : IDisposable
     private readonly SqliteConnection _connection;
     private readonly SemaphoreSlim _access = new(1, 1);
     private bool _disposed;
+    private readonly FileStream? _memoPin;
+    private long? _memoDataVersion;
+    private PackageInfo _memoInfo;
     public PackageInfo Info { get; }
-    private PackageReader(SqliteConnection connection, PackageInfo info) { _connection = connection; Info = info; }
+    private PackageReader(SqliteConnection connection, PackageInfo info, FileStream? memoPin, long dataVersion)
+    { _connection = connection; Info = _memoInfo = info; _memoPin = memoPin; _memoDataVersion = dataVersion; }
 
-    public static Task<AdmissionResult> OpenAsync(string path, CancellationToken token = default) => Task.Run(() =>
+    public static Task<AdmissionResult> OpenAsync(string path, CancellationToken token = default, bool memoReuse = false) => Task.Run(() =>
     {
+        using var phase = UABS.UnityAssets.Packages.Memos.MemoTrace.Start("reader-admission");
         SqliteConnection? connection = null;
+        FileStream? pin = null;
         try
         {
             token.ThrowIfCancellationRequested();
+            // Opt-in Windows handle denies replacement for this admission/connection lifetime.
+            // Other platforms retain full validation for memo reads.
+            if (memoReuse && OperatingSystem.IsWindows()) pin = new(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
             using (FileStream stream = new(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
             {
                 Span<byte> signature = stackalloc byte[16]; stream.ReadExactly(signature);
@@ -27,13 +38,14 @@ public sealed class PackageReader : IDisposable
             using var interrupt = token.Register(() => SQLitePCL.raw.sqlite3_interrupt(connection.Handle));
             using StorageSql sql = new(connection); sql.Exec("BEGIN");
             PackageInfo info = StorageSchema.Validate(connection, false, token);
+            long dataVersion = sql.Number("PRAGMA data_version");
             sql.Exec("COMMIT");
-            return new AdmissionResult(StorageStatus.Success, new PackageReader(connection, info),
+            return new AdmissionResult(StorageStatus.Success, new PackageReader(connection, info, pin, dataVersion),
                 info.DerivedFieldsCompatible ? "Read-only V2 package admitted." : "Raw read-only fallback: derived profile unsupported; derived fields ignored.");
         }
         catch (Exception e)
         {
-            connection?.Dispose();
+            connection?.Dispose(); pin?.Dispose();
             return new AdmissionResult(token.IsCancellationRequested ? StorageStatus.Cancelled : e is StorageSchema.UnsupportedSchemaException
                 ? StorageStatus.UnsupportedVersion : StorageStatus.InvalidPackage, null, $"{e.GetType().Name}: {e.Message}"[..Math.Min(1024, e.GetType().Name.Length + 2 + e.Message.Length)]);
         }
@@ -97,7 +109,40 @@ public sealed class PackageReader : IDisposable
         return (IReadOnlyDictionary<string, object?>)new ReadOnlyDictionary<string, object?>(result);
     });
 
-    private Task<T> Read<T>(CancellationToken token, Func<StorageSql, T> read) => Task.Run(() =>
+    /// <summary>Exact writable-address lookup across all identity statuses; never name/row-ID targeting.</summary>
+    public Task<MemoTargetSnapshot> ReadMemoAsync(MemoTarget target, CancellationToken token = default, bool refreshAdmission = false) => Read(token, sql =>
+    {
+        using var phase = UABS.UnityAssets.Packages.Memos.MemoTrace.Start("memo-query");
+        if (target.PackageId != Info.PackageId || target.GenerationId != Info.GenerationId)
+            throw new InvalidDataException("Memo target generation differs from admitted package.");
+        using var row = sql.Command("SELECT a.memo,a.memo_revision,a.identity_status FROM asset a JOIN logical_file f ON f.file_id=a.file_id JOIN source s ON s.source_id=f.source_id WHERE s.source_uuid=@p0 AND s.source_revision_uuid=@p1 AND f.directory_ordinal=@p2 AND a.path_id=@p3 LIMIT 2",
+            StorageSchema.Bytes(target.SourceId), StorageSchema.Bytes(target.SourceRevision), target.DirectoryOrdinal, target.PathId).ExecuteReader();
+        if (!row.Read()) throw new InvalidDataException("Exact memo asset is missing.");
+        string? memo = row.IsDBNull(0) ? null : row.GetString(0); long revision = row.GetInt64(1); string status = row.GetString(2);
+        if (row.Read() || status != "addressable") throw new InvalidDataException("Memo identity is ambiguous or incomplete.");
+        return new MemoTargetSnapshot(target, memo, revision, (refreshAdmission ? _memoInfo : Info).CatalogRevision);
+    }, refreshAdmission);
+
+    /// <summary>Native-session bridge: verified source bytes plus exact path/logical evidence and signed ID.
+    /// Returns at most two candidates so duplicate logical/source occurrences remain ambiguous.</summary>
+    public Task<IReadOnlyList<MemoTarget>> FindMemoTargetsAsync(string sourcePath, string sourceSha256,
+        string logicalName, long pathId, CancellationToken token = default, bool refreshAdmission = false) => Read(token, sql =>
+    {
+        byte[] hash = Convert.FromHexString(sourceSha256);
+        if (hash.Length != 32) throw new ArgumentException("A full session SHA256 is required.");
+        _connection.CreateFunction<string, string, int>("uabs_same_source_path", (a, b) => PackagePathComparer.Equals(a, b) ? 1 : 0);
+        using var rows = sql.Command("SELECT s.source_uuid,s.source_revision_uuid,f.directory_ordinal,a.identity_status FROM asset a JOIN logical_file f ON f.file_id=a.file_id JOIN source s ON s.source_id=f.source_id WHERE a.path_id=@p0 AND s.content_sha256=@p1 AND uabs_same_source_path(s.original_path,@p2)=1 AND f.logical_name=@p3 LIMIT 2",
+            pathId, hash, sourcePath, logicalName).ExecuteReader();
+        List<MemoTarget> matches = [];
+        while (rows.Read())
+        {
+            if (rows.GetString(3) != "addressable") throw new InvalidDataException("Native selection has an ambiguous/incomplete indexed identity.");
+            matches.Add(new(Info.PackageId, Info.GenerationId, StorageSchema.Uuid(rows.GetValue(0)), StorageSchema.Uuid(rows.GetValue(1)), rows.GetInt32(2), pathId));
+        }
+        return (IReadOnlyList<MemoTarget>)matches.AsReadOnly();
+    }, refreshAdmission);
+
+    private Task<T> Read<T>(CancellationToken token, Func<StorageSql, T> read, bool refreshMemo = false) => Task.Run(() =>
     {
         _access.Wait(token);
         try
@@ -110,12 +155,28 @@ public sealed class PackageReader : IDisposable
             {
                 using (SqliteDataReader p = sql.Command("SELECT package_uuid,generation_uuid,catalog_revision FROM package").ExecuteReader())
                 {
-                    if (!p.Read() || StorageSchema.Uuid(p.GetValue(0)) != Info.PackageId || StorageSchema.Uuid(p.GetValue(1)) != Info.GenerationId || p.GetInt64(2) != Info.CatalogRevision)
+                    if (!p.Read() || StorageSchema.Uuid(p.GetValue(0)) != Info.PackageId || StorageSchema.Uuid(p.GetValue(1)) != Info.GenerationId
+                        || (!refreshMemo && p.GetInt64(2) != Info.CatalogRevision))
                         throw new InvalidDataException("Package revision changed; explicit readmission required.");
                 }
-                T result = read(sql); sql.Exec("COMMIT"); return result;
+                if (refreshMemo)
+                {
+                    // Manifest SELECT pins this snapshot first. This read-only connection's
+                    // data_version invalidates on every other-connection commit, not a timer.
+                    long version = sql.Number("PRAGMA data_version");
+                    if (_memoPin is null || _memoDataVersion != version)
+                    {
+                        _memoDataVersion = null;
+                        var current = StorageSchema.Validate(_connection, false, token);
+                        if (current.PackageId != Info.PackageId || current.GenerationId != Info.GenerationId)
+                            throw new InvalidDataException("Memo registration generation changed.");
+                        _memoInfo = current; _memoDataVersion = version;
+                    }
+                    if (!_memoInfo.DerivedFieldsCompatible) throw new InvalidDataException("Unsupported writable derived profile.");
+                }
+                T result = read(sql); token.ThrowIfCancellationRequested(); sql.Exec("COMMIT"); return result;
             }
-            catch { sql.Exec("ROLLBACK"); throw; }
+            catch { _memoDataVersion = null; sql.Exec("ROLLBACK"); throw; }
         }
         catch (SqliteException) when (token.IsCancellationRequested) { throw new OperationCanceledException(token); }
         finally { _access.Release(); }
@@ -126,7 +187,7 @@ public sealed class PackageReader : IDisposable
     public void Dispose()
     {
         _access.Wait();
-        try { if (!_disposed) { _disposed = true; _connection.Dispose(); } }
+        try { if (!_disposed) { _disposed = true; _connection.Dispose(); _memoPin?.Dispose(); } }
         finally { _access.Release(); }
     }
 }

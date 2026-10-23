@@ -16,7 +16,9 @@ public enum PackageMemoPersistenceStatus
     WriteFailure,
     VerificationFailure,
     CatalogPublicationFailure,
-    CancelledBeforeCommit
+    CancelledBeforeCommit,
+    RegistrationChanged,
+    CommittedButSuperseded
 }
 
 public sealed record PackageMemoPersistenceRequest(
@@ -30,10 +32,11 @@ public sealed record PackageMemoPersistenceResult(
     PackageMemoPersistenceRequest Request,
     string Diagnostic,
     string? PackageRevision = null,
-    PackageDocument? PersistedPackage = null)
+    PackageDocument? PersistedPackage = null,
+    PackageMemoCommitState? CommitState = null)
 {
     public bool IsSuccess => Status is PackageMemoPersistenceStatus.Saved or PackageMemoPersistenceStatus.Unchanged;
-    public bool ChangedDisk => Status is PackageMemoPersistenceStatus.Saved
+    public bool ChangedDisk => CommitState is PackageMemoCommitState.Committed or PackageMemoCommitState.Uncertain || Status is PackageMemoPersistenceStatus.Saved
         or PackageMemoPersistenceStatus.VerificationFailure
         or PackageMemoPersistenceStatus.CatalogPublicationFailure;
 }
@@ -44,6 +47,9 @@ public delegate Task PackageMemoCatalogPublisher(
 
 public interface IPackageMemoPersistenceService
 {
+    async Task<MemoPersistenceBasis> CaptureBasisAsync(PackageMemoIdentity identity, string? displayedMemo,
+        CancellationToken cancellationToken = default) => new(displayedMemo,
+            await CaptureRevisionAsync(identity.PackagePath!, cancellationToken).ConfigureAwait(false));
     Task<string?> CaptureRevisionAsync(
         string packagePath,
         CancellationToken cancellationToken = default);
@@ -113,6 +119,8 @@ public sealed class PackageMemoPersistenceService : IPackageMemoPersistenceServi
     {
         ArgumentNullException.ThrowIfNull(request);
         ArgumentNullException.ThrowIfNull(request.Identity);
+        if (request.Identity.V2 is not null)
+            return Result(PackageMemoPersistenceStatus.AssetNotFound, request, "V2 identities require the format-aware SQLite writer, never V1 package persistence.");
         string? packagePath = request.Identity.PackagePath;
         if (string.IsNullOrWhiteSpace(packagePath))
             return Result(PackageMemoPersistenceStatus.PackageMissing, request, "The memo identity does not contain a package path.");

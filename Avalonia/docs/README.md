@@ -31,7 +31,7 @@ How the legacy and replacement applications are structured, including implemente
 Interaction and workflow specifications, with current behavior separated from proposals:
 
 - [UI and workflow design](03_design/ui-and-workflow-design.md)
-- [Package Format V2 identity, schema and Search contract](03_design/package-format-v2-design.md) — approved D1–D8 architecture, performance acceptance gates and separately authorized implementation roadmap; production V2 remains unimplemented.
+- [Package Format V2 identity, schema and Search contract](03_design/package-format-v2-design.md) — approved D1–D8 architecture and performance acceptance gates; current production evidence is recorded in the Gate5 reports.
 - [UX redesign foundation and design audit](03_design/ux-redesign-foundation.md) — proposed four-workspace shell, shared inspector, behavior matrix, wireframes, and incremental sequence.
 
 ### 04 Systems
@@ -68,6 +68,9 @@ Evidence, migration tracking, risks, decisions, and implementation history:
 - [Package V2 Gate5A.1 creation](05_audit/package-format-v2-gate-05a1-creation.md) — production source selection, staged SQLite creation, explicit incomplete-coverage acknowledgement and registration; no structural editing.
 - [Package V2 .NET SQLite validation spike](05_audit/package-format-v2-dotnet-sqlite-spike.md) — isolated provider, metadata, search/federation and memo transaction evidence; no production replacement.
 - [Current Codex session handoff](05_audit/codex-session-handoff.md)
+- [V2 Gate5B production Search integration](05_audit/package-format-v2-gate-05b-search-integration.md) — format-aware selection, bounded pages, read-only Inspector and stale/Refresh lifecycle; see report for verification status.
+- [V2 Gate5C production memo integration](05_audit/package-format-v2-gate-05c-memo-integration.md) — exact V1/V2 routing, shared Assets/Search drafts, transactional SQLite saves and verified row synchronization; user-operated Debug acceptance remains pending.
+- [V2 Gate5D memo performance](05_audit/package-format-v2-gate-05d-memo-performance.md) — pinned read admission, attempt-local verification reuse, repeated10k/100k/1M calibration and remaining save costs; manual acceptance pending.
 - [Feature comparison](05_audit/feature-comparison.md)
 - [Legacy feature inventory](05_audit/legacy-feature-inventory.md)
 - [Reusable-code analysis](05_audit/reusable-code.md)

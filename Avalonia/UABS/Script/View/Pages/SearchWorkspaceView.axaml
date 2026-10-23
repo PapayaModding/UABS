@@ -71,7 +71,7 @@
                             <ListBox ItemsSource="{Binding VisiblePackageScopes}" MinHeight="100" MaxHeight="220">
                                 <ListBox.ItemTemplate>
                                     <DataTemplate x:DataType="vm:SearchPackageScopeItemViewModel">
-                                        <CheckBox Content="{Binding Name}" IsChecked="{Binding IsSelected, Mode=TwoWay}"
+                                        <CheckBox Content="{Binding DisplayName}" IsChecked="{Binding IsSelected, Mode=TwoWay}"
                                                   ToolTip.Tip="{Binding Path}"/>
                                     </DataTemplate>
                                 </ListBox.ItemTemplate>
@@ -86,6 +86,10 @@
                             <TextBox Watermark="Exclude terms" Text="{Binding ExcludeText}"
                                      KeyDown="OnSearchFieldKeyDown"/>
                             <TextBox Watermark="Exact Path ID (optional)" Text="{Binding PathIdText}"
+                                     KeyDown="OnSearchFieldKeyDown"/>
+                            <TextBox Watermark="V2 Class ID (asset-only, optional)" Text="{Binding ClassIdText}"
+                                     KeyDown="OnSearchFieldKeyDown"/>
+                            <TextBox Watermark="V2 exact type name (asset-only, optional)" Text="{Binding TypeNameText}"
                                      KeyDown="OnSearchFieldKeyDown"/>
                             <ComboBox ItemsSource="{Binding FieldSelections}" SelectedItem="{Binding FieldSelection}"/>
                             <CheckBox Content="Exact name" IsChecked="{Binding ExactText}"
@@ -125,13 +129,16 @@
                       DragDelta="OnSearchControlsSplitterDragDelta"
                       DragCompleted="OnSearchControlsSplitterDragCompleted"/>
 
-        <Grid Grid.Column="2" RowDefinitions="Auto,Auto,*" Margin="8,0" RowSpacing="6">
+        <Grid Grid.Column="2" RowDefinitions="Auto,Auto,*,Auto" Margin="8,0" RowSpacing="6">
             <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
                 <StackPanel>
                     <TextBlock Text="Search Results" FontSize="18" FontWeight="SemiBold"/>
                     <TextBlock Text="{Binding Status}" Foreground="#666666" TextWrapping="Wrap"/>
+                    <ScrollViewer IsVisible="{Binding HasWarnings}" MaxHeight="100" HorizontalScrollBarVisibility="Disabled">
+                        <TextBlock Text="{Binding Warnings}" TextWrapping="Wrap"/>
+                    </ScrollViewer>
                 </StackPanel>
-                <TextBlock Grid.Column="1" Text="{Binding ResultCount, StringFormat={}{0:N0} results}"
+                <TextBlock Grid.Column="1" Text="{Binding CountSummary}" MaxWidth="230" TextWrapping="Wrap"
                            VerticalAlignment="Center" FontWeight="SemiBold"/>
             </Grid>
             <ProgressBar Grid.Row="1" IsVisible="{Binding IsSearching}" IsIndeterminate="True" Height="4"/>
@@ -148,7 +155,7 @@
                             </DataGridTemplateColumn.Header>
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate x:DataType="vm:SearchResultItemViewModel">
-                                    <Image Source="{Binding Kind, Converter={StaticResource AssetTypeIconConvertor}}"
+                                    <Image Source="{Binding IconKind, Converter={StaticResource AssetTypeIconConvertor}}"
                                            Width="24" Height="24" Stretch="Uniform"
                                            HorizontalAlignment="Center" VerticalAlignment="Center"
                                            RenderOptions.BitmapInterpolationMode="HighQuality"
@@ -194,6 +201,11 @@
                     VerticalAlignment="Top" Margin="8">
                 <TextBlock Text="{Binding Error}" Foreground="#9A2020" TextWrapping="Wrap"/>
             </Border>
+            <StackPanel Grid.Row="3" Orientation="Horizontal" Spacing="8">
+                <Button x:Name="RefreshSearchButton" Content="Refresh Search" Command="{Binding RefreshSearchCommand}"/>
+                <Button x:Name="NextSearchPageButton" Content="Next V2 page (100)" Command="{Binding NextPageCommand}"/>
+                <TextBlock Text="Stale — refresh required" IsVisible="{Binding IsStale}" VerticalAlignment="Center"/>
+            </StackPanel>
         </Grid>
 
         <GridSplitter x:Name="SearchInspectorSplitter"
@@ -241,8 +253,12 @@
                             <TextBlock Text="{Binding SelectedResult.CabCode, StringFormat=CAB: {0}}" TextWrapping="Wrap"/>
                             <TextBlock Text="{Binding SelectedResult.PathId, StringFormat=Path ID: {0}}"/>
                             <TextBlock Text="{Binding SelectedResult.MatchCategories, StringFormat=Matched: {0}}" TextWrapping="Wrap"/>
-                            <page:EditableMemoInspectorView x:Name="SearchMemoInspector"
-                                                            DataContext="{Binding MemoInspector}" Margin="0,4,0,0"/>
+                            <StackPanel IsVisible="{Binding CanShowMemoEditor}">
+                                <page:EditableMemoInspectorView x:Name="SearchMemoInspector"
+                                                                DataContext="{Binding MemoInspector}" Margin="0,4,0,0"/>
+                            </StackPanel>
+                            <SelectableTextBlock x:Name="V2SearchDetails" Text="{Binding SelectedResult.V2Details}"
+                                                 IsVisible="{Binding IsV2ResultSelected}" TextWrapping="Wrap"/>
                             <Border Background="#F7F9FC" BorderBrush="#C8D3E0" BorderThickness="1"
                                     CornerRadius="4" Padding="8" Margin="0,8,0,0">
                                 <TextBlock Text="Metadata only — source loading, previews, and Show in Assets are deferred."

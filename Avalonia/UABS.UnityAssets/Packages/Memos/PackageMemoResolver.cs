@@ -18,7 +18,9 @@ public sealed record AssetMemoLookup(
     string SourcePath,
     string AssetName,
     long PathId,
-    bool HasAmbiguousLogicalFileIdentity = false);
+    bool HasAmbiguousLogicalFileIdentity = false,
+    string? LogicalFile = null,
+    string? SourceSha256 = null);
 
 public sealed record PackageMemoResolution(
     PackageMemoResolutionStatus Status,
@@ -34,6 +36,8 @@ public sealed record PackageMemoResolution(
 
 public interface IPackageMemoResolver
 {
+    Task<PackageMemoResolution> ResolveAssetAsync(IReadOnlyList<PackageMemoCatalogEntry> packages,
+        AssetMemoLookup lookup, CancellationToken cancellationToken = default) => Task.FromResult(ResolveAsset(packages, lookup));
     PackageMemoResolution ResolveExact(
         IReadOnlyList<PackageMemoCatalogEntry> packages,
         PackageMemoIdentity identity);
@@ -60,6 +64,9 @@ public sealed class PackageMemoResolver : IPackageMemoResolver
     {
         ArgumentNullException.ThrowIfNull(packages);
         ArgumentNullException.ThrowIfNull(identity);
+        if (identity.V2 is not null)
+            return new(PackageMemoResolutionStatus.Unsupported, identity, null, identity.PackagePath, null, null,
+                "V2 identity must be resolved against its registered SQLite package.");
 
         if (string.IsNullOrWhiteSpace(identity.PackagePath)
             || string.IsNullOrWhiteSpace(identity.SourcePath)

@@ -91,8 +91,9 @@ public sealed class V2MemoPersistenceService
             || request.ExpectedCatalogRevision < 0) return Result(MemoStatus.AmbiguousIdentity, "Incomplete target/precondition.");
         try
         {
+            using var wait = UABS.UnityAssets.Packages.Memos.MemoTrace.Start("write-lock-wait");
             return await _writes.ExecutePackageWriteAsync(request.Registration.Path,
-                ct => SaveCoordinated(request, ct), token).ConfigureAwait(false);
+                ct => { wait?.Dispose(); return SaveCoordinated(request, ct); }, token).ConfigureAwait(false);
         }
         catch (Exception e) { return Result(Failure(e, token), e.Message); }
         MemoWriteResult Result(MemoStatus status, string message) => new(status, request, MemoCommitState.NotCommitted, message);
@@ -103,6 +104,25 @@ public sealed class V2MemoPersistenceService
         MemoCommitState committed = MemoCommitState.NotCommitted;
         VerifiedMemoChange? change = null;
         bool unchanged = false;
+        SqliteConnection? origin = null;
+        FileStream? verificationPin = null;
+        long validatedDataVersion = -1;
+        MemoWriteResult completed = await AttemptAsync().ConfigureAwait(false);
+        try
+        {
+            try { origin?.Dispose(); }
+            finally { verificationPin?.Dispose(); }
+        }
+        catch (Exception e)
+        {
+            // Cleanup must not escape to PersistAsync's pre-commit exception wrapper:
+            // a confirmed/uncertain commit remains so, even when handle closing fails.
+            return Fail(MemoStatus.WriteFailure, "Memo resource cleanup failed: " + e.Message);
+        }
+        return completed;
+
+        async Task<MemoWriteResult> AttemptAsync()
+        {
         try
         {
             var outcome = await Task.Run(() => {
@@ -112,14 +132,21 @@ public sealed class V2MemoPersistenceService
                 if (!File.Exists(r.Path)) return Fail(MemoStatus.PackageMissing, "Package missing.");
                 if (r.Info.PackageId != target.PackageId || r.Info.GenerationId != target.GenerationId)
                     return Fail(MemoStatus.GenerationChanged, "Request does not belong to this registration generation.");
-                using var c = Open(r.Path, false); using StorageSql sql = new(c);
+                // Attempt-local reuse only. Keep this exact connection to observe OTHER
+                // commits; its own commit does not change data_version. The Windows pin
+                // prevents a different file appearing at this path during verification.
+                if (OperatingSystem.IsWindows()) verificationPin = new(r.Path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                var c = origin = Open(r.Path, false); using StorageSql sql = new(c);
                 _boundary?.Invoke(MemoBoundary.BeforeTransaction);
                 using var interrupt = token.Register(() => SQLitePCL.raw.sqlite3_interrupt(c.Handle));
                 bool transaction = false;
                 try
                 {
-                    token.ThrowIfCancellationRequested(); sql.Exec("BEGIN IMMEDIATE"); transaction = true;
+                    token.ThrowIfCancellationRequested();
+                    using (UABS.UnityAssets.Packages.Memos.MemoTrace.Start("transaction-open")) sql.Exec("BEGIN IMMEDIATE");
+                    transaction = true;
                     PackageInfo info = StorageSchema.Validate(c, false, token);
+                    validatedDataVersion = sql.Number("PRAGMA data_version");
                     if (info.PackageId != target.PackageId || info.GenerationId != target.GenerationId)
                         return Fail(MemoStatus.GenerationChanged, "Package replaced or generation changed.");
                     if (!info.DerivedFieldsCompatible) return Fail(MemoStatus.InvalidPackage, "Unsupported derived profile; no mixed-profile writes.");
@@ -133,6 +160,7 @@ public sealed class V2MemoPersistenceService
                     unchanged = string.Equals(current.Memo, request.DesiredMemo, StringComparison.Ordinal);
                     if (!unchanged)
                     {
+                        using var update = UABS.UnityAssets.Packages.Memos.MemoTrace.Start("memo-update");
                         // Local row ID is used only after full identity resolution inside the locked transaction.
                         if (sql.Exec("UPDATE asset SET memo=@p0 WHERE asset_id=@p1 AND memo_revision=@p2 AND memo IS @p3 AND identity_status='addressable'"
                             + " AND path_id=@p4 AND file_id IN (SELECT f.file_id FROM logical_file f JOIN source s ON s.source_id=f.source_id"
@@ -153,7 +181,8 @@ public sealed class V2MemoPersistenceService
                     // From here cancellation cannot interrupt commit or verification and claim rollback.
                     interrupt.Dispose(); token.ThrowIfCancellationRequested();
                     committed = unchanged ? MemoCommitState.NotCommitted : MemoCommitState.Uncertain;
-                    sql.Exec("COMMIT"); transaction = false;
+                    using (UABS.UnityAssets.Packages.Memos.MemoTrace.Start("memo-commit")) sql.Exec("COMMIT");
+                    transaction = false;
                     committed = unchanged ? MemoCommitState.NotCommitted : MemoCommitState.Committed;
                     _boundary?.Invoke(MemoBoundary.AfterCommit);
                     return null;
@@ -173,9 +202,17 @@ public sealed class V2MemoPersistenceService
             try
             {
                 await Task.Run(() => {
+                    using var verification = UABS.UnityAssets.Packages.Memos.MemoTrace.Start("fresh-verification");
                     _boundary?.Invoke(MemoBoundary.BeforeVerification);
                     using var fresh = Open(request.Registration.Path, true); using StorageSql sql = new(fresh); sql.Exec("BEGIN");
-                    PackageInfo info = StorageSchema.Validate(fresh, false, CancellationToken.None);
+                    // Pin the FRESH read snapshot before consulting the original connection.
+                    // Any intervening external commit falls back to full global validation.
+                    _ = sql.Number("SELECT COUNT(*) FROM package");
+                    using var observer = new StorageSql(origin!);
+                    bool reusable = verificationPin is not null && observer.Number("PRAGMA data_version") == validatedDataVersion;
+                    using var reused = reusable ? UABS.UnityAssets.Packages.Memos.MemoTrace.Start("attempt-validation-reuse") : null;
+                    PackageInfo info = reusable ? StorageSchema.ReadManifest(fresh, CancellationToken.None)
+                        : StorageSchema.Validate(fresh, false, CancellationToken.None);
                     if (info.PackageId != request.Target.PackageId || info.GenerationId != request.Target.GenerationId)
                         throw new VerificationException(MemoStatus.GenerationChanged, "Package replaced after transaction.");
                     var saved = ReadTarget(sql, request.Target);
@@ -194,6 +231,7 @@ public sealed class V2MemoPersistenceService
             return new(unchanged ? MemoStatus.Unchanged : MemoStatus.Saved, request, committed, "Fresh-connection verified.", change);
         }
         catch (Exception e) { return Fail(committed == MemoCommitState.NotCommitted ? Failure(e, token) : MemoStatus.WriteFailure, e.Message); }
+        }
         MemoWriteResult Fail(MemoStatus status, string message) => new(status, request, committed, message);
     }
 
@@ -217,6 +255,7 @@ public sealed class V2MemoPersistenceService
     private sealed record TargetRow(long Count, long Id, string? Memo, long Revision, string? Status);
     private static TargetRow ReadTarget(StorageSql sql, MemoTarget key)
     {
+        using var phase = UABS.UnityAssets.Packages.Memos.MemoTrace.Start("target-lookup");
         using var rows = sql.Command("SELECT a.asset_id,a.memo,a.memo_revision,a.identity_status FROM asset a JOIN logical_file f ON f.file_id=a.file_id JOIN source s ON s.source_id=f.source_id WHERE s.source_uuid=@p0 AND s.source_revision_uuid=@p1 AND f.directory_ordinal=@p2 AND a.path_id=@p3 LIMIT 2",
             StorageSchema.Bytes(key.SourceId), StorageSchema.Bytes(key.SourceRevision), key.DirectoryOrdinal, key.PathId).ExecuteReader();
         if (!rows.Read()) return new(0, 0, null, 0, null);

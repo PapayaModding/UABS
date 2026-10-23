@@ -112,27 +112,39 @@ internal static partial class StorageSchema
 
     internal static PackageInfo Validate(SqliteConnection c, bool full, CancellationToken token)
     {
+        using var phase = UABS.UnityAssets.Packages.Memos.MemoTrace.Start("full-validation");
+        PackageInfo info = ReadManifest(c, token);
         using StorageSql sql = new(c);
-        token.ThrowIfCancellationRequested();
-        if (sql.Number("PRAGMA application_id") != 0x55414232 || sql.Number("PRAGMA user_version") != 20000)
-            throw new UnsupportedSchemaException();
-        if (Signature(c) != CanonicalSignature.Value) throw new InvalidDataException("Schema objects/constraints differ from canonical V2.0.");
         string check = full ? "PRAGMA integrity_check" : "PRAGMA quick_check";
         using (SqliteDataReader integrity = sql.Command(check).ExecuteReader())
         { if (!integrity.Read() || integrity.GetString(0) != "ok" || integrity.Read()) throw new InvalidDataException("SQLite integrity check failed."); }
         using (SqliteDataReader foreign = sql.Command("PRAGMA foreign_key_check").ExecuteReader())
         { if (foreign.Read()) throw new InvalidDataException("Foreign-key integrity failed."); }
+        return ValidateContents(c, sql, info, token);
+    }
+
+    // Bounded schema/manifest check. It is not a replacement for full admission;
+    // only a writer's proven unchanged, same-file post-commit snapshot may reuse it.
+    internal static PackageInfo ReadManifest(SqliteConnection c, CancellationToken token)
+    {
+        using var phase = UABS.UnityAssets.Packages.Memos.MemoTrace.Start("schema-manifest");
+        token.ThrowIfCancellationRequested(); using StorageSql sql = new(c);
+        if (sql.Number("PRAGMA application_id") != 0x55414232 || sql.Number("PRAGMA user_version") != 20000) throw new UnsupportedSchemaException();
+        if (Signature(c) != CanonicalSignature.Value) throw new InvalidDataException("Schema objects/constraints differ from canonical V2.0.");
         if (sql.Number("SELECT COUNT(*) FROM package") != 1) throw new InvalidDataException("Exactly one package manifest required.");
-        PackageInfo info;
         using (SqliteDataReader p = sql.Command("SELECT package_uuid,generation_uuid,display_name,catalog_revision,index_status,derived_text_profile,schema_major,schema_minor,text_contract,created_utc,indexer_version FROM package").ExecuteReader())
         {
             p.Read();
             if (p.GetInt32(6) != 2 || p.GetInt32(7) != 0 || p.GetString(8) != "dotnet-ordinal-v1") throw new UnsupportedSchemaException();
             Guid id = Uuid(p.GetValue(0)), generation = Uuid(p.GetValue(1));
             if (id == Guid.Empty || generation == Guid.Empty) throw new InvalidDataException("Empty package/generation UUID.");
-            info = new(id, generation, p.GetString(2), p.GetInt64(3), p.GetString(4), p.GetString(5),
+            return new(id, generation, p.GetString(2), p.GetInt64(3), p.GetString(4), p.GetString(5),
                 p.GetString(5) == TextProfile, 0, 0, 0, p.GetString(9), p.GetString(10), p.GetString(8), p.GetInt32(6), p.GetInt32(7));
         }
+    }
+
+    private static PackageInfo ValidateContents(SqliteConnection c, StorageSql sql, PackageInfo info, CancellationToken token)
+    {
         foreach (string invalid in new[]
         {
             "SELECT 1 FROM source WHERE source_uuid=zeroblob(16) OR source_revision_uuid=zeroblob(16) LIMIT 1",

@@ -24,6 +24,8 @@ public sealed class EditableMemoInspectorViewModel : ViewModelBase, IDisposable
     private bool _isApplyingSnapshot;
     private int _presentationVersion;
     private bool _disposed;
+    private PackageMemoPersistenceStatus? _lastPersistenceStatus;
+    private CancellationTokenSource? _revisionLoad;
 
     public EditableMemoInspectorViewModel(
         IMemoDraftCoordinator drafts,
@@ -105,15 +107,19 @@ public sealed class EditableMemoInspectorViewModel : ViewModelBase, IDisposable
         MemoDraftSaveState.Saved => "Saved",
         MemoDraftSaveState.Unsaved => "Unsaved changes",
         MemoDraftSaveState.Saving => "Saving…",
+        MemoDraftSaveState.Failed when _lastPersistenceStatus is PackageMemoPersistenceStatus.RevisionConflict or PackageMemoPersistenceStatus.CommittedButSuperseded => "Conflict — draft retained",
         MemoDraftSaveState.Failed => "Save failed",
         _ => "Unavailable"
     };
 
     public async Task ShowAsync(PackageMemoResolution resolution)
     {
+        using var phase = MemoTrace.Start("inspector-selection");
         ObjectDisposedException.ThrowIf(_disposed, this);
         ArgumentNullException.ThrowIfNull(resolution);
         int version = ++_presentationVersion;
+        _revisionLoad?.Cancel(); _revisionLoad?.Dispose();
+        var revisionLoad = _revisionLoad = CancellationTokenSource.CreateLinkedTokenSource(_lifetime.Token);
         _resolution = resolution;
         PresentResolutionContext(resolution);
 
@@ -135,7 +141,7 @@ public sealed class EditableMemoInspectorViewModel : ViewModelBase, IDisposable
             MemoDraftSnapshot snapshot = await _drafts.TrackAsync(
                 resolution.Identity,
                 resolution.Value,
-                _lifetime.Token);
+                revisionLoad.Token);
             if (version != _presentationVersion || _disposed)
                 return;
             if (_editorGuard.IsPackageOpen(resolution.Identity.PackagePath!))
@@ -159,7 +165,7 @@ public sealed class EditableMemoInspectorViewModel : ViewModelBase, IDisposable
             };
             ApplySnapshot(_drafts.GetSnapshot(resolution.Identity));
         }
-        catch (OperationCanceledException) when (_lifetime.IsCancellationRequested)
+        catch (OperationCanceledException) when (revisionLoad.IsCancellationRequested)
         {
         }
         catch (Exception exception)
@@ -192,6 +198,7 @@ public sealed class EditableMemoInspectorViewModel : ViewModelBase, IDisposable
             return;
         _disposed = true;
         _presentationVersion++;
+        _revisionLoad?.Cancel(); _revisionLoad?.Dispose();
         _drafts.DraftChanged -= DraftsOnDraftChanged;
         _lifetime.Cancel();
         _lifetime.Dispose();
@@ -236,6 +243,8 @@ public sealed class EditableMemoInspectorViewModel : ViewModelBase, IDisposable
             _isApplyingSnapshot = false;
         }
         Error = snapshot.Error;
+        _lastPersistenceStatus = snapshot.LastPersistenceStatus;
+        OnPropertyChanged(nameof(StatusText));
         SaveState = snapshot.State;
     }
 
@@ -260,7 +269,8 @@ public sealed class EditableMemoInspectorViewModel : ViewModelBase, IDisposable
         _isApplyingSnapshot = true;
         try
         {
-            MemoText = _resolution?.Value ?? string.Empty;
+            var retained = _drafts.GetSnapshot(_resolution?.Identity);
+            MemoText = retained.Identity is not null ? retained.DraftMemo ?? string.Empty : _resolution?.Value ?? string.Empty;
         }
         finally
         {
@@ -272,11 +282,5 @@ public sealed class EditableMemoInspectorViewModel : ViewModelBase, IDisposable
     }
 
     private static bool SameIdentity(PackageMemoIdentity? left, PackageMemoIdentity? right) =>
-        left is not null
-        && right is not null
-        && PackagePathComparer.Equals(left.PackagePath, right.PackagePath)
-        && string.Equals(left.IndexDirectory, right.IndexDirectory, StringComparison.Ordinal)
-        && PackagePathComparer.Equals(left.SourcePath, right.SourcePath)
-        && string.Equals(left.AssetName, right.AssetName, StringComparison.Ordinal)
-        && left.PathId == right.PathId;
+        PackageMemoIdentityComparer.Same(left, right);
 }

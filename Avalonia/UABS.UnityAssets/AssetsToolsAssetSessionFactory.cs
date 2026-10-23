@@ -46,6 +46,10 @@ public sealed class AssetsToolsAssetSessionFactory : IAssetSessionFactory
 
         try
         {
+            // Fingerprint the bytes actually enumerated. Pin only the loading interval;
+            // existing session stream ownership and format parsing are unchanged.
+            using FileStream memoEvidence = new(fullPath, FileMode.Open, FileAccess.Read, FileShare.Read);
+            string sourceHash = HashEvidence(memoEvidence, cancellationToken);
             LoadClassPackage(assetsManager, warnings);
 
             List<(AssetsFileInstance Instance, string LogicalName)> files = kind switch
@@ -68,7 +72,8 @@ public sealed class AssetsToolsAssetSessionFactory : IAssetSessionFactory
                 Path.GetFileName(fullPath),
                 kind,
                 string.IsNullOrWhiteSpace(unityVersion) ? null : unityVersion,
-                files.Count);
+                files.Count,
+                sourceHash == HashEvidence(memoEvidence, cancellationToken) ? sourceHash : null);
 
             return new AssetsToolsAssetSession(
                 assetsManager,
@@ -97,6 +102,14 @@ public sealed class AssetsToolsAssetSessionFactory : IAssetSessionFactory
         }
     }
 
+    private static string HashEvidence(Stream stream, CancellationToken token)
+    {
+        stream.Position = 0;
+        using var hash = System.Security.Cryptography.IncrementalHash.CreateHash(System.Security.Cryptography.HashAlgorithmName.SHA256);
+        byte[] buffer = new byte[65536]; int read;
+        while ((read = stream.Read(buffer, 0, buffer.Length)) > 0) { token.ThrowIfCancellationRequested(); hash.AppendData(buffer, 0, read); }
+        token.ThrowIfCancellationRequested(); return Convert.ToHexString(hash.GetHashAndReset());
+    }
     private void LoadClassPackage(AssetsManager assetsManager, List<string> warnings)
     {
         if (!File.Exists(_classDataPath))

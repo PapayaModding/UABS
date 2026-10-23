@@ -36,6 +36,7 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
     public RelayCommand BrowseV2Command { get; }
     public RelayCommand BrowseUnityCommand { get; }
     public Task V2NavigationTask { get; private set; } = Task.CompletedTask;
+    public Task SearchNavigationTask { get; private set; } = Task.CompletedTask;
     private void V2OnPropertyChanged(object? sender, PropertyChangedEventArgs e)
     { if (e.PropertyName == nameof(V2BrowseViewModel.SelectedPackage)) IsV2Assets = V2.SelectedPackage is not null; }
 
@@ -72,19 +73,22 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
             userConfirmationService,
             writeCoordinator,
             editorSessionGuard);
-        MemoDrafts = memoDraftCoordinator ?? new MemoDraftCoordinator(
-            new PackageMemoPersistenceService(
+        InspectorMemos = new InspectorMemoService(new PackageMemoPersistenceService(
                 packages,
                 writeCoordinator,
                 editorSessionGuard: editorSessionGuard,
-                catalogPublisher: PublishMemoCatalogAsync));
-        AssetList = new AssetListViewModel(memoResolver, MemoDrafts, editorSessionGuard);
+                catalogPublisher: PublishMemoCatalogAsync), memoResolver, writeCoordinator, editorSessionGuard,
+                () => Packages.V2.Registrations.ToArray());
+        MemoDrafts = memoDraftCoordinator ?? new MemoDraftCoordinator(InspectorMemos);
+        AssetList = new AssetListViewModel(InspectorMemos, MemoDrafts, InspectorMemos);
+        V2.ConfigureMemos(InspectorMemos, MemoDrafts);
         Search = new SearchWorkspaceViewModel(
             Packages,
             searchService,
             memoResolver,
             MemoDrafts,
-            editorSessionGuard);
+            InspectorMemos,
+            v2Memos: InspectorMemos);
         Packages.PropertyChanged += PackagesOnPropertyChanged;
         V2.PropertyChanged += V2OnPropertyChanged;
         BrowseV2Command = new RelayCommand(() => { IsV2Assets = V2.SelectedPackage is not null; V2NavigationTask = V2.VerifyCurrentAsync(); });
@@ -104,6 +108,7 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
     public SearchWorkspaceViewModel Search { get; }
     public PackageManagementViewModel Packages { get; }
     public IMemoDraftCoordinator MemoDrafts { get; }
+    public InspectorMemoService InspectorMemos { get; }
     public IReadOnlyList<AssetEntry> Assets => AssetList.Assets;
     public AsyncCommand OpenFileCommand { get; }
     public RelayCommand ShowAssetsCommand { get; }
@@ -121,9 +126,16 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
                 return;
             if ((value == 0 && IsV2Assets) || (value == 2 && Packages.IsV2OverviewVisible)) V2NavigationTask = V2.VerifyCurrentAsync();
             if (previous == 1 && value != 1)
+            {
+                Search.Deactivate();
                 _ = ObserveSearchMemoFlushAsync();
+            }
+            if (value == 1) SearchNavigationTask = Search.ActivateAsync();
             if (previous == 0 && value != 0)
+            {
                 _ = ObserveAssetsMemoFlushAsync();
+                _ = ObserveV2MemoFlushAsync();
+            }
         }
     }
 
@@ -315,7 +327,10 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
     private void EditorOnPropertyChanged(object? sender, PropertyChangedEventArgs eventArgs)
     {
         if (eventArgs.PropertyName is nameof(PackageEditorViewModel.IsEditing) or nameof(PackageEditorViewModel.IsSaving))
+        {
             AssetList.RefreshMemoEligibility();
+            V2.RefreshMemoEligibility();
+        }
     }
 
     private async Task PublishMemoCatalogAsync(
@@ -361,5 +376,11 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
         {
             Printer.PrintException("Assets memo navigation flush failed.", exception);
         }
+    }
+    private async Task ObserveV2MemoFlushAsync()
+    {
+        try { await V2.MemoInspector.FlushForNavigationAsync(_lifetime.Token); }
+        catch (OperationCanceledException) { }
+        catch (Exception e) { Printer.PrintException("V2 memo navigation flush failed.", e); }
     }
 }

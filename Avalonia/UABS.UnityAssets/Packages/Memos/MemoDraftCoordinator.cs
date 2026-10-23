@@ -119,12 +119,11 @@ public sealed class MemoDraftCoordinator : IMemoDraftCoordinator, IDisposable, I
     {
         ValidateIdentity(identity);
         MemoDraftSnapshot observed = GetSnapshot(identity);
-        string? packageRevision = await _persistence.CaptureRevisionAsync(
-            identity.PackagePath!, cancellationToken).ConfigureAwait(false);
+        MemoPersistenceBasis basis = await _persistence.CaptureBasisAsync(identity, persistedMemo, cancellationToken).ConfigureAwait(false);
         cancellationToken.ThrowIfCancellationRequested();
-        return packageRevision is null
+        return basis.Revision is null
             ? MemoDraftSnapshot.Unavailable
-            : TrackCore(identity, persistedMemo, packageRevision, observed);
+            : TrackCore(identity, basis.Memo, basis.Revision, observed);
     }
 
     public MemoDraftSnapshot Track(
@@ -365,7 +364,8 @@ public sealed class MemoDraftCoordinator : IMemoDraftCoordinator, IDisposable, I
             MemoDraftSnapshot? savingSnapshot = null;
             lock (_sync)
             {
-                if (string.Equals(entry.DraftMemo, entry.ConfirmedMemo, StringComparison.Ordinal))
+                if (string.Equals(entry.DraftMemo, entry.ConfirmedMemo, StringComparison.Ordinal)
+                    && !(entry.Identity.V2 is not null && entry.LastPersistenceStatus == PackageMemoPersistenceStatus.CatalogPublicationFailure))
                 {
                     if (entry.State != MemoDraftSaveState.Saving)
                         entry.State = MemoDraftSaveState.Saved;
@@ -427,7 +427,7 @@ public sealed class MemoDraftCoordinator : IMemoDraftCoordinator, IDisposable, I
                 else if (entry.DraftRevision == savingRevision)
                 {
                     if (result.Status == PackageMemoPersistenceStatus.CatalogPublicationFailure
-                        && result.PersistedPackage is not null)
+                        && (result.PersistedPackage is not null || (entry.Identity.V2 is not null && result.PackageRevision is not null)))
                     {
                         entry.ConfirmedMemo = request.DesiredMemo;
                         entry.ConfirmedPackageRevision = result.PackageRevision ?? entry.ConfirmedPackageRevision;
@@ -469,7 +469,8 @@ public sealed class MemoDraftCoordinator : IMemoDraftCoordinator, IDisposable, I
     {
         try
         {
-            await _delay.DelayAsync(_debounceDelay, cancellation.Token).ConfigureAwait(false);
+            using (MemoTrace.Start("debounce"))
+                await _delay.DelayAsync(_debounceDelay, cancellation.Token).ConfigureAwait(false);
             cancellation.Token.ThrowIfCancellationRequested();
             PackageMemoIdentity? identity = null;
             lock (_sync)
@@ -546,6 +547,13 @@ public sealed class MemoDraftCoordinator : IMemoDraftCoordinator, IDisposable, I
     {
         ArgumentNullException.ThrowIfNull(identity);
         ArgumentException.ThrowIfNullOrWhiteSpace(identity.PackagePath);
+        if (identity.V2 is { } v2)
+        {
+            if (v2.RegistrationEpoch == Guid.Empty || v2.PackageId == Guid.Empty || v2.GenerationId == Guid.Empty
+                || v2.SourceId == Guid.Empty || v2.SourceRevision == Guid.Empty || v2.DirectoryOrdinal < 0 || v2.PathId != identity.PathId)
+                throw new ArgumentException("Incomplete V2 memo identity.", nameof(identity));
+            return;
+        }
         ArgumentException.ThrowIfNullOrWhiteSpace(identity.SourcePath);
         ArgumentNullException.ThrowIfNull(identity.IndexDirectory);
         ArgumentNullException.ThrowIfNull(identity.AssetName);
@@ -602,14 +610,16 @@ public sealed class MemoDraftCoordinator : IMemoDraftCoordinator, IDisposable, I
         string Index,
         string Source,
         string Asset,
-        long PathId)
+        long PathId,
+        V2MemoIdentity? V2)
     {
-        public static MemoDraftKey Create(PackageMemoIdentity identity) => new(
+        public static MemoDraftKey Create(PackageMemoIdentity identity) => identity.V2 is { } v2
+            ? new("V2", "", "", "", v2.PathId, v2) : new(
             PackagePathComparer.GetIdentity(identity.PackagePath!),
             identity.IndexDirectory.ToUpperInvariant(),
             PackagePathComparer.GetIdentity(identity.SourcePath),
             identity.AssetName,
-            identity.PathId);
+            identity.PathId, null);
     }
 
     private sealed class SystemMemoDraftDelay : IMemoDraftDelay

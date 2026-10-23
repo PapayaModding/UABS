@@ -26,7 +26,8 @@ public sealed record PackageMemoIdentity(
     string IndexDirectory,
     string SourcePath,
     string AssetName,
-    long PathId);
+    long PathId,
+    V2MemoIdentity? V2 = null);
 
 public sealed record PackageMemoReadResult(
     PackageMemoLookupStatus Status,

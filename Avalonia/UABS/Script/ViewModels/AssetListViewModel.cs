@@ -41,6 +41,7 @@ public sealed class AssetListViewModel : ViewModelBase, IDisposable
     private readonly IPackageMemoResolver _memoResolver;
     private IReadOnlyList<PackageMemoCatalogEntry> _memoCatalog = [];
     private readonly CancellationTokenSource _memoLifetime = new();
+    private int _memoVersion;
 
     public AssetListViewModel(
         IPackageMemoResolver? memoResolver = null,
@@ -194,6 +195,7 @@ public sealed class AssetListViewModel : ViewModelBase, IDisposable
             return;
 
         _disposed = true;
+        ++_memoVersion;
         CancelDetails();
         _memoLifetime.Cancel();
         MemoInspector.Dispose();
@@ -279,20 +281,20 @@ public sealed class AssetListViewModel : ViewModelBase, IDisposable
 
     private void RefreshMemo(bool flushPrevious = false)
     {
-        PackageMemoResolution resolution = ResolveSelectedMemo();
-        PackageMemoIdentity? previousIdentity = flushPrevious || !resolution.IsAvailable
-            ? MemoInspector.Identity
-            : null;
-        MemoTransitionTask = ObserveMemoTransitionAsync(previousIdentity, resolution);
+        MemoTransitionTask = ObserveMemoTransitionAsync(++_memoVersion, MemoInspector.Identity, flushPrevious);
     }
 
-    private async Task ObserveMemoTransitionAsync(PackageMemoIdentity? previousIdentity, PackageMemoResolution resolution)
+    private async Task ObserveMemoTransitionAsync(int version, PackageMemoIdentity? previousIdentity, bool flushPrevious)
     {
         try
         {
-            Task flush = previousIdentity is null
+            Task flush = previousIdentity is null || !flushPrevious
                 ? Task.CompletedTask
                 : MemoInspector.FlushIdentityForNavigationAsync(previousIdentity, _memoLifetime.Token);
+            var resolution = await ResolveSelectedMemoAsync();
+            if (version != _memoVersion || _disposed) { await flush; return; }
+            if (!resolution.IsAvailable && !flushPrevious && previousIdentity is not null)
+                flush = MemoInspector.FlushIdentityForNavigationAsync(previousIdentity, _memoLifetime.Token);
             await Task.WhenAll(flush, MemoInspector.ShowAsync(resolution)).ConfigureAwait(true);
         }
         catch (OperationCanceledException) when (_memoLifetime.IsCancellationRequested)
@@ -304,14 +306,14 @@ public sealed class AssetListViewModel : ViewModelBase, IDisposable
         }
     }
 
-    private PackageMemoResolution ResolveSelectedMemo()
+    private Task<PackageMemoResolution> ResolveSelectedMemoAsync()
     {
         AssetEntry? selected = SelectedAsset;
         if (selected is null)
         {
-            return new PackageMemoResolution(
+            return Task.FromResult(new PackageMemoResolution(
                 PackageMemoResolutionStatus.Unsupported, null, null, null, null, null,
-                "Select an asset to edit its indexed package memo.");
+                "Select an asset to edit its indexed package memo."));
         }
 
         bool ambiguousLogicalFileIdentity = _allAssets.Any(asset =>
@@ -320,12 +322,14 @@ public sealed class AssetListViewModel : ViewModelBase, IDisposable
             && string.Equals(asset.Name, selected.Name, StringComparison.Ordinal)
             && PackagePathComparer.Equals(asset.SourcePath, selected.SourcePath)
             && !string.Equals(asset.LogicalFile, selected.LogicalFile, StringComparison.Ordinal));
-        return _memoResolver.ResolveAsset(
+        return _memoResolver.ResolveAssetAsync(
             _memoCatalog,
             new AssetMemoLookup(
                 selected.SourcePath,
                 selected.Name,
                 selected.PathId,
-                ambiguousLogicalFileIdentity));
+                ambiguousLogicalFileIdentity,
+                selected.LogicalFile,
+                _session?.Metadata.SourceSha256), _memoLifetime.Token);
     }
 }

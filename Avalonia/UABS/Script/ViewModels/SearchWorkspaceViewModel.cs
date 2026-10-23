@@ -6,6 +6,8 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Avalonia.Threading;
+using UABS.Services;
+using UABS.PackageV2.Search;
 using UABS.UnityAssets.Packages;
 using UABS.UnityAssets.Packages.Memos;
 using UABS.UnityAssets.Packages.Search;
@@ -42,6 +44,8 @@ public sealed class SearchPackageScopeItemViewModel : ViewModelBase
     public string Name => Package.Name;
 
     public string Path => Package.Path;
+    public string ScopeKey => Package.V2 is { } v2 ? $"V2:{v2.Epoch}" : $"V1:{Path}";
+    public string DisplayName => $"[{(Package.V2 is null ? "V1" : "V2")}] {Name}" + (Package.V2 is { } v ? $" · {v.Status}" : "");
 
     public bool IsSelected
     {
@@ -54,7 +58,8 @@ public sealed class SearchPackageScopeItemViewModel : ViewModelBase
         }
     }
 
-    internal void UpdatePackage(PackageCatalogItemViewModel package) => Package = package;
+    internal void UpdatePackage(PackageCatalogItemViewModel package)
+    { Package = package; OnPropertyChanged(nameof(Name)); OnPropertyChanged(nameof(DisplayName)); OnPropertyChanged(nameof(Path)); }
 
     internal bool SetSelectedWithoutCallback(bool value)
     {
@@ -69,24 +74,50 @@ public sealed class SearchPackageScopeItemViewModel : ViewModelBase
 public sealed class SearchResultItemViewModel : ViewModelBase
 {
     private string? _memo;
+    private readonly PackageSearchResult? _legacyResult;
 
     internal SearchResultItemViewModel(PackageSearchResult result)
     {
-        Result = result;
+        _legacyResult = result;
         _memo = result.Memo;
     }
 
-    public PackageSearchResult Result { get; }
-    public PackageSearchResultKind Kind => Result.Kind;
-    public string Name => Result.AssetName ?? Result.SourceName ?? Result.PackageName;
-    public string PackageName => Result.PackageName;
-    public string? PackagePath => Result.PackagePath;
-    public string? IndexDirectory => Result.IndexDirectory;
-    public string? SourceName => Result.SourceName;
-    public string? SourcePath => Result.SourcePath;
-    public string? CabCode => Result.CabCode;
-    public string? AssetName => Result.AssetName;
-    public long? PathId => Result.PathId;
+    internal SearchResultItemViewModel(SearchResult result, SearchRevision revision)
+    { V2Result = result; V2Revision = revision; _memo = result.Memo; }
+    // Preserve the V1 API without fabricating V1 identities for SQLite results.
+    public PackageSearchResult Result => _legacyResult ?? throw new InvalidOperationException("V2 rows must use V2Result, never V1 memo/persistence APIs.");
+    public SearchResult? V2Result { get; private set; }
+    public SearchRevision? V2Revision { get; private set; }
+    internal void ApplyVerifiedV2Memo(V2MemoPublication publication)
+    {
+        if (V2Result is not { } row || V2Revision?.LocationEpoch != publication.Registration.LocationEpoch) return;
+        var target = publication.Change.Target;
+        if (row.Key.PackageId != target.PackageId || row.Key.GenerationId != target.GenerationId || row.Key.SourceId != target.SourceId
+            || row.Key.SourceRevision != target.SourceRevision || row.Key.DirectoryOrdinal != target.DirectoryOrdinal || row.PathId != target.PathId
+            || row.MemoRevision >= publication.Change.MemoRevision) return;
+        V2Result = row with { Memo = publication.Change.Memo, MemoRevision = publication.Change.MemoRevision };
+        V2Revision = V2Revision! with { CatalogRevision = Math.Max(V2Revision.CatalogRevision, publication.Change.CatalogRevision) };
+        Memo = publication.Change.Memo;
+        OnPropertyChanged(nameof(V2Result)); OnPropertyChanged(nameof(V2Revision)); OnPropertyChanged(nameof(V2Details));
+    }
+    public bool IsV2 => V2Result is not null;
+    public PackageSearchResultKind Kind => V2Result?.Key.Kind ?? Result!.Kind;
+    public string Name => V2Result is { } v ? v.Key.Kind switch
+        { PackageSearchResultKind.Package => v.PackageName, PackageSearchResultKind.SourceFile => v.SourceName ?? "<unnamed source>", _ => v.AssetName ?? "<unnamed asset>" }
+        : Result!.AssetName ?? Result.SourceName ?? Result.PackageName;
+    public string PackageName => V2Result?.PackageName ?? Result!.PackageName;
+    public string? PackagePath => V2Result?.PackagePath ?? Result?.PackagePath;
+    public string? IndexDirectory => V2Result is { } v ? v.IndexDirectory : Result?.IndexDirectory;
+    public string? SourceName => V2Result is { } v ? v.SourceName : Result?.SourceName;
+    public string? SourcePath => V2Result is { } v ? v.SourcePath : Result?.SourcePath;
+    public string? CabCode => _legacyResult?.CabCode;
+    public string? AssetName => V2Result is { } v ? v.AssetName : Result?.AssetName;
+    public long? PathId => V2Result is { } v ? v.PathId : Result?.PathId;
+    public object IconKind => Kind == PackageSearchResultKind.Asset && !string.IsNullOrWhiteSpace(V2Result?.TypeName)
+        ? V2Result.TypeName : Kind;
+    public string V2Details => V2Result is not { } v ? "" :
+        $"V2 read-only indexed metadata\nRegistration: {V2Revision?.RegistrationId}\nLocation epoch: {V2Revision?.LocationEpoch}\nCatalog revision: {V2Revision?.CatalogRevision}\n{v.Key}\nPath ID: {v.PathId}\nClass ID: {v.ClassId}\nType: {v.TypeName ?? "<unknown>"}\nRaw name: {Raw(v.AssetName)}\nIdentity: {v.IdentityStatus ?? "not an asset"}\nMemo revision: {v.MemoRevision}\nMemo: {Raw(v.Memo)}";
+    private static string Raw(string? text) => text is null ? "<missing>" : text.Length == 0 ? "<empty>" : text;
     public string? Memo
     {
         get => _memo;
@@ -99,7 +130,7 @@ public sealed class SearchResultItemViewModel : ViewModelBase
     public string MemoSummary => string.IsNullOrWhiteSpace(Memo)
         ? "—"
         : Memo.Length <= 80 ? Memo : $"{Memo[..77]}...";
-    public PackageSearchMatchCategory MatchCategories => Result.MatchCategories;
+    public PackageSearchMatchCategory MatchCategories => V2Result?.MatchCategories ?? Result!.MatchCategories;
 
     internal void ApplyPersistedMemo(string? memo) => Memo = memo;
 }
@@ -138,22 +169,38 @@ public sealed class SearchWorkspaceViewModel : ViewModelBase, IDisposable
     private bool _disposed;
     private readonly IPackageMemoResolver _memoResolver;
     private Task _memoTransitionTask = Task.CompletedTask;
+    private V2SearchOperation? _v2Operation;
+    private SearchCursor? _v2Cursor;
+    private bool _isStale;
+    private string _countSummary = "0 loaded";
+    private string _warnings = "";
+    private string _classIdText = "";
+    private string _typeNameText = "";
+    private readonly Func<V2SearchService> _v2EngineFactory;
+    private readonly InspectorMemoService? _v2Memos;
 
     public SearchWorkspaceViewModel(
         PackageManagementViewModel packages,
         IPackageSearchService searchService,
         IPackageMemoResolver? memoResolver = null,
         IMemoDraftCoordinator? memoDraftCoordinator = null,
-        IPackageEditorSessionGuard? editorSessionGuard = null)
+        IPackageEditorSessionGuard? editorSessionGuard = null,
+        Func<V2SearchService>? v2EngineFactory = null,
+        InspectorMemoService? v2Memos = null)
     {
         _packages = packages ?? throw new ArgumentNullException(nameof(packages));
         _searchService = searchService ?? throw new ArgumentNullException(nameof(searchService));
         _memoResolver = memoResolver ?? new PackageMemoResolver();
         _memoDrafts = memoDraftCoordinator ?? new UnavailableMemoDraftCoordinator();
+        _v2EngineFactory = v2EngineFactory ?? (() => new V2SearchService());
+        _v2Memos = v2Memos;
+        if (v2Memos is not null) v2Memos.Published += OnVerifiedV2Memo;
         MemoInspector = new EditableMemoInspectorViewModel(
             _memoDrafts,
             editorSessionGuard ?? new PackageEditorSessionGuard());
         SearchCommand = new AsyncCommand(SearchAsync);
+        RefreshSearchCommand = new AsyncCommand(SearchAsync);
+        NextPageCommand = new AsyncCommand(NextPageAsync, () => CanReadNextPage);
         CancelSearchCommand = new RelayCommand(CancelSearch, () => IsSearching);
         SelectAllPackagesCommand = new RelayCommand(() => SetAllPackages(true), () => PackageScopes.Count > 0);
         ClearPackagesCommand = new RelayCommand(() => SetAllPackages(false), () => SelectedPackageCount > 0);
@@ -167,6 +214,18 @@ public sealed class SearchWorkspaceViewModel : ViewModelBase, IDisposable
     public SearchWorkspaceLayoutViewModel Layout { get; } = new();
     public EditableMemoInspectorViewModel MemoInspector { get; }
     public AsyncCommand SearchCommand { get; }
+    public AsyncCommand RefreshSearchCommand { get; }
+    public AsyncCommand NextPageCommand { get; }
+    public bool IsStale { get => _isStale; private set { SetField(ref _isStale, value); NotifyPaging(); } }
+    public bool CanReadNextPage => _v2Cursor is not null && !IsStale && !IsSearching;
+    public bool IsV2ResultSelected => SelectedResult?.IsV2 == true;
+    public bool CanShowMemoEditor => !IsV2ResultSelected || _v2Memos is not null;
+    public string CountSummary { get => _countSummary; private set => SetField(ref _countSummary, value); }
+    public string Warnings { get => _warnings; private set => SetField(ref _warnings, value); }
+    public bool HasWarnings => Warnings.Length > 0;
+    public string ClassIdText { get => _classIdText; set => SetCriteriaField(ref _classIdText, value ?? ""); }
+    public string TypeNameText { get => _typeNameText; set => SetCriteriaField(ref _typeNameText, value ?? ""); }
+    private void NotifyPaging() { OnPropertyChanged(nameof(CanReadNextPage)); NextPageCommand?.NotifyCanExecuteChanged(); }
     public RelayCommand CancelSearchCommand { get; }
     public RelayCommand SelectAllPackagesCommand { get; }
     public RelayCommand ClearPackagesCommand { get; }
@@ -202,6 +261,7 @@ public sealed class SearchWorkspaceViewModel : ViewModelBase, IDisposable
         {
             if (SetField(ref _results, value))
             {
+                if (value.Count == 0) CountSummary = "0 loaded";
                 OnPropertyChanged(nameof(ResultCount));
                 OnPropertyChanged(nameof(HasResults));
                 OnPropertyChanged(nameof(ShowEmptyState));
@@ -218,6 +278,8 @@ public sealed class SearchWorkspaceViewModel : ViewModelBase, IDisposable
             if (SetField(ref _selectedResult, value))
             {
                 OnPropertyChanged(nameof(HasSelectedResult));
+                OnPropertyChanged(nameof(IsV2ResultSelected));
+                OnPropertyChanged(nameof(CanShowMemoEditor));
                 QueueMemoPresentation(flushIdentity: previousIdentity);
             }
         }
@@ -301,6 +363,7 @@ public sealed class SearchWorkspaceViewModel : ViewModelBase, IDisposable
             if (SetField(ref _isSearching, value))
             {
                 CancelSearchCommand.NotifyCanExecuteChanged();
+                NotifyPaging();
                 OnPropertyChanged(nameof(ShowEmptyState));
             }
         }
@@ -365,6 +428,23 @@ public sealed class SearchWorkspaceViewModel : ViewModelBase, IDisposable
         IsSearching = false;
         Error = null;
 
+        var scope = PackageScopes.Where(p => p.IsSelected).ToArray();
+        if (scope.Any(p => p.Package.V2 is not null))
+        {
+            if (scope.Any(p => p.Package.V2 is null))
+            {
+                Error = "Select one package format per search (V1 or V2). Mixed-format federation is not supported.";
+                Status = "Search was not run; previous rows were preserved.";
+                return;
+            }
+            await RunV2SearchAsync(scope, version);
+            return;
+        }
+        RetireV2Operation();
+        IsStale = false; Warnings = ""; OnPropertyChanged(nameof(HasWarnings));
+        if (!string.IsNullOrWhiteSpace(ClassIdText) || !string.IsNullOrWhiteSpace(TypeNameText))
+        { Error = "Class ID / type-name filters require V2 asset-only search."; return; }
+
         if (!TryCreateRequest(out PackageSearchRequest? request, out string? validationError))
         {
             Results = [];
@@ -403,6 +483,7 @@ public sealed class SearchWorkspaceViewModel : ViewModelBase, IDisposable
                 return;
 
             Results = results.Select(result => new SearchResultItemViewModel(result)).ToArray();
+            CountSummary = $"{Results.Count:N0} loaded / {Results.Count:N0} exact";
             SelectedResult = null;
             _executedCriteria = criteria;
             LastExecutedCriteria = CreateCriteriaSummary(criteria);
@@ -436,6 +517,152 @@ public sealed class SearchWorkspaceViewModel : ViewModelBase, IDisposable
         }
     }
 
+    private async Task RunV2SearchAsync(SearchPackageScopeItemViewModel[] scope, int version)
+    {
+        if (!TryCreateRequest(out var legacy, out var validation))
+        { Error = validation; Status = "Search was not run; previous rows were preserved."; return; }
+        int? classId = null;
+        if (!string.IsNullOrWhiteSpace(ClassIdText))
+        {
+            if (!int.TryParse(ClassIdText, NumberStyles.Integer, CultureInfo.InvariantCulture, out int value))
+            { Error = "Class ID must be a signed 32-bit number."; return; }
+            classId = value;
+        }
+        if ((classId is not null || !string.IsNullOrWhiteSpace(TypeNameText)) && legacy!.ResultKinds != PackageSearchResultKinds.Asset)
+        { Error = "Class ID / type-name filters require Assets only (disable Packages and Sources)."; return; }
+        CriteriaSnapshot criteria = CaptureCriteria();
+        var request = new SearchRequest(IncludeText, ExcludeText, legacy!.Fields, legacy.ResultKinds,
+            ExactText, MemoOnly, legacy.PathId, ClassId: classId, TypeName: string.IsNullOrWhiteSpace(TypeNameText) ? null : TypeNameText);
+        RetireV2Operation(); IsStale = false;
+        _searchCancellation = CancellationTokenSource.CreateLinkedTokenSource(_lifetime.Token);
+        var owned = _searchCancellation; IsSearching = true; Status = "Admitting selected V2 packages for Search...";
+        try
+        {
+            var operation = await V2SearchOperation.OpenAsync(scope.Select(p => p.Package.V2!).ToArray(), request, owned.Token, _v2EngineFactory());
+            if (version != _searchVersion || owned.IsCancellationRequested)
+            { await operation.DisposeAsync(); return; }
+            if (criteria.SelectedPaths != CaptureCriteria().SelectedPaths)
+            {
+                await operation.DisposeAsync(); MarkV2Stale();
+                Error = "Selected package scope changed during admission. Refresh Search explicitly.";
+                return;
+            }
+            _v2Operation = operation;
+            operation.Invalidated += OnV2Invalidated;
+            var page = await operation.ReadPageAsync(token: owned.Token);
+            if (version != _searchVersion || _v2Operation != operation) return;
+            if (operation.Session.IsStale) { MarkV2Stale(); return; }
+            if (!PublishV2Page(page)) return;
+            _executedCriteria = criteria; LastExecutedCriteria = CreateCriteriaSummary(criteria);
+            HasExecutedSearch = true; UpdateCriteriaChanged();
+        }
+        catch (OperationCanceledException) when (owned.IsCancellationRequested)
+        { if (version == _searchVersion) Status = "Search cancelled; previous rows were preserved."; }
+        catch (Exception e)
+        { if (version == _searchVersion) { Error = "V2 Search failed: " + e.Message; Status = "No new rows published."; } }
+        finally
+        {
+            if (version == _searchVersion) { _searchCancellation = null; IsSearching = false; }
+            owned.Dispose();
+        }
+    }
+
+    public async Task NextPageAsync()
+    {
+        if (!CanReadNextPage || _v2Operation is not { } operation) return;
+        int version = _searchVersion;
+        _searchCancellation = CancellationTokenSource.CreateLinkedTokenSource(_lifetime.Token);
+        var owned = _searchCancellation; IsSearching = true; Error = null;
+        try
+        {
+            var page = await operation.ReadPageAsync(_v2Cursor, token: owned.Token);
+            if (version == _searchVersion && operation == _v2Operation)
+            { if (operation.Session.IsStale) MarkV2Stale(); else PublishV2Page(page); }
+        }
+        catch (Exception e)
+        { if (version == _searchVersion) Error = "V2 page failed; previous rows/cursor preserved: " + e.Message; }
+        finally
+        {
+            if (version == _searchVersion) { _searchCancellation = null; IsSearching = false; }
+            owned.Dispose();
+        }
+    }
+
+    private bool PublishV2Page(SearchPage page)
+    {
+        if (page.Status != SearchStatus.Success)
+        {
+            if (page.Status == SearchStatus.StaleCursor) MarkV2Stale();
+            Error = $"{page.Status}: " + string.Join("; ", page.Diagnostics.Select(d => d.Message));
+            Status = "Page not published; previous rows and cursor preserved.";
+            return false;
+        }
+        // One page is retained, never an ObservableCollection of the complete result universe.
+        Results = page.Rows.Select(r => new SearchResultItemViewModel(r,
+            page.Revisions.Single(v => v.PackageId == r.Key.PackageId && v.GenerationId == r.Key.GenerationId))).ToArray();
+        SelectedResult = null; _v2Cursor = page.NextCursor;
+        CountSummary = page.Count.Kind == SearchCountKind.Exact
+            ? $"{Results.Count:N0} on page / {page.Count.Value:N0} exact indexed matches"
+            : $"{Results.Count:N0} on page / at least {page.Count.Value:N0} indexed matches";
+        Warnings = string.Join("\n", page.Diagnostics.GroupBy(d => (d.Code, d.Message))
+            .Select(g => $"{g.Key.Code} ({g.Count()} package warning(s)): {g.Key.Message}"));
+        OnPropertyChanged(nameof(HasWarnings));
+        Status = "V2 indexed metadata only · global package ordering · column sorting is current-page only.";
+        Error = null; NotifyPaging(); return true;
+    }
+
+    private void OnVerifiedV2Memo(V2MemoPublication publication)
+    {
+        if (_disposed) return;
+        foreach (var row in Results) row.ApplyVerifiedV2Memo(publication);
+        if (_v2Operation?.Session.Revisions.Any(r => r.LocationEpoch == publication.Registration.LocationEpoch
+            && r.PackageId == publication.Change.Target.PackageId && r.GenerationId == publication.Change.Target.GenerationId
+            && r.CatalogRevision < publication.Change.CatalogRevision) == true)
+        {
+            ++_searchVersion; CancelAndDisposeSearch(); IsSearching = false; _v2Operation.Invalidate(); MarkV2Stale();
+        }
+    }
+    private void OnV2Invalidated(V2SearchOperation operation)
+    {
+        void Apply() { if (!_disposed && operation is not null && operation == _v2Operation) MarkV2Stale(); }
+        if (Dispatcher.UIThread.CheckAccess()) Apply(); else Dispatcher.UIThread.Post(Apply);
+    }
+
+    private void MarkV2Stale()
+    {
+        IsStale = true;
+        Status = "V2 results are stale. Refresh Search explicitly; displayed rows are retained.";
+        CountSummary = $"{Results.Count:N0} displayed · stale count";
+    }
+
+    public async Task ActivateAsync()
+    {
+        var operation = _v2Operation;
+        if (operation is null) return;
+        try
+        {
+            bool current = await operation.CheckCurrentAsync(_lifetime.Token);
+            if (!current && operation == _v2Operation && !_disposed) MarkV2Stale();
+        }
+        catch (OperationCanceledException) { }
+        catch (Exception e) { if (!_disposed && operation == _v2Operation) { MarkV2Stale(); Error = e.Message; } }
+    }
+
+    public void Deactivate() => CancelSearch();
+    public Task RetirementTask { get; private set; } = Task.CompletedTask;
+    private void RetireV2Operation()
+    {
+        var operation = _v2Operation; _v2Operation = null; _v2Cursor = null; NotifyPaging();
+        if (operation is null) return;
+        operation.Invalidated -= OnV2Invalidated;
+        RetirementTask = ObserveRetirementAsync(operation);
+    }
+    private static async Task ObserveRetirementAsync(V2SearchOperation operation)
+    {
+        try { await operation.DisposeAsync().ConfigureAwait(false); }
+        catch (Exception e) { Printer.PrintException("V2 Search session disposal failed.", e); }
+    }
+
     public void Dispose()
     {
         if (_disposed)
@@ -444,9 +671,11 @@ public sealed class SearchWorkspaceViewModel : ViewModelBase, IDisposable
         _packages.PropertyChanged -= PackagesOnPropertyChanged;
         _packages.Editor.PropertyChanged -= EditorOnPropertyChanged;
         _memoDrafts.DraftChanged -= MemoDraftsOnDraftChanged;
+        if (_v2Memos is not null) _v2Memos.Published -= OnVerifiedV2Memo;
         _searchVersion++;
         _lifetime.Cancel();
         CancelAndDisposeSearch();
+        RetireV2Operation();
         MemoInspector.Dispose();
         _lifetime.Dispose();
     }
@@ -469,7 +698,7 @@ public sealed class SearchWorkspaceViewModel : ViewModelBase, IDisposable
     private void MemoDraftsOnDraftChanged(object? sender, MemoDraftChangedEventArgs eventArgs)
     {
         MemoDraftSnapshot draft = eventArgs.Draft;
-        if (draft.Identity is null
+        if (draft.Identity is null || draft.Identity.V2 is not null
             || draft.LastPersistenceStatus is not (PackageMemoPersistenceStatus.Saved
                 or PackageMemoPersistenceStatus.Unchanged))
         {
@@ -495,7 +724,7 @@ public sealed class SearchWorkspaceViewModel : ViewModelBase, IDisposable
     }
 
     private static bool MatchesIdentity(SearchResultItemViewModel result, PackageMemoIdentity identity) =>
-        result.Kind == PackageSearchResultKind.Asset
+        !result.IsV2 && result.Kind == PackageSearchResultKind.Asset
         && result.PathId == identity.PathId
         && PackagePathComparer.Equals(result.PackagePath, identity.PackagePath)
         && string.Equals(result.IndexDirectory, identity.IndexDirectory, StringComparison.Ordinal)
@@ -505,16 +734,17 @@ public sealed class SearchWorkspaceViewModel : ViewModelBase, IDisposable
     private void ReconcilePackages()
     {
         Dictionary<string, SearchPackageScopeItemViewModel> existing = PackageScopes
-            .ToDictionary(package => package.Path, StringComparer.OrdinalIgnoreCase);
+            .ToDictionary(package => package.ScopeKey, StringComparer.OrdinalIgnoreCase);
         PackageCatalogItemViewModel[] available = _packages.Packages
-            .Where(package => package.IsAvailable)
+            .Where(package => package.IsAvailable || package.V2 is not null)
             .ToArray();
         bool selectNew = !_scopeInitialized && available.Length > 0;
         List<SearchPackageScopeItemViewModel> reconciled = new(available.Length);
 
         foreach (PackageCatalogItemViewModel package in available)
         {
-            if (existing.TryGetValue(package.Path, out SearchPackageScopeItemViewModel? scope))
+            string key = package.V2 is { } v2 ? $"V2:{v2.Epoch}" : $"V1:{package.Path}";
+            if (existing.TryGetValue(key, out SearchPackageScopeItemViewModel? scope))
             {
                 scope.UpdatePackage(package);
                 reconciled.Add(scope);
@@ -533,6 +763,8 @@ public sealed class SearchWorkspaceViewModel : ViewModelBase, IDisposable
         Status = available.Length == 0
             ? "Load a package catalog in Packages to establish search scope."
             : $"{PackageSelectionSummary}. Ready to search.";
+        if (_v2Operation is not null && _v2Operation.Session.Revisions.Any(r =>
+            !available.Any(p => p.V2?.LocationEpoch == r.LocationEpoch))) MarkV2Stale();
     }
 
     private void SetAllPackages(bool selected)
@@ -546,6 +778,8 @@ public sealed class SearchWorkspaceViewModel : ViewModelBase, IDisposable
 
     private void OnScopeSelectionChanged()
     {
+        if (_v2Operation is not null)
+        { ++_searchVersion; CancelAndDisposeSearch(); IsSearching = false; _v2Operation.Invalidate(); MarkV2Stale(); }
         UpdateScopeState();
         UpdateCriteriaChanged();
     }
@@ -658,8 +892,10 @@ public sealed class SearchWorkspaceViewModel : ViewModelBase, IDisposable
         IncludeSourceResults,
         IncludeAssetResults,
         FieldSelection,
+        ClassIdText,
+        TypeNameText,
         string.Join('\u001f', PackageScopes.Where(package => package.IsSelected)
-            .Select(package => package.Path)
+            .Select(package => package.ScopeKey)
             .OrderBy(path => path, StringComparer.OrdinalIgnoreCase)));
 
     private static string CreateCriteriaSummary(CriteriaSnapshot criteria)
@@ -727,6 +963,11 @@ public sealed class SearchWorkspaceViewModel : ViewModelBase, IDisposable
     private PackageMemoResolution ResolveSelectedMemo()
     {
         SearchResultItemViewModel? selected = SelectedResult;
+        if (selected?.V2Result is { } v2 && selected.V2Revision is { } revision && _v2Memos is not null)
+            return _v2Memos.ResolveSearch(v2, revision);
+        if (selected?.IsV2 == true)
+            return new(PackageMemoResolutionStatus.Unsupported, null, selected.PackageName, selected.PackagePath,
+                null, null, "V2 Search memos are read-only in Gate5B; no V1 persistence route.");
         if (selected is null)
         {
             return new PackageMemoResolution(
@@ -792,5 +1033,7 @@ public sealed class SearchWorkspaceViewModel : ViewModelBase, IDisposable
         bool IncludeSourceResults,
         bool IncludeAssetResults,
         SearchWorkspaceFieldSelection FieldSelection,
+        string ClassIdText,
+        string TypeNameText,
         string SelectedPaths);
 }

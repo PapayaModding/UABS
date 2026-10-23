@@ -23,6 +23,7 @@ public sealed record MemoWriteResult(MemoStatus Status, MemoWriteRequest Request
     public bool Succeeded => Status is MemoStatus.Saved or MemoStatus.Unchanged;
 }
 public sealed record MemoAdmission(MemoStatus? Failure, V2MemoRegistration? Registration, string Message);
+public sealed record MemoTargetSnapshot(MemoTarget Target, string? Memo, long MemoRevision, long CatalogRevision);
 
 /// <summary>Captured location/ownership; no with-expression or mutable path can retarget queued writes.</summary>
 public sealed class V2MemoRegistration

@@ -1,14 +1,26 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.ComponentModel;
 
 namespace UABS.Models;
 
 public sealed record V2AssetIdentity(Guid PackageId, Guid GenerationId, Guid SourceId, Guid SourceRevision,
     int DirectoryOrdinal, long? PathId, int TableOrdinal);
 public sealed record V2AssetRow(long Cursor, V2AssetIdentity Identity, string? Name, int? ClassId,
-    string? TypeName, string? Memo, long MemoRevision, string IdentityStatus, long? Size)
+    string? TypeName, string? Memo, long MemoRevision, string IdentityStatus, long? Size) : INotifyPropertyChanged
 {
+    public string? Memo { get; private set; } = Memo;
+    public long MemoRevision { get; private set; } = MemoRevision;
+    public event PropertyChangedEventHandler? PropertyChanged;
+    public void ApplyVerifiedMemo(string? memo, long revision)
+    {
+        if (revision < MemoRevision || (revision == MemoRevision && memo == Memo)) return;
+        if (revision == MemoRevision) return; // Conflicting same-revision delta is never authoritative.
+        Memo = memo; MemoRevision = revision;
+        foreach (string property in new[] { nameof(Memo), nameof(MemoRevision), nameof(ValueStates), nameof(Details) })
+            PropertyChanged?.Invoke(this, new(property));
+    }
     public string NameLabel => Value(Name);
     public string TypeLabel => TypeName ?? (ClassId is int id ? $"Class {id} (unresolved)" : "Class ID unavailable");
     public string IconType => TypeName ?? "Asset";

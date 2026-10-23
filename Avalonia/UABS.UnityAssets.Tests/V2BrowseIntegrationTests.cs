@@ -197,7 +197,18 @@ public sealed class V2BrowseIntegrationTests
         Assert.True(app.Packages.IsV2OverviewVisible); Assert.False(app.Packages.EditPackageCommand.CanExecute(null)); Assert.False(await app.Packages.EditSelectedPackageAsync());
         app.V2.SelectedAsset = app.V2.Assets[0]; await app.V2.InspectorTask; Assert.Contains("Read-only", app.V2.Inspector); Assert.Contains("Memo:", app.V2.Inspector);
         var selected = app.V2.SelectedAsset; app.SelectedWorkspaceIndex = 1; app.SelectedWorkspaceIndex = 0; Assert.Same(selected, app.V2.SelectedAsset);
-        Assert.Empty(app.Search.PackageScopes); // not added to V1 Search providers
+        var scope = Assert.Single(app.Search.PackageScopes);
+        Assert.Equal($"V2:{catalogItem.V2!.Epoch}", scope.ScopeKey); // Exact registration, not display-name matching.
+        app.Search.IncludeText = "Hero"; app.Search.IncludePackageResults = false; app.Search.IncludeSourceResults = false;
+        await app.Search.SearchAsync(); Assert.Null(app.Search.Error); Assert.NotEmpty(app.Search.Results);
+        Assert.All(app.Search.Results, row => Assert.True(row.IsV2));
+        Assert.Throws<InvalidOperationException>(() => app.Search.Results[0].Result); // No fabricated V1 provider.
+        app.Search.SelectedResult = app.Search.Results[0]; await app.Search.MemoTransitionTask;
+        Assert.True(app.Search.MemoInspector.IsEditable); Assert.NotNull(app.Search.MemoInspector.Identity!.V2); Assert.Equal(0, factory.Calls);
+        var results = app.Search.Results; var searchSelection = app.Search.SelectedResult;
+        app.SelectedWorkspaceIndex = 1; await app.SearchNavigationTask;
+        app.SelectedWorkspaceIndex = 2; app.SelectedWorkspaceIndex = 1; await app.SearchNavigationTask;
+        Assert.Same(results, app.Search.Results); Assert.Same(searchSelection, app.Search.SelectedResult);
         var directory = await new DirectoryBrowserService().ReadAsync(corpus.DirectoryPath);
         Assert.Contains(directory.Entries, e => e.FullPath == corpus.Packages[0].Path);
     }
@@ -300,7 +311,7 @@ public sealed class V2BrowseIntegrationTests
     }
 
     [AvaloniaFact]
-    public async Task ReadOnlyViews_UseSharedGreenRowsAndBoundedKindColumn()
+    public async Task MetadataViews_UseSharedGreenRowsAndBoundedKindColumn_WithUnavailableUnconfiguredMemoEditor()
     {
         using var corpus = new V2SearchTests.Corpus(); await corpus.Add(250);
         using var vm = new V2BrowseViewModel(new Picker()); await vm.OpenAsync(corpus.Packages[0].Path);
@@ -320,7 +331,11 @@ public sealed class V2BrowseIntegrationTests
             grid.SelectedItem = vm.Assets[0]; await vm.InspectorTask;
             var inspector = new V2InspectorView { DataContext = vm }; window.Content = inspector; inspector.UpdateLayout();
             var box = inspector.FindControl<TextBox>("V2ReadOnlyInspector")!; Assert.True(box.IsReadOnly); Assert.Contains("Memo:", box.Text);
-            Assert.Empty(inspector.GetVisualDescendants().OfType<Button>());
+            var memo = inspector.FindControl<EditableMemoInspectorView>("V2MemoInspector")!;
+            Assert.Same(vm.MemoInspector, memo.DataContext);
+            Assert.False(memo.FindControl<TextBox>("MemoEditor")!.IsEffectivelyEnabled, "Unconfigured memo input must be disabled.");
+            Assert.False(memo.FindControl<Button>("MemoSaveNowButton")!.IsEffectivelyEnabled, "Unavailable command must be noninteractive.");
+            Assert.False(memo.FindControl<Button>("MemoRetryButton")!.IsVisible, "No retry before an editable draft.");
         }
         finally { window.Close(); }
     }

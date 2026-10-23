@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using Microsoft.Win32.SafeHandles;
 using UABS.Models;
 using UABS.PackageV2;
+using UABS.PackageV2.Memos;
 
 namespace UABS.Services;
 
@@ -44,7 +45,7 @@ public sealed class V2BrowseCatalog : IDisposable
                 string evidence = await EvidenceAsync(full, token).ConfigureAwait(false);
                 _observe?.Invoke(V2BrowseBoundary.BeforeAdmission);
                 token.ThrowIfCancellationRequested();
-                var admission = await PackageReader.OpenAsync(full, token).ConfigureAwait(false);
+                var admission = await PackageReader.OpenAsync(full, token, memoReuse: true).ConfigureAwait(false);
                 reader = admission.Reader;
                 token.ThrowIfCancellationRequested();
                 if (reader is null) throw new InvalidDataException(admission.Message);
@@ -72,7 +73,8 @@ public sealed class V2BrowseCatalog : IDisposable
         try { if (_disposed) return; _disposed = true; foreach (var e in _entries) e.Stop(); foreach (var e in _entries) e.CloseAsync().GetAwaiter().GetResult(); _entries.Clear(); }
         finally { _gate.Release(); }
     }
-    internal static Task<string> EvidenceAsync(string path, CancellationToken token) => Task.Run(() => {
+    internal static Task<string> EvidenceAsync(string path, CancellationToken token, bool hashContents = true) => Task.Run(() => {
+        using var phase = UABS.UnityAssets.Packages.Memos.MemoTrace.Start(hashContents ? "package-hash" : "physical-identity");
         using FileStream stream = new(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
         string physical = "";
         if (OperatingSystem.IsWindows())
@@ -80,6 +82,7 @@ public sealed class V2BrowseCatalog : IDisposable
             if (!GetFileInformationByHandle(stream.SafeFileHandle, out FileInformation info)) throw new IOException("Cannot establish package file identity.");
             physical = $"{info.Volume}:{info.IndexHigh}:{info.IndexLow}";
         }
+        if (!hashContents && OperatingSystem.IsWindows()) return physical + ":pinned";
         using var hash = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
         byte[] buffer = new byte[65536]; int read;
         while ((read = stream.Read(buffer, 0, buffer.Length)) > 0) { token.ThrowIfCancellationRequested(); hash.AppendData(buffer, 0, read); }
@@ -99,17 +102,66 @@ public sealed class V2BrowseCatalog : IDisposable
 
 public sealed class V2BrowseRegistration
 {
-    private readonly PackageReader _reader;
+    private static long _nextLocationEpoch;
+    private PackageReader _reader;
     private readonly FileStream _pin;
-    private readonly string _evidence;
+    private string _evidence;
+    private readonly string _physical;
     private readonly SemaphoreSlim _reads = new(1, 1);
     private readonly CancellationTokenSource _lifetime = new();
     private bool _closed;
     private bool _stale;
     private readonly Action<V2BrowseBoundary>? _observe;
     internal V2BrowseRegistration(string path, PackageReader reader, FileStream pin, string evidence, Action<V2BrowseBoundary>? observe)
-    { Path = path; _reader = reader; _pin = pin; _evidence = evidence; _observe = observe; }
+    { Path = path; _reader = reader; _pin = pin; _evidence = evidence; _physical = Physical(evidence); _observe = observe; }
+    private static string Physical(string evidence) => OperatingSystem.IsWindows() ? string.Join(':', evidence.Split(':').Take(3)) : "";
+    internal async Task RequireMemoLocationAsync(CancellationToken token)
+    {
+        Lifetime.ThrowIfCancellationRequested();
+        if (_physical != Physical(await V2BrowseCatalog.EvidenceAsync(Path, token, hashContents: !OperatingSystem.IsWindows()).ConfigureAwait(false)))
+            throw new InvalidDataException("Package location was replaced; unload/reopen explicitly. Draft remains tied to its old registration.");
+    }
+    internal async Task<T> ReadCurrentMemoAsync<T>(Func<PackageReader, Task<T>> query, CancellationToken token)
+    {
+        using var linked = CancellationTokenSource.CreateLinkedTokenSource(token, Lifetime);
+        await _reads.WaitAsync(linked.Token).ConfigureAwait(false);
+        try
+        {
+            if (_closed) throw new InvalidDataException("Registration unloaded.");
+            await RequireMemoLocationAsync(linked.Token).ConfigureAwait(false);
+            T result = await query(_reader).ConfigureAwait(false);
+            linked.Token.ThrowIfCancellationRequested(); return result;
+        }
+        finally { _reads.Release(); }
+    }
+    /// <summary>Controlled explicit memo admission/verified publication, not an unsafe validation cache.
+    /// Replaces reader ownership only after fresh canonical admission and exact queries; retains visible rows.</summary>
+    internal async Task<T> ReadmitForMemoAsync<T>(Func<PackageReader, Task<T>> query, CancellationToken token)
+    {
+        using var linked = CancellationTokenSource.CreateLinkedTokenSource(token, Lifetime);
+        await _reads.WaitAsync(linked.Token).ConfigureAwait(false);
+        PackageReader? candidate = null;
+        try
+        {
+            if (_closed) throw new InvalidDataException("Registration unloaded.");
+            string before = await V2BrowseCatalog.EvidenceAsync(Path, linked.Token).ConfigureAwait(false);
+            if (_physical != Physical(before)) throw new InvalidDataException("Package physical location changed.");
+            var admitted = await PackageReader.OpenAsync(Path, linked.Token, memoReuse: true).ConfigureAwait(false);
+            candidate = admitted.Reader ?? throw new InvalidDataException(admitted.Message);
+            if (candidate.Info.PackageId != PackageId || candidate.Info.GenerationId != GenerationId)
+                throw new InvalidDataException("Package generation changed; no draft retargeting permitted.");
+            T result = await query(candidate).ConfigureAwait(false);
+            if (before != await V2BrowseCatalog.EvidenceAsync(Path, linked.Token).ConfigureAwait(false))
+                throw new InvalidDataException("Package changed during memo readmission.");
+            linked.Token.ThrowIfCancellationRequested();
+            var previous = _reader; _reader = candidate; candidate = null; _evidence = before; _stale = false; previous.Dispose();
+            return result;
+        }
+        finally { candidate?.Dispose(); _reads.Release(); }
+    }
     public Guid Epoch { get; } = Guid.NewGuid();
+    public long LocationEpoch { get; } = Interlocked.Increment(ref _nextLocationEpoch);
+    public CancellationToken Lifetime => _lifetime.Token;
     public string Path { get; }
     public Guid PackageId => _reader.Info.PackageId;
     public Guid GenerationId => _reader.Info.GenerationId;
@@ -117,7 +169,7 @@ public sealed class V2BrowseRegistration
     public long AssetCount => _reader.Info.Assets;
     public long SourceCount => _reader.Info.Sources;
     public string Status => _stale || _closed || _lifetime.IsCancellationRequested ? "stale/unloaded" : _reader.Info.IndexStatus;
-    public string Summary => $"V2 · {Name} · {Status} index · {AssetCount:N0} assets · {_reader.Info.Issues:N0} issues\nPackage {PackageId} · Generation {GenerationId}\nRead-only. No V2 Search, memo editing, structural saving or preview. "
+    public string Summary => $"V2 · {Name} · {Status} index · {AssetCount:N0} assets · {_reader.Info.Issues:N0} issues\nPackage {PackageId} · Generation {GenerationId}\nIndexed metadata; exact asset memos are editable in Inspectors. Search is available in Search; no structural saving or preview. "
         + (_reader.Info.DerivedFieldsCompatible ? "" : "Unknown derived profile: authoritative raw metadata only.");
     internal void Stop() => _lifetime.Cancel();
     internal async Task CloseAsync()

@@ -5,4 +5,5 @@ public sealed record AssetSessionMetadata(
     string DisplayName,
     UnityFileKind Kind,
     string? UnityVersion,
-    int LogicalFileCount);
+    int LogicalFileCount,
+    string? SourceSha256 = null);
