@@ -2,7 +2,15 @@
 
 **Updated:** 2026-10-23
 
-**Current task:** V2 recovery Phase1A bundle identity/memo audit — documentation only (2026-10-23).
+**Current task:** record approved Phase1 decisions P1-D1–P1-D5 — documentation only (2026-10-23).
+
+### Phase 1 Approved Decisions
+
+- Recorded explicit user approval in the [roadmap's authoritative decision section](v2-ui-workflow-recovery-roadmap.md#phase-1-approved-decisions) and reconciled the [Phase1A audit](v2-recovery-phase-01a-bundle-audit.md#phase-1-approved-decisions). **Decided:** P1-D1 one immutable indexed source occurrence/no label/hash merging; P1-D2 source-name OR child-name/memo matching with approved V2 asset semantics, aggregated before global sort/pages; P1-D3 genuine bundle-memo design in a separate milestone, existing asset memos unchanged/no fabricated values; P1-D4 exact Search → Assets navigation preserving history/Back/Forward and supported offline metadata; P1-D5 deterministic global Name/existing meaningful source fields, bundle Memo sorting deferred.
+- This approval record authorizes **no implementation phase**, source/UI/schema/trigger/package/memo/navigation/V1/test/build changes. All17 recovery issue statuses remain Reported; #1/#2/#3/#7 are not implemented or resolved. Existing V2 D1–D8 and D5 Refresh are not amended by the distinct P1 IDs.
+- Remaining dependencies: standalone/failed-source inclusion, mixed-result/Path ID/Class/type/Memo-only control mapping, exact source-query predicates/coverage, typed source/cursor/tie mappings, native ordinal/package provenance and action/return-context/missing-source UX. Independent bundle-memo identity/storage/transactions/conflicts/UI/publication requires a separate approved design/milestone; no schema/triggers/storage work now.
+- Worktree/index clean at entry; only roadmap/audit/handoff documentation updated. Verified three decision sections with all five IDs,97 local links/anchors, balanced fences, unchanged17 Reported issue rows, whitespace/conflicts and Git staged/unstaged checks. Index remains empty; protected code/UI/schema/tests/package/Unity paths unchanged. No builds/tests or desktop control. Historical source findings/checkpoints below remain evidence, not current open product questions where superseded by P1-D1–P1-D5.
+- **Next exact action:** obtain a separately scoped implementation request or detailed design task for the remaining dependencies. Do not start Phase1 automatically, implement bundle memo storage, or retire V1.
 
 ### Phase1A — audit checkpoint; implementation approval required
 

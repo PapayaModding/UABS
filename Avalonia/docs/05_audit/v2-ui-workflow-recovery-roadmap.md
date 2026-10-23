@@ -9,7 +9,7 @@ All 17 items below start **Reported / Not yet resolved under this roadmap**. Obs
 
 Related sources of truth: [AI policy](../01_core/ai-agent.md), [current UI/workflow design](../03_design/ui-and-workflow-design.md), [approved V2 design](../03_design/package-format-v2-design.md), [Gate5G/5G.1 evidence](package-format-v2-gate-05g-search-paging-performance.md), [migration roadmap](migration-roadmap.md), and [session handoff](codex-session-handoff.md).
 
-[Phase1A bundle identity and memo audit](v2-recovery-phase-01a-bundle-audit.md) traces the legacy bundle-returning workflow and current source/asset contracts for #1/#2/#7/#3. Confirmed: source-level projection is representable without a schema change, but no existing bundle-owned memo storage exists; navigation needs captured source/registration identity and a native Assets provenance decision. Matching/aggregation, mixed-result controls, source-kind inclusion, bundle memos and navigation/history remain pending approval. This audit implements no fix and changes none of the17 Reported statuses.
+[Phase1A bundle identity and memo audit](v2-recovery-phase-01a-bundle-audit.md) traces the legacy bundle-returning workflow and current source/asset contracts for #1/#2/#7/#3. Confirmed: source-level projection is representable without a schema change, but no existing bundle-owned memo storage exists. The five product questions are now decided by [P1-D1–P1-D5](#phase-1-approved-decisions); detailed implementation dependencies remain below. Neither the audit nor this approval record implements a fix or changes any of the17 Reported issue statuses.
 
 The current implementation intentionally includes individual indexed assets, per-asset memos, V1 support, and restricted V2 global sorting. The requirements below propose changes to those boundaries; they do not rewrite historical reports or establish that existing design decisions were implementation defects. In particular, current UI documentation describes Search-to-Assets as deferred; calling for its restoration records the desired legacy workflow, not proof that a previously implemented Avalonia action was removed.
 
@@ -56,7 +56,7 @@ Priority is proposed: **P0** core workflow, **P1** interaction/reliability or re
 
 - **Reported:** Search exposes individual asset rows instead of the intended matching asset bundles.
 - **Intended/scope:** each displayed result represents the appropriate bundle-level identity. Asset metadata may identify matching bundles internally; do not discard the underlying asset index or substitute an arbitrary matching asset as the bundle's identity.
-- **Priority/dependencies:** P0; agree bundle/source versus logical-file identity, cross-package duplicate handling, match aggregation and memo meaning. Coordinate #2, #6 and #7.
+- **Priority/dependencies:** P0; P1-D1/P1-D2 decide source-occurrence identity, distinct occurrences and match aggregation; specify remaining source-kind/control/query details. Bundle-memo design is separately deferred by P1-D3. Coordinate #2, #6 and #7.
 - **Acceptance:** representative queries display the approved bundle units, preserve package/source provenance and matching evidence, and avoid accidental duplicates or omissions. Paging, global ordering and selection use the approved bundle identity, not name/CAB/Path ID alone. Match-membership rules are approved and regression-tested before changing results.
 
 ### #2 — Search → Assets navigation is missing
@@ -92,7 +92,7 @@ Priority is proposed: **P0** core workflow, **P1** interaction/reliability or re
 - **Reported:** intended Name/Memo sorting is incomplete across appropriate grids.
 - **Intended/scope:** global ordering over the full matching result set, never only materialized rows. Preserve header toggling/indicators and supported existing sorts.
 - **Priority/dependencies:** P1; #1/#7 row units, #8, approved Name/Memo contracts and storage support. Gate5G.1 already supports raw asset Name only in Assets-only V2 queries; Memo and mixed-result Name remain unsupported. That partial delivery does not close this broader issue.
-- **Acceptance:** approve which fields each grid sorts (raw/display name, asset/bundle memo, aggregation, NULL/empty, Unicode, direction and immutable ties). Implement only supported approved global sorts; unsupported headers explain the limitation. Verify multi-package/multi-window order, cursor invalidation, cancellation, selection/drafts and D5. Do not silently invent semantics or weaken validation.
+- **Acceptance:** follow P1-D5's approved global Name/existing meaningful source-field direction and deferred bundle Memo sorting; specify exact mappings, NULL/empty, Unicode, direction and immutable ties for each affected row unit. Other asset-grid sort proposals are not automatically approved. Implement only supported approved global sorts; unsupported headers explain the limitation. Verify multi-package/multi-window order, cursor invalidation, cancellation, selection/drafts and D5. Do not silently invent semantics or weaken validation.
 
 ### #7 — Packages Indexed Assets view is too detailed
 
@@ -173,7 +173,7 @@ Priority is proposed: **P0** core workflow, **P1** interaction/reliability or re
 
 ## Proposed implementation order — not permission to execute
 
-1. **Phase1: restore core workflow — #1, #2, #7, #3.** Agree bundle identity/memo boundaries, then recover bundle presentation, Search → Assets and the explicitly approved columns in narrow slices.
+1. **Phase1: restore core workflow — #1, #2, #7, #3.** Apply P1-D1–P1-D5's approved direction after remaining technical contracts and a bounded implementation slice are authorized; recover bundle presentation, Search → Assets and the explicitly approved columns. Genuine bundle-memo design stays in a separate milestone.
 2. **Phase2: shared grids/navigation — #8, #5, #4, #6.** Establish an evidence-based reuse boundary, fix wheel stalls, align appropriate infinite scrolling and complete approved global sorts. Diagnose independently when useful; do not make a broad refactor a prerequisite for every bug fix.
 3. **Phase3: usability/visual consistency — #10–#17.** Separate small, independently reviewable checkpoints; cross-workspace consistency still needs scoped authorization.
 4. **Phase4: V1 feature-parity audit.** Inventory V1-only capabilities, especially Package Editor operations, and obtain retain/replace/retire decisions. No deletion during the audit.
@@ -181,17 +181,41 @@ Priority is proposed: **P0** core workflow, **P1** interaction/reliability or re
 
 Do not start Phase1, a V1 audit, schema changes or any implementation automatically because this document exists. Future tasks must name the authorized slice and prerequisites.
 
+## Phase 1 Approved Decisions
+
+**Authority:** explicit user approval, recorded 2026-10-23. **Status:** P1-D1–P1-D5 are decided design direction, not implementation authorization. No roadmap phase, schema/trigger amendment, bundle-memo storage or behavior change is authorized by this documentation task. All 17 issues, including #1/#2/#3/#7, remain Reported, unimplemented/unresolved under this roadmap. These IDs are separate from the existing V2 D1–D8, including D5 Refresh policy, which remain unchanged.
+
+### P1-D1 — Bundle identity and deduplication
+
+**Approved / decided:** represent one result per indexed source/bundle occurrence, using existing immutable source UUID and source revision together with required package/generation and live registration context. Never merge separate occurrences solely by filenames, CAB labels, asset names or content hashes. Identical display names remain distinct occurrences. A label is not an identity.
+
+### P1-D2 — Search matching and aggregation
+
+**Approved / decided:** a bundle/source occurrence matches when its source name matches the criteria **or** a contained asset name or memo matches. Present that occurrence once; an asset-level match is evidence, not itself a displayed Search result in the bundle projection. Retain approved V2 Unicode and filtering semantics for asset matching. Aggregate at bundle level **before deterministic global sorting and pagination**, never over the visible scrolling window. This does not approve reproducing legacy field-local exclusion or exact-mode quirks.
+
+### P1-D3 — Genuine bundle-owned memos
+
+**Approved / decided:** design genuine bundle-owned memos in a **separate milestone**. Existing V2 asset memos remain asset-owned and unchanged; never assign an arbitrary contained asset memo or a merged asset-memo string to a bundle. The independent bundle-memo identity, storage, transaction/conflict model and UI behavior still require a separate approved design. No bundle memo storage, SQLite schema/trigger changes or migration work is authorized now. Before genuine support exists, a future bundle Memo column must not display invented or misleading values; its exact unavailable-state presentation remains to be specified.
+
+### P1-D4 — Search to Assets navigation
+
+**Approved / decided:** restore navigation from a selected Search bundle result to its corresponding source/bundle in Assets using exact identity, never filenames or CAB labels. Preserve existing navigation history and Back/Forward behavior. Support indexed metadata browsing when original source bundles are unavailable wherever existing V2 contracts permit it; metadata availability does not imply source payload loading/preview is possible. Action wiring, missing-source presentation and exact child-selection provenance remain technical dependencies, not a reason to retarget identity or replace existing history semantics.
+
+### P1-D5 — Global sorting
+
+**Approved / decided:** support Name and existing meaningful source/bundle fields with deterministic global ordering **before pagination**, never sorting only materialized rows. Do not invent additional fields. Defer **bundle Memo sorting** until bundle-memo architecture and its sorting semantics are separately approved. Detailed eligible field mappings, immutable tie-breakers and source-level cursor integration remain implementation dependencies; this is not approval for a local-window substitute.
+
 ## Decisions and new findings register
 
-No additional product decisions are approved by this documentation task. Record user/date, source evidence, affected issues and acceptance impact when a decision is made.
+The five decisions above resolve product direction only. Preserve the remaining technical questions and obtain separate authorization for any implementation slice. Record later decisions with user/date, source evidence and acceptance impact.
 
 | Decision/finding | Affected issues | Current disposition |
 |---|---|---|
-| Meaning of bundle row: physical indexed source, logical serialized file, or another exact unit; duplicate references across packages | #1, #2, #7 | Open; retain package/generation/source-revision provenance and agree deduplication rules |
-| Include/exclude/exact/memo matching aggregation and bundle match evidence; which asset memo (if any) may appear | #1, #6, #7 | Open; do not silently change result membership or label an arbitrary asset memo as a bundle memo |
-| Bundle memo identity, storage, editing and synchronization | #3, #6, #7, #9 | Open; existing per-asset memo contracts do not authorize bundle memo writes or schema changes |
-| Global Name/Memo order for each row unit, NULL/empty/Unicode/ties and mixed results | #6 | Open; preserve existing Gate5G.1 capabilities until separately approved |
-| Exact Search → Assets action and missing-source/selection restoration behavior | #2 | Open; legacy intent recorded, current UI says deferred |
+| Bundle row unit and deduplication | #1, #2, #7 | **Decided: P1-D1.** One indexed source occurrence; preserve separate identities across identical labels/hashes. Standalone/failed/unsupported-source inclusion and typed projection still need specification |
+| Search matching and aggregation | #1, #6, #7 | **Decided: P1-D2.** Source-name OR qualifying contained asset-name/memo match, one source row before global order/paging; approved asset filtering retained. Precise source/child predicate composition, coverage evidence and current mixed-result/Path ID/Class/type/Memo-only controls still need mapping |
+| Genuine bundle memo direction | #3, #6, #7, #9 | **Decided: P1-D3; detailed design deferred.** Independent bundle identity/storage/transactions/conflicts/UI/synchronization remain unapproved; preserve asset memos, no fake values or schema/trigger changes |
+| Global source/bundle sorting | #6 | **Decided: P1-D5.** Name/existing meaningful fields globally before pages; bundle Memo sorting deferred. Exact mappings, NULL/empty/Unicode/ties and cursor contracts remain to specify without changing established asset matching |
+| Search → Assets workflow | #2 | **Decided: P1-D4.** Exact source navigation, existing history/Back/Forward preserved, indexed metadata available without source where supported. Gesture, native provenance, parent-directory/return-context integration and missing-source UX remain to specify |
 | Reuse boundary and which paged grids should become infinite-scroll consumers | #4, #8 | Open; preserve workspace-specific providers/columns/Inspectors |
 | V1-only capability inventory and V2 replacement/retirement approvals | #9 | Open; future V2-only/no-migration direction recorded, immediate removal not authorized |
 | Filesystem Assets unique behavior and accurate Choose... replacement label | #11, #13 | Inspect before deciding; no assumed redundancy/picker type |
