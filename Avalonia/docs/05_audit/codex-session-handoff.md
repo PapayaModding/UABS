@@ -2,7 +2,16 @@
 
 **Updated:** 2026-10-23
 
-**Current task:** record approved Phase1D decisions P1-D10–P1-D15 — documentation only (2026-10-23). No implementation phase/checkpoint completed or authorized.
+**Current task:** Recovery Implementation Checkpoint1 — bounded V2 bundle Search backend verified (2026-10-23); remaining contracts explicitly blocked. No UI integration or issue closure.
+
+### Checkpoint1 — verified bounded backend; contract clarification required
+
+- Entry baseline `551e1de`, clean worktree/index. Authorized backend only, not Search UI/navigation/Packages/schema/V1/memos. New BundleSearchContracts/BundleSearchQuery reuse existing search sessions, federation, budgets and keysets through format-specific methods; existing public asset SearchRequest/CreateSession untouched in meaning. Edits also in SearchSession, SearchQuery and V2SearchService. No stage/commit.
+- Baseline Debug solution/startup build passed0 warnings/errors(37.21s). Final Debug solution/startup build passed0 warnings/errors(1.56s); final external verification runner build passed0 warnings/errors(10.91s). Focused new bundle SQL tests20/20 passed(1.82s); existing V2 Search regressions54/54 passed(18.09s). One final full in-process xUnit regression:745 total,744 passed,0 failed,1 existing permission-related skip(66.05s); **not VSTest**. Initial sandboxed fixture run failed on temp-file permissions; authorized synthetic-fixture rerun passed. Transient new test params-construction compile errors corrected before successful verification. Current worktree is verified buildable; backend safe for isolated callers, not yet integrated UI.
+- Explicit bounded scope: positive SourceName/AssetName/Memo fields, only SourceFile projection; unresolved other field/result-kind mappings return InvalidRequest. Exclusions require caller-specified AssetName/Memo scope; source metadata exclusion policy not invented. Exclusions on partial packages rejected until unknown-coverage policy approved; partial positives retain existing diagnostic evidence. No UI control translation implemented.
+- Separate bundle result has immutable package/generation/source/revision identity and source details, no asset memo/type/Path-ID properties. New original-file navigation remains out of scope. P1-D1–P1-D15 and17 unresolved issue statuses preserved.
+- Added [checkpoint implementation report](v2-recovery-checkpoint-01-bundle-search.md), disposable V2BundleSearchTests and roadmap progress only. Final Git/whitespace/conflict, protected-path, zero-Unity-runtime project/output, embedded canonical DDL and documentation checks passed;48 local links/anchors and17 Reported rows checked. No schema/V1/UI/memo/real-package/Unity edits; no desktop control/process termination/staging/commit. Removed only session-created `Avalonia/uabs_log.txt` emitted by existing regression failure-path tests; no pre-existing file removed.
+- **Next exact action:** user resolves unsupported field/result-kind compatibility, UI exclusion-field mapping and incomplete-package exclusion policy before expanding/integrating this backend. Keep new API SourceFile-only and positive SourceName/AssetName/Memo subset explicit; do not silently translate current controls. Review/commit is user-owned. Do not start navigation, Packages changes or V1 retirement. This is a bounded partial checkpoint, not full recovery issue #1 completion.
 
 ### Phase 1D Approved Decisions P1-D10–P1-D15
 

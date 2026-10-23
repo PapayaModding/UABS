@@ -5,7 +5,7 @@ using UABS.UnityAssets.Packages.Search;
 namespace UABS.PackageV2.Search;
 
 /// <summary>Isolated read-only federation. No application registration, UI state or writable package API.</summary>
-public sealed class V2SearchService
+public sealed partial class V2SearchService
 {
     private readonly Guid _owner = Guid.NewGuid();
     private readonly object _gate = new();
@@ -90,11 +90,15 @@ public sealed class V2SearchService
     }
 
     public SearchSessionResult CreateSession(SearchRequest request, IReadOnlyList<Guid> selectedRegistrationIds)
+        => CreateSessionCore(request, selectedRegistrationIds, null);
+
+    private SearchSessionResult CreateSessionCore(SearchRequest request, IReadOnlyList<Guid> selectedRegistrationIds,
+        BundleSearchRequest? bundle)
     {
         ArgumentNullException.ThrowIfNull(request); ArgumentNullException.ThrowIfNull(selectedRegistrationIds);
         if (!Enum.IsDefined(request.SortBy) || !Enum.IsDefined(request.SortDirection)
             || (request.Fields & ~PackageSearchFields.All) != 0 || (request.ResultKinds & ~PackageSearchResultKinds.All) != 0
-            || ((request.ClassId is not null || request.TypeName is not null || request.AssetIdentity is not null) && request.ResultKinds != PackageSearchResultKinds.Asset)
+            || (bundle is null && (request.ClassId is not null || request.TypeName is not null || request.AssetIdentity is not null) && request.ResultKinds != PackageSearchResultKinds.Asset)
             || selectedRegistrationIds.Count > _options.MaxSelectedPackages)
             return new(SearchStatus.InvalidRequest, null, "Invalid criteria, scope budget, or non-Asset result kinds with asset-only filters.");
         lock (_gate)
@@ -106,7 +110,11 @@ public sealed class V2SearchService
                     return new(SearchStatus.StaleCursor, null, "Selected registration is no longer loaded; explicitly select/search again.");
                 registrations.Add(registration);
             }
-            return new(SearchStatus.Success, new(_owner, request, registrations.ToArray(), registrations.SelectMany(r => r.Diagnostics)), "Criteria and scope captured.");
+            if (bundle is not null && new PackageSearchRequest(bundle.ExcludedQuery).IncludeTerms.Count > 0
+                && registrations.Any(r => r.Value.Package.IndexStatus != "complete"))
+                return new(SearchStatus.InvalidRequest, null,
+                    "Bundle exclusions on incomplete packages require an approved unknown-coverage policy; no results were queried.");
+            return new(SearchStatus.Success, new(_owner, request, registrations.ToArray(), registrations.SelectMany(r => r.Diagnostics), bundle), "Criteria and scope captured.");
         }
     }
 

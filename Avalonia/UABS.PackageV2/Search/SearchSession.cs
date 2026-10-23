@@ -11,6 +11,7 @@ public sealed class SearchSession : IDisposable
     internal readonly string[] Include;
     internal readonly string[] Exclude;
     internal readonly SearchRequest Request;
+    internal BundleSearchRequest? Bundle { get; }
     private readonly CancellationTokenSource _stop = new();
     internal CancellationToken Token { get; }
     private int _stale;
@@ -22,15 +23,18 @@ public sealed class SearchSession : IDisposable
     internal bool Empty => (Include.Length == 0 && Request.PathId is null && Request.AssetIdentity is null)
         || (Request.Fields == PackageSearchFields.None && Request.PathId is null && Request.AssetIdentity is null)
         || Request.ResultKinds == PackageSearchResultKinds.None || Registrations.Length == 0;
-    internal SearchSession(Guid owner, SearchRequest request, Registration[] registrations, IEnumerable<SearchDiagnostic> diagnostics)
+    internal SearchSession(Guid owner, SearchRequest request, Registration[] registrations, IEnumerable<SearchDiagnostic> diagnostics,
+        BundleSearchRequest? bundle = null)
     {
-        Owner = owner; Request = request; Registrations = registrations; Token = _stop.Token;
+        Owner = owner; Request = request; Bundle = bundle; Registrations = registrations; Token = _stop.Token;
         static string[] Terms(string? text) => new PackageSearchRequest(text).IncludeTerms
             .Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
         Include = Terms(request.Query); Exclude = Terms(request.ExcludedQuery);
         Revisions = Array.AsReadOnly(registrations.Select(r => new SearchRevision(r.Value.RegistrationId,
             r.Value.LocationEpoch, r.Value.Package.PackageId, r.Value.Package.GenerationId, r.Value.Package.CatalogRevision)).ToArray());
-        Diagnostics = Array.AsReadOnly(diagnostics.ToArray());
+        Diagnostics = Array.AsReadOnly((bundle is null ? diagnostics : diagnostics.Append(new SearchDiagnostic(
+            "BundleIndexEvidence", "Only sources with indexed bundle kind, complete/partial status and verified revision evidence qualify. "
+                + "Other/insufficient source evidence is excluded; this does not verify original files are currently available."))).ToArray());
     }
     public void Cancel() { lock (_stop) { if (!_stop.IsCancellationRequested) _stop.Cancel(); } }
     public void Invalidate() { Interlocked.Exchange(ref _stale, 1); Cancel(); }

@@ -32,6 +32,8 @@ Preserve immutable identities, safe session ownership, cancellation/stale-result
 
 ## Status register
 
+**Checkpoint1 backend progress (2026-10-23):** [bounded bundle Search foundation](v2-recovery-checkpoint-01-bundle-search.md) implements a separately callable source projection with pre-page aggregation, global Name/Package keysets, cross-asset mandatory witnesses and explicit asset-field bundle-wide exclusions. Existing UI/asset Search remains unchanged. Other field/result-kind mappings and exclusions against incomplete packages are explicitly blocked pending contract clarification, not silently reinterpreted. Backend verification is tracked in the handoff; issue #1 is not resolved until UI integration and manual acceptance. All17 issue statuses below remain Reported.
+
 Priority is proposed: **P0** core workflow, **P1** interaction/reliability or retirement gate, **P2** usability/polish. These labels are not scheduling or implementation approval. Phase numbers refer to the proposed sequence below.
 
 | Issue | Requirement | Priority | Phase | Status |

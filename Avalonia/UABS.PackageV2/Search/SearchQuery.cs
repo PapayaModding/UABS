@@ -77,11 +77,13 @@ internal static class SearchQuery
         string SourceKey = $"{baseKey}||hex(s.source_uuid)||'|'||hex(s.source_revision_uuid)||'||'";
         string AssetKeySql = $"{baseKey}||hex(s.source_uuid)||'|'||hex(s.source_revision_uuid)||'|'||printf('%010d',f.directory_ordinal)||'|'||printf('%010d',a.table_ordinal)";
         List<string> branches = [];
-        if (r.PathId is null && r.AssetIdentity is null && r.ResultKinds.HasFlag(PackageSearchResultKinds.Package))
+        if (session.Bundle is not null)
+            branches.Add(BundleSearchQuery.Branch(command, session, packageName, packagePath, SourceKey));
+        if (session.Bundle is null && r.PathId is null && r.AssetIdentity is null && r.ResultKinds.HasFlag(PackageSearchResultKinds.Package))
             branches.Add($"SELECT 0 kind,({Match(packageName, PackageSearchFields.PackageName)}|{Match(packagePath, PackageSearchFields.PackagePath)}) categories,"
                 + $"({Exclude(packageName, PackageSearchFields.PackageName)}|{Exclude(packagePath, PackageSearchFields.PackagePath)}) excluded,"
                 + $"{packageName} package_name,{packagePath} package_path,NULL index_directory,NULL source_name,NULL source_path,NULL asset_name,NULL path_id,NULL class_id,NULL type_name,NULL source_uuid,NULL source_revision,NULL directory_ordinal,NULL table_ordinal,0 memo_revision,NULL identity_status,0 asset_id,{prefix} row_key,NULL ascii_key");
-        if (r.PathId is null && r.AssetIdentity is null && r.ResultKinds.HasFlag(PackageSearchResultKinds.SourceFile))
+        if (session.Bundle is null && r.PathId is null && r.AssetIdentity is null && r.ResultKinds.HasFlag(PackageSearchResultKinds.SourceFile))
         {
             string[] expressions = ["s.index_directory", "s.original_name", "s.original_path"];
             PackageSearchFields[] fields = [PackageSearchFields.IndexDirectory, PackageSearchFields.SourceName, PackageSearchFields.SourcePath];
@@ -99,7 +101,7 @@ internal static class SearchQuery
             }
             branches.Add($"SELECT 1,({string.Join('|', matches)}),({string.Join('|', excluded)}),{packageName},{packagePath},s.index_directory,s.original_name,s.original_path,NULL,NULL,NULL,NULL,s.source_uuid,s.source_revision_uuid,NULL,NULL,0,NULL,0,{SourceKey},NULL FROM source s");
         }
-        if (r.ResultKinds.HasFlag(PackageSearchResultKinds.Asset))
+        if (session.Bundle is null && r.ResultKinds.HasFlag(PackageSearchResultKinds.Asset))
         {
             List<string> gates = ["1=1"];
             if (partition != Partition.All)
