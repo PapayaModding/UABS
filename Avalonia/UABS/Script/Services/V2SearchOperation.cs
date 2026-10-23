@@ -94,14 +94,29 @@ public sealed class V2SearchOperation : IAsyncDisposable
         }
     }
 
-    public async Task<SearchPage> ReadPageAsync(SearchCursor? cursor = null, int pageSize = 100,
-        CancellationToken token = default)
+    public Task<SearchPage> ReadPageAsync(SearchCursor? cursor = null, int pageSize = 100,
+        CancellationToken token = default) => ReadPageCoreAsync(Session, cursor, pageSize, token);
+
+    /// <summary>Bounded membership/metadata check for a retained selected occurrence;
+    /// reuses admitted registrations and the exact frozen criteria, not a name lookup.</summary>
+    public async Task<SearchPage> ProbeAssetAsync(SearchResult asset, CancellationToken token = default)
+    {
+        if (asset.AssetIdentity is not { } key) throw new ArgumentException("An exact asset occurrence is required.", nameof(asset));
+        if (!Session.Criteria.ResultKinds.HasFlag(UABS.UnityAssets.Packages.Search.PackageSearchResultKinds.Asset))
+            return new(SearchStatus.Success, [], null, false, new(SearchCountKind.Exact, 0), Session.Diagnostics, Session.Revisions);
+        var created = _engine.CreateSession(Session.Criteria with { AssetIdentity = key,
+            ResultKinds = UABS.UnityAssets.Packages.Search.PackageSearchResultKinds.Asset }, _registered);
+        using var probe = created.Session ?? throw new InvalidDataException(created.Message);
+        return await ReadPageCoreAsync(probe, null, 1, token).ConfigureAwait(false);
+    }
+
+    private async Task<SearchPage> ReadPageCoreAsync(SearchSession session, SearchCursor? cursor, int pageSize, CancellationToken token)
     {
         using var linked = CancellationTokenSource.CreateLinkedTokenSource(token, _stop.Token);
         try
         {
             await CheckEvidenceAsync(linked.Token).ConfigureAwait(false);
-            var page = await _engine.ReadPageAsync(Session, cursor, pageSize, linked.Token).ConfigureAwait(false);
+            var page = await _engine.ReadPageAsync(session, cursor, pageSize, linked.Token).ConfigureAwait(false);
             if (page.Status == SearchStatus.StaleCursor) Invalidate();
             if (page.Status != SearchStatus.Success) return page;
             await CheckEvidenceAsync(linked.Token).ConfigureAwait(false);

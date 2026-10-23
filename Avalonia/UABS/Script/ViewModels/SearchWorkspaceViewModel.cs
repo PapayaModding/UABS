@@ -179,6 +179,16 @@ public sealed class SearchWorkspaceViewModel : ViewModelBase, IDisposable
     private V2SearchOperation? _v2Operation;
     private V2SearchWindow? _v2Window;
     private CriteriaSnapshot? _v2Criteria;
+    private PackageSearchSortField _v2SortBy = PackageSearchSortField.PackageName;
+    private PackageSearchSortDirection _v2SortDirection;
+    private PackageSearchSortField? _displayedSortBy;
+    private PackageSearchSortDirection _displayedSortDirection;
+    private sealed record SortBasis(SearchPackageScopeItemViewModel[] Scope, CriteriaSnapshot Criteria,
+        SearchRequest Request, IReadOnlyList<SearchRevision> Revisions);
+    private SortBasis? _sortBasis;
+    private Task _sortTask = Task.CompletedTask;
+    private CriteriaSnapshot? _selectionCriteria;
+    private bool _publishingResultCollection;
     private long? _failedPage;
     private int _loadingDirection;
     private bool _viewportCancelled;
@@ -237,7 +247,13 @@ public sealed class SearchWorkspaceViewModel : ViewModelBase, IDisposable
     public V2SearchWindow? ResultWindow => _v2Window;
     public bool IsV2Search => _v2Operation is not null;
     public bool CanSortResultsLocally => !IsV2Search && (Results.Count == 0 || !Results[0].IsV2);
-    public bool IsUpdatingResultWindow => _v2Window?.IsChanging == true;
+    public bool CanChangeV2Sort => !IsStale && (_sortBasis is not null || (_v2Operation is not null
+        && _v2Window is not null && ReferenceEquals(Results, _v2Window.Rows) && (!IsSearching || IsLoadingPage)));
+    public bool CanSortV2AssetName => CanChangeV2Sort
+        && (_sortBasis?.Request ?? _v2Operation!.Session.Criteria).ResultKinds == PackageSearchResultKinds.Asset;
+    public PackageSearchSortField? DisplayedSortBy => CanSortResultsLocally ? null : _displayedSortBy;
+    public PackageSearchSortDirection DisplayedSortDirection => _displayedSortDirection;
+    public bool IsUpdatingResultWindow => _publishingResultCollection || _v2Window?.IsChanging == true;
     public bool IsLoadingPage { get => _isLoadingPage; private set { SetField(ref _isLoadingPage, value); OnPropertyChanged(nameof(IsInitialSearching)); } }
     public bool IsInitialSearching => IsSearching && !IsLoadingPage;
     public bool CanRetryPage => _failedPage.HasValue && !IsSearching && !IsStale && _v2Operation is not null;
@@ -258,6 +274,8 @@ public sealed class SearchWorkspaceViewModel : ViewModelBase, IDisposable
         OnPropertyChanged(nameof(CanRetryPage)); OnPropertyChanged(nameof(ResultCount)); OnPropertyChanged(nameof(HasResults));
         OnPropertyChanged(nameof(IsSelectionOutsideWindow)); OnPropertyChanged(nameof(ShowEmptyState));
         OnPropertyChanged(nameof(IsV2Search)); OnPropertyChanged(nameof(CanSortResultsLocally));
+        OnPropertyChanged(nameof(CanChangeV2Sort)); OnPropertyChanged(nameof(CanSortV2AssetName));
+        OnPropertyChanged(nameof(DisplayedSortBy)); OnPropertyChanged(nameof(DisplayedSortDirection));
         NextPageCommand?.NotifyCanExecuteChanged(); RetryPageCommand?.NotifyCanExecuteChanged();
     }
     public RelayCommand CancelSearchCommand { get; }
@@ -312,6 +330,7 @@ public sealed class SearchWorkspaceViewModel : ViewModelBase, IDisposable
             PackageMemoIdentity? previousIdentity = MemoInspector.Identity;
             if (SetField(ref _selectedResult, value))
             {
+                _selectionCriteria = _v2Criteria;
                 OnPropertyChanged(nameof(HasSelectedResult));
                 OnPropertyChanged(nameof(IsV2ResultSelected));
                 OnPropertyChanged(nameof(CanShowMemoEditor));
@@ -460,6 +479,7 @@ public sealed class SearchWorkspaceViewModel : ViewModelBase, IDisposable
     public async Task SearchAsync()
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
+        _sortBasis = null;
         CancelAndDisposeSearch();
         int version = ++_searchVersion;
         IsLoadingPage = false;
@@ -568,14 +588,54 @@ public sealed class SearchWorkspaceViewModel : ViewModelBase, IDisposable
         }
         if ((classId is not null || !string.IsNullOrWhiteSpace(TypeNameText)) && legacy!.ResultKinds != PackageSearchResultKinds.Asset)
         { Error = "Class ID / type-name filters require Assets only (disable Packages and Sources)."; return; }
+        // Raw AssetName has no equivalent meaning for the shared mixed-result
+        // Name column. A newly executed mixed query resumes the existing default.
+        if (legacy!.ResultKinds != PackageSearchResultKinds.Asset && _v2SortBy == PackageSearchSortField.AssetName)
+        { _v2SortBy = PackageSearchSortField.PackageName; _v2SortDirection = PackageSearchSortDirection.Ascending; }
         CriteriaSnapshot criteria = CaptureCriteria();
         var request = new SearchRequest(IncludeText, ExcludeText, legacy!.Fields, legacy.ResultKinds,
-            ExactText, MemoOnly, legacy.PathId, ClassId: classId, TypeName: string.IsNullOrWhiteSpace(TypeNameText) ? null : TypeNameText);
-        RetireV2Operation(); IsStale = false;
+            ExactText, MemoOnly, legacy.PathId, SortBy: _v2SortBy, SortDirection: _v2SortDirection,
+            ClassId: classId, TypeName: string.IsNullOrWhiteSpace(TypeNameText) ? null : TypeNameText);
+        await ExecuteV2SearchAsync(scope, version, criteria, request);
+    }
+
+    public Task SortV2Async(PackageSearchSortField field)
+    {
+        if (!CanChangeV2Sort || (field == PackageSearchSortField.AssetName && !CanSortV2AssetName)
+            || field is not (PackageSearchSortField.AssetName or PackageSearchSortField.PackageName or PackageSearchSortField.SourceName or PackageSearchSortField.PathId))
+            return Task.CompletedTask;
+        bool pending = _sortBasis is not null;
+        var basis = _sortBasis ??= new(PackageScopes.Where(p => p.IsSelected).ToArray(), _v2Criteria!,
+            _v2Operation!.Session.Criteria, _v2Operation.Session.Revisions);
+        var request = basis.Request with { SortBy = field,
+            SortDirection = (pending ? _v2SortBy : _displayedSortBy) == field
+                && (pending ? _v2SortDirection : _displayedSortDirection) == PackageSearchSortDirection.Ascending
+                ? PackageSearchSortDirection.Descending : PackageSearchSortDirection.Ascending };
+        CancelAndDisposeSearch(); int version = ++_searchVersion;
+        IsLoadingPage = false; Error = null;
+        _v2SortBy = request.SortBy; _v2SortDirection = request.SortDirection;
+        var preceding = _sortTask;
+        return _sortTask = RunQueuedSortAsync(preceding, basis, request, version);
+    }
+
+    private async Task RunQueuedSortAsync(Task preceding, SortBasis basis, SearchRequest request, int version)
+    {
+        // Retire cancelled work before admitting its successor. Intermediate requests
+        // never publish, and the original revision vector remains the D5 boundary.
+        await preceding;
+        if (version != _searchVersion || _disposed) return;
+        try { await ExecuteV2SearchAsync(basis.Scope, version, basis.Criteria, request, basis.Revisions); }
+        finally { if (version == _searchVersion) { _sortBasis = null; NotifyPaging(); } }
+    }
+
+    private async Task ExecuteV2SearchAsync(SearchPackageScopeItemViewModel[] scope, int version, CriteriaSnapshot criteria,
+        SearchRequest request, IReadOnlyList<SearchRevision>? previousSort = null)
+    {
         _searchCancellation = CancellationTokenSource.CreateLinkedTokenSource(_lifetime.Token);
         var owned = _searchCancellation; IsSearching = true; Status = "Admitting selected V2 packages for Search...";
         try
         {
+            RetireV2Operation(); IsStale = false;
             var operation = await V2SearchOperation.OpenAsync(scope.Select(p => p.Package.V2!).ToArray(), request, owned.Token, _v2EngineFactory());
             if (version != _searchVersion || owned.IsCancellationRequested)
             { await operation.DisposeAsync(); return; }
@@ -583,6 +643,12 @@ public sealed class SearchWorkspaceViewModel : ViewModelBase, IDisposable
             {
                 await operation.DisposeAsync(); MarkV2Stale();
                 Error = "Selected package scope changed during admission. Refresh Search explicitly.";
+                return;
+            }
+            if (previousSort is not null && !SameRevisionVector(previousSort, operation.Session.Revisions))
+            {
+                await operation.DisposeAsync(); MarkV2Stale();
+                Error = "Catalog changed during sorting. Refresh Search explicitly; previous rows and drafts were retained.";
                 return;
             }
             _v2Operation = operation;
@@ -595,18 +661,57 @@ public sealed class SearchWorkspaceViewModel : ViewModelBase, IDisposable
             var page = await window.ReadAsync(0, owned.Token);
             if (version != _searchVersion || _v2Operation != operation) return;
             if (operation.Session.IsStale) { MarkV2Stale(); return; }
+            bool clearSelection = false;
+            if (previousSort is not null && page.Status == SearchStatus.Success && SelectedResult is { } selected)
+            {
+                if (selected.V2Result is { Key.Kind: PackageSearchResultKind.Asset } asset)
+                {
+                    var membership = await operation.ProbeAssetAsync(asset, owned.Token);
+                    if (version != _searchVersion || _v2Operation != operation || owned.IsCancellationRequested) return;
+                    if (membership.Status != SearchStatus.Success)
+                    {
+                        if (membership.Status == SearchStatus.StaleCursor) MarkV2Stale();
+                        Error = "Selection could not be verified for the new order. Refresh Search explicitly; previous rows/draft retained.";
+                        return;
+                    }
+                    var match = membership.Rows.SingleOrDefault(r => r.Key == asset.Key);
+                    clearSelection = match is null;
+                    if (match is not null) selected.RefreshOccurrence(match, membership.Revisions.Single(r => r.PackageId == match.Key.PackageId));
+                }
+                // Sorting cannot change membership under identical frozen criteria
+                // and revisions. Retain metadata selected from that same query too.
+                else clearSelection = _selectionCriteria != criteria || selected.V2Revision is not { } revision
+                    || !page.Revisions.Any(r => r.PackageId == revision.PackageId && r.GenerationId == revision.GenerationId
+                        && r.LocationEpoch == revision.LocationEpoch && r.CatalogRevision == revision.CatalogRevision);
+            }
             if (!PublishV2Page(page, 0)) return;
+            if (clearSelection)
+            {
+                SelectedResult = null;
+                Status += " Previous selection is not a verified asset match; selection cleared, drafts retained.";
+            }
         }
         catch (OperationCanceledException) when (owned.IsCancellationRequested)
         { if (version == _searchVersion) Status = "Search cancelled; previous rows were preserved."; }
         catch (Exception e)
-        { if (version == _searchVersion) { Error = "V2 Search failed: " + e.Message; Status = "No new rows published."; } }
+        {
+            if (version == _searchVersion)
+            {
+                if (previousSort is not null) MarkV2Stale();
+                Error = "V2 Search failed: " + e.Message;
+                Status = previousSort is null ? "No new rows published." : "Sort not published; Refresh Search explicitly. Previous rows/drafts retained.";
+            }
+        }
         finally
         {
             if (version == _searchVersion) { _searchCancellation = null; IsSearching = false; }
             owned.Dispose();
         }
     }
+
+    private static bool SameRevisionVector(IReadOnlyList<SearchRevision> first, IReadOnlyList<SearchRevision> second) =>
+        first.Count == second.Count && first.All(a => second.Any(b => a.PackageId == b.PackageId
+            && a.GenerationId == b.GenerationId && a.LocationEpoch == b.LocationEpoch && a.CatalogRevision == b.CatalogRevision));
 
     public async Task NextPageAsync()
     {
@@ -675,9 +780,18 @@ public sealed class SearchWorkspaceViewModel : ViewModelBase, IDisposable
             { selected.RefreshOccurrence(r, revision); return selected; }
             return new SearchResultItemViewModel(r, revision);
         });
-        Results = window.Rows;
+        // Replacing ItemsSource temporarily clears DataGrid.SelectedItem. That is
+        // view coercion, not user intent to abandon the retained Inspector/draft.
+        _publishingResultCollection = true;
+        try
+        {
+            Results = window.Rows;
+            _displayedSortBy = _v2Operation!.Session.Criteria.SortBy;
+            _displayedSortDirection = _v2Operation.Session.Criteria.SortDirection;
+            if (replacing) OnPropertyChanged(nameof(SelectedResult));
+        }
+        finally { _publishingResultCollection = false; }
         if (SelectedResult?.IsV2 != true) SelectedResult = null;
-        if (replacing) OnPropertyChanged(nameof(SelectedResult));
         _failedPage = null;
         CountSummary = $"{window.StartIndex + (Results.Count == 0 ? 0 : 1):N0}–{window.StartIndex + Results.Count:N0} displayed / "
             + (window.ExactCount is long exact ? $"{exact:N0} exact indexed matches" : $"at least {window.SeenRows:N0} indexed matches");
@@ -932,6 +1046,15 @@ public sealed class SearchWorkspaceViewModel : ViewModelBase, IDisposable
 
     private void CancelSearch()
     {
+        if (_sortBasis is not null)
+        {
+            ++_searchVersion; _sortBasis = null; CancelAndDisposeSearch();
+            _v2SortBy = _displayedSortBy ?? PackageSearchSortField.PackageName;
+            _v2SortDirection = _displayedSortDirection;
+            IsSearching = false; IsLoadingPage = false;
+            Status = "Sort cancelled; previous rows and selection were retained."; NotifyPaging();
+            return;
+        }
         if (_searchCancellation is null)
             return;
         _searchCancellation.Cancel();

@@ -145,7 +145,7 @@
             <Grid Grid.Row="2">
                 <DataGrid x:Name="ResultsGrid" Classes="assetList" AutoGenerateColumns="False" IsReadOnly="True"
                           CanUserResizeColumns="True" GridLinesVisibility="Horizontal"
-                          CanUserSortColumns="{Binding CanSortResultsLocally}"
+                          CanUserSortColumns="True" Sorting="OnResultsSorting"
                           ItemsSource="{Binding Results}" SelectedItem="{Binding SelectedResult, Mode=OneWay}"
                           SelectionChanged="OnResultSelectionChanged"
                           LoadingRow="OnResultsGridLoadingRow">
@@ -165,11 +165,11 @@
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
-                        <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="2*"/>
-                        <DataGridTextColumn Header="Package" Binding="{Binding PackageName}" Width="*"/>
-                        <DataGridTextColumn Header="Source" Binding="{Binding SourceName}" Width="*"/>
-                        <DataGridTextColumn Header="Path ID" Binding="{Binding PathId}" Width="110"/>
-                        <DataGridTextColumn Header="Memo" Binding="{Binding MemoSummary}" Width="*"/>
+                        <DataGridTextColumn Header="Name" SortMemberPath="Name" Binding="{Binding Name}" Width="2*"/>
+                        <DataGridTextColumn Header="Package" SortMemberPath="PackageName" Binding="{Binding PackageName}" Width="*"/>
+                        <DataGridTextColumn Header="Source" SortMemberPath="SourceName" Binding="{Binding SourceName}" Width="*"/>
+                        <DataGridTextColumn Header="Path ID" SortMemberPath="PathId" Binding="{Binding PathId}" Width="110"/>
+                        <DataGridTextColumn Header="Memo" SortMemberPath="MemoSummary" Binding="{Binding MemoSummary}" Width="*"/>
                     </DataGrid.Columns>
                 </DataGrid>
                 <TextBlock Text="{Binding Status}" IsVisible="{Binding ShowEmptyState}"

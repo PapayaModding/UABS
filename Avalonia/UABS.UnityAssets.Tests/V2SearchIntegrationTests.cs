@@ -114,7 +114,9 @@ public sealed class V2SearchIntegrationTests
             Assert.True(grid.Columns[0].CanUserResize); Assert.Empty(((TextBlock)grid.Columns[0].Header!).Text!);
             Assert.Null(view.FindControl<Button>("NextSearchPageButton"));
             Assert.Same(search.RetryPageCommand, view.FindControl<Button>("RetrySearchPageButton")!.Command);
-            Assert.False(grid.CanUserSortColumns); // never sort a bounded V2 fragment as though it were the full query
+            Assert.True(grid.CanUserSortColumns); // supported V2 headers dispatch global sessions, not local-window sorts
+            Assert.False(grid.Columns[0].CanUserSort);
+            Assert.False(grid.Columns[5].CanUserSort);
             Assert.Same(search.RefreshSearchCommand, view.FindControl<Button>("RefreshSearchButton")!.Command);
             Assert.True(view.FindControl<SelectableTextBlock>("V2SearchDetails")!.IsVisible);
             Assert.False(view.FindControl<EditableMemoInspectorView>("SearchMemoInspector")!.IsEffectivelyVisible);

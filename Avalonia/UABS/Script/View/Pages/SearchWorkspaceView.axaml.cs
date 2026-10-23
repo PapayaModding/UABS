@@ -1,14 +1,18 @@
 using System;
+using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Linq;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Automation;
 using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
 using UABS.ViewModels;
+using UABS.UnityAssets.Packages.Search;
 
 namespace UABS.Page;
 
@@ -27,6 +31,11 @@ public partial class SearchWorkspaceView : UserControl
     private double _anchorY;
     private int _anchorVersion;
     public Task ViewportLoadTask { get; private set; } = Task.CompletedTask;
+    public Task HeaderSortTask { get; private set; } = Task.CompletedTask;
+    private readonly HashSet<DataGridColumnHeader> _sortHeaders = new();
+    private bool _headersQueued, _settingIndicators, _usingGlobalIndicators;
+    private bool _restoringHeaderSelection;
+    private int _headerSortVersion;
 
     public SearchWorkspaceView()
     {
@@ -35,6 +44,7 @@ public partial class SearchWorkspaceView : UserControl
         SearchRegionsGrid.SizeChanged += (_, _) => UpdatePanelMaximumWidths();
         ResultsGrid.TemplateApplied += (_, _) => HookResultsScroll();
         ResultsGrid.SizeChanged += (_, _) => QueueViewport();
+        ResultsGrid.LayoutUpdated += (_, _) => UpdateSortHeaders();
         AttachedToVisualTree += (_, _) => { HookResultsScroll(); QueueViewport(); };
         ObserveViewModel(DataContext as SearchWorkspaceViewModel);
     }
@@ -53,6 +63,7 @@ public partial class SearchWorkspaceView : UserControl
         }
 
         _observedViewModel = viewModel;
+        _headerSortVersion++; _restoringHeaderSelection = false;
         _anchorVersion++; _restoringWindow = false; _anchor = null;
 
         if (_observedViewModel is not null)
@@ -64,6 +75,7 @@ public partial class SearchWorkspaceView : UserControl
         }
 
         UpdatePanelMaximumWidths();
+        QueueSortHeaders();
     }
 
     private void OnLayoutPropertyChanged(object? sender, PropertyChangedEventArgs eventArgs) =>
@@ -163,6 +175,7 @@ public partial class SearchWorkspaceView : UserControl
 
     private void OnSearchPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
+        QueueSortHeaders();
         if (e.PropertyName == nameof(SearchWorkspaceViewModel.Results))
         {
             // An explicit new session replaces the collection. Its viewport must
@@ -171,10 +184,121 @@ public partial class SearchWorkspaceView : UserControl
         }
         if (e.PropertyName is nameof(SearchWorkspaceViewModel.IsSearching) or nameof(SearchWorkspaceViewModel.Results)) QueueViewport();
     }
+
+    private static PackageSearchSortField? GlobalSort(DataGridColumn column) => column.SortMemberPath switch
+    {
+        "Name" => PackageSearchSortField.AssetName,
+        "PackageName" => PackageSearchSortField.PackageName,
+        "SourceName" => PackageSearchSortField.SourceName,
+        "PathId" => PackageSearchSortField.PathId,
+        _ => null
+    };
+
+    private void OnResultsSorting(object? sender, DataGridColumnEventArgs e)
+    {
+        if (_observedViewModel is not { } vm || vm.CanSortResultsLocally) return; // unchanged V1 native route
+        e.Handled = true; // never let DataGrid sort the retained V2 window
+        if (GlobalSort(e.Column) is { } field)
+        {
+            _restoringHeaderSelection = true;
+            HeaderSortTask = SortHeaderAsync(vm, field, ++_headerSortVersion);
+        }
+    }
+
+    private async Task SortHeaderAsync(SearchWorkspaceViewModel vm, PackageSearchSortField field, int version)
+    {
+        try { await vm.SortV2Async(field); }
+        catch (Exception e) { Printer.PrintException("Search header sorting failed.", e); }
+        finally
+        {
+            if (version == _headerSortVersion && ReferenceEquals(vm, _observedViewModel))
+            {
+                try
+                {
+                    // DataGrid defers its ItemsSource selection reset until measure.
+                    // Drain that reset before restoring the retained immutable row.
+                    ResultsGrid.UpdateLayout();
+                    ResultsGrid.SelectedItem = vm.SelectedResult is { } selected && vm.Results.Contains(selected) ? selected : null;
+                    ResultsGrid.UpdateLayout();
+                }
+                finally { _restoringHeaderSelection = false; }
+            }
+            QueueSortHeaders();
+        }
+    }
+
+    private void QueueSortHeaders()
+    {
+        if (_headersQueued) return;
+        _headersQueued = true;
+        Dispatcher.UIThread.Post(() => { _headersQueued = false; UpdateSortHeaders(); }, DispatcherPriority.Loaded);
+    }
+
+    private void OnHeaderClassesChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    {
+        // Native header pointer/state transitions recompute their local arrows.
+        // Reapply global-session indicators after that transition, not reentrantly.
+        if (!_settingIndicators) QueueSortHeaders();
+    }
+
+    private void UpdateSortHeaders()
+    {
+        if (_observedViewModel is not { } vm) return;
+        // A prior V1 query may have left native sort descriptions on the grid.
+        // Global V2 ordering must never inherit a local fragment sort.
+        if (!vm.CanSortResultsLocally && ResultsGrid.CollectionView is { } collection && collection.SortDescriptions.Count > 0)
+            collection.SortDescriptions.Clear();
+        var headers = ResultsGrid.GetVisualDescendants().OfType<DataGridColumnHeader>().ToHashSet();
+        foreach (var old in _sortHeaders.Except(headers).ToArray())
+        { old.Classes.CollectionChanged -= OnHeaderClassesChanged; _sortHeaders.Remove(old); }
+        foreach (var header in headers)
+            if (_sortHeaders.Add(header)) header.Classes.CollectionChanged += OnHeaderClassesChanged;
+        foreach (var column in ResultsGrid.Columns)
+        {
+            var field = GlobalSort(column);
+            column.CanUserSort = vm.CanSortResultsLocally || (field is not null && vm.CanChangeV2Sort
+                && (field != PackageSearchSortField.AssetName || vm.CanSortV2AssetName));
+            var header = headers.FirstOrDefault(h => Equals(h.Content, column.Header));
+            if (header is null) continue;
+            if (vm.CanSortResultsLocally)
+            {
+                if (_usingGlobalIndicators)
+                {
+                    _settingIndicators = true;
+                    try
+                    {
+                        ((IPseudoClasses)header.Classes).Set(":sortascending", false);
+                        ((IPseudoClasses)header.Classes).Set(":sortdescending", false);
+                        ToolTip.SetTip(header, null); AutomationProperties.SetHelpText(header, null);
+                    }
+                    finally { _settingIndicators = false; }
+                }
+                continue;
+            }
+            string help = field is null ? "Global V2 sorting is unavailable for this column."
+                : field == PackageSearchSortField.AssetName && !vm.CanSortV2AssetName
+                    ? "Global Name sorting requires a current Assets-only search; refresh stale results explicitly."
+                    : "Sort all matching V2 results; " + (vm.DisplayedSortBy == field
+                        ? vm.DisplayedSortDirection.ToString() : "not the active order");
+            ToolTip.SetTip(header, help); AutomationProperties.SetHelpText(header, help);
+            _settingIndicators = true;
+            try
+            {
+                var classes = (IPseudoClasses)header.Classes;
+                classes.Set(":sortascending", field is not null && vm.DisplayedSortBy == field
+                    && vm.DisplayedSortDirection == PackageSearchSortDirection.Ascending);
+                classes.Set(":sortdescending", field is not null && vm.DisplayedSortBy == field
+                    && vm.DisplayedSortDirection == PackageSearchSortDirection.Descending);
+            }
+            finally { _settingIndicators = false; }
+        }
+        _usingGlobalIndicators = !vm.CanSortResultsLocally;
+    }
     private void OnResultSelectionChanged(object? sender, SelectionChangedEventArgs e)
     {
         if (_restoringWindow || _observedViewModel is not { } vm || vm.IsUpdatingResultWindow) return;
         if (ResultsGrid.SelectedItem is SearchResultItemViewModel selected) vm.SelectedResult = selected;
+        else if (_restoringHeaderSelection) return;
         else if (!vm.IsV2Search || vm.SelectedResult is null || vm.Results.Contains(vm.SelectedResult)) vm.SelectedResult = null;
     }
     private void HookResultsScroll()

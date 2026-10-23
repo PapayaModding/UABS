@@ -2,6 +2,41 @@
 
 **Date:** 2026-10-23. **Baseline:** clean committed `b08a8f6` (Gate5F). **Status:** scoped implementation, calibration and automated verification complete; ready for review/commit as an optimization checkpoint. User Debug acceptance remains pending. No canonical schema or memo-writer change. Targeted synthetic paging improvement, not universal or real-OWL performance acceptance.
 
+## Gate5G.1 — supported global header sorting (2026-10-23)
+
+**Root cause:** Gate5F intentionally disabled native V2 DataGrid sorting to prevent local ordering of a partial window. There was no global header-event route; Gate5G did not introduce a new sorting-engine defect. V1 native sorting was unaffected. This correction continues the existing partial backend work from committed baseline `1015b57`.
+
+| Existing header | V2 behavior |
+|---|---|
+| Package | Global PackageName ascending/descending |
+| Source | Global SourceName ascending/descending |
+| Path ID | Global signed numeric PathId ascending/descending, including nullable metadata rows |
+| Name | Global raw AssetName only for executed Assets-only queries; NULL is not the displayed unnamed-placeholder text |
+| Kind / Memo | Intentionally unavailable: no equivalent approved global sort contract |
+| Name with Package/Source rows | Intentionally unavailable: raw AssetName does not order the shared display-name column correctly |
+
+Supported headers use the existing engine's OrdinalIgnoreCase then Ordinal text comparison, existing NULL handling and deterministic immutable tie-breakers; descending changes the primary order, not the established tie contract. A different header starts ascending; clicking the active header toggles direction. Default PackageName ascending remains unchanged. Explicit Refresh retains the chosen supported order. If a new mixed-result query makes an earlier raw Name order ineligible, that query uses the existing default PackageName ascending instead of silently applying incompatible semantics. Unsupported headers retain their presentation, have sorting disabled and expose explanatory tooltip/help text. V1 still uses native column sorting, including its existing Kind/Memo behavior.
+
+The View handles V2 Sorting before native collection sorting; native V1 SortDescriptions are cleared when entering V2. Each sort creates a fresh ordered session from the **executed frozen criteria and package scope**, resets to its first100-row page, invalidates prior cursors and compares the original package/generation/location/catalog revision vector. Pending edits to criteria remain pending. A serialized latest-request-wins queue cancels old work and skips superseded admissions. Version/operation checks prevent late pages or sorts from publishing. Cancel stops pending sort requests without replacing prior rows/selection. Admission/conflict failure retains rows/drafts and requires explicit Refresh; no D5 auto-renewal.
+
+Exact retained asset identity is probed against the new session before publication; metadata selected from the same immutable query is retained too. The same selected ViewModel/Inspector/draft survives even off-window. Headless tests exposed DataGrid's **deferred measure-time selection reset**, beyond synchronous ItemsSource assignment. The View drains that layout reset under a scoped header-sort selection guard and restores the retained row highlight when it is in the new window; non-null user row selections remain accepted. No draft flush is caused by that transient null. Genuine missing/unverified selections are explicitly cleared, not retargeted by name.
+
+Direction arrows reuse Fluent's native `:sortascending`/`:sortdescending` header states, reflect only the published order and are reapplied after native pointer-state updates. No custom header template, columns, sizing, styling or layout changes. Windows remain600 rows/128 checkpoints; keyset replay and zebra row-loading parity remain intact. Assets columns, package/editor/memo persistence, V1 engines and approved schema are untouched.
+
+Changed implementation: `UABS/Script/Services/V2SearchOperation.cs`, `UABS/Script/ViewModels/SearchWorkspaceViewModel.cs`, `UABS/Script/View/Pages/SearchWorkspaceView.axaml` and its `.axaml.cs` code-behind. Tests: new `UABS.UnityAssets.Tests/V2SearchHeaderSortTests.cs`, updated `V2SearchIntegrationTests.cs` and `V2SearchInfiniteScrollTests.cs` in that same test project; existing tests now assert supported global-header eligibility and unsupported Kind/Memo rather than blanket disablement. Documentation: this report, `docs/03_design/ui-and-workflow-design.md` and the [session handoff](codex-session-handoff.md). No desktop observation or VSTest transport claim.
+
+**Final automated verification:** Debug solution including the actual startup application passed with zero warnings/errors (53.26s); external runner build also clean (4.41s). Focused sorting15/15, existing Search integration18/18, viewport7/7 and SearchVM22/22 all passed. One final standard in-process xUnit regression: **724 passed,1 existing physical-hardlink permission skip,0 failed** (725 cases,74.45s). Canonical DDL equality, Unity project/dependency/output audit, genuine fixture hashes, protected-file scope, changed/new source integrity and Git whitespace checks passed. Documentation16 files/196 links/anchors and fences checked;20 unchanged Mermaid blocks counted, not rendered. No real package or source writes, desktop automation, process termination, schema/engine/writer changes, staging or commits. Scoped implementation is ready for review/commit; manual Debug acceptance remains pending.
+
+**Limitations:** sorting re-admits packages, checks selection and starts a new first-page query; nondefault orders retain the general SQL/federation plan, not Gate5G's default-order optimization. No new latency benchmark or smooth real-OWL acceptance is claimed. The historical performance measurements below were not rerun. Cancelling after an old session has retired preserves its displayed rows/draft but can require an explicit Search to resume paging; it never attaches an obsolete cursor to the replacement order.
+
+### Manual Debug acceptance
+
+1. Launch the current `E:\Projects\UABS\Avalonia\UABS\bin\Debug\net9.0\UABS.exe` with disposable V2 packages; select multiple packages and run an Assets-only search with more than600 matches.
+2. Click Name, Package, Source and Path ID twice each; confirm arrows/directions, first-page reset and consistent forward/backward order across window eviction. Move the pointer away and back; the active arrow must remain accurate.
+3. Keep an unsaved memo draft/selection while rapidly changing sort headers. Confirm its Inspector identity/text remains unchanged, even when outside the new window; no automatic save or Search rerun from a transient selection reset.
+4. Include Package/Source results: Name, Kind and Memo must not offer misleading V2 sorting; Package/Source/Path ID remain available. Check Kind resizing and green zebra/hover/selection remain unchanged.
+5. Save a memo or change catalog scope: confirm stale state and explicit Refresh Search before paging/sorting resumes. Check V1 header sorting separately. Visual acceptance is user-operated and still pending.
+
 ## Confirmed baseline
 
 Opt-in [SearchTrace](../../UABS.PackageV2/Search/SearchTrace.cs) and [disposable production-model calibration](../../UABS.UnityAssets.Tests/V2SearchPagingMeasurements.cs) separate admission, existing full-validation/hash spans, connection setup, candidate SQL, emitted-row mapping/federation, memo hydration, vector recheck and collection publication. Managed predicate/comparison counts and callback-body time are aggregated, not an activity per evaluated candidate. Timings are inclusive/overlapping: callback time is inside SQL and row mapping/merge inside candidate iteration. Native/provider decoding and string conversion are not individually profiled; callback-body CPU excludes those costs. No paths, criteria or memos are emitted by tracing. With no listener, no Activity is allocated.

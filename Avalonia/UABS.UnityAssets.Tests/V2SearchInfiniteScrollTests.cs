@@ -62,7 +62,8 @@ public sealed class V2SearchInfiniteScrollTests
             Assert.True(Math.Abs(after.TranslatePoint(default, grid)!.Value.Y - y) <= 1,
                 $"Anchor moved: before={y}, capture={capturedY}, after={after.TranslatePoint(default, grid)!.Value.Y}, captureHeight={capturedHeight}, finalHeight={grid.Bounds.Height}, bar={grid.GetVisualDescendants().OfType<ScrollBar>().First(b => b.Orientation == Avalonia.Layout.Orientation.Vertical).Value}");
             Assert.InRange(grid.GetVisualDescendants().OfType<DataGridRow>().Count(r => r.IsVisible), 1, 60);
-            Assert.Contains("assetList", grid.Classes); Assert.False(grid.CanUserSortColumns);
+            Assert.Contains("assetList", grid.Classes); Assert.True(grid.CanUserSortColumns);
+            Assert.False(grid.Columns[0].CanUserSort); Assert.False(grid.Columns[5].CanUserSort);
             Assert.Equal(52, grid.Columns[0].Width.Value); Assert.Equal(0, grid.Columns[0].MinWidth);
             Assert.Equal(80, grid.Columns[0].MaxWidth); Assert.True(grid.Columns[0].CanUserResize);
             foreach (var row in grid.GetVisualDescendants().OfType<DataGridRow>().Where(r => r.IsVisible))
