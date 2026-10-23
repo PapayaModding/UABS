@@ -9,6 +9,8 @@ All 17 items below start **Reported / Not yet resolved under this roadmap**. Obs
 
 Related sources of truth: [AI policy](../01_core/ai-agent.md), [current UI/workflow design](../03_design/ui-and-workflow-design.md), [approved V2 design](../03_design/package-format-v2-design.md), [Gate5G/5G.1 evidence](package-format-v2-gate-05g-search-paging-performance.md), [migration roadmap](migration-roadmap.md), and [session handoff](codex-session-handoff.md).
 
+[Phase1A bundle identity and memo audit](v2-recovery-phase-01a-bundle-audit.md) traces the legacy bundle-returning workflow and current source/asset contracts for #1/#2/#7/#3. Confirmed: source-level projection is representable without a schema change, but no existing bundle-owned memo storage exists; navigation needs captured source/registration identity and a native Assets provenance decision. Matching/aggregation, mixed-result controls, source-kind inclusion, bundle memos and navigation/history remain pending approval. This audit implements no fix and changes none of the17 Reported statuses.
+
 The current implementation intentionally includes individual indexed assets, per-asset memos, V1 support, and restricted V2 global sorting. The requirements below propose changes to those boundaries; they do not rewrite historical reports or establish that existing design decisions were implementation defects. In particular, current UI documentation describes Search-to-Assets as deferred; calling for its restoration records the desired legacy workflow, not proof that a previously implemented Avalonia action was removed.
 
 ## Mandatory compatibility contract

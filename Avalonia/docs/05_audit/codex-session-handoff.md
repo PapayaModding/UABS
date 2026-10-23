@@ -2,7 +2,16 @@
 
 **Updated:** 2026-10-23
 
-**Current task:** preserve the V2 UI/workflow recovery roadmap — documentation only (2026-10-23).
+**Current task:** V2 recovery Phase1A bundle identity/memo audit — documentation only (2026-10-23).
+
+### Phase1A — audit checkpoint; implementation approval required
+
+- Baseline `f815443`; worktree/index clean at entry. Created [bundle identity/memo audit](v2-recovery-phase-01a-bundle-audit.md), referenced it in the recovery roadmap, and updated this handoff only. No source, tests, XAML, schema, packages or legacy Unity edits; no builds/tests/desktop control/Git mutations.
+- Legacy Search accepts bundle index items via bundle/asset-name/asset-memo predicates and opens copied bundle entries into Assets. Its memo ownership is individual assets. Filename cache collisions, field-local excludes/exact-mode quirks and per-package view replacement are verified source limitations, not recommended behavior to copy blindly. No distinct literal Go to Assets command or equivalent Unity Indexed Assets DataGrid established by inspected paths.
+- Current V2 independently returns Package/SourceFile/Asset candidates; source results do not aggregate asset hits. Packages Indexed Assets and indexed Assets share an individual-asset grid; technical columns/no Memo are confirmed. Source metadata supports a schema-free typed source list/query, but grouping must precede global paging/federation. Search → Assets is still absent by design. The live Assets entry lacks original ordinals/package binding; exact source navigation alone does not guarantee unambiguous native memo selection.
+- Pending decisions: source-as-bundle identity including standalone/failed sources and cross-package duplicates; match/exclusion/exact/Memo-only aggregation and mixed-result controls; bundle-owned memo storage (currently absent); action/history/native provenance; source-level sorting/pagination and scoped Assets Memo mapping. Preserve D1–D8/schema/D5, all-asset index and exact asset memos. All17 issues remain Reported/unresolved.
+- Documentation validation: three documents/local source-reference targets, balanced Markdown fences, static syntax review of the single new existing-schema Mermaid diagram (not rendered), whitespace/conflicts and all17 unchanged Reported statuses checked. Protected application/test/schema/Unity paths unchanged; index empty, only this handoff/roadmap modified and the new audit untracked. Historical Gate5G.1 build/test evidence below is not rerun or claimed as Phase1A runtime verification. No automatic Phase1 implementation, V1 retirement or bundle-memo schema amendment.
+- **Next exact action:** user reviews the eight-row decision matrix and approves a bounded recovery slice/contracts before source edits. No implementation has been started.
 
 ### V2 recovery roadmap — documentation checkpoint
 
