@@ -13,12 +13,20 @@ public sealed class PackageReader : IDisposable
     private bool _disposed;
     private readonly FileStream? _memoPin;
     private long? _memoDataVersion;
+    private readonly long _admissionDataVersion;
     private PackageInfo _memoInfo;
     public PackageInfo Info { get; }
     private PackageReader(SqliteConnection connection, PackageInfo info, FileStream? memoPin, long dataVersion)
-    { _connection = connection; Info = _memoInfo = info; _memoPin = memoPin; _memoDataVersion = dataVersion; }
+    { _connection = connection; Info = _memoInfo = info; _memoPin = memoPin; _admissionDataVersion = dataVersion; _memoDataVersion = dataVersion; }
 
-    public static Task<AdmissionResult> OpenAsync(string path, CancellationToken token = default, bool memoReuse = false) => Task.Run(() =>
+    public static Task<AdmissionResult> OpenAsync(string path, CancellationToken token = default, bool memoReuse = false) =>
+        OpenCore(path, token, memoReuse, null);
+
+    /// <summary>Only a live writer-created capability can avoid global admission. Caller-created deltas fall back to full validation.</summary>
+    public static Task<AdmissionResult> OpenMemoPublicationAsync(string path, VerifiedMemoChange change, CancellationToken token = default) =>
+        OpenCore(path, token, true, change.Admission is { } proof && proof.Matches(path) ? proof : null);
+
+    private static Task<AdmissionResult> OpenCore(string path, CancellationToken token, bool memoReuse, MemoAdmissionProof? proof) => Task.Run(() =>
     {
         using var phase = UABS.UnityAssets.Packages.Memos.MemoTrace.Start("reader-admission");
         SqliteConnection? connection = null;
@@ -37,7 +45,7 @@ public sealed class PackageReader : IDisposable
             connection = StorageSchema.Open(Path.GetFullPath(path), true);
             using var interrupt = token.Register(() => SQLitePCL.raw.sqlite3_interrupt(connection.Handle));
             using StorageSql sql = new(connection); sql.Exec("BEGIN");
-            PackageInfo info = StorageSchema.Validate(connection, false, token);
+            PackageInfo info = proof is null ? StorageSchema.Validate(connection, false, token) : proof.Read(connection, token);
             long dataVersion = sql.Number("PRAGMA data_version");
             sql.Exec("COMMIT");
             return new AdmissionResult(StorageStatus.Success, new PackageReader(connection, info, pin, dataVersion),
@@ -181,6 +189,14 @@ public sealed class PackageReader : IDisposable
         catch (SqliteException) when (token.IsCancellationRequested) { throw new OperationCanceledException(token); }
         finally { _access.Release(); }
     }, token);
+
+    /// <summary>Cheap unchanged-admission check on this pinned connection, for a published reader's frozen metadata pages.</summary>
+    public Task CheckAdmissionAsync(CancellationToken token = default) => Read(token, sql =>
+    {
+        if (_memoPin is null || _admissionDataVersion != sql.Number("PRAGMA data_version"))
+            throw new InvalidDataException("Published package admission changed; reopen explicitly.");
+        return true;
+    });
 
     private static void ValidatePage(long after, int size)
     { if (after < 0 || size is < 1 or > 500) throw new ArgumentOutOfRangeException(nameof(size), "Row cursor must be nonnegative; page size 1–500."); }

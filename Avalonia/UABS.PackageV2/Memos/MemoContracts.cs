@@ -12,11 +12,15 @@ public enum MemoStatus { Saved, Unchanged, PackageMissing, GenerationChanged, Mi
     EditorActive, RevisionConflict, Busy, ReadOnly, InvalidText, InvalidPackage, RegistrationChanged,
     WriteFailure, VerificationFailure, PublicationFailure, CancelledBeforeCommit, CommittedButSuperseded }
 public enum MemoCommitState { NotCommitted, Committed, Uncertain }
-public enum MemoBoundary { BeforeTransaction, BeforeCommit, AfterCommit, BeforeVerification }
+public enum MemoBoundary { BeforeTransaction, BeforeCommit, AfterCommit, BeforeVerification, CommitStarting, BeforeRollback }
 public sealed record MemoWriteRequest(V2MemoRegistration Registration, MemoTarget Target, string? DesiredMemo,
     string? ExpectedOriginalMemo, long ExpectedMemoRevision, long? ExpectedCatalogRevision = null);
 public sealed record VerifiedMemoChange(MemoTarget Target, string? Memo, long MemoRevision, long CatalogRevision,
-    bool Verified = true);
+    bool Verified = true)
+{
+    // Ephemeral capability, never supplied by callers or serialized as revision evidence.
+    internal MemoAdmissionProof? Admission { get; init; }
+}
 public sealed record MemoWriteResult(MemoStatus Status, MemoWriteRequest Request, MemoCommitState CommitState,
     string Message, VerifiedMemoChange? Change = null)
 {
@@ -31,6 +35,7 @@ public sealed class V2MemoRegistration
     internal V2MemoRegistration(Guid owner, string path, PackageInfo info) { Owner = owner; Path = path; Info = info; }
     internal Guid Owner { get; }
     internal bool Active { get; set; } = true; // accessed only under the service registry monitor
+    internal WriterAdmission? Admission { get; set; } // accessed only under the path coordinator
     public Guid Id { get; } = Guid.NewGuid();
     public string Path { get; }
     public PackageInfo Info { get; }

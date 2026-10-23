@@ -71,6 +71,7 @@ Evidence, migration tracking, risks, decisions, and implementation history:
 - [V2 Gate5B production Search integration](05_audit/package-format-v2-gate-05b-search-integration.md) — format-aware selection, bounded pages, read-only Inspector and stale/Refresh lifecycle; see report for verification status.
 - [V2 Gate5C production memo integration](05_audit/package-format-v2-gate-05c-memo-integration.md) — exact V1/V2 routing, shared Assets/Search drafts, transactional SQLite saves and verified row synchronization; user-operated Debug acceptance remains pending.
 - [V2 Gate5D memo performance](05_audit/package-format-v2-gate-05d-memo-performance.md) — pinned read admission, attempt-local verification reuse, repeated10k/100k/1M calibration and remaining save costs; manual acceptance pending.
+- [V2 Gate5E transactional memo saves](05_audit/package-format-v2-gate-05e-memo-save-performance.md) — retained writer admission, attempt-limited verified publication, invalidation and10k/100k/1M save calibration; manual acceptance pending.
 - [Feature comparison](05_audit/feature-comparison.md)
 - [Legacy feature inventory](05_audit/legacy-feature-inventory.md)
 - [Reusable-code analysis](05_audit/reusable-code.md)

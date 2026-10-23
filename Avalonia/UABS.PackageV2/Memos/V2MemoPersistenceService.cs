@@ -15,14 +15,17 @@ public sealed class V2MemoPersistenceService
     private readonly object _registry = new();
     private readonly Dictionary<Guid, V2MemoRegistration> _packages = [];
     private readonly int _busySeconds;
+    private readonly bool _reuseAdmission;
 
     public V2MemoPersistenceService(IPackageWriteCoordinator writes, V2PackageEditorGuard editors,
-        Func<VerifiedMemoChange, Task>? publish = null, Action<MemoBoundary>? boundary = null, int busyTimeoutSeconds = 1)
+        Func<VerifiedMemoChange, Task>? publish = null, Action<MemoBoundary>? boundary = null, int busyTimeoutSeconds = 1,
+        bool reuseAdmission = false)
     {
         _writes = writes ?? throw new ArgumentNullException(nameof(writes));
         _editors = editors ?? throw new ArgumentNullException(nameof(editors)); _publish = publish; _boundary = boundary;
         if (busyTimeoutSeconds is < 0 or > 30) throw new ArgumentOutOfRangeException(nameof(busyTimeoutSeconds));
         _busySeconds = busyTimeoutSeconds;
+        _reuseAdmission = reuseAdmission && OperatingSystem.IsWindows();
     }
 
     public async Task<MemoAdmission> RegisterAsync(string path, CancellationToken token = default)
@@ -32,17 +35,26 @@ public sealed class V2MemoPersistenceService
             string full = Path.GetFullPath(path);
             return await _writes.ExecutePackageWriteAsync(full, ct => Task.Run(() => {
                 if (!File.Exists(full)) return new MemoAdmission(MemoStatus.PackageMissing, null, "Package missing.");
-                using var c = Open(full, true); using StorageSql sql = new(c); sql.Exec("BEGIN");
-                PackageInfo info = StorageSchema.Validate(c, false, ct); sql.Exec("COMMIT");
-                if (!info.DerivedFieldsCompatible) return new MemoAdmission(MemoStatus.InvalidPackage, null, "Unsupported derived profile: writable revalidation required.");
-                lock (_registry)
+                SqliteConnection? c = null; FileStream? pin = null;
+                try
                 {
-                    if (_packages.ContainsKey(info.PackageId) || _packages.Values.Any(r => string.Equals(r.Path, full,
-                        OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal)))
-                        return new MemoAdmission(MemoStatus.RegistrationChanged, null, "UUID/location already registered; unload before moving/reopening.");
-                    var reg = new V2MemoRegistration(_owner, full, info); _packages.Add(info.PackageId, reg);
-                    return new MemoAdmission(null, reg, "Registered isolated V2 memo target.");
+                    if (_reuseAdmission) pin = new(full, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                    c = Open(full, !_reuseAdmission); using StorageSql sql = new(c); sql.Exec("BEGIN");
+                    PackageInfo info = StorageSchema.Validate(c, false, ct);
+                    long version = sql.Number("PRAGMA data_version"); sql.Exec("COMMIT");
+                    if (!info.DerivedFieldsCompatible) return new MemoAdmission(MemoStatus.InvalidPackage, null, "Unsupported derived profile: writable revalidation required.");
+                    lock (_registry)
+                    {
+                        if (_packages.ContainsKey(info.PackageId) || _packages.Values.Any(r => string.Equals(r.Path, full,
+                            OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal)))
+                            return new MemoAdmission(MemoStatus.RegistrationChanged, null, "UUID/location already registered; unload before moving/reopening.");
+                        var reg = new V2MemoRegistration(_owner, full, info);
+                        if (pin is not null) { reg.Admission = new(c, pin, info, version); c = null; pin = null; }
+                        _packages.Add(info.PackageId, reg);
+                        return new MemoAdmission(null, reg, "Registered isolated V2 memo target.");
+                    }
                 }
+                finally { try { c?.Dispose(); } finally { pin?.Dispose(); } }
             }, ct), token).ConfigureAwait(false);
         }
         catch (Exception e) { return new(Failure(e, token), null, e.Message); }
@@ -52,8 +64,10 @@ public sealed class V2MemoPersistenceService
         _writes.ExecutePackageWriteAsync(registration.Path, _ => {
             lock (_registry)
             {
-                if (Active(registration)) { registration.Active = false; _packages.Remove(registration.Info.PackageId); }
+                if (!Active(registration)) return Task.CompletedTask;
+                registration.Active = false; _packages.Remove(registration.Info.PackageId);
             }
+            var owned = registration.Admission; registration.Admission = null; owned?.Dispose();
             return Task.CompletedTask;
         }, token);
 
@@ -107,10 +121,24 @@ public sealed class V2MemoPersistenceService
         SqliteConnection? origin = null;
         FileStream? verificationPin = null;
         long validatedDataVersion = -1;
+        WriterAdmission? admission = request.Registration.Admission;
+        MemoAdmissionProof? proof = null;
         MemoWriteResult completed = await AttemptAsync().ConfigureAwait(false);
+        proof?.Expire();
+        if (!completed.Succeeded && admission is not null) admission.Version = null;
         try
         {
-            try { origin?.Dispose(); }
+            if (admission is not null && completed.CommitState == MemoCommitState.Uncertain)
+            {
+                request.Registration.Admission = null;
+                lock (_registry)
+                {
+                    request.Registration.Active = false;
+                    _packages.Remove(request.Registration.Info.PackageId);
+                }
+                admission.Dispose(); // discard uncertain connection state, never cache a failed transaction
+            }
+            try { if (admission is null) origin?.Dispose(); }
             finally { verificationPin?.Dispose(); }
         }
         catch (Exception e)
@@ -130,13 +158,15 @@ public sealed class V2MemoPersistenceService
                 if (!Active(r)) return Fail(MemoStatus.RegistrationChanged, "Captured registration was unloaded.");
                 if (_editors.IsOpen(target.PackageId)) return Fail(MemoStatus.EditorActive, "Package Editor owns this package, clean or dirty.");
                 if (!File.Exists(r.Path)) return Fail(MemoStatus.PackageMissing, "Package missing.");
+                if ((File.GetAttributes(r.Path) & FileAttributes.ReadOnly) != 0)
+                    return Fail(MemoStatus.ReadOnly, "Package file is read-only.");
                 if (r.Info.PackageId != target.PackageId || r.Info.GenerationId != target.GenerationId)
                     return Fail(MemoStatus.GenerationChanged, "Request does not belong to this registration generation.");
                 // Attempt-local reuse only. Keep this exact connection to observe OTHER
                 // commits; its own commit does not change data_version. The Windows pin
                 // prevents a different file appearing at this path during verification.
-                if (OperatingSystem.IsWindows()) verificationPin = new(r.Path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-                var c = origin = Open(r.Path, false); using StorageSql sql = new(c);
+                if (admission is null && OperatingSystem.IsWindows()) verificationPin = new(r.Path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                var c = origin = admission?.Connection ?? Open(r.Path, false); using StorageSql sql = new(c);
                 _boundary?.Invoke(MemoBoundary.BeforeTransaction);
                 using var interrupt = token.Register(() => SQLitePCL.raw.sqlite3_interrupt(c.Handle));
                 bool transaction = false;
@@ -145,7 +175,28 @@ public sealed class V2MemoPersistenceService
                     token.ThrowIfCancellationRequested();
                     using (UABS.UnityAssets.Packages.Memos.MemoTrace.Start("transaction-open")) sql.Exec("BEGIN IMMEDIATE");
                     transaction = true;
-                    PackageInfo info = StorageSchema.Validate(c, false, token);
+                    if (!string.Equals((string?)sql.Scalar("PRAGMA journal_mode"), "delete", StringComparison.OrdinalIgnoreCase))
+                        return Fail(MemoStatus.InvalidPackage, "Writable package no longer uses approved DELETE journal mode.");
+                    // The manifest pins the transaction snapshot. A token is compared only
+                    // on the SAME retained writer connection under BEGIN IMMEDIATE.
+                    PackageInfo info;
+                    if (admission is null) info = StorageSchema.Validate(c, false, token);
+                    else
+                    {
+                        var manifest = StorageSchema.ReadManifest(c, token);
+                        long version = sql.Number("PRAGMA data_version");
+                        if (admission.Version == version && admission.Info.CatalogRevision == manifest.CatalogRevision)
+                        {
+                            using var reused = UABS.UnityAssets.Packages.Memos.MemoTrace.Start("writer-admission-reuse");
+                            info = manifest with { Sources = admission.Info.Sources, Assets = admission.Info.Assets, Issues = admission.Info.Issues };
+                        }
+                        else
+                        {
+                            admission.Version = null;
+                            info = StorageSchema.Validate(c, false, token);
+                        }
+                        admission.Info = info; admission.Version = version;
+                    }
                     validatedDataVersion = sql.Number("PRAGMA data_version");
                     if (info.PackageId != target.PackageId || info.GenerationId != target.GenerationId)
                         return Fail(MemoStatus.GenerationChanged, "Package replaced or generation changed.");
@@ -155,8 +206,9 @@ public sealed class V2MemoPersistenceService
                     var current = ReadTarget(sql, target);
                     if (current.Count == 0) return Fail(MemoStatus.MissingAsset, "Exact source/revision/logical/Path ID is absent.");
                     if (current.Count != 1 || current.Status != "addressable") return Fail(MemoStatus.AmbiguousIdentity, "Target is not uniquely addressable.");
-                    if (current.Revision != request.ExpectedMemoRevision || !string.Equals(current.Memo, request.ExpectedOriginalMemo, StringComparison.Ordinal))
-                        return Fail(MemoStatus.RevisionConflict, "Expected memo revision or original nullable value changed.");
+                    using (UABS.UnityAssets.Packages.Memos.MemoTrace.Start("expected-original-comparison"))
+                        if (current.Revision != request.ExpectedMemoRevision || !string.Equals(current.Memo, request.ExpectedOriginalMemo, StringComparison.Ordinal))
+                            return Fail(MemoStatus.RevisionConflict, "Expected memo revision or original nullable value changed.");
                     unchanged = string.Equals(current.Memo, request.DesiredMemo, StringComparison.Ordinal);
                     if (!unchanged)
                     {
@@ -171,8 +223,9 @@ public sealed class V2MemoPersistenceService
                             target.DirectoryOrdinal, StorageSchema.Bytes(target.PackageId), StorageSchema.Bytes(target.GenerationId)) != 1)
                             return Fail(MemoStatus.RevisionConflict, "Conditional target update failed.");
                     }
-                    var updated = ReadTarget(sql, target);
-                    long catalog = sql.Number("SELECT catalog_revision FROM package");
+                    TargetRow updated; long catalog;
+                    using (UABS.UnityAssets.Packages.Memos.MemoTrace.Start("trigger-revision-check"))
+                    { updated = ReadTarget(sql, target); catalog = sql.Number("SELECT catalog_revision FROM package"); }
                     if (updated.Count != 1 || updated.Memo != request.DesiredMemo || updated.Revision != checked(current.Revision + (unchanged ? 0 : 1))
                         || catalog != checked(info.CatalogRevision + (unchanged ? 0 : 1)))
                         return Fail(MemoStatus.WriteFailure, "Trigger-managed counters/value did not match expected update.");
@@ -181,9 +234,14 @@ public sealed class V2MemoPersistenceService
                     // From here cancellation cannot interrupt commit or verification and claim rollback.
                     interrupt.Dispose(); token.ThrowIfCancellationRequested();
                     committed = unchanged ? MemoCommitState.NotCommitted : MemoCommitState.Uncertain;
+                    _boundary?.Invoke(MemoBoundary.CommitStarting);
                     using (UABS.UnityAssets.Packages.Memos.MemoTrace.Start("memo-commit")) sql.Exec("COMMIT");
                     transaction = false;
                     committed = unchanged ? MemoCommitState.NotCommitted : MemoCommitState.Committed;
+                    if (admission is not null) admission.Info = info with { CatalogRevision = catalog };
+                    proof = new(r.Path, c, admission is not null || verificationPin is not null,
+                        validatedDataVersion, info with { CatalogRevision = catalog }, () => { if (admission is not null) admission.Version = null; });
+                    change = change with { Admission = proof };
                     _boundary?.Invoke(MemoBoundary.AfterCommit);
                     return null;
                 }
@@ -193,7 +251,7 @@ public sealed class V2MemoPersistenceService
                     {
                         // No token-controlled interrupt during cleanup. A failed rollback leaves uncertainty explicit.
                         interrupt.Dispose();
-                        try { sql.Exec("ROLLBACK"); if (committed == MemoCommitState.Uncertain) committed = MemoCommitState.NotCommitted; }
+                        try { _boundary?.Invoke(MemoBoundary.BeforeRollback); sql.Exec("ROLLBACK"); if (committed == MemoCommitState.Uncertain) committed = MemoCommitState.NotCommitted; }
                         catch (Exception e) { committed = MemoCommitState.Uncertain; throw new IOException("Rollback could not be confirmed.", e); }
                     }
                 }
@@ -205,14 +263,7 @@ public sealed class V2MemoPersistenceService
                     using var verification = UABS.UnityAssets.Packages.Memos.MemoTrace.Start("fresh-verification");
                     _boundary?.Invoke(MemoBoundary.BeforeVerification);
                     using var fresh = Open(request.Registration.Path, true); using StorageSql sql = new(fresh); sql.Exec("BEGIN");
-                    // Pin the FRESH read snapshot before consulting the original connection.
-                    // Any intervening external commit falls back to full global validation.
-                    _ = sql.Number("SELECT COUNT(*) FROM package");
-                    using var observer = new StorageSql(origin!);
-                    bool reusable = verificationPin is not null && observer.Number("PRAGMA data_version") == validatedDataVersion;
-                    using var reused = reusable ? UABS.UnityAssets.Packages.Memos.MemoTrace.Start("attempt-validation-reuse") : null;
-                    PackageInfo info = reusable ? StorageSchema.ReadManifest(fresh, CancellationToken.None)
-                        : StorageSchema.Validate(fresh, false, CancellationToken.None);
+                    PackageInfo info = proof!.Read(fresh, CancellationToken.None);
                     if (info.PackageId != request.Target.PackageId || info.GenerationId != request.Target.GenerationId)
                         throw new VerificationException(MemoStatus.GenerationChanged, "Package replaced after transaction.");
                     var saved = ReadTarget(sql, request.Target);

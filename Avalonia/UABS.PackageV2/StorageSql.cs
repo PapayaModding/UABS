@@ -116,8 +116,10 @@ internal static partial class StorageSchema
         PackageInfo info = ReadManifest(c, token);
         using StorageSql sql = new(c);
         string check = full ? "PRAGMA integrity_check" : "PRAGMA quick_check";
+        using (UABS.UnityAssets.Packages.Memos.MemoTrace.Start(full ? "integrity-check" : "quick-check"))
         using (SqliteDataReader integrity = sql.Command(check).ExecuteReader())
         { if (!integrity.Read() || integrity.GetString(0) != "ok" || integrity.Read()) throw new InvalidDataException("SQLite integrity check failed."); }
+        using (UABS.UnityAssets.Packages.Memos.MemoTrace.Start("foreign-key-check"))
         using (SqliteDataReader foreign = sql.Command("PRAGMA foreign_key_check").ExecuteReader())
         { if (foreign.Read()) throw new InvalidDataException("Foreign-key integrity failed."); }
         return ValidateContents(c, sql, info, token);
@@ -145,28 +147,32 @@ internal static partial class StorageSchema
 
     private static PackageInfo ValidateContents(SqliteConnection c, StorageSql sql, PackageInfo info, CancellationToken token)
     {
-        foreach (string invalid in new[]
+        using (UABS.UnityAssets.Packages.Memos.MemoTrace.Start("global-semantics"))
         {
-            "SELECT 1 FROM source WHERE source_uuid=zeroblob(16) OR source_revision_uuid=zeroblob(16) LIMIT 1",
-            "SELECT 1 FROM asset GROUP BY file_id,path_id HAVING path_id IS NOT NULL AND COUNT(*)>1 AND SUM(identity_status<>'ambiguous')>0 LIMIT 1",
-            "SELECT 1 FROM asset GROUP BY file_id HAVING MIN(table_ordinal)<>0 OR MAX(table_ordinal)<>COUNT(*)-1 LIMIT 1",
-            "SELECT 1 FROM asset a JOIN asset_type t ON a.type_id=t.type_id WHERE a.class_id IS NOT NULL AND t.class_id IS NOT NULL AND a.class_id<>t.class_id LIMIT 1",
-            "SELECT 1 FROM dependency d JOIN logical_file f ON f.file_id=d.file_id JOIN source s ON s.source_id=f.source_id WHERE s.dependency_status='complete' GROUP BY d.file_id,d.relation_kind HAVING MIN(d.declaration_ordinal)<>0 OR MAX(d.declaration_ordinal)<>COUNT(*)-1 LIMIT 1",
-            "SELECT 1 FROM logical_file f WHERE f.index_status='complete' AND (f.declared_asset_count IS NULL OR f.declared_asset_count<>(SELECT COUNT(*) FROM asset a WHERE a.file_id=f.file_id)) LIMIT 1",
-            "SELECT 1 FROM source s WHERE s.index_status='complete' AND (s.kind='unknown' OR s.content_sha256 IS NULL OR s.byte_size IS NULL OR NOT EXISTS(SELECT 1 FROM logical_file f WHERE f.source_id=s.source_id) OR EXISTS(SELECT 1 FROM logical_file f WHERE f.source_id=s.source_id AND f.index_status<>'complete')) LIMIT 1",
-            "SELECT 1 FROM package p WHERE p.index_status='complete' AND EXISTS(SELECT 1 FROM source s WHERE s.index_status<>'complete') LIMIT 1"
-        }) if (sql.Scalar(invalid) is not null) throw new InvalidDataException("Semantic identity/count/completeness invariant failed.");
-        using (SqliteDataReader roots = sql.Command("SELECT label,original_base_path,path_policy FROM source_root").ExecuteReader())
-            while (roots.Read()) { token.ThrowIfCancellationRequested(); ValidateRoot(new(roots.GetString(0), roots.GetString(1), roots.GetString(2))); }
-        using (SqliteDataReader sources = sql.Command("SELECT s.relative_path,s.locator_key,s.index_directory,r.path_policy FROM source s JOIN source_root r ON r.root_id=s.root_id").ExecuteReader())
-            while (sources.Read())
+            foreach (string invalid in new[]
             {
-                token.ThrowIfCancellationRequested();
-                if (Locator(sources.GetString(0), sources.GetString(3)) != sources.GetString(1)) throw new InvalidDataException("Locator key does not match declared path policy.");
-                _ = Locator(sources.GetString(2), sources.GetString(3), true);
-            }
+                "SELECT 1 FROM source WHERE source_uuid=zeroblob(16) OR source_revision_uuid=zeroblob(16) LIMIT 1",
+                "SELECT 1 FROM asset GROUP BY file_id,path_id HAVING path_id IS NOT NULL AND COUNT(*)>1 AND SUM(identity_status<>'ambiguous')>0 LIMIT 1",
+                "SELECT 1 FROM asset GROUP BY file_id HAVING MIN(table_ordinal)<>0 OR MAX(table_ordinal)<>COUNT(*)-1 LIMIT 1",
+                "SELECT 1 FROM asset a JOIN asset_type t ON a.type_id=t.type_id WHERE a.class_id IS NOT NULL AND t.class_id IS NOT NULL AND a.class_id<>t.class_id LIMIT 1",
+                "SELECT 1 FROM dependency d JOIN logical_file f ON f.file_id=d.file_id JOIN source s ON s.source_id=f.source_id WHERE s.dependency_status='complete' GROUP BY d.file_id,d.relation_kind HAVING MIN(d.declaration_ordinal)<>0 OR MAX(d.declaration_ordinal)<>COUNT(*)-1 LIMIT 1",
+                "SELECT 1 FROM logical_file f WHERE f.index_status='complete' AND (f.declared_asset_count IS NULL OR f.declared_asset_count<>(SELECT COUNT(*) FROM asset a WHERE a.file_id=f.file_id)) LIMIT 1",
+                "SELECT 1 FROM source s WHERE s.index_status='complete' AND (s.kind='unknown' OR s.content_sha256 IS NULL OR s.byte_size IS NULL OR NOT EXISTS(SELECT 1 FROM logical_file f WHERE f.source_id=s.source_id) OR EXISTS(SELECT 1 FROM logical_file f WHERE f.source_id=s.source_id AND f.index_status<>'complete')) LIMIT 1",
+                "SELECT 1 FROM package p WHERE p.index_status='complete' AND EXISTS(SELECT 1 FROM source s WHERE s.index_status<>'complete') LIMIT 1"
+            }) if (sql.Scalar(invalid) is not null) throw new InvalidDataException("Semantic identity/count/completeness invariant failed.");
+            using (SqliteDataReader roots = sql.Command("SELECT label,original_base_path,path_policy FROM source_root").ExecuteReader())
+                while (roots.Read()) { token.ThrowIfCancellationRequested(); ValidateRoot(new(roots.GetString(0), roots.GetString(1), roots.GetString(2))); }
+            using (SqliteDataReader sources = sql.Command("SELECT s.relative_path,s.locator_key,s.index_directory,r.path_policy FROM source s JOIN source_root r ON r.root_id=s.root_id").ExecuteReader())
+                while (sources.Read())
+                {
+                    token.ThrowIfCancellationRequested();
+                    if (Locator(sources.GetString(0), sources.GetString(3)) != sources.GetString(1)) throw new InvalidDataException("Locator key does not match declared path policy.");
+                    _ = Locator(sources.GetString(2), sources.GetString(3), true);
+                }
+        }
         if (info.DerivedFieldsCompatible)
         {
+            using var derivedPhase = UABS.UnityAssets.Packages.Memos.MemoTrace.Start("derived-text-validation");
             using SqliteDataReader derived = sql.Command("SELECT name,name_ascii_key,memo,memo_nonblank FROM asset").ExecuteReader();
             while (derived.Read())
             {

@@ -38,7 +38,7 @@ public sealed class InspectorMemoService : IPackageMemoPersistenceService, IPack
     {
         _legacy = legacy; _resolver = resolver; _legacyEditors = legacyEditors; _loaded = loaded;
         _dispatch = dispatch ?? DispatchAsync;
-        V2Editors = editors ?? new(); V2Writer = new(writes, V2Editors, PublishAsync, boundary);
+        V2Editors = editors ?? new(); V2Writer = new(writes, V2Editors, PublishAsync, boundary, reuseAdmission: true);
     }
     private static async Task DispatchAsync(Action action)
     { if (Dispatcher.UIThread.CheckAccess()) action(); else await Dispatcher.UIThread.InvokeAsync(action); }
@@ -162,14 +162,15 @@ public sealed class InspectorMemoService : IPackageMemoPersistenceService, IPack
         Context c;
         lock (_gate) c = _contexts.Values.Single(x => x.Writer is not null && x.Entry.PackageId == change.Target.PackageId
             && x.Entry.GenerationId == change.Target.GenerationId && !x.Entry.Lifetime.IsCancellationRequested);
-        // Fresh admission is deliberately retained, not replaced with an unreviewed cache.
+        // A writer-created attempt capability can reuse proven admission. External
+        // commits still force full validation on a fresh publication connection.
         var snapshot = await c.Entry.ReadmitForMemoAsync(async reader =>
         {
             var current = await reader.ReadMemoAsync(change.Target).ConfigureAwait(false);
             if (current.MemoRevision != change.MemoRevision || current.Memo != change.Memo || current.CatalogRevision < change.CatalogRevision)
                 throw new InvalidDataException("Verified memo was externally superseded before publication; draft retained.");
             return current;
-        }, CancellationToken.None).ConfigureAwait(false);
+        }, CancellationToken.None, change).ConfigureAwait(false);
         var publication = new V2MemoPublication(c.Entry, change with { CatalogRevision = snapshot.CatalogRevision });
         using var ui = MemoTrace.Start("ui-publication");
         await _dispatch(() => { c.Entry.Lifetime.ThrowIfCancellationRequested(); Published?.Invoke(publication); }).ConfigureAwait(false);

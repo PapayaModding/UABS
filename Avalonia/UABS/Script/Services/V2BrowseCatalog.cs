@@ -111,6 +111,7 @@ public sealed class V2BrowseRegistration
     private readonly CancellationTokenSource _lifetime = new();
     private bool _closed;
     private bool _stale;
+    private bool _publishedAdmission;
     private readonly Action<V2BrowseBoundary>? _observe;
     internal V2BrowseRegistration(string path, PackageReader reader, FileStream pin, string evidence, Action<V2BrowseBoundary>? observe)
     { Path = path; _reader = reader; _pin = pin; _evidence = evidence; _physical = Physical(evidence); _observe = observe; }
@@ -134,9 +135,8 @@ public sealed class V2BrowseRegistration
         }
         finally { _reads.Release(); }
     }
-    /// <summary>Controlled explicit memo admission/verified publication, not an unsafe validation cache.
-    /// Replaces reader ownership only after fresh canonical admission and exact queries; retains visible rows.</summary>
-    internal async Task<T> ReadmitForMemoAsync<T>(Func<PackageReader, Task<T>> query, CancellationToken token)
+    /// <summary>Replaces reader ownership after fresh verified publication; retains visible rows.</summary>
+    internal async Task<T> ReadmitForMemoAsync<T>(Func<PackageReader, Task<T>> query, CancellationToken token, VerifiedMemoChange? change = null)
     {
         using var linked = CancellationTokenSource.CreateLinkedTokenSource(token, Lifetime);
         await _reads.WaitAsync(linked.Token).ConfigureAwait(false);
@@ -144,17 +144,21 @@ public sealed class V2BrowseRegistration
         try
         {
             if (_closed) throw new InvalidDataException("Registration unloaded.");
-            string before = await V2BrowseCatalog.EvidenceAsync(Path, linked.Token).ConfigureAwait(false);
+            bool fast = change is not null && OperatingSystem.IsWindows();
+            string before = fast ? _evidence : await V2BrowseCatalog.EvidenceAsync(Path, linked.Token).ConfigureAwait(false);
+            if (fast) await RequireMemoLocationAsync(linked.Token).ConfigureAwait(false);
             if (_physical != Physical(before)) throw new InvalidDataException("Package physical location changed.");
-            var admitted = await PackageReader.OpenAsync(Path, linked.Token, memoReuse: true).ConfigureAwait(false);
+            var admitted = fast ? await PackageReader.OpenMemoPublicationAsync(Path, change!, linked.Token).ConfigureAwait(false)
+                : await PackageReader.OpenAsync(Path, linked.Token, memoReuse: true).ConfigureAwait(false);
             candidate = admitted.Reader ?? throw new InvalidDataException(admitted.Message);
             if (candidate.Info.PackageId != PackageId || candidate.Info.GenerationId != GenerationId)
                 throw new InvalidDataException("Package generation changed; no draft retargeting permitted.");
             T result = await query(candidate).ConfigureAwait(false);
-            if (before != await V2BrowseCatalog.EvidenceAsync(Path, linked.Token).ConfigureAwait(false))
+            if (fast) await candidate.CheckAdmissionAsync(linked.Token).ConfigureAwait(false);
+            else if (before != await V2BrowseCatalog.EvidenceAsync(Path, linked.Token).ConfigureAwait(false))
                 throw new InvalidDataException("Package changed during memo readmission.");
             linked.Token.ThrowIfCancellationRequested();
-            var previous = _reader; _reader = candidate; candidate = null; _evidence = before; _stale = false; previous.Dispose();
+            var previous = _reader; _reader = candidate; candidate = null; _evidence = before; _publishedAdmission = fast; _stale = false; previous.Dispose();
             return result;
         }
         finally { candidate?.Dispose(); _reads.Release(); }
@@ -186,10 +190,12 @@ public sealed class V2BrowseRegistration
         try
         {
             if (_closed || _stale) throw new InvalidDataException("Registration is stale/unloaded. Remove and reopen the package.");
-            if (_evidence != await V2BrowseCatalog.EvidenceAsync(Path, linked.Token).ConfigureAwait(false)) throw new InvalidDataException("Package bytes/location changed. Remove and reopen explicitly.");
+            if (_publishedAdmission) { await RequireMemoLocationAsync(linked.Token).ConfigureAwait(false); await _reader.CheckAdmissionAsync(linked.Token).ConfigureAwait(false); }
+            else if (_evidence != await V2BrowseCatalog.EvidenceAsync(Path, linked.Token).ConfigureAwait(false)) throw new InvalidDataException("Package bytes/location changed. Remove and reopen explicitly.");
             _observe?.Invoke(V2BrowseBoundary.BeforeRead); linked.Token.ThrowIfCancellationRequested();
             T result = await operation(linked.Token).ConfigureAwait(false);
-            if (_evidence != await V2BrowseCatalog.EvidenceAsync(Path, linked.Token).ConfigureAwait(false)) throw new InvalidDataException("Package changed during read; no page published.");
+            if (_publishedAdmission) await _reader.CheckAdmissionAsync(linked.Token).ConfigureAwait(false);
+            else if (_evidence != await V2BrowseCatalog.EvidenceAsync(Path, linked.Token).ConfigureAwait(false)) throw new InvalidDataException("Package changed during read; no page published.");
             linked.Token.ThrowIfCancellationRequested(); return result;
         }
         catch (OperationCanceledException) { throw; }
