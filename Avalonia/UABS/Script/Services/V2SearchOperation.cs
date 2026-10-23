@@ -5,6 +5,8 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using UABS.PackageV2.Search;
+using UABS.PackageV2;
+using Microsoft.Data.Sqlite;
 
 namespace UABS.Services;
 
@@ -15,6 +17,7 @@ public sealed class V2SearchOperation : IAsyncDisposable
     private readonly V2SearchService _engine;
     private readonly V2BrowseRegistration[] _scope;
     private readonly string[] _evidence;
+    private readonly PackageReader.SearchAdmission?[] _admissions;
     private readonly List<Guid> _registered = new();
     private readonly CancellationTokenSource _stop = new();
     private readonly List<CancellationTokenRegistration> _unloads = new();
@@ -24,7 +27,7 @@ public sealed class V2SearchOperation : IAsyncDisposable
     public event Action<V2SearchOperation>? Invalidated;
 
     private V2SearchOperation(V2BrowseRegistration[] scope, V2SearchService engine)
-    { _scope = scope; _engine = engine; _evidence = new string[scope.Length]; }
+    { _scope = scope; _engine = engine; _evidence = new string[scope.Length]; _admissions = new PackageReader.SearchAdmission?[scope.Length]; }
 
     public static async Task<V2SearchOperation> OpenAsync(IReadOnlyList<V2BrowseRegistration> scope,
         SearchRequest request, CancellationToken token, V2SearchService? engine = null)
@@ -41,7 +44,9 @@ public sealed class V2SearchOperation : IAsyncDisposable
             for (int i = 0; i < operation._scope.Length; i++)
             {
                 var entry = operation._scope[i];
-                operation._evidence[i] = await V2BrowseCatalog.EvidenceAsync(entry.Path, linked.Token).ConfigureAwait(false);
+                var admission = operation._admissions[i] = await entry.CaptureSearchAdmissionAsync(linked.Token).ConfigureAwait(false);
+                if (admission is null)
+                    operation._evidence[i] = await V2BrowseCatalog.EvidenceAsync(entry.Path, linked.Token).ConfigureAwait(false);
                 var admitted = await operation._engine.RegisterAsync(entry.Path, entry.LocationEpoch, linked.Token).ConfigureAwait(false);
                 linked.Token.ThrowIfCancellationRequested();
                 if (admitted.Registration is not { } registration)
@@ -49,6 +54,8 @@ public sealed class V2SearchOperation : IAsyncDisposable
                 operation._registered.Add(registration.RegistrationId);
                 if (registration.Package.PackageId != entry.PackageId || registration.Package.GenerationId != entry.GenerationId)
                     throw new InvalidDataException("Package identity/generation changed; unload and reopen it in Packages.");
+                if (admission is not null && admission.Info.CatalogRevision != registration.Package.CatalogRevision)
+                    throw new InvalidDataException("Search read admission/catalog changed during registration. Refresh explicitly.");
             }
             await operation.CheckEvidenceAsync(linked.Token).ConfigureAwait(false);
             var created = operation._engine.CreateSession(request, operation._registered);
@@ -71,7 +78,7 @@ public sealed class V2SearchOperation : IAsyncDisposable
     {
         try { await CheckEvidenceAsync(token).ConfigureAwait(false); return !Session.IsStale && !_stop.IsCancellationRequested; }
         catch (OperationCanceledException) when (token.IsCancellationRequested) { throw; }
-        catch (Exception e) when (e is IOException or InvalidDataException or UnauthorizedAccessException or OperationCanceledException)
+        catch (Exception e) when (e is IOException or InvalidDataException or UnauthorizedAccessException or OperationCanceledException or ObjectDisposedException or SqliteException)
         { Invalidate(); return false; }
     }
 
@@ -80,7 +87,9 @@ public sealed class V2SearchOperation : IAsyncDisposable
         for (int i = 0; i < _scope.Length; i++)
         {
             token.ThrowIfCancellationRequested(); _scope[i].Lifetime.ThrowIfCancellationRequested();
-            if (_evidence[i] != await V2BrowseCatalog.EvidenceAsync(_scope[i].Path, token).ConfigureAwait(false))
+            if (_admissions[i] is { } admission)
+                await _scope[i].CheckSearchAdmissionAsync(admission, token).ConfigureAwait(false);
+            else if (_evidence[i] != await V2BrowseCatalog.EvidenceAsync(_scope[i].Path, token).ConfigureAwait(false))
                 throw new InvalidDataException("Package bytes/location changed; Refresh Search to readmit the current revision.");
         }
     }
@@ -101,7 +110,7 @@ public sealed class V2SearchOperation : IAsyncDisposable
         }
         catch (OperationCanceledException)
         { return Failure(_stop.IsCancellationRequested ? SearchStatus.StaleCursor : SearchStatus.Cancelled, "Search cancelled or registration unloaded."); }
-        catch (Exception e) when (e is IOException or InvalidDataException or UnauthorizedAccessException)
+        catch (Exception e) when (e is IOException or InvalidDataException or UnauthorizedAccessException or ObjectDisposedException or SqliteException)
         { Invalidate(); return Failure(SearchStatus.StaleCursor, e.Message); }
     }
 

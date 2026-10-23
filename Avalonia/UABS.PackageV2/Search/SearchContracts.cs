@@ -9,7 +9,8 @@ public sealed record SearchCount(SearchCountKind Kind, long Value);
 public sealed record SearchDiagnostic(string Code, string Message, Guid? RegistrationId = null);
 public sealed record SearchOptions(int Workers = 2, TimeSpan? OperationTimeout = null,
     long MaxPredicateEvaluations = 20_000_000, int MaxSelectedPackages = 128,
-    int MaxSqliteValueBytes = 1_048_576, long MaxBufferedTextBytes = 16_777_216);
+    int MaxSqliteValueBytes = 1_048_576, long MaxBufferedTextBytes = 16_777_216,
+    bool UseIndexedAsciiPaging = true);
 public sealed record SearchRequest(string? Query = null, string? ExcludedQuery = null,
     PackageSearchFields Fields = PackageSearchFields.All, PackageSearchResultKinds ResultKinds = PackageSearchResultKinds.All,
     bool ExactText = false, bool RequireNonEmptyMemo = false, long? PathId = null,

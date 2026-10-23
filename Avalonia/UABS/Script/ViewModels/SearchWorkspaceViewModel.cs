@@ -668,6 +668,7 @@ public sealed class SearchWorkspaceViewModel : ViewModelBase, IDisposable
             return false;
         }
         var window = _v2Window!;
+        using var phase = SearchTrace.Start("collection-publication");
         bool replacing = !ReferenceEquals(Results, window.Rows);
         window.Apply(pageIndex, page, (r, revision) => {
             if (SelectedResult is { } selected && selected.SameOccurrence(r, revision))

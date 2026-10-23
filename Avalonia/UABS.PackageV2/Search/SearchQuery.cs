@@ -5,6 +5,27 @@ namespace UABS.PackageV2.Search;
 
 internal static class SearchQuery
 {
+    internal enum Partition { All, Ascii, Uncovered }
+    internal static IEnumerable<SqliteCommand> PageCommands(SqliteConnection c, SearchSession session, Registration registration,
+        SearchResult? after, int limit, bool indexedAscii)
+    {
+        // Only exact source-sort constants let asset-name order follow the existing
+        // B-tree. Other sorts, mixed source paths and incompatible profiles fall back.
+        bool safe = indexedAscii && registration.Value.Package.DerivedFieldsCompatible
+            && session.Request.ResultKinds == PackageSearchResultKinds.Asset
+            && session.Request.SortBy == PackageSearchSortField.PackageName
+            // Do not force the name index over selective identity/class/memo plans.
+            && session.Request.PathId is null && session.Request.AssetIdentity is null
+            && session.Request.ClassId is null && session.Request.TypeName is null
+            && !session.Request.RequireNonEmptyMemo
+            && registration.ConstantSortValues.ContainsKey("index_directory")
+            && registration.ConstantSortValues.ContainsKey("source_path");
+        if (!safe) { yield return Command(c, session, registration, after, limit, false); yield break; }
+        // These disjoint partitions cover ALL rows, including NULL/control/Unicode
+        // names. Each top K+1 is sufficient for their bounded global merge.
+        yield return Command(c, session, registration, after, limit, false, Partition.Ascii);
+        yield return Command(c, session, registration, after, limit, false, Partition.Uncovered);
+    }
     internal static string Key(SearchRowKey key) => key.PackageId.ToString("N").ToUpperInvariant() + "|"
         + key.GenerationId.ToString("N").ToUpperInvariant() + "|" + key.SourceId?.ToString("N").ToUpperInvariant() + "|"
         + key.SourceRevision?.ToString("N").ToUpperInvariant() + "|"
@@ -38,8 +59,9 @@ internal static class SearchQuery
     }
 
     internal static SqliteCommand Command(SqliteConnection connection, SearchSession session, Registration registration,
-        SearchResult? after, int limit, bool count)
+        SearchResult? after, int limit, bool count, Partition partition = Partition.All)
     {
+        using var planning = SearchTrace.Start("cursor-planning");
         SearchRequest r = session.Request;
         SearchRegistration reg = registration.Value;
         SqliteCommand command = connection.CreateCommand();
@@ -58,7 +80,7 @@ internal static class SearchQuery
         if (r.PathId is null && r.AssetIdentity is null && r.ResultKinds.HasFlag(PackageSearchResultKinds.Package))
             branches.Add($"SELECT 0 kind,({Match(packageName, PackageSearchFields.PackageName)}|{Match(packagePath, PackageSearchFields.PackagePath)}) categories,"
                 + $"({Exclude(packageName, PackageSearchFields.PackageName)}|{Exclude(packagePath, PackageSearchFields.PackagePath)}) excluded,"
-                + $"{packageName} package_name,{packagePath} package_path,NULL index_directory,NULL source_name,NULL source_path,NULL asset_name,NULL path_id,NULL class_id,NULL type_name,NULL source_uuid,NULL source_revision,NULL directory_ordinal,NULL table_ordinal,0 memo_revision,NULL identity_status,0 asset_id,{prefix} row_key");
+                + $"{packageName} package_name,{packagePath} package_path,NULL index_directory,NULL source_name,NULL source_path,NULL asset_name,NULL path_id,NULL class_id,NULL type_name,NULL source_uuid,NULL source_revision,NULL directory_ordinal,NULL table_ordinal,0 memo_revision,NULL identity_status,0 asset_id,{prefix} row_key,NULL ascii_key");
         if (r.PathId is null && r.AssetIdentity is null && r.ResultKinds.HasFlag(PackageSearchResultKinds.SourceFile))
         {
             string[] expressions = ["s.index_directory", "s.original_name", "s.original_path"];
@@ -75,11 +97,19 @@ internal static class SearchQuery
                 matches.Add("CASE WHEN EXISTS(SELECT 1 FROM dependency d JOIN logical_file f ON f.file_id=d.file_id WHERE f.source_id=s.source_id AND (uabs_match(d.raw_path,256)|uabs_match(d.raw_virtual_path,256)|uabs_match(d.raw_cab,256))<>0) THEN 256 ELSE 0 END");
                 if (session.Exclude.Length > 0) excluded.Add("EXISTS(SELECT 1 FROM dependency d JOIN logical_file f ON f.file_id=d.file_id WHERE f.source_id=s.source_id AND (uabs_exclude(d.raw_path)|uabs_exclude(d.raw_virtual_path)|uabs_exclude(d.raw_cab))<>0)");
             }
-            branches.Add($"SELECT 1,({string.Join('|', matches)}),({string.Join('|', excluded)}),{packageName},{packagePath},s.index_directory,s.original_name,s.original_path,NULL,NULL,NULL,NULL,s.source_uuid,s.source_revision_uuid,NULL,NULL,0,NULL,0,{SourceKey} FROM source s");
+            branches.Add($"SELECT 1,({string.Join('|', matches)}),({string.Join('|', excluded)}),{packageName},{packagePath},s.index_directory,s.original_name,s.original_path,NULL,NULL,NULL,NULL,s.source_uuid,s.source_revision_uuid,NULL,NULL,0,NULL,0,{SourceKey},NULL FROM source s");
         }
         if (r.ResultKinds.HasFlag(PackageSearchResultKinds.Asset))
         {
             List<string> gates = ["1=1"];
+            if (partition != Partition.All)
+                gates.Add(partition == Partition.Ascii ? "a.name_ascii_key IS NOT NULL" : "a.name_ascii_key IS NULL");
+            if (partition == Partition.Ascii && after is not null
+                && after.PackageName == reg.Package.Name && after.PackagePath == reg.Path
+                && after.IndexDirectory == registration.ConstantSortValues["index_directory"]
+                && after.SourcePath == registration.ConstantSortValues["source_path"]
+                && StorageSchema.AsciiKey(after.AssetName) is { } lower)
+                gates.Add("a.name_ascii_key>=" + Param(lower)); // inclusive; original case/path/ties remain authoritative below
             if (r.PathId is long pathId) gates.Add("a.path_id=" + Param(pathId));
             if (r.ClassId is int classId) gates.Add("a.class_id=" + Param(classId));
             if (r.TypeName is not null) gates.Add("uabs_type(t.type_name)<>0");
@@ -99,11 +129,12 @@ internal static class SearchQuery
                 gates.Add("(a.name_ascii_key IN(" + string.Join(',', session.Include.Select(t => Param(StorageSchema.AsciiKey(t)))) + ") OR a.name_ascii_key IS NULL)");
             int pathCategory = r.PathId is null && r.AssetIdentity is null ? 0 : (int)PackageSearchMatchCategory.PathId;
             branches.Add($"SELECT 2,({Match("a.name", PackageSearchFields.AssetName)}|{Match("a.memo", PackageSearchFields.Memo)}|{pathCategory}),"
-                + $"({Exclude("a.name", PackageSearchFields.AssetName)}|{Exclude("a.memo", PackageSearchFields.Memo)}),{packageName},{packagePath},s.index_directory,s.original_name,s.original_path,a.name,a.path_id,a.class_id,t.type_name,s.source_uuid,s.source_revision_uuid,f.directory_ordinal,a.table_ordinal,a.memo_revision,a.identity_status,a.asset_id,{AssetKeySql}"
-                + " FROM asset a JOIN logical_file f ON f.file_id=a.file_id JOIN source s ON s.source_id=f.source_id LEFT JOIN asset_type t ON t.type_id=a.type_id WHERE " + string.Join(" AND ", gates));
+                + $"({Exclude("a.name", PackageSearchFields.AssetName)}|{Exclude("a.memo", PackageSearchFields.Memo)}),{packageName},{packagePath},s.index_directory,s.original_name,s.original_path,a.name,a.path_id,a.class_id,t.type_name,s.source_uuid,s.source_revision_uuid,f.directory_ordinal,a.table_ordinal,a.memo_revision,a.identity_status,a.asset_id,{AssetKeySql},a.name_ascii_key"
+                + " FROM asset a" + (partition == Partition.Ascii ? " INDEXED BY ix_asset_ascii_name" : "")
+                + " JOIN logical_file f ON f.file_id=a.file_id JOIN source s ON s.source_id=f.source_id LEFT JOIN asset_type t ON t.type_id=a.type_id WHERE " + string.Join(" AND ", gates));
         }
         if (branches.Count == 0) throw new InvalidOperationException("Empty result scope.");
-        string sql = "WITH candidates(kind,categories,excluded,package_name,package_path,index_directory,source_name,source_path,asset_name,path_id,class_id,type_name,source_uuid,source_revision,directory_ordinal,table_ordinal,memo_revision,identity_status,asset_id,row_key) AS("
+        string sql = "WITH candidates(kind,categories,excluded,package_name,package_path,index_directory,source_name,source_path,asset_name,path_id,class_id,type_name,source_uuid,source_revision,directory_ordinal,table_ordinal,memo_revision,identity_status,asset_id,row_key,ascii_key) AS("
             + string.Join(" UNION ALL ", branches) + ") SELECT " + (count ? "COUNT(*)" : "*")
             + " FROM candidates WHERE excluded=0 AND categories<>0";
         // Without a numeric/identity match category, an asset's nonzero categories already prove
@@ -157,7 +188,11 @@ internal static class SearchQuery
             // Package name/path are constants within this database. Keep them in global continuation
             // predicates, but do not invoke managed collations on constants during the local sort.
             var localKeys = keys.Where(k => !TryConstant(k.Sql, out _)).DistinctBy(k => k.Sql);
-            sql += " ORDER BY " + string.Join(',', localKeys.Select(k => k.Sql + (k.Desc ? " DESC" : " ASC"))) + " LIMIT " + Param(limit);
+            // Printable ASCII: upper key BINARY then raw BINARY is exactly .NET
+            // OrdinalIgnoreCase-then-Ordinal. No claim is made for uncovered text.
+            sql += " ORDER BY " + (partition == Partition.Ascii
+                ? "ascii_key COLLATE BINARY,asset_name COLLATE BINARY,path_id,kind,row_key COLLATE BINARY"
+                : string.Join(',', localKeys.Select(k => k.Sql + (k.Desc ? " DESC" : " ASC")))) + " LIMIT " + Param(limit);
         }
         command.CommandText = sql;
         return command;

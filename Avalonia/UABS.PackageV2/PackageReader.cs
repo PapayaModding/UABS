@@ -15,9 +15,11 @@ public sealed class PackageReader : IDisposable
     private long? _memoDataVersion;
     private readonly long _admissionDataVersion;
     private PackageInfo _memoInfo;
+    private PackageInfo _searchInfo;
+    private long? _searchDataVersion;
     public PackageInfo Info { get; }
     private PackageReader(SqliteConnection connection, PackageInfo info, FileStream? memoPin, long dataVersion)
-    { _connection = connection; Info = _memoInfo = info; _memoPin = memoPin; _admissionDataVersion = dataVersion; _memoDataVersion = dataVersion; }
+    { _connection = connection; Info = _memoInfo = _searchInfo = info; _memoPin = memoPin; _admissionDataVersion = dataVersion; _memoDataVersion = _searchDataVersion = dataVersion; }
 
     public static Task<AdmissionResult> OpenAsync(string path, CancellationToken token = default, bool memoReuse = false) =>
         OpenCore(path, token, memoReuse, null);
@@ -200,6 +202,75 @@ public sealed class PackageReader : IDisposable
 
     private static void ValidatePage(long after, int size)
     { if (after < 0 || size is < 1 or > 500) throw new ArgumentOutOfRangeException(nameof(size), "Row cursor must be nonnegative; page size 1–500."); }
+
+    /// <summary>Immutable same-connection admission. No extra connection/transaction is retained.
+    /// Only a Windows-pinned reader may reuse it; other platforms use full-file evidence.</summary>
+    public sealed class SearchAdmission
+    {
+        private readonly PackageReader _owner;
+        private readonly long _version;
+        public PackageInfo Info { get; }
+        internal SearchAdmission(PackageReader owner, PackageInfo info, long version)
+        { _owner = owner; Info = info; _version = version; }
+        public Task CheckAsync(CancellationToken token = default) => _owner.SearchRead(token, (sql, version) =>
+        {
+            if (version != _version) throw new InvalidDataException("Search read admission changed; Refresh Search explicitly.");
+            CheckSearchManifest(sql, Info); return true;
+        });
+    }
+
+    public Task<SearchAdmission?> CaptureSearchAdmissionAsync(CancellationToken token = default) => SearchRead(token, (sql, version) =>
+    {
+        if (_searchDataVersion != version)
+        {
+            _searchDataVersion = null;
+            PackageInfo admitted = StorageSchema.Validate(_connection, false, token);
+            if (admitted.PackageId != Info.PackageId || admitted.GenerationId != Info.GenerationId)
+                throw new InvalidDataException("Search registration generation changed; reopen explicitly.");
+            _searchInfo = admitted; _searchDataVersion = version;
+        }
+        CheckSearchManifest(sql, _searchInfo);
+        return new SearchAdmission(this, _searchInfo, version);
+    }, allowUnpinned: true);
+
+    private Task<T?> SearchRead<T>(CancellationToken token, Func<StorageSql, long, T> read, bool allowUnpinned = false) => Task.Run(() =>
+    {
+        _access.Wait(token);
+        try
+        {
+            ObjectDisposedException.ThrowIf(_disposed, this);
+            if (_memoPin is null)
+            {
+                if (allowUnpinned) return default;
+                throw new InvalidDataException("Search admission requires a pinned reader.");
+            }
+            using var phase = Search.SearchTrace.Start("read-admission-check");
+            using var interrupt = token.Register(() => SQLitePCL.raw.sqlite3_interrupt(_connection.Handle));
+            using StorageSql sql = new(_connection);
+            sql.Exec("BEGIN");
+            try
+            {
+                // Pin this snapshot before consulting THIS connection's change token.
+                _ = sql.Number("SELECT catalog_revision FROM package WHERE singleton=1");
+                if (!string.Equals(sql.Scalar("PRAGMA journal_mode") as string, "delete", StringComparison.OrdinalIgnoreCase))
+                    throw new InvalidDataException("Search admission requires the approved DELETE journal mode.");
+                long version = sql.Number("PRAGMA data_version");
+                T result = read(sql, version); token.ThrowIfCancellationRequested(); sql.Exec("COMMIT"); return result;
+            }
+            catch { sql.Exec("ROLLBACK"); throw; }
+        }
+        catch (SqliteException) when (token.IsCancellationRequested) { throw new OperationCanceledException(token); }
+        finally { _access.Release(); }
+    }, token);
+
+    private static void CheckSearchManifest(StorageSql sql, PackageInfo info)
+    {
+        using var row = sql.Command("SELECT package_uuid,generation_uuid,catalog_revision FROM package WHERE singleton=1").ExecuteReader();
+        if (!row.Read() || StorageSchema.Uuid(row.GetValue(0)) != info.PackageId || StorageSchema.Uuid(row.GetValue(1)) != info.GenerationId
+            || row.GetInt64(2) != info.CatalogRevision || row.Read())
+            throw new InvalidDataException("Search admission manifest changed.");
+    }
+
     public void Dispose()
     {
         _access.Wait();

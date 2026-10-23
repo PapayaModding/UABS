@@ -73,6 +73,7 @@ Evidence, migration tracking, risks, decisions, and implementation history:
 - [V2 Gate5D memo performance](05_audit/package-format-v2-gate-05d-memo-performance.md) — pinned read admission, attempt-local verification reuse, repeated10k/100k/1M calibration and remaining save costs; manual acceptance pending.
 - [V2 Gate5E transactional memo saves](05_audit/package-format-v2-gate-05e-memo-save-performance.md) — retained writer admission, attempt-limited verified publication, invalidation and10k/100k/1M save calibration; manual acceptance pending.
 - [V2 Gate5F Search scrolling](05_audit/package-format-v2-gate-05f-search-ux.md) — regression-verified bounded bidirectional windows, keyset checkpoints, retained selection and D5-compatible explicit Refresh; million-row latency and user visual acceptance remain open.
+- [V2 Gate5G paging performance](05_audit/package-format-v2-gate-05g-search-paging-performance.md) — pinned-reader change proofs and equivalent indexed/uncovered query partitions; synthetic calibration, invalidation safety and remaining general-plan costs.
 - [Feature comparison](05_audit/feature-comparison.md)
 - [Legacy feature inventory](05_audit/legacy-feature-inventory.md)
 - [Reusable-code analysis](05_audit/reusable-code.md)

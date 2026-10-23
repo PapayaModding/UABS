@@ -30,6 +30,7 @@ public sealed class V2SearchService
 
     public async Task<SearchRegistrationResult> RegisterAsync(string path, long locationEpoch = 0, CancellationToken token = default)
     {
+        using var phase = SearchTrace.Start("search-admission");
         try
         {
             if (locationEpoch < 0) return new(SearchStatus.InvalidRequest, null, "Location epoch must be nonnegative.");
@@ -112,6 +113,7 @@ public sealed class V2SearchService
     public async Task<SearchPage> ReadPageAsync(SearchSession session, SearchCursor? cursor = null,
         int pageSize = 100, CancellationToken token = default)
     {
+        using var phase = SearchTrace.Start("search-page");
         if (pageSize is < 1 or > 500 || session.Owner != _owner)
             return Failure(session, SearchStatus.InvalidRequest, cursor, "Invalid page size or session owner.");
         if (cursor is not null && cursor.SessionId != session.Id)
@@ -126,24 +128,31 @@ public sealed class V2SearchService
                 await Task.WhenAll(session.Registrations.Select(registration => WorkRegistration(registration, operation.Token, c => {
                     Configure(c, session, operation, registration.Value.Path);
                     using StorageSql sql = new(c); sql.Exec("BEGIN"); Verify(c, registration);
-                    using (SqliteCommand command = SearchQuery.Command(c, session, registration, cursor?.Last, pageSize + 1, false))
-                    using (SqliteDataReader reader = command.ExecuteReader())
-                        while (reader.Read())
-                        {
-                            operation.Token.ThrowIfCancellationRequested();
-                            Candidate candidate = new(SearchQuery.Row(reader, registration), reader.GetInt64(18), registration);
-                            lock (merge)
+                    foreach (SqliteCommand nextCommand in SearchQuery.PageCommands(c, session, registration, cursor?.Last, pageSize + 1, _options.UseIndexedAsciiPaging))
+                    {
+                        using (SearchTrace.Start("candidate-query"))
+                        using (SqliteCommand command = nextCommand)
+                        using (SqliteDataReader reader = command.ExecuteReader())
+                            while (reader.Read())
                             {
-                                if (best.Add(candidate))
+                                operation.Token.ThrowIfCancellationRequested();
+                                Candidate candidate;
+                                using (SearchTrace.Start("row-materialization"))
+                                    candidate = new(SearchQuery.Row(reader, registration), reader.GetInt64(18), registration);
+                                using var merging = SearchTrace.Start("federation");
+                                lock (merge)
                                 {
-                                    long delta = TextBytes(candidate.Row);
-                                    if (best.Count > pageSize + 1) { Candidate removed = best.Max!; best.Remove(removed); delta -= TextBytes(removed.Row); }
-                                    operation.RetainText(delta);
+                                    if (best.Add(candidate))
+                                    {
+                                        long delta = TextBytes(candidate.Row);
+                                        if (best.Count > pageSize + 1) { Candidate removed = best.Max!; best.Remove(removed); delta -= TextBytes(removed.Row); }
+                                        operation.RetainText(delta);
+                                    }
+                                    int peak; do { peak = PeakBufferedCandidates; if (best.Count <= peak) break; }
+                                    while (Interlocked.CompareExchange(ref _peakBufferedCandidates, best.Count, peak) != peak);
                                 }
-                                int peak; do { peak = PeakBufferedCandidates; if (best.Count <= peak) break; }
-                                while (Interlocked.CompareExchange(ref _peakBufferedCandidates, best.Count, peak) != peak);
                             }
-                        }
+                    }
                     Verify(c, registration); sql.Exec("COMMIT");
                 }))).ConfigureAwait(false);
             bool more = best.Count > pageSize;
@@ -151,6 +160,7 @@ public sealed class V2SearchService
             // Only emitted assets hydrate memo contents. No prefetched memo or full result universe is retained.
             await Task.WhenAll(emitted.Where(c => c.Row.Key.Kind == PackageSearchResultKind.Asset).GroupBy(c => c.Registration)
                 .Select(group => WorkRegistration(group.Key, operation.Token, c => {
+                    using var hydration = SearchTrace.Start("memo-hydration");
                     using StorageSql sql = new(c); sql.Exec("BEGIN"); Verify(c, group.Key);
                     foreach (Candidate item in group)
                     {
@@ -225,7 +235,9 @@ public sealed class V2SearchService
         using var linked = CancellationTokenSource.CreateLinkedTokenSource(token, registration.UnloadToken);
         await Worker(linked.Token, () => {
             using IDisposable lease = registration.Lease();
-            using SqliteConnection c = StorageSchema.Open(registration.Value.Path, true);
+            SqliteConnection opened;
+            using (SearchTrace.Start("connection-open")) opened = StorageSchema.Open(registration.Value.Path, true);
+            using SqliteConnection c = opened;
             SetValueLimit(c);
             using var interrupt = linked.Token.Register(() => SQLitePCL.raw.sqlite3_interrupt(c.Handle));
             using (StorageSql sql = new(c)) { sql.Exec("PRAGMA cache_size=-4096"); sql.Exec("PRAGMA temp_store=FILE"); sql.Exec("PRAGMA query_only=ON"); }
@@ -239,13 +251,21 @@ public sealed class V2SearchService
             ? value.Equals(term, StringComparison.OrdinalIgnoreCase) : value.Contains(term, StringComparison.OrdinalIgnoreCase));
         void Check() { operation.Step(); _observe?.Invoke(SearchBoundary.Predicate, path); operation.Token.ThrowIfCancellationRequested(); }
         c.CreateFunction<string?, int, int>("uabs_match", (value, category) => {
-            Check(); foreach (string term in session.Include) if (Matches(value, term)) return category; return 0;
+            long started = operation.StartSample();
+            try { Check(); foreach (string term in session.Include) if (Matches(value, term)) return category; return 0; }
+            finally { operation.EndSample(started, false); }
         });
         c.CreateFunction<string?, int>("uabs_exclude", value => {
-            Check(); foreach (string term in session.Exclude) if (Matches(value, term)) return 1; return 0;
+            long started = operation.StartSample();
+            try { Check(); foreach (string term in session.Exclude) if (Matches(value, term)) return 1; return 0; }
+            finally { operation.EndSample(started, false); }
         });
         c.CreateFunction<string?, int>("uabs_type", value => { Check(); return string.Equals(value, session.Request.TypeName, StringComparison.OrdinalIgnoreCase) ? 1 : 0; });
-        c.CreateCollation("uabs_order", (a, b) => { Check(); _observe?.Invoke(SearchBoundary.SortComparison, path); operation.Token.ThrowIfCancellationRequested(); return SearchQuery.Text(a, b); });
+        c.CreateCollation("uabs_order", (a, b) => {
+            long started = operation.StartSample();
+            try { Check(); _observe?.Invoke(SearchBoundary.SortComparison, path); operation.Token.ThrowIfCancellationRequested(); return SearchQuery.Text(a, b); }
+            finally { operation.EndSample(started, true); }
+        });
     }
     private void SetValueLimit(SqliteConnection connection) =>
         SQLitePCL.raw.sqlite3_limit(connection.Handle, SQLitePCL.raw.SQLITE_LIMIT_LENGTH, _options.MaxSqliteValueBytes);
@@ -264,8 +284,11 @@ public sealed class V2SearchService
             || StorageSchema.Uuid(manifest.GetValue(1)) != p.GenerationId || manifest.GetInt64(2) != p.CatalogRevision)
             throw new StaleSearchException();
     }
-    private Task ValidateVector(SearchSession session, CancellationToken token) => Task.WhenAll(session.Registrations
-        .Select(r => WorkRegistration(r, token, c => Verify(c, r))));
+    private async Task ValidateVector(SearchSession session, CancellationToken token)
+    {
+        using var phase = SearchTrace.Start("revision-vector");
+        await Task.WhenAll(session.Registrations.Select(r => WorkRegistration(r, token, c => Verify(c, r)))).ConfigureAwait(false);
+    }
     private void CheckSession(SearchSession session)
     {
         lock (_gate)
@@ -297,6 +320,15 @@ public sealed class V2SearchService
         private readonly long _maxText;
         private long _steps;
         private long _textBytes;
+        private readonly bool _profile = SearchTrace.Source.HasListeners();
+        private long _predicateTicks, _sortTicks, _predicateCalls, _sortCalls;
+        internal long StartSample() => _profile ? Stopwatch.GetTimestamp() : 0;
+        internal void EndSample(long start, bool sort)
+        {
+            if (start == 0) return;
+            if (sort) { Interlocked.Add(ref _sortTicks, Stopwatch.GetTimestamp() - start); Interlocked.Increment(ref _sortCalls); }
+            else { Interlocked.Add(ref _predicateTicks, Stopwatch.GetTimestamp() - start); Interlocked.Increment(ref _predicateCalls); }
+        }
         internal CancellationToken Token => _stop.Token;
         internal Operation(SearchSession session, CancellationToken token, SearchOptions options)
         {
@@ -310,6 +342,17 @@ public sealed class V2SearchService
         internal void Step() { if (Interlocked.Increment(ref _steps) > _max) _stop.Cancel(); Token.ThrowIfCancellationRequested(); }
         internal void RetainText(long delta)
         { if (Interlocked.Add(ref _textBytes, delta) > _maxText) _stop.Cancel(); Token.ThrowIfCancellationRequested(); }
-        public void Dispose() => _stop.Dispose();
+        public void Dispose()
+        {
+            if (_profile)
+            {
+                using var sample = SearchTrace.Start("query-counters");
+                sample?.SetTag("predicate-calls", _predicateCalls);
+                sample?.SetTag("comparison-calls", _sortCalls);
+                sample?.SetTag("predicate-ms", _predicateTicks * 1000d / Stopwatch.Frequency);
+                sample?.SetTag("comparison-ms", _sortTicks * 1000d / Stopwatch.Frequency);
+            }
+            _stop.Dispose();
+        }
     }
 }

@@ -183,6 +183,30 @@ public sealed class V2BrowseRegistration
         finally { _reads.Release(); }
     }
     internal Task CheckAsync(CancellationToken token) => Read(async ct => { await Task.CompletedTask; return true; }, token);
+    internal async Task<PackageReader.SearchAdmission?> CaptureSearchAdmissionAsync(CancellationToken token)
+    {
+        using var linked = CancellationTokenSource.CreateLinkedTokenSource(token, Lifetime);
+        await _reads.WaitAsync(linked.Token).ConfigureAwait(false);
+        try
+        {
+            if (_closed || _stale) throw new InvalidDataException("Search registration is stale/unloaded.");
+            await RequireMemoLocationAsync(linked.Token).ConfigureAwait(false);
+            return await _reader.CaptureSearchAdmissionAsync(linked.Token).ConfigureAwait(false);
+        }
+        finally { _reads.Release(); }
+    }
+    internal async Task CheckSearchAdmissionAsync(PackageReader.SearchAdmission admission, CancellationToken token)
+    {
+        using var linked = CancellationTokenSource.CreateLinkedTokenSource(token, Lifetime);
+        await _reads.WaitAsync(linked.Token).ConfigureAwait(false);
+        try
+        {
+            if (_closed || _stale) throw new InvalidDataException("Search registration is stale/unloaded.");
+            await RequireMemoLocationAsync(linked.Token).ConfigureAwait(false);
+            await admission.CheckAsync(linked.Token).ConfigureAwait(false);
+        }
+        finally { _reads.Release(); }
+    }
     private async Task<T> Read<T>(Func<CancellationToken, Task<T>> operation, CancellationToken token)
     {
         using var linked = CancellationTokenSource.CreateLinkedTokenSource(token, _lifetime.Token);
