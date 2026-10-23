@@ -2,7 +2,16 @@
 
 **Updated:** 2026-10-23
 
-**Current task:** record Phase1C approvals P1-D6–P1-D9 — documentation only (2026-10-23). No implementation phase/checkpoint completed or authorized.
+**Current task:** Phase1D Search semantics/navigation lifecycle audit — documentation output (2026-10-23). No implementation phase/checkpoint completed or authorized.
+
+### Phase1D — focused audit; recommendations require approval
+
+- Baseline `f6183cf`; clean index/worktree at entry. Created [Phase1D audit](v2-recovery-phase-01d-search-navigation-semantics.md); updated roadmap and this handoff only. P1-D1–P1-D9, approved V2 D1–D8/schema/D5 and all17 Reported statuses unchanged.
+- Confirmed current V1/V2 comma OR, literal OrdinalIgnoreCase exact/substring, candidate exclusions and asset-only gates. One include box cannot express independently required name AND memo groups. Package filter affects visibility only; Select All/Clear affect all scope entries. Current result-kind boxes emit different candidates and need explicit bundle-evidence mapping, not silent removal.
+- Proposed, not approved: source OR child text group AND independently witnessed mandatory child gates; candidate-scoped exclusions, no automatic bundle-wide veto. Truth table distinguishes approved principles/current behavior from proposed outcomes. No same-asset-only requirement returns; exact identity-bound lookup stays indivisible.
+- Navigation findings: action and source-scoped reader integration absent; directory history is separate; current workspace switches do not await flush success, and navigation flush does not auto-retry already-failed drafts. Drafts remain exact-identity-owned. Recommended indexed destination/no arbitrary child, exact revalidation of stale-valid identities, nonblocking captured flush with retained failures; all are proposals, not implementation.
+- **Next exact action:** user chooses S1 exclusion scope, S2 gate/witness grouping, S3 field/result-kind mapping, N1 destination, N2 stale-valid navigation and N3 pending/failed draft policy using the audit's alternatives. Then authorize a bounded checkpoint. CP1→CP2→CP3 depend on Search choices; CP4→CP5 on navigation choices; CP6 stays separately scoped. Bundle memos and non-bundle Packages policy remain separate where applicable; no automatic implementation/V1 retirement.
+- Verification passed: three changed documentation paths only;58 local references/anchors, balanced Markdown fences, whitespace/conflicts and17 Reported rows. Approved decision sections remain unchanged; index empty. No builds/tests/package access/desktop automation, source/schema/Unity edits, staging or commits. Existing executable buildability is not newly verified by this documentation task.
 
 ### Phase 1C Approved Decisions P1-D6–P1-D9
 

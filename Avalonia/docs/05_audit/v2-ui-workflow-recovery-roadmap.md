@@ -17,6 +17,8 @@ The current implementation intentionally includes individual indexed assets, per
 
 ## Mandatory compatibility contract
 
+[Phase1D Search semantics/navigation lifecycle audit](v2-recovery-phase-01d-search-navigation-semantics.md) supplies current V1/V2 control evidence, a proposed cross-asset predicate/truth table, exact lifecycle/failure outcomes and six remaining user-visible choices: S1 exclusion scope, S2 mandatory-gate/witness grouping, S3 field/result-kind mapping, N1 indexed/native destination, N2 stale-valid navigation, N3 pending/failed draft navigation. These are recommendations awaiting approval, not P1-D10+ decisions. Current comma OR, exact matching, immutable identity, directory Back/Forward/Up, Name/Package-only target headers and D5 are not reopened. All17 issues remain Reported; no implementation checkpoint is authorized or complete.
+
 **Existing functionality and UI behavior are protected by default.** For every implementation:
 
 - Inspect affected workflows and identify comparable workspaces before editing.
