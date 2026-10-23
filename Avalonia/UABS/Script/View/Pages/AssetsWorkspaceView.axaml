@@ -2,6 +2,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:page="clr-namespace:UABS.Page"
              xmlns:vm="clr-namespace:UABS.ViewModels"
+             xmlns:services="clr-namespace:UABS.Services"
              x:Class="UABS.Page.AssetsWorkspaceView"
              x:DataType="vm:MainWindowViewModel">
     <UserControl.Resources>
@@ -42,7 +43,7 @@
             <Border x:Name="NavigatorPanel" Grid.Column="0"
                     IsVisible="{Binding AssetsLayout.IsNavigatorVisible}"
                     Background="#FAFAFA" BorderBrush="#D0D0D0" BorderThickness="0,0,1,0">
-                <Grid RowDefinitions="Auto,*">
+                <Grid RowDefinitions="Auto,Auto,*">
                     <Grid ColumnDefinitions="*,Auto" Margin="12,6,6,0">
                         <TextBlock Text="Navigator" FontWeight="SemiBold" FontSize="15" VerticalAlignment="Center"/>
                         <Button x:Name="NavigatorCollapseButton"
@@ -56,7 +57,20 @@
                                       Data="{StaticResource PanelChevronLeftGeometry}"/>
                         </Button>
                     </Grid>
-                    <page:BrowserView Grid.Row="1" DataContext="{Binding Browser}"/>
+                    <StackPanel Grid.Row="1" Spacing="4" Margin="8">
+                        <TextBlock Text="Registered V2 packages (read-only)" TextWrapping="Wrap"/>
+                        <ComboBox ItemsSource="{Binding V2.Registrations}" SelectedItem="{Binding V2.SelectedPackage}" HorizontalAlignment="Stretch">
+                            <ComboBox.ItemTemplate><DataTemplate x:DataType="services:V2BrowseRegistration"><TextBlock Text="{Binding Name}"/></DataTemplate></ComboBox.ItemTemplate>
+                        </ComboBox>
+                        <WrapPanel>
+                            <Button Content="Open V2..." Command="{Binding V2.OpenCommand}"/>
+                            <Button Content="Browse V2" Command="{Binding BrowseV2Command}"/>
+                            <Button Content="Unload V2" Command="{Binding V2.RemoveCommand}"/>
+                            <Button Content="Filesystem assets" Command="{Binding BrowseUnityCommand}"/>
+                        </WrapPanel>
+                        <TextBlock Text="{Binding V2.Status}" TextWrapping="Wrap"/>
+                    </StackPanel>
+                    <page:BrowserView Grid.Row="2" DataContext="{Binding Browser}"/>
                 </Grid>
             </Border>
 
@@ -74,7 +88,8 @@
                 <Border Background="#F4F4F4">
                     <Grid RowDefinitions="Auto,*">
                         <TextBlock Text="Assets" FontWeight="SemiBold" FontSize="15" Margin="12,8,12,0"/>
-                        <page:FolderView Grid.Row="1"/>
+                        <page:FolderView Grid.Row="1" IsVisible="{Binding IsUnityAssets}"/>
+                        <Grid Grid.Row="1" IsVisible="{Binding IsV2Assets}"><page:V2AssetListView DataContext="{Binding V2}"/></Grid>
                     </Grid>
                 </Border>
                 <Button x:Name="NavigatorRestoreHandle"
@@ -128,7 +143,8 @@
                         <TextBlock Grid.Column="1" Text="Inspector" FontWeight="SemiBold" FontSize="15"
                                    Margin="8,0,0,0" VerticalAlignment="Center"/>
                     </Grid>
-                    <page:AssetInspectorView Grid.Row="1" DataContext="{Binding AssetList}"/>
+                    <Grid Grid.Row="1" IsVisible="{Binding IsUnityAssets}"><page:AssetInspectorView DataContext="{Binding AssetList}"/></Grid>
+                    <Grid Grid.Row="1" IsVisible="{Binding IsV2Assets}"><page:V2InspectorView DataContext="{Binding V2}"/></Grid>
                 </Grid>
             </Border>
         </Grid>

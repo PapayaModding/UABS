@@ -1,0 +1,36 @@
+<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:UABS.ViewModels" xmlns:m="clr-namespace:UABS.Models"
+             x:Class="UABS.Page.V2AssetListView" x:DataType="vm:V2BrowseViewModel">
+    <Grid RowDefinitions="Auto,Auto,*,Auto" Margin="8" RowSpacing="6">
+        <TextBlock Text="{Binding Status}" TextWrapping="Wrap"/>
+        <ProgressBar Grid.Row="1" IsVisible="{Binding IsLoading}" IsIndeterminate="True" Height="3"/>
+        <DataGrid x:Name="V2AssetsGrid" Grid.Row="2" Classes="assetList" IsReadOnly="True" AutoGenerateColumns="False"
+                  CanUserResizeColumns="True" CanUserSortColumns="True" ItemsSource="{Binding Assets}"
+                  SelectedItem="{Binding SelectedAsset}" LoadingRow="OnLoadingRow">
+            <DataGrid.Columns>
+                <DataGridTemplateColumn Width="52" MinWidth="0" MaxWidth="80" CanUserResize="True"
+                                        CellTheme="{StaticResource KindIconCellTheme}">
+                    <DataGridTemplateColumn.Header><TextBlock Text="" AutomationProperties.Name="Kind"/></DataGridTemplateColumn.Header>
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate x:DataType="m:V2AssetRow">
+                            <Image Width="24" Height="24" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                   Source="{Binding IconType, Converter={StaticResource AssetTypeIconConvertor}}"
+                                   ToolTip.Tip="{Binding TypeLabel}" AutomationProperties.Name="{Binding TypeLabel}"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+                <DataGridTextColumn Header="Name" Binding="{Binding NameLabel}" Width="2*"/>
+                <DataGridTextColumn Header="Type" Binding="{Binding TypeLabel}" Width="*"/>
+                <DataGridTextColumn Header="Class ID" Binding="{Binding ClassId}" Width="85"/>
+                <DataGridTextColumn Header="Path ID" Binding="{Binding Identity.PathId}" Width="110"/>
+                <DataGridTextColumn Header="Directory ordinal" Binding="{Binding Identity.DirectoryOrdinal}" Width="110"/>
+                <DataGridTextColumn Header="Table ordinal" Binding="{Binding Identity.TableOrdinal}" Width="100"/>
+            </DataGrid.Columns>
+        </DataGrid>
+        <StackPanel Grid.Row="3" Orientation="Horizontal" Spacing="6">
+            <Button Content="First" Command="{Binding FirstCommand}"/>
+            <Button Content="Previous" Command="{Binding PreviousCommand}"/>
+            <Button Content="Next 100" Command="{Binding NextCommand}"/>
+        </StackPanel>
+    </Grid>
+</UserControl>

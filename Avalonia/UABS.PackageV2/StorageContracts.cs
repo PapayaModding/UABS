@@ -5,6 +5,8 @@ namespace UABS.PackageV2;
 public enum StorageStatus { Success, Cancelled, DestinationExists, InvalidInput, ExtractionFailed,
     PartialAcknowledgementRequired, InvalidPackage, UnsupportedVersion, IoFailure, ValidationFailure }
 public enum BuildBoundary { BeforeSchema, AfterSchema, BeforeBatch, BeforeValidation, AfterValidation, BeforePublication }
+public sealed record PackageBuildProgress(string Stage, int SourceNumber, int SourceCount, long Assets);
+public sealed record PartialBuildSummary(long Assets, long Issues, IReadOnlyList<string> Details);
 public sealed record SourceRoot(string Label, string OriginalBasePath, string PathPolicy);
 public sealed record BuildSource(int RootIndex, string RelativePath, string IndexDirectory, V2ExtractionRequest Request);
 public sealed record PackageBuildRequest(string Destination, Guid PackageId, Guid GenerationId, string Name,

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Collections.Specialized;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -52,6 +53,12 @@ public sealed record PackageContentItem(
 
 public sealed class PackageCatalogItemViewModel
 {
+    internal PackageCatalogItemViewModel(V2BrowseRegistration entry)
+    {
+        V2 = entry; Name = entry.Name; Path = entry.Path; SourceCount = entry.SourceCount;
+        Status = "V2 " + entry.Status; Diagnostic = entry.Summary;
+    }
+    public V2BrowseRegistration? V2 { get; }
     internal PackageCatalogItemViewModel(PackageCatalogEntry entry)
     {
         Entry = entry;
@@ -69,13 +76,13 @@ public sealed class PackageCatalogItemViewModel
                 : "Package metadata loaded.");
     }
 
-    internal PackageCatalogEntry Entry { get; }
-    internal PackageDocument? Package => Entry.Package;
+    internal PackageCatalogEntry? Entry { get; }
+    internal PackageDocument? Package => Entry?.Package;
 
     public string Name { get; }
     public string Path { get; }
     public int IndexCount { get; }
-    public int SourceCount { get; }
+    public long SourceCount { get; }
     public int WarningCount { get; }
     public string Status { get; }
     public string Diagnostic { get; }
@@ -178,6 +185,29 @@ public sealed class PackageManagementViewModel : ViewModelBase, IDisposable
         IPackageEditorSessionController? editorSessionController = null)
     {
         _filePicker = filePicker;
+        V2 = new V2BrowseViewModel(filePicker);
+        V2.Registrations.CollectionChanged += V2RegistrationsChanged;
+        Creation = new V2CreationViewModel(filePicker, async result =>
+        {
+            var entry = await V2.OpenAsync(result.Build!.PublishedPath!, _lifetime.Token, select: false);
+            return entry is null ? V2.Status : entry.PackageId != result.Info!.PackageId || entry.GenerationId != result.Info.GenerationId
+                ? "Registered identity differs from verified creation. Do not browse this file; unload and investigate." : null;
+        }, async path =>
+        {
+            var item = Packages.FirstOrDefault(p => p.V2?.Path == path);
+            if (item is null)
+            {
+                var entry = await V2.OpenAsync(path, _lifetime.Token, select: false);
+                if (entry is null) { CatalogError = V2.Status; return; }
+                item = Packages.First(p => ReferenceEquals(p.V2, entry));
+            }
+            if (item.V2?.PackageId != Creation!.Result?.Info?.PackageId || item.V2?.GenerationId != Creation.Result?.Info?.GenerationId)
+            { CatalogError = "Saved package identity changed. Unload and investigate before opening."; return; }
+            await SelectPackageAsync(item);
+            if (ReferenceEquals(SelectedPackage, item)) await Creation!.CloseCommand.ExecuteAsync();
+        });
+        CreateV2PackageCommand = new AsyncCommand(() => { Creation.Show(); return Task.CompletedTask; });
+        OpenV2PackageCommand = new AsyncCommand(OpenV2PackageAsync);
         _packageService = packageService;
         _searchService = searchService;
         _dependencyResolver = dependencyResolver;
@@ -202,6 +232,29 @@ public sealed class PackageManagementViewModel : ViewModelBase, IDisposable
     }
 
     public AsyncCommand ChoosePackageDirectoryCommand { get; }
+    public V2BrowseViewModel V2 { get; }
+    public V2CreationViewModel Creation { get; }
+    public AsyncCommand CreateV2PackageCommand { get; }
+    public AsyncCommand OpenV2PackageCommand { get; }
+    public bool IsV2OverviewVisible => Editor.IsEditorClosed && SelectedPackage?.V2 is not null;
+    public bool IsV1OverviewVisible => Editor.IsEditorClosed && SelectedPackage?.V2 is null;
+    private void NotifyOverview() { OnPropertyChanged(nameof(IsV2OverviewVisible)); OnPropertyChanged(nameof(IsV1OverviewVisible)); }
+    private void V2RegistrationsChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    {
+        var previous = Packages;
+        Packages = previous.Where(p => p.V2 is null).Concat(V2.Registrations.Select(r =>
+            previous.FirstOrDefault(p => ReferenceEquals(p.V2, r)) ?? new PackageCatalogItemViewModel(r))).ToArray();
+        if (_selectedPackage?.V2 is not null && !V2.Registrations.Contains(_selectedPackage.V2))
+        { _selectedPackage = null; OnPropertyChanged(nameof(SelectedPackage)); EditPackageCommand.NotifyCanExecuteChanged(); NotifyOverview(); }
+    }
+    public async Task OpenV2PackageAsync()
+    {
+        string? path = await _filePicker.PickV2PackageAsync(_lifetime.Token);
+        if (path is null) return;
+        var entry = await V2.OpenAsync(path, _lifetime.Token, select: false);
+        if (entry is not null) await SelectPackageAsync(Packages.First(p => ReferenceEquals(p.V2, entry)));
+        else CatalogError = V2.Status;
+    }
     public AsyncCommand RefreshCatalogCommand { get; }
     public AsyncCommand SearchCommand { get; }
     public AsyncCommand NewPackageCommand { get; }
@@ -474,13 +527,27 @@ public sealed class PackageManagementViewModel : ViewModelBase, IDisposable
             if (version != _catalogVersion)
                 return;
 
+            var rejectedV2 = new List<PackageCatalogItemViewModel>();
+            if (Directory.Exists(path))
+            {
+                var files = await Task.Run(() => Directory.GetFiles(path, "*.uabs.sqlite", SearchOption.TopDirectoryOnly), token);
+                foreach (string file in files)
+                {
+                    token.ThrowIfCancellationRequested();
+                    if (await V2.OpenAsync(file, token, select: false) is null)
+                        rejectedV2.Add(new PackageCatalogItemViewModel(new PackageCatalogEntry(Path.GetFileName(file), file, null, V2.Status)));
+                }
+            }
+            token.ThrowIfCancellationRequested(); if (version != _catalogVersion) return;
             IReadOnlyList<PackageCatalogItemViewModel> packages = entries
                 .Select(entry => new PackageCatalogItemViewModel(entry))
+                .Concat(V2.Registrations.Select(entry => new PackageCatalogItemViewModel(entry)))
+                .Concat(rejectedV2)
                 .ToArray();
             Packages = packages;
             PackageDirectory = Path.GetFullPath(path);
 
-            int loaded = packages.Count(package => package.IsAvailable);
+            int loaded = packages.Count(package => package.IsAvailable || package.V2 is not null);
             int errors = packages.Count - loaded;
             int warnings = packages.Sum(package => package.WarningCount);
             CatalogStatus = packages.Count == 0
@@ -489,7 +556,7 @@ public sealed class PackageManagementViewModel : ViewModelBase, IDisposable
 
             PackageCatalogItemViewModel? selected = packages.FirstOrDefault(package =>
                 string.Equals(package.Path, previousSelectionPath, StringComparison.OrdinalIgnoreCase));
-            selected ??= packages.FirstOrDefault(package => package.IsAvailable);
+            selected ??= packages.FirstOrDefault(package => package.IsAvailable || package.V2 is not null);
             await SelectPackageAsync(selected);
         }
         catch (OperationCanceledException) when (token.IsCancellationRequested)
@@ -550,6 +617,7 @@ public sealed class PackageManagementViewModel : ViewModelBase, IDisposable
 
         _selectedPackage = package;
         OnPropertyChanged(nameof(SelectedPackage));
+        NotifyOverview();
         EditPackageCommand.NotifyCanExecuteChanged();
         await ApplyPackageSelectionAsync(package);
     }
@@ -649,12 +717,19 @@ public sealed class PackageManagementViewModel : ViewModelBase, IDisposable
 
     private Task ApplyPackageSelectionAsync(PackageCatalogItemViewModel? package)
     {
+        NotifyOverview();
         CancelAndDispose(ref _dependencyCancellation);
         int version = ++_dependencyVersion;
         SelectedContent = null;
         SelectedDependency = null;
         _allDependencyResults = [];
         DependencyResults = [];
+
+        if (package?.V2 is not null)
+        {
+            Contents = []; IsDependencyLoading = false; SelectedPackageStatus = package.Diagnostic;
+            V2.SelectedPackage = package.V2; return V2.SelectionTask;
+        }
 
         if (package?.Package is null)
         {
@@ -740,15 +815,19 @@ public sealed class PackageManagementViewModel : ViewModelBase, IDisposable
         _disposed = true;
         Editor.PropertyChanged -= EditorOnPropertyChanged;
         _lifetime.Cancel();
+        Creation.Dispose();
         CancelAndDispose(ref _catalogCancellation);
         CancelAndDispose(ref _searchCancellation);
         CancelAndDispose(ref _dependencyCancellation);
         Editor.Dispose();
+        V2.Registrations.CollectionChanged -= V2RegistrationsChanged;
+        V2.Dispose();
         _lifetime.Dispose();
     }
 
     private void EditorOnPropertyChanged(object? sender, PropertyChangedEventArgs eventArgs)
     {
+        NotifyOverview();
         if (eventArgs.PropertyName is nameof(PackageEditorViewModel.IsEditing)
             or nameof(PackageEditorViewModel.IsOperationRunning))
         {

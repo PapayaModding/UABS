@@ -85,6 +85,18 @@ public sealed class PackageReader : IDisposable
         return (IReadOnlyList<MetadataRow>)rows.AsReadOnly();
     });
 
+    /// <summary>Bounded selected-occurrence evidence; no source file opened and no Search semantics changed.</summary>
+    public Task<IReadOnlyDictionary<string, object?>> ReadAssetEvidenceAsync(AssetKey key, CancellationToken token = default) => Read(token, sql =>
+    {
+        if (key.PackageId != Info.PackageId || key.GenerationId != Info.GenerationId) throw new InvalidDataException("Asset belongs to another generation.");
+        using var row = sql.Command("SELECT s.original_name,s.original_path,s.index_directory,s.index_status AS source_index_status,s.dependency_status,f.logical_name,f.cab_name,f.unity_version,f.directory_ordinal,f.index_status AS logical_index_status FROM asset a JOIN logical_file f ON f.file_id=a.file_id JOIN source s ON s.source_id=f.source_id WHERE s.source_uuid=@p0 AND s.source_revision_uuid=@p1 AND f.directory_ordinal=@p2 AND a.table_ordinal=@p3 AND a.path_id IS @p4",
+            StorageSchema.Bytes(key.SourceId), StorageSchema.Bytes(key.SourceRevision), key.DirectoryOrdinal, key.TableOrdinal, key.PathId).ExecuteReader();
+        if (!row.Read()) throw new InvalidDataException("Selected occurrence no longer exists.");
+        Dictionary<string, object?> result = new(StringComparer.Ordinal);
+        for (int i = 0; i < row.FieldCount; i++) result.Add(row.GetName(i), row.IsDBNull(i) ? null : row.GetValue(i));
+        return (IReadOnlyDictionary<string, object?>)new ReadOnlyDictionary<string, object?>(result);
+    });
+
     private Task<T> Read<T>(CancellationToken token, Func<StorageSql, T> read) => Task.Run(() =>
     {
         _access.Wait(token);

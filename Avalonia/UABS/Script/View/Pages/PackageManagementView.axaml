@@ -1,6 +1,7 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="clr-namespace:UABS.ViewModels"
+             xmlns:page="clr-namespace:UABS.Page"
              x:Class="UABS.Page.PackageManagementView"
              x:DataType="vm:PackageManagementViewModel">
     <UserControl.Resources>
@@ -24,13 +25,16 @@
     </UserControl.Styles>
 
     <Grid RowDefinitions="Auto,Auto,*" Margin="12" RowSpacing="8">
-        <Grid Grid.Row="0" ColumnDefinitions="Auto,Auto,Auto,Auto,*" ColumnSpacing="8">
+        <Grid Grid.Row="0" ColumnDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,*" ColumnSpacing="8"
+              IsEnabled="{Binding !Creation.IsBusy}">
             <Button Content="Open Package Catalog..." Command="{Binding ChoosePackageDirectoryCommand}"
-                    ToolTip.Tip="Choose either a catalog root containing package folders or one package folder."/>
+                    ToolTip.Tip="Choose a catalog root with V1 package folders and/or V2 .uabs.sqlite files, or one V1 package folder."/>
             <Button Grid.Column="1" Content="Refresh" Command="{Binding RefreshCatalogCommand}"/>
-            <Button Grid.Column="2" Content="New Package" Command="{Binding NewPackageCommand}"/>
-            <Button Grid.Column="3" Content="Edit Package" Command="{Binding EditPackageCommand}"/>
-            <TextBlock Grid.Column="4" Text="{Binding PackageDirectory}" VerticalAlignment="Center"
+            <Button Grid.Column="2" Content="Create Package" Command="{Binding CreateV2PackageCommand}" ToolTip.Tip="Create a portable V2 SQLite metadata package."/>
+            <Button Grid.Column="3" Content="Edit Package" Command="{Binding EditPackageCommand}" ToolTip.Tip="Legacy V1 editing only; unavailable for V2."/>
+            <Button Grid.Column="4" Content="Open V2..." Command="{Binding OpenV2PackageCommand}"/>
+            <Button Grid.Column="5" Content="New Legacy V1" Command="{Binding NewPackageCommand}" IsVisible="{Binding !Creation.IsOpen}"/>
+            <TextBlock Grid.Column="6" Text="{Binding PackageDirectory}" VerticalAlignment="Center"
                        TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding PackageDirectory}"/>
         </Grid>
 
@@ -43,7 +47,8 @@
             </Border>
         </Grid>
 
-        <Grid x:Name="PackagesRegionsGrid" Grid.Row="2">
+        <page:V2CreationView Grid.Row="2" DataContext="{Binding Creation}" IsVisible="{Binding IsOpen}"/>
+        <Grid x:Name="PackagesRegionsGrid" Grid.Row="2" IsVisible="{Binding !Creation.IsOpen}">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="{Binding Layout.SidebarColumnWidth}"
                                   MinWidth="{Binding Layout.SidebarColumnMinimumWidth}"
@@ -90,7 +95,10 @@
 
             <Grid x:Name="PackageEditorRegion" Grid.Column="2" RowDefinitions="Auto,*" Margin="8,0,0,0" RowSpacing="6">
                 <TextBlock Text="{Binding SelectedPackageStatus}" TextWrapping="Wrap"/>
-                <TabControl x:Name="PackageOverviewTabs" Grid.Row="1" IsVisible="{Binding Editor.IsEditorClosed}">
+                <Grid Grid.Row="1" IsVisible="{Binding IsV2OverviewVisible}">
+                    <page:V2PackageView DataContext="{Binding V2}"/>
+                </Grid>
+                <TabControl x:Name="PackageOverviewTabs" Grid.Row="1" IsVisible="{Binding IsV1OverviewVisible}">
                     <TabItem Header="Contents">
                         <Grid RowDefinitions="*,Auto" Margin="8" RowSpacing="8">
                             <DataGrid x:Name="PackageContentsGrid"

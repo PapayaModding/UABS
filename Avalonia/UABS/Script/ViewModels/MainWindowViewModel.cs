@@ -29,6 +29,15 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
     private int _loadVersion;
     private int _selectedWorkspaceIndex;
     private bool _disposed;
+    private bool _isV2Assets;
+    public V2BrowseViewModel V2 => Packages.V2;
+    public bool IsV2Assets { get => _isV2Assets; private set { if (SetField(ref _isV2Assets, value)) { OnPropertyChanged(nameof(IsUnityAssets)); AddSelectedAssetToPackageCommand?.NotifyCanExecuteChanged(); } } }
+    public bool IsUnityAssets => !IsV2Assets;
+    public RelayCommand BrowseV2Command { get; }
+    public RelayCommand BrowseUnityCommand { get; }
+    public Task V2NavigationTask { get; private set; } = Task.CompletedTask;
+    private void V2OnPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    { if (e.PropertyName == nameof(V2BrowseViewModel.SelectedPackage)) IsV2Assets = V2.SelectedPackage is not null; }
 
     public MainWindowViewModel(
         IFilePickerService filePicker,
@@ -77,13 +86,16 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
             MemoDrafts,
             editorSessionGuard);
         Packages.PropertyChanged += PackagesOnPropertyChanged;
+        V2.PropertyChanged += V2OnPropertyChanged;
+        BrowseV2Command = new RelayCommand(() => { IsV2Assets = V2.SelectedPackage is not null; V2NavigationTask = V2.VerifyCurrentAsync(); });
+        BrowseUnityCommand = new RelayCommand(() => IsV2Assets = false);
         Packages.Editor.PropertyChanged += EditorOnPropertyChanged;
         UpdateAssetMemoCatalog();
         OpenFileCommand = new AsyncCommand(OpenFromPickerAsync);
         ShowAssetsCommand = new RelayCommand(() => SelectedWorkspaceIndex = 0);
         ShowSearchCommand = new RelayCommand(() => SelectedWorkspaceIndex = 1);
         ShowPackagesCommand = new RelayCommand(() => SelectedWorkspaceIndex = 2);
-        AddSelectedAssetToPackageCommand = new AsyncCommand(AddSelectedAssetToPackageAsync);
+        AddSelectedAssetToPackageCommand = new AsyncCommand(AddSelectedAssetToPackageAsync, () => !IsV2Assets);
     }
 
     public BrowserViewModel Browser { get; }
@@ -107,6 +119,7 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
             int previous = _selectedWorkspaceIndex;
             if (!SetField(ref _selectedWorkspaceIndex, value))
                 return;
+            if ((value == 0 && IsV2Assets) || (value == 2 && Packages.IsV2OverviewVisible)) V2NavigationTask = V2.VerifyCurrentAsync();
             if (previous == 1 && value != 1)
                 _ = ObserveSearchMemoFlushAsync();
             if (previous == 0 && value != 0)
@@ -157,6 +170,7 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
 
     public async Task AddSelectedAssetToPackageAsync()
     {
+        if (IsV2Assets) { ErrorMessage = "V2 metadata is read-only; no V1 editor/save route is available."; return; }
         if (AssetList.SelectedAsset is null)
         {
             ErrorMessage = "Select a Texture2D or Sprite asset before adding it to a package.";
@@ -189,6 +203,14 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
 
         try
         {
+            if (path.EndsWith(".uabs.sqlite", StringComparison.OrdinalIgnoreCase))
+            {
+                var registration = await V2.OpenAsync(path, token);
+                token.ThrowIfCancellationRequested(); if (version != _loadVersion) return;
+                if (registration is not null) { IsV2Assets = true; StatusText = registration.Summary; }
+                else { ErrorMessage = V2.Status; StatusText = "V2 registration failed; the prior view is retained."; }
+                return;
+            }
             candidate = await _sessionFactory.OpenAsync(path, token);
             token.ThrowIfCancellationRequested();
             if (version != _loadVersion)
@@ -198,6 +220,7 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
             _session = candidate;
             candidate = null;
             AssetList.ReplaceSession(_session);
+            IsV2Assets = false;
 
             ActiveFilePath = _session.Metadata.SourcePath;
             string warningText = _session.Warnings.Count == 0
@@ -247,6 +270,7 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
         AssetList.Dispose();
         Search.Dispose();
         Packages.PropertyChanged -= PackagesOnPropertyChanged;
+        V2.PropertyChanged -= V2OnPropertyChanged;
         Packages.Editor.PropertyChanged -= EditorOnPropertyChanged;
         Packages.Dispose();
         if (MemoDrafts is IDisposable disposableMemoDrafts)

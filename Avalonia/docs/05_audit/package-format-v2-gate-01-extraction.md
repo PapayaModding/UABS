@@ -4,6 +4,45 @@
 
 The [approved V2 contract](../03_design/package-format-v2-design.md) remains unchanged. Earlier [architecture](package-format-v2-architecture-audit.md) and [SQLite spike](package-format-v2-dotnet-sqlite-spike.md) results are historical context, not evidence that the new extractor handles every Unity version.
 
+## Real-corpus follow-up — 2026-10-22
+
+This section supersedes the original Gate1-only deployment/verification status below. Gate5A.1 now calls this extractor for V2 creation; V1 loading/writing and the vendored parser binary are unchanged.
+
+### Confirmed failure mechanism
+
+The user-supplied `E:\Media\UABS_Packages\OWL_V2.uabs.sqlite` was inspected with a read-only SQLite connection. Its46 issues comprise19 `table-unreadable`,23 `dependency-enrichment-status` summaries (19 Unavailable,4 Partial), and4 `bundle-dependencies-unavailable`. All19 failed logical records are ordinal1 `.resS` resource payloads, not actual serialized tables. The ordinal0 siblings contain readable Unity2022.3.62f2 / serialized-version22 tables.
+
+Before changing production code, disposable copies reproduced both reported exception classes. The old call path was `Extract → bundle.IsAssetsFile → AssetsFile.IsAssetsFile → ReadFile → AssetsFile.Read → AssetsFileHeader.Read → AssetsFileMetadata.Read`. Inspection of the actual vendored AssetsTools.NET3.0.0 IL established that the probe reads a **signed** version and rejects only values greater than99; negative values pass. Its offset20 version-string test also accepts very short ASCII strings without validating metadata/file/data bounds. The resource bytes happen to contain negative pseudo-versions and `UWVT` / `U`. Metadata parsing then treats arbitrary resource bytes as type/tree/object counts: `AssetsFileMetadata.Read` passes an unchecked signed type count directly to `List<TypeTreeType>(capacity)`; other count-driven reads can allocate heavily before reaching EOF. These are false-positive inputs to the parser, not proof of corrupt Unity source or an unsupported valid table layout.
+
+Representative copies: burnfloorlinegreen bundle65,055B/SHA256 `E9D6CF791052906A18FF3CE27484F02089910456E4F2D6CB706E9C77E150CE69` (17 actual assets,9,504B resource), holographicstretchedtraillighteffect_hard bundle20,639B/SHA256 `8E4BBBA9EF940A4423263B2ADE00C739032D45C4F57E840B94AB7746A1A52140` (4 actual assets,8,192B resource). Both resource entries have flags0; actual tables have flags4. Logical ranges are decompressed-stream ranges, not physical compressed-file offsets. The genuine v22 header uses big-endian header words, endian byte16, extended metadata/file/data fields at20/24/32 and a48-byte header; subsequent metadata follows the header's endian flag. Genuine siblings parse with the existing reader; no endianness or decompressor replacement was justified.
+
+**Safety warning:** the pre-fix EOF reproduction caused about28.0GB cumulative managed allocation /16.6GB process-lifetime peak before failing. Do not repeat the old metadata parse on those resources. This exposed a serious allocation consequence, not a performance benchmark or retained-memory claim.
+
+### Targeted correction and diagnostics
+
+- New [V2SerializedHeader](../../UABS.UnityAssets/Metadata/V2SerializedHeader.cs) reads at most48 header bytes through the bounded logical stream, checking version floor, endian byte, metadata/file/data ranges before unflagged candidate admission. It replaces only V2's permissive vendor probe, not the vendor library or V1. Filenames/extensions do not decide admission: a structurally valid serialized file named `.resS` still parses.
+- Flagged serialized entries still enter `ReadFile` regardless of header plausibility. Inconsistent/future headers fail explicitly before metadata allocation; failed tables retain unknown declared count and partial source coverage. Header admission remains5–22, **not** verified support for every version. Unflagged bytes without plausible header evidence are not asserted to be tables; malformed unflagged/unknown layouts remain a detection limitation, not newly guaranteed coverage.
+- `table-unreadable` now retains exception, source, logical name/ordinal, header evidence, known Unity version, parser stage/frame/IL offset, reader position and bounded range/scalar evidence. The preceding Int32 is explicitly labeled raw evidence, **not a verified count**. Diagnostic strings are bounded to1024 characters. No exception is suppressed to mark a failed table complete.
+- Budget exceptions now identify the actual budget, observed count, limit and asset-relative offset. Dependency failure context adds source/logical/version/Path ID and asset/window bounds. Existing budgets are unchanged.
+
+### Dependency warnings are not missing asset tables
+
+All four warnings reproduce at `BundleDependencies → Skip(m_PreloadTable/Array)`: counts42,335 /17,418 /26,807 /21,481 exceed the default16,384-item limit at asset-relative offset44. The smallest direct cause is our own `MetadataBudgetException : IOException` with no message, which previously inherited the misleading generic “I/O error occurred.” No OS disk-I/O failure was demonstrated. This is a deliberately bounded skip of an earlier field while seeking `m_Dependencies`, **not necessarily the number of dependencies**. The largest example's entire513,512B AssetBundle object fits the default1MiB window; its37,999 table rows are complete.
+
+These remain explicit Partial dependency warnings. Raising the limit or implementing shape/size-checked bulk skipping requires separate resource-budget review; this correction neither discards warnings nor invents empty dependency lists.
+
+### Corpus recheck, coverage and rebuild guidance
+
+All23 issue-bearing sources were copied to disposable artifacts and their hashes matched the package's recorded source fingerprints. Re-extraction captures **100,242 assets**, identical per-source counts to the existing SQLite package; all actual tables are complete. The19 false resource failures disappear; only4 enrichment diagnostics remain at the extractor layer (the builder additionally records4 Partial summaries). No malformed genuine source was established, and no missing asset rows were demonstrated for these46 issues. A genuinely failed serialized table would still mean unknown/missing coverage; do not generalize this result to unrelated failures.
+
+The full825,730-asset package was **not rebuilt or modified**, nor was the entire no-issue corpus re-extracted. Create a **new output filename** with the current Debug application if corrected completeness/issue metadata is desired; keep the existing package. The affected-source evidence predicts unchanged asset counts and8 rather than46 issue records, not a verified full-corpus rebuild result. The4 budget-limited dependency sources remain incomplete in optional enrichment. No in-place repair/migration is implemented.
+
+Evidence remains in external scratch `corpus-before.log`, `corpus-budget-before.log`, `corpus-after-all.log`, `parser-il.log`; disposable copies in `UABS.PackageV2/artifacts/uabs-v2-corpus-*` are intentionally retained for comparison. No original bundle, real package or legacy Unity file was written. Genuine multi-file/duplicate-CAB acceptance, older/newer Unity versions and malicious metadata allocation limits remain open.
+
+### Follow-up verification
+
+Current Debug startup/solution builds pass with0 warnings/errors. Focused extractor **29/29** passes (seven new cases); creation integration **40 passed,1 existing permission skip**. Full regression: **598 passed,1 skipped,0 failed** (599 cases,55.81s). New fixtures cover both unsafe-probe strings without invoking the old unsafe metadata parse, valid unflagged files irrespective of suffix, flagged future versions, negative type counts, truncated object tables and descriptive budget evidence; existing identity/cancellation tests remain. Final three-assembly/shipped zero-Unity, canonical DDL equality, genuine fixture hashes, protected-path and staged/unstaged whitespace checks pass; documentation links/fences pass. See the [current handoff](codex-session-handoff.md) for scope and continuation details. All tests use disposable input/output, not the real package. These are standard **in-process xUnit** runs, not VSTest transport or desktop visual acceptance. The existing physical-hardlink permission skip and broader resource/version/fault acceptance remain open; no test was weakened.
+
 ## Components and consumer contract
 
 - [V2MetadataContracts.cs](../../UABS.UnityAssets/Metadata/V2MetadataContracts.cs): immutable, UI-neutral source evidence, logical-file/type/asset/dependency/diagnostic records, progress, options, metrics and final verdict. No SQLite or package UUID/row-ID dependency.

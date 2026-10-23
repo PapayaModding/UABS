@@ -1,0 +1,35 @@
+<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:UABS.ViewModels" xmlns:page="clr-namespace:UABS.Page"
+             x:Class="UABS.Page.V2PackageView" x:DataType="vm:V2BrowseViewModel">
+    <Grid RowDefinitions="Auto,Auto,*,Auto" RowSpacing="6">
+        <TextBlock Text="{Binding Summary}" TextWrapping="Wrap" Margin="8"/>
+        <TextBlock Grid.Row="1" Text="{Binding Status}" TextWrapping="Wrap" Margin="8,0"/>
+        <TabControl Grid.Row="2">
+            <TabItem Header="Indexed assets (read-only)">
+                <Grid RowDefinitions="*,170">
+                    <page:V2AssetListView/>
+                    <page:V2InspectorView Grid.Row="1"/>
+                </Grid>
+            </TabItem>
+            <TabItem Header="Sources, logical files and evidence">
+                <Grid RowDefinitions="Auto,Auto,*,170,Auto" Margin="8" RowSpacing="6">
+                    <ComboBox ItemsSource="{Binding MetadataKinds}" SelectedItem="{Binding MetadataKind}"/>
+                    <TextBlock Grid.Row="1" Text="{Binding MetadataStatus}" TextWrapping="Wrap"/>
+                    <DataGrid Grid.Row="2" Classes="assetList" ItemsSource="{Binding Metadata}" SelectedItem="{Binding SelectedMetadata}"
+                              IsReadOnly="True" AutoGenerateColumns="False" CanUserResizeColumns="True" LoadingRow="OnLoadingRow">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Occurrence" Binding="{Binding Cursor}" Width="95"/>
+                            <DataGridTextColumn Header="Raw indexed evidence" Binding="{Binding Details}" Width="*"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                    <TextBox Grid.Row="3" Text="{Binding SelectedMetadata.Details, Mode=OneWay}" IsReadOnly="True" AcceptsReturn="True" TextWrapping="Wrap"/>
+                    <StackPanel Grid.Row="4" Orientation="Horizontal" Spacing="6">
+                        <Button Content="First evidence page" Command="{Binding FirstMetadataCommand}"/>
+                        <Button Content="Next evidence page" Command="{Binding NextMetadataCommand}"/>
+                    </StackPanel>
+                </Grid>
+            </TabItem>
+        </TabControl>
+        <Button Grid.Row="3" Content="Unload V2 (no disk deletion)" Command="{Binding RemoveCommand}" HorizontalAlignment="Left" Margin="8"/>
+    </Grid>
+</UserControl>

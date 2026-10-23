@@ -107,7 +107,7 @@ public sealed class AssetsToolsV2MetadataExtractor : IV2MetadataExtractor
                     await Emit(new V2Diagnostic(-1, null, "discovery", "unsupported-source", "Header is not a supported Unity bundle or serialized file."));
                 else if (kind == UnityFileKind.SerializedFile)
                 {
-                    foreach (V2MetadataRecord record in ReadFile(source, 0, length, 0, Path.GetFileName(path), manager, options, meter, token))
+                    foreach (V2MetadataRecord record in ReadFile(source, 0, length, 0, Path.GetFileName(path), request.Path, manager, options, meter, token))
                         await Emit(record);
                 }
                 else
@@ -134,15 +134,6 @@ public sealed class AssetsToolsV2MetadataExtractor : IV2MetadataExtractor
                         {
                             token.ThrowIfCancellationRequested();
                             AssetBundleDirectoryInfo entry = bundle.BlockAndDirInfo.DirectoryInfos[ordinal];
-                            bool candidate;
-                            try { candidate = (entry.Flags & 4) != 0 || bundle.IsAssetsFile(ordinal); }
-                            catch (Exception e) when (e is not OperationCanceledException)
-                            {
-                                status = V2ExtractionStatus.Partial;
-                                await Emit(Diagnostic(ordinal, null, "file", "candidate-unreadable", e));
-                                continue;
-                            }
-                            if (!candidate) continue;
                             long offset = 0, size = 0;
                             V2Diagnostic? rangeFailure = null;
                             try { bundle.GetFileRange(ordinal, out offset, out size); }
@@ -155,8 +146,17 @@ public sealed class AssetsToolsV2MetadataExtractor : IV2MetadataExtractor
                                     V2ExtractionStatus.Failed, V2DependencyStatus.Unavailable));
                                 continue;
                             }
+                            bool candidate;
+                            try { candidate = (entry.Flags & 4) != 0 || V2SerializedHeader.IsCandidate(bundle.DataReader.BaseStream, offset, size, token); }
+                            catch (Exception e) when (e is not OperationCanceledException)
+                            {
+                                status = V2ExtractionStatus.Partial;
+                                await Emit(Diagnostic(ordinal, null, "file", "candidate-unreadable", e));
+                                continue;
+                            }
+                            if (!candidate) continue;
                             foreach (V2MetadataRecord record in ReadFile(bundle.DataReader.BaseStream, offset, size,
-                                ordinal, entry.Name, manager, options, meter, token)) await Emit(record);
+                                ordinal, entry.Name, request.Path, manager, options, meter, token)) await Emit(record);
                             progress?.Report(new("table", ordinal, assets));
                         }
                         if (files == 0)
@@ -195,15 +195,21 @@ public sealed class AssetsToolsV2MetadataExtractor : IV2MetadataExtractor
     }
 
     private static IEnumerable<V2MetadataRecord> ReadFile(Stream source, long offset, long size, int ordinal,
-        string? name, AssetsManager manager, V2ExtractionOptions options, Meter meter, CancellationToken token)
+        string? name, string sourcePath, AssetsManager manager, V2ExtractionOptions options, Meter meter, CancellationToken token)
     {
         AssetsFile file = new();
         Exception? failure = null;
+        V2SerializedHeader? header = null;
+        string stage = "header";
         Stopwatch phase = Stopwatch.StartNew();
         try
         {
             if (offset < 0 || size < 0 || offset > source.Length || size > source.Length - offset)
                 throw new InvalidDataException("Invalid logical-file byte range.");
+            header = V2SerializedHeader.Read(source, offset, size, token);
+            if (!header.Plausible(size)) throw new InvalidDataException("Inconsistent serialized header; no complete asset coverage established.");
+            if (header.Version > 22) throw new InvalidDataException("Unsupported serialized-file version; supported admission range is 5–22.");
+            stage = "metadata/table";
             file.Read(new AssetsFileReader(new V2ReadWindow(source, offset, size, token)));
             if (file.Header.Version is < 5 or > 22 || file.Header.FileSize > size ||
                 file.Header.FileSize < file.Header.GetSize() || file.Header.DataOffset > size)
@@ -216,8 +222,8 @@ public sealed class AssetsToolsV2MetadataExtractor : IV2MetadataExtractor
         {
             if (failure is not null)
             {
-                yield return Diagnostic(ordinal, null, "table", "table-unreadable", failure);
-                yield return new V2LogicalFile(ordinal, name, Cab(name), null, null, null, null, 0,
+                yield return TableDiagnostic(ordinal, name, sourcePath, source, offset, size, file, header, stage, failure, token);
+                yield return new V2LogicalFile(ordinal, name, Cab(name), file.Metadata?.UnityVersion, header?.Version, file.Metadata?.TypeTreeEnabled, null, 0,
                     V2ExtractionStatus.Failed, V2DependencyStatus.Unavailable);
                 yield break;
             }
@@ -321,7 +327,8 @@ public sealed class AssetsToolsV2MetadataExtractor : IV2MetadataExtractor
                     if (declarations is null) deps = V2DependencyStatus.Partial;
                 }
                 catch (Exception e) when (e is not OperationCanceledException)
-                { depFailure = Diagnostic(ordinal, i, "dependency", "bundle-dependencies-unavailable", e); deps = V2DependencyStatus.Partial; }
+                { depFailure = Diagnostic(ordinal, i, "dependency", "bundle-dependencies-unavailable", e,
+                    $"logical={ordinal}; unity={metadata.UnityVersion}; version={file.Header.Version}; pathId={info.PathId}; assetOffset={absolute}; assetBytes={info.ByteSize}; windowBytes={Math.Min(info.ByteSize, options.MaxDependencyBytes)}; source={sourcePath}"); deps = V2DependencyStatus.Partial; }
                 meter.Dependencies += phase.Elapsed;
                 if (depFailure is not null) yield return depFailure;
                 if (declarations is null && depFailure is null)
@@ -362,8 +369,31 @@ public sealed class AssetsToolsV2MetadataExtractor : IV2MetadataExtractor
         return Convert.ToHexString(hash.GetHashAndReset());
     }
     private static string? Cab(string? raw) => raw?.StartsWith("CAB-", StringComparison.OrdinalIgnoreCase) == true ? raw : null;
-    private static V2Diagnostic Diagnostic(int ordinal, int? row, string phase, string code, Exception e) =>
-        new(ordinal, row, phase, code, $"{e.GetType().Name}: {e.Message}"[..Math.Min(256, e.GetType().Name.Length + 2 + e.Message.Length)]);
+    private static V2Diagnostic TableDiagnostic(int ordinal, string? name, string path, Stream source, long offset, long size,
+        AssetsFile file, V2SerializedHeader? header, string stage, Exception failure, CancellationToken token)
+    {
+        long? position = file.Reader?.Position;
+        string raw = "unknown";
+        if (position is >= 4 && position <= size)
+        {
+            try
+            {
+                using V2ReadWindow peek = new(source, offset + position.Value - 4, 4, token);
+                Span<byte> bytes = stackalloc byte[4]; peek.ReadExactly(bytes);
+                raw = $"offset={position - 4},LE={System.Buffers.Binary.BinaryPrimitives.ReadInt32LittleEndian(bytes)},BE={System.Buffers.Binary.BinaryPrimitives.ReadInt32BigEndian(bytes)} (raw preceding scalar, not verified count)";
+            }
+            catch (IOException) { } // Diagnostic peek must not replace the original failure.
+        }
+        var frame = new StackTrace(failure).GetFrames()?.FirstOrDefault(f => f.GetMethod()?.DeclaringType?.Namespace?.StartsWith("AssetsTools.NET", StringComparison.Ordinal) == true);
+        string parser = frame is null ? "preflight" : $"{frame.GetMethod()?.DeclaringType?.Name}.{frame.GetMethod()?.Name}@IL{frame.GetILOffset():X}";
+        string message = $"{failure.GetType().Name}: {failure.Message}; stage={stage}; logical={ordinal}:{name}; {header?.Evidence ?? "header=unavailable"}; unity={file.Metadata?.UnityVersion ?? "unknown"}; parser={parser}; position={position}; precedingInt32={raw}; logicalRange={offset}+{size}; source={path}";
+        return new(ordinal, null, "table", "table-unreadable", message[..Math.Min(1024, message.Length)]);
+    }
+    private static V2Diagnostic Diagnostic(int ordinal, int? row, string phase, string code, Exception e, string? context = null)
+    {
+        string message = $"{e.GetType().Name}: {e.Message}" + (context is null ? "" : "; " + context);
+        return new(ordinal, row, phase, code, message[..Math.Min(1024, message.Length)]);
+    }
     private sealed class ReceiverException(Exception inner) : Exception("Metadata receiver failed; discard staged source.", inner);
     private sealed class ManagerScope : IDisposable
     {

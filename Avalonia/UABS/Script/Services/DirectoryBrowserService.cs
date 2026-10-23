@@ -77,6 +77,9 @@ public sealed class DirectoryBrowserService : IDirectoryBrowserService
         CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
+        // A package candidate is admitted by the V2 reader on activation, never treated as Unity data.
+        if (!file.Name.EndsWith(".uabs.sqlite", StringComparison.OrdinalIgnoreCase))
+        {
         UnityFileRecognition recognition = _recognitionService.Recognize(file.FullName, cancellationToken);
         cancellationToken.ThrowIfCancellationRequested();
 
@@ -94,6 +97,7 @@ public sealed class DirectoryBrowserService : IDirectoryBrowserService
 
         if (!recognition.IsSupported)
             return;
+        }
 
         try
         {

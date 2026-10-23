@@ -41,7 +41,7 @@ internal static class V2MetadataEnrichment
     {
         int length = reader.ReadInt32();
         if (length < 0) throw new InvalidDataException("Negative metadata string length.");
-        if (length > maximum) throw new MetadataBudgetException();
+        if (length > maximum) throw new MetadataBudgetException("string-bytes", length, maximum, reader.Position - 4);
         if (length > reader.BaseStream.Length - reader.Position) throw new EndOfStreamException();
         byte[] bytes = new byte[length];
         reader.BaseStream.ReadExactly(bytes);
@@ -72,17 +72,20 @@ internal static class V2MetadataEnrichment
             Math.Min(info.ByteSize, options.MaxDependencyBytes), token);
         using AssetsFileReader reader = new(window) { BigEndian = file.Header.Endianness };
         int visits = 0;
+        string rootField = "unknown";
         void Align(Field field) { if (field.Align) reader.Position = checked((reader.Position + 3) & ~3L); }
         void Skip(Field field, int depth)
         {
             token.ThrowIfCancellationRequested();
-            if (++visits > options.MaxDependencyItems || depth > 64) throw new MetadataBudgetException();
+            if (++visits > options.MaxDependencyItems) throw new MetadataBudgetException("field-visits:" + rootField, visits, options.MaxDependencyItems, reader.Position);
+            if (depth > 64) throw new MetadataBudgetException("field-depth", depth, 64, reader.Position);
             if (field.Type == "string") { _ = ReadString(reader, options.MaxDependencyBytes); reader.Position = (reader.Position + 3) & ~3L; }
             else if (field.Type == "Array")
             {
                 int count = reader.ReadInt32();
                 if (count < 0) throw new InvalidDataException("Negative metadata array length.");
-                if (count > options.MaxDependencyItems || field.Children.Count != 2) throw new MetadataBudgetException();
+                if (count > options.MaxDependencyItems) throw new MetadataBudgetException("array-items:" + rootField + "/" + field.Name, count, options.MaxDependencyItems, reader.Position - 4);
+                if (field.Children.Count != 2) throw new InvalidDataException("Unsupported dependency array shape: expected size/data children.");
                 for (int i = 0; i < count; i++) Skip(field.Children[1], depth + 1);
             }
             else if (field.Size >= 0) reader.Position = checked(reader.Position + field.Size);
@@ -92,13 +95,14 @@ internal static class V2MetadataEnrichment
         }
         foreach (Field field in shape.Children)
         {
+            rootField = field.Name;
             if (field.Name != "m_Dependencies") { Skip(field, 0); continue; }
             Field? array = field.Type == "Array" ? field : field.Children.FirstOrDefault();
             if (array?.Type != "Array" || array.Children.Count != 2 || array.Children[1].Type != "string")
                 throw new InvalidDataException("Unsupported dependency declaration layout.");
             int count = reader.ReadInt32();
             if (count < 0) throw new InvalidDataException("Negative dependency count.");
-            if (count > options.MaxDependencyItems) throw new MetadataBudgetException();
+            if (count > options.MaxDependencyItems) throw new MetadataBudgetException("dependency-items", count, options.MaxDependencyItems, reader.Position - 4);
             List<string> values = new(count);
             for (int i = 0; i < count; i++)
             {
@@ -121,5 +125,6 @@ internal static class V2MetadataEnrichment
         return Convert.ToHexString(bytes);
     }
 
-    internal sealed class MetadataBudgetException : IOException;
+    internal sealed class MetadataBudgetException(string budget, long observed, long limit, long position)
+        : IOException($"Metadata budget '{budget}' exceeded: observed={observed}, limit={limit}, asset-relative offset={position}. Optional enrichment incomplete; not evidence of corrupt source.");
 }

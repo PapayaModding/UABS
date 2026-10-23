@@ -1,0 +1,6 @@
+<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:UABS.ViewModels" x:Class="UABS.Page.V2InspectorView" x:DataType="vm:V2BrowseViewModel">
+    <TextBox x:Name="V2ReadOnlyInspector" Text="{Binding Inspector, Mode=OneWay}" IsReadOnly="True"
+             AcceptsReturn="True" TextWrapping="Wrap" Margin="8"
+             AutomationProperties.Name="Read-only V2 asset metadata and memo"/>
+</UserControl>

@@ -14,7 +14,7 @@ internal sealed class V2MetadataFixture : IDisposable
         File.WriteAllBytes(path, bytes);
         return path;
     }
-    internal static byte[] Serialized(int count = 6)
+    internal static byte[] Serialized(int count = 6, string virtualPath = "")
     {
         AssetsFile file = new();
         file.Read(File.OpenRead(TestPaths.SerializedFixture));
@@ -46,7 +46,7 @@ internal sealed class V2MetadataFixture : IDisposable
             file.Metadata.AssetInfos = rows;
             file.Metadata.Externals =
             [
-                new() { PathName = "CAB-duplicate", OriginalPathName = "archive:/first", VirtualAssetPathName = "",
+                new() { PathName = "CAB-duplicate", OriginalPathName = "archive:/first", VirtualAssetPathName = virtualPath,
                     Type = (AssetsFileExternalType)1, Guid = new GUID128 { data0 = 0x01020304, data1 = 0x8090A0B0, data2 = 0xFFFFFFFF, data3 = 0x11223344 } },
                 new() { PathName = "", OriginalPathName = "", VirtualAssetPathName = "", Guid = new GUID128() }
             ];
@@ -56,13 +56,14 @@ internal sealed class V2MetadataFixture : IDisposable
         }
         finally { file.Close(); }
     }
-    internal static byte[] Bundle(string logicalName, bool corruptSecond = false)
+    internal static byte[] Bundle(string logicalName, bool corruptSecond = false, string virtualPath = "",
+        byte[]? leadingResource = null, bool unflaggedLogical = false, byte[]? serializedOverride = null)
     {
-        byte[] serialized = Serialized();
+        byte[] serialized = serializedOverride ?? Serialized(virtualPath: virtualPath);
         (string Name, byte[] Bytes, uint Flags)[] entries =
         [
-            ("before.resS", new byte[8], 0), (logicalName, serialized, 4),
-            ("gap.resource", new byte[8], 0), (logicalName, corruptSecond ? new byte[48] : serialized, 4)
+            ("before.resS", leadingResource ?? new byte[8], 0), (logicalName, serialized, unflaggedLogical ? 0u : 4u),
+            ("gap.resource", new byte[8], 0), (logicalName, corruptSecond ? new byte[48] : serialized, unflaggedLogical ? 0u : 4u)
         ];
         using MemoryStream info = new();
         info.Write(new byte[16]);

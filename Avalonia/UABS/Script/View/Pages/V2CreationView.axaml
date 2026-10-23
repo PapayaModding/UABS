@@ -1,0 +1,46 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:UABS.ViewModels"
+             x:Class="UABS.Page.V2CreationView" x:DataType="vm:V2CreationViewModel">
+    <Grid RowDefinitions="Auto,*,Auto" RowSpacing="10">
+        <Grid ColumnDefinitions="*,Auto">
+            <TextBlock Text="Create Package — V2 SQLite Package" FontSize="18" FontWeight="SemiBold"/>
+            <Button Grid.Column="1" Content="Close" Command="{Binding CloseCommand}"/>
+        </Grid>
+        <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Disabled">
+            <StackPanel Spacing="8" Margin="0,0,20,0">
+                <TextBlock Text="Portable .uabs.sqlite metadata only; source files remain external and read-only. No media is copied or decoded." TextWrapping="Wrap"/>
+                <StackPanel Spacing="8" IsEnabled="{Binding CanEditSelection}">
+                    <TextBlock Text="Package name (without extension)"/>
+                    <TextBox x:Name="CreationName" Text="{Binding Name, Mode=TwoWay}"/>
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                        <TextBox Text="{Binding Directory, Mode=TwoWay}" Watermark="Destination directory"/>
+                        <Button Grid.Column="1" Content="Destination..." Command="{Binding DestinationCommand}"/>
+                    </Grid>
+                    <TextBlock Text="{Binding DestinationPath}" TextWrapping="Wrap"/>
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <Button Content="Add Sources..." Command="{Binding AddSourcesCommand}"/>
+                        <Button x:Name="V2AddFolder" Content="Add Folder..." Command="{Binding AddFolderCommand}"/>
+                        <Button Content="Clear Sources" Command="{Binding ClearSourcesCommand}"/>
+                        <Button Content="Remove Selected" Command="{Binding RemoveSelectedSourceCommand}"/>
+                    </StackPanel>
+                    <CheckBox x:Name="V2IncludeSubfolders" Content="Include subfolders" IsChecked="{Binding IncludeSubfolders, Mode=TwoWay}"/>
+                    <TextBlock x:Name="SelectedSourceCount" Text="{Binding SelectionSummary}" TextWrapping="Wrap"/>
+                    <ListBox x:Name="CreationSources" ItemsSource="{Binding Sources}" Height="150"
+                             SelectedIndex="{Binding SelectedSourceIndex, Mode=TwoWay}"/>
+                </StackPanel>
+                <ProgressBar IsVisible="{Binding IsBusy}" IsIndeterminate="True" Height="4"/>
+                <ProgressBar IsVisible="{Binding IsSelecting}" IsIndeterminate="True" Height="4"/>
+                <TextBlock x:Name="CreationStatus" Text="{Binding Status}" TextWrapping="Wrap"/>
+                <TextBox Text="{Binding Details, Mode=OneWay}" IsReadOnly="True" AcceptsReturn="True" MinHeight="80" MaxHeight="220" TextWrapping="Wrap"/>
+                <Button x:Name="AcknowledgeIncomplete" Content="I acknowledge incomplete asset coverage — publish incomplete package"
+                        IsVisible="{Binding AwaitingAcknowledgement}" Command="{Binding AcknowledgeCommand}"/>
+            </StackPanel>
+        </ScrollViewer>
+        <StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="8">
+            <Button Content="Create" Command="{Binding CreateCommand}"/>
+            <Button Content="Cancel" Command="{Binding CancelCommand}"/>
+            <Button Content="Open Package" Command="{Binding OpenPackageCommand}"/>
+        </StackPanel>
+    </Grid>
+</UserControl>

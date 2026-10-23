@@ -6,6 +6,88 @@ namespace UABS.UnityAssets.Tests;
 
 public sealed class V2MetadataExtractionTests(Xunit.Abstractions.ITestOutputHelper output)
 {
+    [Theory]
+    [InlineData("UWVT")]
+    [InlineData("U")]
+    public async Task ResourceFalsePositive_NegativeSignedVersionNeverReachesMetadataAllocation(string apparentVersion)
+    {
+        byte[] resource = new byte[64];
+        System.Buffers.Binary.BinaryPrimitives.WriteUInt32BigEndian(resource.AsSpan(8), 0xE06E6010);
+        System.Text.Encoding.ASCII.GetBytes(apparentVersion).CopyTo(resource, 20);
+        using (AssetsFileReader oldProbe = new(new MemoryStream(resource)))
+            Assert.True(AssetsFile.IsAssetsFile(oldProbe, 0, resource.Length)); // Probe only; never invoke unsafe metadata parse.
+        using V2MetadataFixture fixture = new();
+        var (result, rows) = await Run(Request(fixture.Save(V2MetadataFixture.Bundle("CAB-valid", leadingResource: resource), "false-positive.bundle")));
+        Assert.Equal(V2ExtractionStatus.Complete, result.Status); Assert.True(result.Source.Verified);
+        Assert.Equal(12, result.CapturedAssets); Assert.Equal(new[] { 1, 3 }, rows.OfType<V2LogicalFile>().Select(f => f.DirectoryOrdinal));
+        Assert.DoesNotContain(rows.OfType<V2Diagnostic>(), d => d.Code == "table-unreadable");
+    }
+
+    [Fact]
+    public async Task ValidUnflaggedSerializedFiles_AreRecognizedByHeaderNotFilenameSuffix()
+    {
+        using V2MetadataFixture fixture = new();
+        var (result, rows) = await Run(Request(fixture.Save(V2MetadataFixture.Bundle("valid.resS", unflaggedLogical: true), "unflagged.bundle")));
+        Assert.Equal(V2ExtractionStatus.Complete, result.Status); Assert.Equal(12, result.CapturedAssets);
+        Assert.Equal(new[] { 1, 3 }, rows.OfType<V2LogicalFile>().Select(f => f.DirectoryOrdinal));
+    }
+
+    [Fact]
+    public async Task FlaggedFutureVersion_RemainsFailedCoverageWithoutMetadataParsing()
+    {
+        byte[] bytes = V2MetadataFixture.Serialized(); System.Buffers.Binary.BinaryPrimitives.WriteUInt32BigEndian(bytes.AsSpan(8), 23);
+        using V2MetadataFixture fixture = new();
+        var (result, rows) = await Run(Request(fixture.Save(V2MetadataFixture.Bundle("future", serializedOverride: bytes), "future.bundle")));
+        Assert.Equal(V2ExtractionStatus.Partial, result.Status); Assert.Equal(0, result.CapturedAssets);
+        Assert.All(rows.OfType<V2LogicalFile>(), f => { Assert.Equal(V2ExtractionStatus.Failed, f.Status); Assert.Equal(23u, f.SerializedVersion); Assert.Null(f.DeclaredAssetCount); });
+        Assert.All(rows.OfType<V2Diagnostic>().Where(d => d.Code == "table-unreadable"), d => Assert.Contains("stage=header", d.Message));
+    }
+
+    private static int TypeCountPosition(byte[] serialized)
+    {
+        using AssetsFileReader reader = new(new MemoryStream(serialized)); var header = new AssetsFileHeader(); header.Read(reader);
+        reader.ReadNullTerminated(); reader.ReadUInt32(); if (header.Version >= 13) reader.ReadBoolean(); return (int)reader.Position;
+    }
+
+    [Fact]
+    public async Task MalformedTypeCount_ReportsSafeHeaderParserAndScalarEvidenceWithoutClaimingCompleteCoverage()
+    {
+        byte[] bytes = V2MetadataFixture.Serialized(0); int countOffset = TypeCountPosition(bytes);
+        System.Buffers.Binary.BinaryPrimitives.WriteInt32LittleEndian(bytes.AsSpan(countOffset), -1);
+        using V2MetadataFixture fixture = new(); string path = fixture.Save(bytes);
+        var (result, rows) = await Run(Request(path)); var diagnostic = Assert.Single(rows.OfType<V2Diagnostic>(), d => d.Code == "table-unreadable");
+        Assert.Equal(V2ExtractionStatus.Partial, result.Status); Assert.Equal(0, result.CapturedAssets);
+        Assert.Contains("ArgumentOutOfRangeException", diagnostic.Message); Assert.Contains("stage=metadata/table", diagnostic.Message);
+        Assert.Contains("version=22", diagnostic.Message); Assert.Contains("AssetsFileMetadata.Read", diagnostic.Message);
+        Assert.Contains("LE=-1", diagnostic.Message); Assert.Contains("metadataSize=", diagnostic.Message); Assert.Contains(path, diagnostic.Message);
+        Assert.Null(Assert.Single(rows.OfType<V2LogicalFile>()).DeclaredAssetCount);
+    }
+
+    [Fact]
+    public async Task TruncatedObjectTable_ReportsEndOfStreamWithoutInventingRows()
+    {
+        byte[] original = V2MetadataFixture.Serialized(0); int count = TypeCountPosition(original);
+        int end = (count + 8 + 3) & ~3; byte[] bytes = original[..end];
+        System.Buffers.Binary.BinaryPrimitives.WriteInt32LittleEndian(bytes.AsSpan(count), 0);
+        System.Buffers.Binary.BinaryPrimitives.WriteInt32LittleEndian(bytes.AsSpan(count + 4), 1);
+        System.Buffers.Binary.BinaryPrimitives.WriteUInt32BigEndian(bytes.AsSpan(20), (uint)(end - 48));
+        System.Buffers.Binary.BinaryPrimitives.WriteInt64BigEndian(bytes.AsSpan(24), end);
+        System.Buffers.Binary.BinaryPrimitives.WriteInt64BigEndian(bytes.AsSpan(32), end);
+        using V2MetadataFixture fixture = new(); var (result, rows) = await Run(Request(fixture.Save(bytes)));
+        Assert.Equal(V2ExtractionStatus.Partial, result.Status); Assert.Empty(rows.OfType<V2Asset>());
+        Assert.Contains(rows.OfType<V2Diagnostic>(), d => d.Code == "table-unreadable" && d.Message.Contains("EndOfStreamException") && d.Message.Contains("stage=metadata/table"));
+        Assert.Null(Assert.Single(rows.OfType<V2LogicalFile>()).DeclaredAssetCount);
+    }
+
+    [Fact]
+    public void BudgetDiagnostics_ReportActualLimitAndOffsetInsteadOfGenericIoError()
+    {
+        using var payload = new MemoryStream(); using (var writer = new BinaryWriter(payload, System.Text.Encoding.UTF8, true)) writer.Write(500);
+        payload.Position = 0; using var reader = new AssetsFileReader(payload);
+        var error = Assert.Throws<V2MetadataEnrichment.MetadataBudgetException>(() => V2MetadataEnrichment.ReadString(reader, 32));
+        Assert.Contains("string-bytes", error.Message); Assert.Contains("observed=500", error.Message); Assert.Contains("limit=32", error.Message);
+        Assert.Contains("offset=0", error.Message); Assert.DoesNotContain("I/O error occurred", error.Message);
+    }
     private static V2ExtractionRequest Request(string path) => new(path, Guid.NewGuid(), Guid.NewGuid());
     private static async Task<(V2ExtractionResult Result, List<V2MetadataRecord> Rows)> Run(
         V2ExtractionRequest request, V2ExtractionOptions? options = null)
@@ -309,8 +391,9 @@ public sealed class V2MetadataExtractionTests(Xunit.Abstractions.ITestOutputHelp
         AssetsFile file = new() { Header = new() { DataOffset = 0, Endianness = false }, Reader = new(payload) };
         AssetFileInfo info = new() { ByteOffset = 0, ByteSize = (uint)payload.Length };
         Assert.Equal(new[] { "", "CAB-repeat", "CAB-repeat" }, V2MetadataEnrichment.BundleDependencies(file, info, shape, new(), default));
-        Assert.Throws<V2MetadataEnrichment.MetadataBudgetException>(() =>
+        var budget = Assert.Throws<V2MetadataEnrichment.MetadataBudgetException>(() =>
             V2MetadataEnrichment.BundleDependencies(file, info, shape, new(MaxDependencyItems: 2), default));
+        Assert.Contains("dependency-items", budget.Message); Assert.Contains("observed=3", budget.Message); Assert.Contains("limit=2", budget.Message);
     }
 
     [Fact]

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Avalonia.Controls;
@@ -15,6 +16,21 @@ namespace UABS.Services;
 // Replacement: Avalonia StorageProvider behind IFilePickerService; file/folder cancellation is covered by Milestone 2 behavior tests.
 public sealed class AvaloniaFilePickerService(TopLevel owner) : IFilePickerService
 {
+    public async Task<IReadOnlyList<string>> PickUnityFilesAsync(CancellationToken cancellationToken = default)
+    {
+        var files = await owner.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions {
+            Title = "Add Unity source files", AllowMultiple = true, FileTypeFilter = [FilePickerFileTypes.All] });
+        cancellationToken.ThrowIfCancellationRequested();
+        if (files.Any(f => f.TryGetLocalPath() is null)) throw new System.IO.IOException("Only local Unity source files are supported.");
+        return files.Select(f => f.TryGetLocalPath()!).ToArray();
+    }
+    public async Task<string?> PickV2PackageAsync(CancellationToken cancellationToken = default)
+    {
+        var files = await owner.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions {
+            Title = "Open read-only UABS V2 package", AllowMultiple = false,
+            FileTypeFilter = [new FilePickerFileType("UABS V2 SQLite") { Patterns = ["*.uabs.sqlite"] }] });
+        cancellationToken.ThrowIfCancellationRequested(); return files.Count == 0 ? null : files[0].TryGetLocalPath();
+    }
     public async Task<string?> PickUnityFileAsync(CancellationToken cancellationToken = default)
     {
         IReadOnlyList<IStorageFile> files = await owner.StorageProvider.OpenFilePickerAsync(

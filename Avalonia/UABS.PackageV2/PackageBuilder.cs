@@ -7,14 +7,17 @@ namespace UABS.PackageV2;
 
 public sealed class PackageBuilder(IV2MetadataExtractor extractor, Action<BuildBoundary, string>? fault = null)
 {
-    public Task<PackageBuildResult> BuildAsync(PackageBuildRequest request, CancellationToken cancellationToken = default)
+    public Task<PackageBuildResult> BuildAsync(PackageBuildRequest request, CancellationToken cancellationToken = default,
+        IProgress<PackageBuildProgress>? progress = null,
+        Func<PartialBuildSummary, CancellationToken, Task<bool>>? acknowledgePartial = null)
     {
         ArgumentNullException.ThrowIfNull(request);
         PackageBuildRequest snapshot = request with { Roots = request.Roots.ToArray(), Sources = request.Sources.ToArray() };
-        return Task.Run(() => Build(snapshot, cancellationToken));
+        return Task.Run(() => Build(snapshot, cancellationToken, progress, acknowledgePartial));
     }
 
-    private async Task<PackageBuildResult> Build(PackageBuildRequest request, CancellationToken token)
+    private async Task<PackageBuildResult> Build(PackageBuildRequest request, CancellationToken token,
+        IProgress<PackageBuildProgress>? progress, Func<PartialBuildSummary, CancellationToken, Task<bool>>? acknowledgePartial)
     {
         Stopwatch total = Stopwatch.StartNew(), phase = new();
         long allocated = GC.GetTotalAllocatedBytes();
@@ -58,6 +61,7 @@ public sealed class PackageBuilder(IV2MetadataExtractor extractor, Action<BuildB
                     token.ThrowIfCancellationRequested();
                     BuildSource source = request.Sources[i]; long sourceId = i + 1;
                     SourceRoot root = request.Roots[source.RootIndex];
+                    progress?.Report(new("Verifying source bytes / extracting metadata / writing SQLite records", i + 1, request.Sources.Count, 0));
                     sql.Exec("INSERT INTO source(source_id,source_uuid,source_revision_uuid,root_id,relative_path,locator_key,original_path,original_name,index_directory,kind,index_status,dependency_status) VALUES(@p0,@p1,@p2,@p3,@p4,@p5,@p6,@p7,@p8,'unknown','failed','unavailable')",
                         sourceId, StorageSchema.Bytes(source.Request.SourceId), StorageSchema.Bytes(source.Request.RevisionId), source.RootIndex + 1,
                         source.RelativePath, StorageSchema.Locator(source.RelativePath, root.PathPolicy), source.Request.Path,
@@ -103,8 +107,21 @@ public sealed class PackageBuilder(IV2MetadataExtractor extractor, Action<BuildB
                 }
                 sql.Exec("UPDATE package SET index_status=@p0", partial ? "partial" : "complete");
                 ingestion = phase.Elapsed;
-                if (partial && !request.AcknowledgePartial) throw new PartialException();
+                if (partial && !request.AcknowledgePartial)
+                {
+                    List<string> details = [];
+                    using (var issues = c.CreateCommand())
+                    {
+                        issues.CommandText = "SELECT phase,code,message FROM indexing_issue ORDER BY issue_id LIMIT 50";
+                        using var rows = issues.ExecuteReader();
+                        while (rows.Read()) details.Add($"{rows.GetString(0)} / {rows.GetString(1)}: {rows.GetString(2)}");
+                    }
+                    var summary = new PartialBuildSummary(sql.Number("SELECT COUNT(*) FROM asset"),
+                        sql.Number("SELECT COUNT(*) FROM indexing_issue"), details);
+                    if (acknowledgePartial is null || !await acknowledgePartial(summary, token).ConfigureAwait(false)) throw new PartialException();
+                }
                 token.ThrowIfCancellationRequested();
+                progress?.Report(new("Validating staged package", request.Sources.Count, request.Sources.Count, sql.Number("SELECT COUNT(*) FROM asset")));
                 phase.Restart(); fault?.Invoke(BuildBoundary.BeforeValidation, staging);
                 _ = StorageSchema.Validate(c, true, token);
                 fault?.Invoke(BuildBoundary.AfterValidation, staging);
@@ -115,6 +132,7 @@ public sealed class PackageBuilder(IV2MetadataExtractor extractor, Action<BuildB
             phase.Restart();
             using (FileStream flush = new(staging, FileMode.Open, FileAccess.ReadWrite, FileShare.None)) flush.Flush(flushToDisk: true);
             fault?.Invoke(BuildBoundary.BeforePublication, staging);
+            progress?.Report(new("Publishing finished package", request.Sources.Count, request.Sources.Count, 0));
             token.ThrowIfCancellationRequested();
             // Same-directory, no-overwrite publication. No replacement, live-copy or two-rename fallback.
             File.Move(staging, destination, overwrite: false);
@@ -141,8 +159,15 @@ public sealed class PackageBuilder(IV2MetadataExtractor extractor, Action<BuildB
             catch (UnauthorizedAccessException) { retained = staging; }
         }
         using Process process = Process.GetCurrentProcess();
+        long fileBytes = 0;
+        if (published)
+        {
+            try { fileBytes = new FileInfo(destination).Length; }
+            catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+            { status = StorageStatus.IoFailure; message = "Package published, but output observation failed: " + e.Message; }
+        }
         return new(status, published ? destination : null, message[..Math.Min(message.Length, 1024)],
-            new(schema, ingestion, validation, publication, total.Elapsed, published ? new FileInfo(destination).Length : 0,
+            new(schema, ingestion, validation, publication, total.Elapsed, fileBytes,
                 GC.GetTotalAllocatedBytes() - allocated, process.PeakWorkingSet64, maxBatch), retained);
     }
 

@@ -64,6 +64,8 @@ Evidence, migration tracking, risks, decisions, and implementation history:
 - [Package V2 Gate 2 storage](05_audit/package-format-v2-gate-02-storage.md) — isolated canonical SQLite builder/read-only reader, publication safety, admission and storage measurements; no production integration.
 - [Package V2 Gate 3 isolated Search](05_audit/package-format-v2-gate-03-search.md) — Search/federation API, correctness, bounded pagination and verification/acceptance evidence; no production UI integration.
 - [Package V2 Gate 4 memos](05_audit/package-format-v2-gate-04-memos.md) — isolated per-asset transactions, editor exclusion, verified publication and draft-adaptation boundary; no production UI integration.
+- [Package V2 Gate5A integration](05_audit/package-format-v2-gate-05a-integration.md) — production read-only registration, bounded Assets/Packages browsing and exact-identity Inspector; no V2 Search or writes.
+- [Package V2 Gate5A.1 creation](05_audit/package-format-v2-gate-05a1-creation.md) — production source selection, staged SQLite creation, explicit incomplete-coverage acknowledgement and registration; no structural editing.
 - [Package V2 .NET SQLite validation spike](05_audit/package-format-v2-dotnet-sqlite-spike.md) — isolated provider, metadata, search/federation and memo transaction evidence; no production replacement.
 - [Current Codex session handoff](05_audit/codex-session-handoff.md)
 - [Feature comparison](05_audit/feature-comparison.md)
