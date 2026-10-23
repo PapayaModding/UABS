@@ -13,7 +13,7 @@ Related sources of truth: [AI policy](../01_core/ai-agent.md), [current UI/workf
 
 The current implementation intentionally includes individual indexed assets, per-asset memos, V1 support, and restricted V2 global sorting. The requirements below propose changes to those boundaries; they do not rewrite historical reports or establish that existing design decisions were implementation defects. In particular, current UI documentation describes Search-to-Assets as deferred; calling for its restoration records the desired legacy workflow, not proof that a previously implemented Avalonia action was removed.
 
-[Phase1B implementation contract audit](v2-recovery-phase-01b-implementation-contract.md) maps actual controls, source eligibility, pre-page aggregation, global sorting, exact navigation/history and workspace/model boundaries. Before implementation, approve B1 source-kind/status inclusion, B2 existing-control and direct-source/child predicate interactions, B3 navigation/history/stale/failed-draft policies, and B4 source-header mappings. Its six dependency-ordered checkpoints are proposals, not implementation authorization; P1-D1–P1-D5 remain binding and all17 issues remain Reported.
+[Phase1B implementation contract audit](v2-recovery-phase-01b-implementation-contract.md) maps actual controls, source eligibility, pre-page aggregation, global sorting, exact navigation/history and workspace/model boundaries. [Phase 1C approvals](#phase-1c-approved-decisions-p1-d6p1-d9) decide the four product directions: bundle-only Search eligibility, cross-asset matching, exact navigation preserving directory commands, and Name/Package-only Search headers. They supersede conflicting Phase1B proposals, including same-asset-only filtering and a Source header alias. Detailed Boolean/control and lifecycle contracts remain unresolved; the six implementation checkpoints are proposals, not authorization. All17 issues remain Reported.
 
 ## Mandatory compatibility contract
 
@@ -185,7 +185,7 @@ Do not start Phase1, a V1 audit, schema changes or any implementation automatica
 
 ## Phase 1 Approved Decisions
 
-**Authority:** explicit user approval, recorded 2026-10-23. **Status:** P1-D1–P1-D5 are decided design direction, not implementation authorization. No roadmap phase, schema/trigger amendment, bundle-memo storage or behavior change is authorized by this documentation task. All 17 issues, including #1/#2/#3/#7, remain Reported, unimplemented/unresolved under this roadmap. These IDs are separate from the existing V2 D1–D8, including D5 Refresh policy, which remain unchanged.
+**Authority:** explicit user approval, recorded 2026-10-23. **Status:** P1-D1–P1-D9 are decided design direction, not implementation authorization; the Phase1C section below refines the original five decisions. No roadmap phase, schema/trigger amendment, bundle-memo storage or behavior change is authorized by this documentation task. All 17 issues, including #1/#2/#3/#7, remain Reported, unimplemented/unresolved under this roadmap. These IDs are separate from the existing V2 D1–D8, including D5 Refresh policy, which remain unchanged.
 
 ### P1-D1 — Bundle identity and deduplication
 
@@ -207,17 +207,39 @@ Do not start Phase1, a V1 audit, schema changes or any implementation automatica
 
 **Approved / decided:** support Name and existing meaningful source/bundle fields with deterministic global ordering **before pagination**, never sorting only materialized rows. Do not invent additional fields. Defer **bundle Memo sorting** until bundle-memo architecture and its sorting semantics are separately approved. Detailed eligible field mappings, immutable tie-breakers and source-level cursor integration remain implementation dependencies; this is not approval for a local-window substitute.
 
+## Phase 1C Approved Decisions P1-D6–P1-D9
+
+**Authority:** explicit user approval recorded 2026-10-23. These four approval areas are decided and supersede conflicting Phase1B recommendations, not historical findings about current code. All nine P1 decisions apply together. No implementation phase or checkpoint is complete or authorized by this record.
+
+### P1-D6 — Bundle source eligibility
+
+**Approved / decided:** only sources confirmed as actual Unity bundles qualify for bundle-level Search. Use reliable existing source-kind/indexing evidence, never filenames, extensions, CAB labels or display names. Standalone serialized files, resource entries and other entities must not silently appear as bundles. Keep one result per eligible indexed occurrence under P1-D1. Where metadata cannot establish genuine bundle classification, record an unresolved dependency rather than invent rules or modify storage. Partial/failed indexing still requires explicit evidence/coverage handling; this decision does not separately settle Packages inventory policy for non-bundle sources.
+
+### P1-D7 — Cross-asset Search matching
+
+**Approved / decided:** different contained assets in the same bundle may collectively satisfy different conditions. A name containing `hero`, type `Texture2D` and memo containing `Attack` may be satisfied by separate assets. This **supersedes the Phase1B same-asset-only recommendation**; do not reduce bundle matching to one same-asset SQL EXISTS or turn every filter into unconditional OR. Preserve P1-D2 bundle-name matching and aggregate once per bundle before global sorting/pagination.
+
+The principle is approved; its detailed Boolean/control contract is not. Specify include OR groups, candidate-level excludes, negation/exclusion scope, Memo-only, exact/substring modes, type/Class ID/Path ID, bundle-name interactions with active filters, empty/incomplete asset sets and predicates inherently tied to one exact asset identity. Preserve existing controls; no silent removal or reinterpretation.
+
+### P1-D8 — Search → Assets navigation and history
+
+**Approved / decided:** Go to Assets uses the exact indexed source/bundle occurrence identity, never display filename, CAB label or non-unique path alone. Preserve existing directory-based Back, Forward and Up. Carry additional source-navigation context only where necessary; do not redefine those commands or replace directory history with source history. Source selection, missing originals, unload/replacement, stale results and navigation-context details remain implementation dependencies, alongside safe draft handling.
+
+### P1-D9 — Minimal Search headers
+
+**Approved / decided:** bundle-level Search displays exactly **Name** (bundle display name) and **Package** (owning UABS package). No Source column; original source path and relevant technical identity belong in the Inspector/details. Retain immutable source identity internally for deduplication, ordering and navigation. Do not repurpose asset Path ID, Class ID, Kind or Memo as bundle table columns, or introduce extra visible columns without approval. Name and Package retain meaningful global sorting where supported under P1-D5. This supersedes the proposed Source-to-Name header alias; it does not change other workspaces or implement the column change now.
+
 ## Decisions and new findings register
 
-The five decisions above resolve product direction only. Preserve the remaining technical questions and obtain separate authorization for any implementation slice. Record later decisions with user/date, source evidence and acceptance impact.
+The nine decisions above resolve product direction only. Preserve the remaining technical questions and obtain separate authorization for any implementation slice. Phase1B B1–B4 product approval areas are decided by P1-D6–P1-D9; remaining detailed contracts are not blanket implementation approval. Record later decisions with user/date, source evidence and acceptance impact.
 
 | Decision/finding | Affected issues | Current disposition |
 |---|---|---|
-| Bundle row unit and deduplication | #1, #2, #7 | **Decided: P1-D1.** One indexed source occurrence; preserve separate identities across identical labels/hashes. Standalone/failed/unsupported-source inclusion and typed projection still need specification |
-| Search matching and aggregation | #1, #6, #7 | **Decided: P1-D2.** Source-name OR qualifying contained asset-name/memo match, one source row before global order/paging; approved asset filtering retained. Precise source/child predicate composition, coverage evidence and current mixed-result/Path ID/Class/type/Memo-only controls still need mapping |
+| Bundle row unit and deduplication | #1, #2, #7 | **Decided: P1-D1/P1-D6.** One confirmed bundle occurrence per Search row; preserve distinct identities across equal labels/hashes. Typed projection, uncertain classification, partial coverage and non-bundle Packages inventory remain dependencies |
+| Search matching and aggregation | #1, #6, #7 | **Decided: P1-D2/P1-D7.** Bundle-name matching preserved; different children may collectively satisfy conditions, one bundle before global order/paging. Detailed Boolean/exclusion/control/identity and incomplete-set semantics remain unresolved; same-asset-only recommendation superseded |
 | Genuine bundle memo direction | #3, #6, #7, #9 | **Decided: P1-D3; detailed design deferred.** Independent bundle identity/storage/transactions/conflicts/UI/synchronization remain unapproved; preserve asset memos, no fake values or schema/trigger changes |
-| Global source/bundle sorting | #6 | **Decided: P1-D5.** Name/existing meaningful fields globally before pages; bundle Memo sorting deferred. Exact mappings, NULL/empty/Unicode/ties and cursor contracts remain to specify without changing established asset matching |
-| Search → Assets workflow | #2 | **Decided: P1-D4.** Exact source navigation, existing history/Back/Forward preserved, indexed metadata available without source where supported. Gesture, native provenance, parent-directory/return-context integration and missing-source UX remain to specify |
+| Global source/bundle sorting and Search headers | #1, #6 | **Decided: P1-D5/P1-D9.** Search displays only Name/Package, meaningfully sorted globally; source path/technical identity in Inspector. No Source alias or asset-level columns; bundle Memo sorting deferred. Ties/cursors/display-name mapping remain technical work |
+| Search → Assets workflow | #2 | **Decided: P1-D4/P1-D8.** Exact occurrence navigation, directory Back/Forward/Up preserved; supported offline metadata retained. Source selection, provenance, missing originals, lifecycle/staleness/drafts and minimal additional context remain to specify |
 | Reuse boundary and which paged grids should become infinite-scroll consumers | #4, #8 | Open; preserve workspace-specific providers/columns/Inspectors |
 | V1-only capability inventory and V2 replacement/retirement approvals | #9 | Open; future V2-only/no-migration direction recorded, immediate removal not authorized |
 | Filesystem Assets unique behavior and accurate Choose... replacement label | #11, #13 | Inspect before deciding; no assumed redundancy/picker type |

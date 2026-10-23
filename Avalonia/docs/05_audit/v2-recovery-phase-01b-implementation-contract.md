@@ -4,20 +4,37 @@
 
 ## Authority and outcome
 
+**Current contract:** the [Phase1C approval record](v2-ui-workflow-recovery-roadmap.md#phase-1c-approved-decisions-p1-d6p1-d9) adds P1-D6–P1-D9. These override conflicting proposals below, not source findings. The original P1-D1–P1-D5 remain binding. No implementation is authorized and all17 issues remain unresolved.
+
 [Phase 1 Approved Decisions P1-D1–P1-D5](v2-ui-workflow-recovery-roadmap.md#phase-1-approved-decisions) are binding: one immutable source occurrence; source-name OR contained asset-name/memo matching; separate future genuine bundle-memo design; exact Search → Assets navigation/history; meaningful global source sorting before pagination. They do not amend [V2 D1–D8/schema](../03_design/package-format-v2-design.md), including D5 explicit Refresh. Recommendations below are not additional approvals.
 
 The [Phase1A audit](v2-recovery-phase-01a-bundle-audit.md) supplies legacy call tracing and identity evidence. Source results are representable without a schema change, but current Search does **not** aggregate child asset matches into sources, and indexed Assets does not browse only a selected source. Recovery needs an explicit source projection and source-scoped navigation, not grouping visible asset rows or selecting an arbitrary child.
 
+## Phase 1C Approved Decisions P1-D6–P1-D9
+
+**Recorded 2026-10-23 by explicit user approval.** The authoritative details are in the roadmap linked above. The four product approval areas B1–B4 are decided; technical dependencies remain.
+
+The original approvals remain: **P1-D1** immutable occurrence identity/no label/hash merging; **P1-D2** bundle-name or contained name/memo matching, aggregated before global sort/pages; **P1-D3** separately designed genuine bundle memos, existing asset memos unchanged; **P1-D4** exact Search → Assets navigation/history and supported offline indexed metadata; **P1-D5** deterministic meaningful global sorting, bundle Memo sorting deferred. P1-D6–P1-D9 refine these directions as follows.
+
+| Decision | Approved contract | Remaining implementation detail |
+|---|---|---|
+| P1-D6 / B1 | Bundle-level Search accepts only sources confirmed as actual Unity bundles by reliable source-kind/indexing evidence, one occurrence under P1-D1; no filename/extension/CAB/name heuristics or silent serialized/resource inclusion | Reliability where classification evidence is insufficient; partial/failed coverage; non-bundle Packages inventory not separately decided |
+| P1-D7 / B2 | Different children may collectively satisfy conditions, e.g. separate assets supply `hero` name, `Texture2D` type and `Attack` memo; same-asset-only recommendation **superseded**. Preserve P1-D2 bundle-name matching and aggregation before sort/pages | Include OR groups, candidate excludes/negation scope, Memo-only, exact/substring, type/Class ID/Path ID, bundle-name/filter interaction, empty/incomplete sets, inherently identity-bound predicates |
+| P1-D8 / B3 | Go to Assets uses exact indexed occurrence identity; directory Back/Forward/Up stay unchanged; carry only necessary extra source-navigation context | Source/child selection, missing originals, unload/replacement, stale results, return context and draft policy |
+| P1-D9 / B4 | Bundle Search shows exactly Name and Package, with meaningful supported global sorting; no Source or asset-level Path ID/Class ID/Kind/Memo columns; technical source path/identity in Inspector and internal keys | Display-name mapping, deterministic ties/cursors and scoped UI implementation; extra visible columns require approval |
+
+P1-D7 is not unconditional OR and does not authorize removal/reinterpretation of controls. P1-D9 supersedes the Source-header alias proposal. Bundle-owned memo storage remains separately deferred by P1-D3; V2 D1–D8/schema/D5 remain unchanged.
+
 ## 1. Source eligibility
 
-[Extractor.ExtractAsync](../../UABS.UnityAssets/Metadata/AssetsToolsV2MetadataExtractor.cs), [PackageBuilder.BuildAsync](../../UABS.PackageV2/PackageBuilder.cs) and [canonical DDL](../../UABS.PackageV2/Schema.sql) establish these entities. Proposed inclusion still requires the approvals indicated.
+[Extractor.ExtractAsync](../../UABS.UnityAssets/Metadata/AssetsToolsV2MetadataExtractor.cs), [PackageBuilder.BuildAsync](../../UABS.PackageV2/PackageBuilder.cs) and [canonical DDL](../../UABS.PackageV2/Schema.sql) establish these entities. The table retains entity evidence but reconciles earlier eligibility proposals with P1-D6; Search and Packages policy must not be conflated.
 
 | Evidence/entity | Proposed Search / Packages Indexed Assets treatment | Constraint / approval |
 |---|---|---|
 | Verified `bundle`, complete tables | One source occurrence; Search applies predicates, Packages lists inventory | Full immutable identity; never filename/hash deduplication |
-| Verified standalone `serialized` source | Include as a clearly identified serialized source | **B1:** approve inclusion under bundle-oriented presentation |
-| Bundle/serialized source with partial tables | Include with incomplete-coverage evidence; match captured data/source name | **B1:** approve presentation; a non-match does not prove absence in original bytes |
-| Failed/unsupported/unknown imported source | Preserve source/status evidence in Packages; propose direct-name-only Search eligibility | **B1:** approve Search inclusion; no invented children or verified fingerprint |
+| Verified standalone `serialized` source | Excluded from bundle-level Search under P1-D6 | Earlier inclusion proposal superseded; non-bundle Packages inventory remains a separate detail |
+| Confirmed bundle with partial tables | Eligible kind under P1-D6; preserve incomplete coverage | Exact empty/incomplete-set matching remains unresolved under P1-D7; non-match does not prove absence in original bytes |
+| Failed/unsupported/unknown imported source | Preserve source/status evidence; Search requires reliable confirmation it is an actual bundle | Earlier blanket direct-name eligibility proposal superseded; absent reliable evidence, document limitation, never invent classification/children/fingerprint |
 | Serialized logical file | Child evidence, not another top-level result | Original directory ordinal, including gaps; standalone ordinal is 0 |
 | Raw/nonserialized bundle entry | Not a serialized table or independent source | Content/flags/range evidence, not extension; independently imported raw files follow unsupported-source policy |
 
@@ -31,11 +48,11 @@ Evidence: [SearchWorkspaceView](../../UABS/Script/View/Pages/SearchWorkspaceView
 |---|---|---|
 | Include / comma OR | Trim English/Chinese comma terms; distinct OrdinalIgnoreCase; any term in selected fields | Direct source-name OR qualifying child-name/memo branch; display source once |
 | Exact name | Whole-field versus substring for selected fields, including memo and excludes | Preserve V2 semantics, not legacy case-sensitive/first-term quirks |
-| Exclude | Any excluded term in selected values vetoes that candidate | Keep child candidate scope; **B2:** define direct-source versus child exclusion composition; excluded sibling must not silently veto every child |
+| Exclude | Any excluded term in selected values vetoes that candidate | P1-D7 leaves candidate/negation/exclusion scope unresolved; do not silently apply a sibling veto or silently waive exclusions |
 | Search memos | Adds Memo to selected fields | Child asset memo can qualify a source; never copy it into source Memo |
-| Memo only | Non-whitespace asset-memo gate, independent of keyword memo matching | Same-child gate; **B2:** whether direct source hit also requires a qualifying child |
-| Path ID | Exact signed invariant Int64; permits execution without include | Child-only AND gate; **B2:** interaction with direct source hits; no source Path ID |
-| Class ID / exact type | V2 asset-only AND filters; signed Int32 / whole-field OrdinalIgnoreCase; mixed/non-asset requests currently fail validation | Same-child predicates possible, but enabling source projection is **B2**, not permission to ignore current validation |
+| Memo only | Non-whitespace asset-memo gate, independent of keyword memo matching | P1-D7 cross-asset principle applies; detailed quantification and interaction with direct bundle hits unresolved |
+| Path ID | Exact signed invariant Int64; permits execution without include | Asset evidence, no source-owned Path ID; P1-D7 detailed Boolean/identity binding and direct bundle-name interaction remain unresolved |
+| Class ID / exact type | V2 asset-only AND filters; signed Int32 / whole-field OrdinalIgnoreCase; mixed/non-asset requests currently fail validation | P1-D7 permits different children to contribute; detailed filter/identity rules need specification before changing current validation |
 | Fields: Names | PackageName + SourceName + AssetName | P1-D2 source/child branches; **B2:** explicitly retain/define package-name contribution |
 | Fields: Paths | PackagePath + IndexDirectory + SourcePath | Package/source metadata; **B2:** approve interaction with source/child-name rule |
 | Fields: CAB codes | Logical-file CAB evidence | **B2:** contained logical-file match may qualify source; never identity by CAB |
@@ -47,13 +64,13 @@ Evidence: [SearchWorkspaceView](../../UABS/Script/View/Pages/SearchWorkspaceView
 | Search / Enter / Cancel | Explicit execution; criteria-changed status and cancellation | Preserve; include-free requests need Path ID, exclude-only/Memo-only do not enumerate all; at least one result kind required today |
 | Refresh Search / paging Retry | Explicit stale readmission versus retry valid boundary | Preserve D5; criteria edits, memo saves and navigation do not implicitly Search |
 
-**Grouping invariant:** a single child must satisfy all active child conditions. Asset A named `Hero` plus unrelated asset B having requested Class ID must not qualify the source. Use one correlated child predicate with text, excludes, Path ID, class/type and memo-only gates; never separate `EXISTS(name)` and `EXISTS(class)` that combine siblings.
+**Historical recommendation — superseded by P1-D7:** Phase1B originally required a single child to satisfy all conditions and rejected combining a `Hero` name from asset A with a Class ID from asset B. That is no longer a mandatory invariant: different contained assets may collectively satisfy conditions. Do not carry the original same-asset-only rule into implementation/tests. Predicates inherently tied to one asset identity still need an explicit contract; cross-asset approval does not mean indiscriminate OR.
 
-**B2 remains open:** source named `Hero` with no child at requested Path ID cannot accidentally bypass that filter. Recommend requiring a qualifying child whenever child-only gates are active, with direct-name matching contributing the text part. This is a proposed clarification, not an approved override of P1-D2's OR. Also approve exclusion scope for direct source hits versus excluded children. Until decided, explicit validation is safer than silently ignoring controls.
+**B2 principle decided; detailed semantics unresolved:** the earlier recommendation to require one qualifying child for every active child gate is superseded. Define include OR groups, candidate-level excludes, negation/exclusion scope, Memo-only, exact/substring, type/Class ID/Path ID predicates, direct bundle-name/filter interaction, empty/incomplete sets and identity-bound predicates explicitly. In particular, source `Hero` with no child at requested Path ID needs an approved Boolean rule; neither automatic bypass nor rejection is implied by P1-D7. Do not silently ignore/remove existing controls.
 
 ## 3. Aggregation, global sorting and paging
 
-Add a narrow explicit source-projection request/result to the existing V2 search path; preserve old SourceFile/asset callers and V1. No provider framework is necessary. Proposed query shape, **not implemented SQL or DDL**:
+Add a narrow explicit source-projection request/result to the existing V2 search path; preserve old SourceFile/asset callers and V1. No provider framework is necessary. **Historical Phase1B sketch — same-asset predicate superseded by P1-D7; not an implementation contract, implemented SQL or DDL:**
 
 ```sql
 SELECT source_identity_and_display_evidence
@@ -71,7 +88,7 @@ ORDER BY approved_source_sort_and_immutable_ties
 LIMIT page_size_plus_one;
 ```
 
-Finalize B2 before composing branches. One outer row per source establishes aggregation **before** per-package limit, global merge and pagination. Never join all asset hits then deduplicate after LIMIT, or group the retained 600 rows. Match-category evidence may be bounded; no unbounded witness lists, concatenated memos or arbitrary child selection. Source Memo is unavailable, not an invented asset memo.
+**Current direction:** retain one outer row per confirmed bundle, but replace the sketch's single-child requirement with the separately specified cross-asset Boolean expression. Multiple correlated predicates may express separately quantified conditions; their grouping/negation/identity constraints are not approved SQL yet. Finalize detailed control semantics before writing that expression. Aggregation still precedes per-package limit, global merge and pagination. Never deduplicate after LIMIT or group the retained600 rows. Keep match evidence bounded, with no concatenated child memos or arbitrary child selection. Source Memo remains unavailable and is not a Search column under P1-D9.
 
 [V2SearchService.ReadPageAsync](../../UABS.PackageV2/Search/V2SearchService.cs) already merges ordered per-package candidates into a bounded best-K+1 set with worker limits, cancellation and revision checks. Reuse this architecture (engine page maximum 500; production fetch 100), counting sources rather than assets. Keep [V2SearchWindow](../../UABS/Script/ViewModels/V2SearchWindow.cs)'s 600 retained rows/128 checkpoints and separately retained selection/draft. Exhausted exact counts mean indexed eligible sources, not whole-corpus completeness.
 
@@ -115,7 +132,7 @@ sequenceDiagram
 - **B3:** approve blocking stale-result navigation until Refresh versus separately revalidating exact navigation. D5 prohibits stale paging but does not decide this policy itself.
 - Pending saves remain attached to captured immutable asset identities. **B3:** decide blocking navigation on failed/conflicted flush versus allowing departure with retained draft/status. Never discard drafts, invent a modal policy or trigger competing flush paths.
 - Capture Search criteria/scope, selected source, window/anchor and return context. Return does not rerun Search; package/editor ownership and dirty clones remain intact.
-- Preserve directory Back/Forward. **B3:** define source/workspace return integration in existing shell history before implementation; no database paths as directories or second competing navigator. Workspace switching alone does not fulfill source history.
+- **P1-D8 decided:** preserve directory Back/Forward/Up without redefining them or replacing their history. Carry additional source-navigation context only where necessary. Detailed return/context behavior remains unresolved; no database paths as directories or competing navigator.
 
 ## 5. Header meanings and global sorts
 
@@ -125,12 +142,12 @@ sequenceDiagram
 |---|---|
 | Name | `source.original_name`, global OrdinalIgnoreCase/Ordinal ordering and immutable ties |
 | Package | Stored package display name; deterministic package/location/source ties |
-| Source | Current source label also original name; **B4:** approve alias-to-Name behavior, no invented field |
-| Path ID | Not source-owned; **B4:** explicitly unsupported in source mode, no first/min/matching-child surrogate |
-| Kind | No equivalent meaningful approved global Kind contract; do not invent one |
-| Memo | Genuine source memo absent; no borrowed child values or sorting under P1-D3/P1-D5 |
+| Source | Historical alias-to-Name proposal superseded by P1-D9: not displayed; source path/technical identity in Inspector |
+| Path ID | Not displayed under P1-D9; no first/min/matching-child surrogate |
+| Kind / Class ID | Not displayed or repurposed as bundle columns under P1-D9 |
+| Memo | Not displayed under P1-D9; no borrowed child value or bundle Memo sort under P1-D3/P1-D5 |
 
-No columns are added/removed/reordered or resized by this audit. Other existing meaningful source fields require explicitly scoped header mappings, not silent repurposing. Arrows must reflect published global order; unsupported headers explain limitations. Sort rebuild preserves criteria/scope/verified identity/drafts, resets paging and leaves D5 unchanged.
+**P1-D9 current contract:** exactly Name and Package are visible in bundle-level Search; no additional columns without explicit approval. Name is the bundle display name, Package the owning UABS package; retain meaningful global sorts where supported. Internal source identity remains available for deterministic ordering/deduplication/navigation. The table documents existing headers and their future disposition, not permission to retain extra headers. This documentation edit changes no XAML. Sort arrows reflect published order; rebuild preserves criteria/scope/verified identity/drafts, resets paging and leaves D5 unchanged.
 
 ## 6. Workspace and model boundaries
 
@@ -144,15 +161,15 @@ Do not turn `V2AssetRow` into a generic row that accidentally becomes a source m
 
 ## 7. Approval gates and small implementation checkpoints
 
-**Still undecided:** B1 kind/status inclusion; B2 all field/result-kind and direct-source/child-gate/exclusion interactions; B3 destination/history/stale/failed-draft navigation; B4 alias/meaningless-header behavior. These refine contracts without reopening P1-D1–P1-D5. Genuine bundle memo identity/storage/transactions/conflicts/UI stays in its separate milestone with separate schema approval.
+**B1–B4 product directions decided by P1-D6–P1-D9:** confirmed bundles only in Search; cross-asset matching allowed; exact navigation preserves directory Back/Forward/Up; Search headers exactly Name/Package. Still unresolved are reliable classification where evidence is insufficient, detailed Boolean/control/identity/coverage semantics, source selection/offline/lifecycle/stale/draft/context behavior, and exact display/sort/cursor integration. These do not reopen P1-D1–P1-D9. Genuine bundle memo design stays separate with separate schema approval.
 
 A new scoped implementation request is required. Dependency order:
 
 | Checkpoint / code responsibility | Preserve / focused tests | Manual Debug acceptance / risk |
 |---|---|---|
-| 1. Approved criteria/eligibility and typed source key/projection in contracts/adapters | Asset/V1 callers; duplicate labels/hashes, partial sources, same-child AND false positives | Review criteria/unsupported explanations; B1/B2 must be settled |
+| 1. Approved criteria/eligibility and typed source key/projection in contracts/adapters | Asset/V1 callers; duplicate labels/hashes, bundle-only evidence, partial sources, approved cross-asset combinations and eventual Boolean/identity boundaries | Review criteria/unsupported explanations; detailed P1-D7 semantics must be settled |
 | 2. Source query/comparer/federation/keyset in SearchQuery/SearchSession/V2SearchService | Schema/D1–D8, budgets; Unicode/NULL, multi-package, >600 sources, late pages, lifecycle invalidation | Results/count/coverage; disposable 1M plans/calibration, no assumed fast-path benefit |
-| 3. Source binding/header eligibility in Search VM/View, reuse window | Controls/defaults/styles, 600/128, drafts/D5; toggles, eviction/replay, rapid sorts, V1 | Published arrows, unsupported headers, scrolling/zebra/resize; never local-only sort |
+| 3. Source binding and P1-D9 Name/Package-only headers in Search VM/View, reuse window | Unchanged criteria controls/defaults/styles, 600/128, drafts/D5; toggles, eviction/replay, rapid sorts, V1 | Exactly two approved headers, published arrows and Inspector source details; never local-only sort |
 | 4. Source-scoped reader/catalog/browse context | All classes/ordinals, exact memos/editor ownership; missing payload, duplicate logical names, partial coverage, paged source filtering, workspace independence | Correct root/only its assets/no arbitrary child; shared browse state must not reset Packages |
 | 5. Go to Assets and existing-shell history/return | Browser history/valid sessions/drafts; pending/failed flush, unload during await, rapid navigation, identical names, return state | Exact destination/return/offline/failure paths; B3 and native provenance prerequisites |
 | 6. Packages source inventory and separately authorized Assets column slice | Editor guards/dirty state/V1/technical Inspector; row units, memo eligibility, focus/styles | Source versus asset selection and existing package actions; no invented bundle memos/unrequested columns |
