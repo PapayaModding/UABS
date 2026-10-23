@@ -17,7 +17,7 @@ The current implementation intentionally includes individual indexed assets, per
 
 ## Mandatory compatibility contract
 
-[Phase1D Search semantics/navigation lifecycle audit](v2-recovery-phase-01d-search-navigation-semantics.md) supplies current V1/V2 control evidence, a proposed cross-asset predicate/truth table, exact lifecycle/failure outcomes and six remaining user-visible choices: S1 exclusion scope, S2 mandatory-gate/witness grouping, S3 field/result-kind mapping, N1 indexed/native destination, N2 stale-valid navigation, N3 pending/failed draft navigation. These are recommendations awaiting approval, not P1-D10+ decisions. Current comma OR, exact matching, immutable identity, directory Back/Forward/Up, Name/Package-only target headers and D5 are not reopened. All17 issues remain Reported; no implementation checkpoint is authorized or complete.
+[Phase1D Search semantics/navigation lifecycle audit](v2-recovery-phase-01d-search-navigation-semantics.md) preserves current-code evidence and records [approved P1-D10–P1-D15](#phase-1d-approved-decisions-p1-d10p1-d15), resolving its six approval questions. Bundle-wide exclusions and original Unity filesystem navigation supersede candidate-only exclusions and indexed-metadata destination proposals throughout earlier audits; those files remain historical evidence, not conflicting active authority. Technical exclusion-field scope, result-kind compatibility and lifecycle implementation details remain dependencies. All17 issues remain Reported; no implementation checkpoint is authorized or complete.
 
 **Existing functionality and UI behavior are protected by default.** For every implementation:
 
@@ -187,7 +187,7 @@ Do not start Phase1, a V1 audit, schema changes or any implementation automatica
 
 ## Phase 1 Approved Decisions
 
-**Authority:** explicit user approval, recorded 2026-10-23. **Status:** P1-D1–P1-D9 are decided design direction, not implementation authorization; the Phase1C section below refines the original five decisions. No roadmap phase, schema/trigger amendment, bundle-memo storage or behavior change is authorized by this documentation task. All 17 issues, including #1/#2/#3/#7, remain Reported, unimplemented/unresolved under this roadmap. These IDs are separate from the existing V2 D1–D8, including D5 Refresh policy, which remain unchanged.
+**Authority:** explicit user approval, recorded 2026-10-23. **Status:** P1-D1–P1-D15 complete the current Phase1 design approval set, not implementation authorization; the Phase1C/1D sections below refine the original decisions. No roadmap phase, schema/trigger amendment, bundle-memo storage or behavior change is authorized by this documentation task. All 17 issues, including #1/#2/#3/#7, remain Reported, unimplemented/unresolved under this roadmap. These IDs are separate from the existing V2 D1–D8, including D5 Refresh policy, which remain unchanged.
 
 ### P1-D1 — Bundle identity and deduplication
 
@@ -205,6 +205,8 @@ Do not start Phase1, a V1 audit, schema changes or any implementation automatica
 
 **Approved / decided:** restore navigation from a selected Search bundle result to its corresponding source/bundle in Assets using exact identity, never filenames or CAB labels. Preserve existing navigation history and Back/Forward behavior. Support indexed metadata browsing when original source bundles are unavailable wherever existing V2 contracts permit it; metadata availability does not imply source payload loading/preview is possible. Action wiring, missing-source presentation and exact child-selection provenance remain technical dependencies, not a reason to retarget identity or replace existing history semantics.
 
+**P1-D13 clarification:** independent indexed metadata browsing remains available where already supported, but it is **not** the Go to Assets destination or an automatic fallback. That action must open the original Unity source in filesystem browsing; unavailable/invalid/ambiguous originals produce an error and preserve current state.
+
 ### P1-D5 — Global sorting
 
 **Approved / decided:** support Name and existing meaningful source/bundle fields with deterministic global ordering **before pagination**, never sorting only materialized rows. Do not invent additional fields. Defer **bundle Memo sorting** until bundle-memo architecture and its sorting semantics are separately approved. Detailed eligible field mappings, immutable tie-breakers and source-level cursor integration remain implementation dependencies; this is not approval for a local-window substitute.
@@ -221,7 +223,7 @@ Do not start Phase1, a V1 audit, schema changes or any implementation automatica
 
 **Approved / decided:** different contained assets in the same bundle may collectively satisfy different conditions. A name containing `hero`, type `Texture2D` and memo containing `Attack` may be satisfied by separate assets. This **supersedes the Phase1B same-asset-only recommendation**; do not reduce bundle matching to one same-asset SQL EXISTS or turn every filter into unconditional OR. Preserve P1-D2 bundle-name matching and aggregate once per bundle before global sorting/pagination.
 
-The principle is approved; its detailed Boolean/control contract is not. Specify include OR groups, candidate-level excludes, negation/exclusion scope, Memo-only, exact/substring modes, type/Class ID/Path ID, bundle-name interactions with active filters, empty/incomplete asset sets and predicates inherently tied to one exact asset identity. Preserve existing controls; no silent removal or reinterpretation.
+P1-D10–P1-D12 now settle bundle-wide asset exclusions, independent cross-asset mandatory filters and preservation of supported control meanings. Retain technical details for exclusion fields, result-kind compatibility, empty/incomplete evidence and inherently identity-bound predicates without reopening these approved principles. Preserve existing controls; no silent removal or reinterpretation.
 
 ### P1-D8 — Search → Assets navigation and history
 
@@ -231,17 +233,45 @@ The principle is approved; its detailed Boolean/control contract is not. Specify
 
 **Approved / decided:** bundle-level Search displays exactly **Name** (bundle display name) and **Package** (owning UABS package). No Source column; original source path and relevant technical identity belong in the Inspector/details. Retain immutable source identity internally for deduplication, ordering and navigation. Do not repurpose asset Path ID, Class ID, Kind or Memo as bundle table columns, or introduce extra visible columns without approval. Name and Package retain meaningful global sorting where supported under P1-D5. This supersedes the proposed Source-to-Name header alias; it does not change other workspaces or implement the column change now.
 
+## Phase 1D Approved Decisions P1-D10–P1-D15
+
+**Authority:** explicit user approval recorded 2026-10-23. S1/S2/S3/N1/N2/N3 are decided as below; this completes the current P1-D1–P1-D15 design approval set. Conflicting audit recommendations are superseded, while historical source findings remain intact. No implementation phase/checkpoint is complete or authorized.
+
+### P1-D10 — Bundle-wide exclusions
+
+**Approved / decided (S1):** exclude the entire eligible bundle/source occurrence if **any contained asset** matches an active exclusion, not just a positive candidate. Neither bundle-name nor another asset's positive match can bypass the veto. Preserve existing exclusion parsing/comparison; exclusions are not positive OR terms. Apply before result emission, global sorting and pagination. This supersedes candidate-scoped exclusion recommendations. Exact exclusion-field scope and handling of incomplete evidence remain technical dependencies; do not invent rules for source/package fields.
+
+### P1-D11 — Cross-asset mandatory filters
+
+**Approved / decided (S2):** separate children can satisfy separate mandatory filters (for example type and nonblank memo). Mandatory requirements remain conjunctive, distinct from include-OR keyword terms; neither same-asset-only matching nor unconditional OR is permitted. Apply P1-D10 exclusions independently. The conceptual model is eligibility/scope AND positive matching AND all active mandatory conditions AND no triggered bundle-wide asset exclusion, then one result per occurrence before global order/pages. Identity-bound lookup components must not be fabricated or split into an ambiguous target; genuinely unspecified edge cases remain technical details.
+
+### P1-D12 — Preserve Search field and result-kind meanings
+
+**Approved / decided (S3):** preserve supported field selections, keyword/exact/substring/include-OR, Memo-only, type/Class ID, signed Path ID, result-kind and package-scope controls. Asset-oriented fields are predicates over contained assets, not displayed bundle values. Translate using P1-D10/P1-D11; do not drop inconvenient controls. If a result-kind control cannot meaningfully yield eligible bundle results, document the compatibility conflict for explicit resolution, not a redesign or automatic conversion to evidence toggles.
+
+### P1-D13 — Go to Assets opens the original Unity source
+
+**Approved / decided (N1):** resolve the exact indexed source occurrence using immutable identity and registration/generation/revision evidence, then navigate to its **original Unity file in filesystem browsing**. Never choose a same-named source/package or non-unique path alone. Preserve directory Back/Forward/Up and do not select an unrelated child. No silent SQLite metadata destination/fallback. Missing, invalid or ambiguous originals leave current workspace state intact with a clear error. This supersedes the indexed-metadata navigation recommendation; loader/directory-selection/provenance and lifecycle steps remain pending implementation details, not additional approval questions.
+
+### P1-D14 — Stale-result navigation
+
+**Approved / decided (N2):** revalidate exact package/source occurrence and relevant generation/revision on request. Stale Search alone is not a blanket navigation ban. Invalid registration/original file fails clearly, preserving current Assets state; never substitute a similar label. No implicit Search rerun; D5 explicit Refresh remains protected.
+
+### P1-D15 — Nonblocking memo-draft navigation
+
+**Approved / decided (N3):** navigation does not require successful persistence. Preserve pending/failed asset drafts, identities and errors; never discard/overwrite/mark failed drafts saved. Preserve current memo contracts; no automatic save gate, modal workflow or unrelated UI change. Any transition that cannot retain a draft is a documented implementation dependency, not claimed support.
+
 ## Decisions and new findings register
 
-The nine decisions above resolve product direction only. Preserve the remaining technical questions and obtain separate authorization for any implementation slice. Phase1B B1–B4 product approval areas are decided by P1-D6–P1-D9; remaining detailed contracts are not blanket implementation approval. Record later decisions with user/date, source evidence and acceptance impact.
+The fifteen decisions above resolve current product direction only. Preserve remaining technical questions and obtain separate implementation authorization. Phase1B B1–B4 and Phase1D S1–S3/N1–N3 approval questions are decided; exclusion-field and result-kind conflicts, source provenance and lifecycle engineering still require explicit treatment. Record later findings with evidence and acceptance impact.
 
 | Decision/finding | Affected issues | Current disposition |
 |---|---|---|
 | Bundle row unit and deduplication | #1, #2, #7 | **Decided: P1-D1/P1-D6.** One confirmed bundle occurrence per Search row; preserve distinct identities across equal labels/hashes. Typed projection, uncertain classification, partial coverage and non-bundle Packages inventory remain dependencies |
-| Search matching and aggregation | #1, #6, #7 | **Decided: P1-D2/P1-D7.** Bundle-name matching preserved; different children may collectively satisfy conditions, one bundle before global order/paging. Detailed Boolean/exclusion/control/identity and incomplete-set semantics remain unresolved; same-asset-only recommendation superseded |
+| Search matching and aggregation | #1, #6, #7 | **Decided: P1-D2/P1-D7/P1-D10–P1-D12.** Bundle-wide asset exclusion veto; independent cross-asset mandatory filters distinct from include OR; supported controls preserved, one bundle before global order/pages. Exclusion-field scope, incompatible result kinds, identity-bound and incomplete evidence remain dependencies, not reopened product questions |
 | Genuine bundle memo direction | #3, #6, #7, #9 | **Decided: P1-D3; detailed design deferred.** Independent bundle identity/storage/transactions/conflicts/UI/synchronization remain unapproved; preserve asset memos, no fake values or schema/trigger changes |
 | Global source/bundle sorting and Search headers | #1, #6 | **Decided: P1-D5/P1-D9.** Search displays only Name/Package, meaningfully sorted globally; source path/technical identity in Inspector. No Source alias or asset-level columns; bundle Memo sorting deferred. Ties/cursors/display-name mapping remain technical work |
-| Search → Assets workflow | #2 | **Decided: P1-D4/P1-D8.** Exact occurrence navigation, directory Back/Forward/Up preserved; supported offline metadata retained. Source selection, provenance, missing originals, lifecycle/staleness/drafts and minimal additional context remain to specify |
+| Search → Assets workflow | #2 | **Decided: P1-D4/P1-D8/P1-D13–P1-D15.** Original Unity filesystem destination, exact revalidation even when Search stale, nonblocking retained memo drafts/errors; directory commands unchanged. Missing/invalid/ambiguous target fails without metadata fallback; exact source/provenance and transition engineering remain pending |
 | Reuse boundary and which paged grids should become infinite-scroll consumers | #4, #8 | Open; preserve workspace-specific providers/columns/Inspectors |
 | V1-only capability inventory and V2 replacement/retirement approvals | #9 | Open; future V2-only/no-migration direction recorded, immediate removal not authorized |
 | Filesystem Assets unique behavior and accurate Choose... replacement label | #11, #13 | Inspect before deciding; no assumed redundancy/picker type |
