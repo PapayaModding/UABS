@@ -248,6 +248,7 @@
                         <StackPanel Spacing="8">
                             <TextBlock Text="{Binding SelectedResult.Name}" FontSize="17" FontWeight="SemiBold"
                                        TextWrapping="Wrap"/>
+                            <StackPanel IsVisible="{Binding !IsBundleSelected}" Spacing="8">
                             <TextBlock Text="{Binding SelectedResult.Kind, StringFormat=Kind: {0}}"/>
                             <TextBlock Text="{Binding SelectedResult.PackageName, StringFormat=Package: {0}}" TextWrapping="Wrap"/>
                             <TextBlock Text="{Binding SelectedResult.PackagePath, StringFormat=Package path: {0}}" TextWrapping="Wrap"/>
@@ -260,6 +261,7 @@
                             <StackPanel IsVisible="{Binding CanShowMemoEditor}">
                                 <page:EditableMemoInspectorView x:Name="SearchMemoInspector"
                                                                 DataContext="{Binding MemoInspector}" Margin="0,4,0,0"/>
+                            </StackPanel>
                             </StackPanel>
                             <SelectableTextBlock x:Name="V2SearchDetails" Text="{Binding SelectedResult.V2Details}"
                                                  IsVisible="{Binding IsV2ResultSelected}" TextWrapping="Wrap"/>

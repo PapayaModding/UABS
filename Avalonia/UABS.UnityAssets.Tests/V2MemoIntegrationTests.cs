@@ -82,20 +82,30 @@ public sealed class V2MemoIntegrationTests
         var identity = app.AssetList.MemoInspector.Identity!; Assert.NotNull(identity.V2);
         app.AssetList.MemoInspector.MemoText = "钩爪 memo 🦉"; await app.AssetList.MemoInspector.SaveNowCommand.ExecuteAsync();
         Assert.Equal(MemoDraftSaveState.Saved, app.AssetList.MemoInspector.SaveState);
-        app.Search.PathIdText = identity.PathId.ToString(CultureInfo.InvariantCulture); app.Search.IncludePackageResults = false; app.Search.IncludeSourceResults = false;
-        await app.Search.SearchAsync(); Assert.Null(app.Search.Error); app.Search.SelectedResult = Assert.Single(app.Search.Results); await app.Search.MemoTransitionTask;
-        Assert.True(app.Search.MemoInspector.IsEditable, app.Search.MemoInspector.Explanation);
-        Assert.True(PackageMemoIdentityComparer.Same(identity, app.Search.MemoInspector.Identity));
+        // Production Search now projects bundles; retain the asset-search/memo API
+        // assertions without pretending a source row owns a contained asset's memo.
+        using var assetSearch = new SearchWorkspaceViewModel(app.Packages, new UABS.UnityAssets.Packages.Search.PackageSearchService(),
+            app.InspectorMemos, app.MemoDrafts, app.InspectorMemos, v2Memos: app.InspectorMemos);
+        assetSearch.PathIdText = identity.PathId.ToString(CultureInfo.InvariantCulture); assetSearch.IncludePackageResults = false; assetSearch.IncludeSourceResults = false;
+        await assetSearch.SearchAsync(); Assert.Null(assetSearch.Error); assetSearch.SelectedResult = Assert.Single(assetSearch.Results); await assetSearch.MemoTransitionTask;
+        Assert.True(assetSearch.MemoInspector.IsEditable, assetSearch.MemoInspector.Explanation);
+        Assert.True(PackageMemoIdentityComparer.Same(identity, assetSearch.MemoInspector.Identity));
         app.V2.SelectedPackage = entry; await app.V2.SelectionTask;
         app.V2.SelectedAsset = app.V2.Assets.Single(a => a.Identity.PathId == identity.PathId); await app.V2.MemoTransitionTask;
         Assert.True(PackageMemoIdentityComparer.Same(identity, app.V2.MemoInspector.Identity));
-        app.Search.MemoInspector.MemoText = "shared pending";
+        assetSearch.MemoInspector.MemoText = "shared pending";
         Assert.Equal("shared pending", app.AssetList.MemoInspector.MemoText); Assert.Equal("shared pending", app.V2.MemoInspector.MemoText);
-        var rows = app.Search.Results; var selected = app.Search.SelectedResult;
-        await app.Search.MemoInspector.SaveNowCommand.ExecuteAsync();
-        Assert.Equal(MemoDraftSaveState.Saved, app.Search.MemoInspector.SaveState);
-        Assert.Same(rows, app.Search.Results); Assert.Same(selected, app.Search.SelectedResult); Assert.Equal("shared pending", selected.Memo);
-        Assert.Equal("shared pending", app.V2.SelectedAsset!.Memo); Assert.True(app.Search.IsStale); Assert.False(app.Search.CanReadNextPage);
+        app.Search.IncludePackageResults = false; app.Search.IncludeAssetResults = false; app.Search.IncludeSourceResults = true;
+        app.Search.FieldSelection = SearchWorkspaceFieldSelection.Assets; app.Search.PathIdText = identity.PathId.ToString(CultureInfo.InvariantCulture);
+        await app.Search.SearchAsync(); Assert.Null(app.Search.Error); app.Search.SelectedResult = Assert.Single(app.Search.Results);
+        await app.Search.MemoTransitionTask; Assert.False(app.Search.CanShowMemoEditor); Assert.Null(app.Search.SelectedResult.Memo);
+        Assert.Equal("shared pending", app.AssetList.MemoInspector.MemoText); Assert.Equal("shared pending", assetSearch.MemoInspector.MemoText);
+        var rows = assetSearch.Results; var selected = assetSearch.SelectedResult;
+        await assetSearch.MemoInspector.SaveNowCommand.ExecuteAsync();
+        Assert.Equal(MemoDraftSaveState.Saved, assetSearch.MemoInspector.SaveState);
+        Assert.Same(rows, assetSearch.Results); Assert.Same(selected, assetSearch.SelectedResult); Assert.Equal("shared pending", selected.Memo);
+        Assert.Equal("shared pending", app.V2.SelectedAsset!.Memo); Assert.True(assetSearch.IsStale); Assert.False(assetSearch.CanReadNextPage);
+        Assert.True(app.Search.IsStale); Assert.Null(app.Search.SelectedResult.Memo);
         using var reader = (await PackageReader.OpenAsync(output)).Reader!;
         var target = identity.V2!; var saved = await reader.ReadMemoAsync(new(target.PackageId, target.GenerationId, target.SourceId, target.SourceRevision, target.DirectoryOrdinal, target.PathId));
         Assert.Equal("shared pending", saved.Memo); Assert.Equal(2, saved.MemoRevision);

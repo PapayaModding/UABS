@@ -88,7 +88,8 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
             memoResolver,
             MemoDrafts,
             InspectorMemos,
-            v2Memos: InspectorMemos);
+            v2Memos: InspectorMemos,
+            useBundleProjection: true);
         Packages.PropertyChanged += PackagesOnPropertyChanged;
         V2.PropertyChanged += V2OnPropertyChanged;
         BrowseV2Command = new RelayCommand(() => { IsV2Assets = V2.SelectedPackage is not null; V2NavigationTask = V2.VerifyCurrentAsync(); });

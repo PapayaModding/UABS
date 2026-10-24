@@ -29,8 +29,21 @@ public sealed class V2SearchOperation : IAsyncDisposable
     private V2SearchOperation(V2BrowseRegistration[] scope, V2SearchService engine)
     { _scope = scope; _engine = engine; _evidence = new string[scope.Length]; _admissions = new PackageReader.SearchAdmission?[scope.Length]; }
 
-    public static async Task<V2SearchOperation> OpenAsync(IReadOnlyList<V2BrowseRegistration> scope,
+    public static Task<V2SearchOperation> OpenAsync(IReadOnlyList<V2BrowseRegistration> scope,
         SearchRequest request, CancellationToken token, V2SearchService? engine = null)
+        => OpenCoreAsync(scope, request, null, token, engine);
+
+    public static async Task<V2SearchOperation> OpenBundleAsync(IReadOnlyList<V2BrowseRegistration> scope,
+        BundleSearchRequest request, CancellationToken token, V2SearchService? engine = null)
+    {
+        engine ??= new V2SearchService();
+        var validation = engine.CreateBundleSession(request, Array.Empty<Guid>());
+        using var probe = validation.Session ?? throw new InvalidDataException($"{validation.Status}: {validation.Message}");
+        return await OpenCoreAsync(scope, null, request, token, engine).ConfigureAwait(false);
+    }
+
+    private static async Task<V2SearchOperation> OpenCoreAsync(IReadOnlyList<V2BrowseRegistration> scope,
+        SearchRequest? request, BundleSearchRequest? bundle, CancellationToken token, V2SearchService? engine)
     {
         if (scope.Count is < 1 or > 128 || scope.Distinct().Count() != scope.Count)
             throw new InvalidDataException("Select between 1 and 128 distinct registered V2 packages.");
@@ -58,8 +71,16 @@ public sealed class V2SearchOperation : IAsyncDisposable
                     throw new InvalidDataException("Search read admission/catalog changed during registration. Refresh explicitly.");
             }
             await operation.CheckEvidenceAsync(linked.Token).ConfigureAwait(false);
-            var created = operation._engine.CreateSession(request, operation._registered);
-            operation._session = created.Session ?? throw new InvalidDataException($"{created.Status}: {created.Message}");
+            if (bundle is not null)
+            {
+                var created = operation._engine.CreateBundleSession(bundle, operation._registered);
+                operation._session = created.Session?.SourceSession ?? throw new InvalidDataException($"{created.Status}: {created.Message}");
+            }
+            else
+            {
+                var created = operation._engine.CreateSession(request!, operation._registered);
+                operation._session = created.Session ?? throw new InvalidDataException($"{created.Status}: {created.Message}");
+            }
             linked.Token.ThrowIfCancellationRequested();
             return operation;
         }

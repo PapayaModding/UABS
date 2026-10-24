@@ -31,6 +31,9 @@ public sealed record BundleSearchPage(SearchStatus Status, IReadOnlyList<BundleS
 public sealed class BundleSearchSession : IDisposable
 {
     internal SearchSession Inner { get; }
+    /// <summary>Engine-native source rows/cursors for existing bounded-window adapters.
+    /// The session still executes only the validated bundle projection.</summary>
+    public SearchSession SourceSession => Inner;
     internal BundleSearchSession(SearchSession inner) => Inner = inner;
     public BundleSearchRequest Criteria => Inner.Bundle!;
     public IReadOnlyList<SearchRevision> Revisions => Inner.Revisions;

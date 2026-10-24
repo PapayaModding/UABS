@@ -122,7 +122,8 @@ public sealed class SearchResultItemViewModel : ViewModelBase
     public long? PathId => V2Result is { } v ? v.PathId : Result?.PathId;
     public object IconKind => Kind == PackageSearchResultKind.Asset && !string.IsNullOrWhiteSpace(V2Result?.TypeName)
         ? V2Result.TypeName : Kind;
-    public string V2Details => V2Result is not { } v ? "" :
+    public string V2Details => V2Result is not { } v ? "" : v.Key.Kind == PackageSearchResultKind.SourceFile ?
+        $"V2 indexed Unity bundle/source metadata\nName: {Name}\nPackage: {PackageName}\nPackage path: {PackagePath}\nOriginal indexed source: {SourcePath}\nIndex directory: {IndexDirectory}\nPackage UUID: {v.Key.PackageId}\nGeneration: {v.Key.GenerationId}\nSource UUID: {v.Key.SourceId}\nSource revision: {v.Key.SourceRevision}\nRegistration: {V2Revision?.RegistrationId}\nLocation epoch: {V2Revision?.LocationEpoch}\nCatalog revision: {V2Revision?.CatalogRevision}\nIndex status: {v.IdentityStatus ?? "<not recorded>"}\nMatched: {v.MatchCategories}\nSource metadata, not an individual asset. Bundle-owned memos are not implemented." :
         $"V2 read-only indexed metadata\nRegistration: {V2Revision?.RegistrationId}\nLocation epoch: {V2Revision?.LocationEpoch}\nCatalog revision: {V2Revision?.CatalogRevision}\n{v.Key}\nPath ID: {v.PathId}\nClass ID: {v.ClassId}\nType: {v.TypeName ?? "<unknown>"}\nRaw name: {Raw(v.AssetName)}\nIdentity: {v.IdentityStatus ?? "not an asset"}\nMemo revision: {v.MemoRevision}\nMemo: {Raw(v.Memo)}";
     private static string Raw(string? text) => text is null ? "<missing>" : text.Length == 0 ? "<empty>" : text;
     public string? Memo
@@ -202,6 +203,7 @@ public sealed class SearchWorkspaceViewModel : ViewModelBase, IDisposable
     private string _typeNameText = "";
     private readonly Func<V2SearchService> _v2EngineFactory;
     private readonly InspectorMemoService? _v2Memos;
+    private readonly bool _useBundleProjection;
 
     public SearchWorkspaceViewModel(
         PackageManagementViewModel packages,
@@ -210,7 +212,8 @@ public sealed class SearchWorkspaceViewModel : ViewModelBase, IDisposable
         IMemoDraftCoordinator? memoDraftCoordinator = null,
         IPackageEditorSessionGuard? editorSessionGuard = null,
         Func<V2SearchService>? v2EngineFactory = null,
-        InspectorMemoService? v2Memos = null)
+        InspectorMemoService? v2Memos = null,
+        bool useBundleProjection = false)
     {
         _packages = packages ?? throw new ArgumentNullException(nameof(packages));
         _searchService = searchService ?? throw new ArgumentNullException(nameof(searchService));
@@ -218,6 +221,9 @@ public sealed class SearchWorkspaceViewModel : ViewModelBase, IDisposable
         _memoDrafts = memoDraftCoordinator ?? new UnavailableMemoDraftCoordinator();
         _v2EngineFactory = v2EngineFactory ?? (() => new V2SearchService());
         _v2Memos = v2Memos;
+        // Existing programmatic asset-search consumers retain their API; the application
+        // composition explicitly chooses the approved bundle projection, with no UI toggle.
+        _useBundleProjection = useBundleProjection;
         if (v2Memos is not null) v2Memos.Published += OnVerifiedV2Memo;
         MemoInspector = new EditableMemoInspectorViewModel(
             _memoDrafts,
@@ -247,9 +253,11 @@ public sealed class SearchWorkspaceViewModel : ViewModelBase, IDisposable
     public V2SearchWindow? ResultWindow => _v2Window;
     public bool IsV2Search => _v2Operation is not null;
     public bool CanSortResultsLocally => !IsV2Search && (Results.Count == 0 || !Results[0].IsV2);
+    public bool IsBundleSearch => _useBundleProjection && !CanSortResultsLocally;
+    public bool IsBundleSelected => IsBundleSearch && SelectedResult?.Kind == PackageSearchResultKind.SourceFile;
     public bool CanChangeV2Sort => !IsStale && (_sortBasis is not null || (_v2Operation is not null
         && _v2Window is not null && ReferenceEquals(Results, _v2Window.Rows) && (!IsSearching || IsLoadingPage)));
-    public bool CanSortV2AssetName => CanChangeV2Sort
+    public bool CanSortV2AssetName => !_useBundleProjection && CanChangeV2Sort
         && (_sortBasis?.Request ?? _v2Operation!.Session.Criteria).ResultKinds == PackageSearchResultKinds.Asset;
     public PackageSearchSortField? DisplayedSortBy => CanSortResultsLocally ? null : _displayedSortBy;
     public PackageSearchSortDirection DisplayedSortDirection => _displayedSortDirection;
@@ -262,7 +270,7 @@ public sealed class SearchWorkspaceViewModel : ViewModelBase, IDisposable
     public bool CanReadPreviousPage => _v2Window?.CanBackward == true && !IsStale && !IsSearching;
     public bool IsSelectionOutsideWindow => IsV2Search && SelectedResult is not null && !Results.Contains(SelectedResult);
     public bool IsV2ResultSelected => SelectedResult?.IsV2 == true;
-    public bool CanShowMemoEditor => !IsV2ResultSelected || _v2Memos is not null;
+    public bool CanShowMemoEditor => !IsBundleSelected && (!IsV2ResultSelected || _v2Memos is not null);
     public string CountSummary { get => _countSummary; private set => SetField(ref _countSummary, value); }
     public string Warnings { get => _warnings; private set => SetField(ref _warnings, value); }
     public bool HasWarnings => Warnings.Length > 0;
@@ -274,6 +282,7 @@ public sealed class SearchWorkspaceViewModel : ViewModelBase, IDisposable
         OnPropertyChanged(nameof(CanRetryPage)); OnPropertyChanged(nameof(ResultCount)); OnPropertyChanged(nameof(HasResults));
         OnPropertyChanged(nameof(IsSelectionOutsideWindow)); OnPropertyChanged(nameof(ShowEmptyState));
         OnPropertyChanged(nameof(IsV2Search)); OnPropertyChanged(nameof(CanSortResultsLocally));
+        OnPropertyChanged(nameof(IsBundleSearch)); OnPropertyChanged(nameof(IsBundleSelected)); OnPropertyChanged(nameof(CanShowMemoEditor));
         OnPropertyChanged(nameof(CanChangeV2Sort)); OnPropertyChanged(nameof(CanSortV2AssetName));
         OnPropertyChanged(nameof(DisplayedSortBy)); OnPropertyChanged(nameof(DisplayedSortDirection));
         NextPageCommand?.NotifyCanExecuteChanged(); RetryPageCommand?.NotifyCanExecuteChanged();
@@ -333,6 +342,7 @@ public sealed class SearchWorkspaceViewModel : ViewModelBase, IDisposable
                 _selectionCriteria = _v2Criteria;
                 OnPropertyChanged(nameof(HasSelectedResult));
                 OnPropertyChanged(nameof(IsV2ResultSelected));
+                OnPropertyChanged(nameof(IsBundleSelected));
                 OnPropertyChanged(nameof(CanShowMemoEditor));
                 OnPropertyChanged(nameof(IsSelectionOutsideWindow));
                 QueueMemoPresentation(flushIdentity: previousIdentity);
@@ -586,7 +596,7 @@ public sealed class SearchWorkspaceViewModel : ViewModelBase, IDisposable
             { Error = "Class ID must be a signed 32-bit number."; return; }
             classId = value;
         }
-        if ((classId is not null || !string.IsNullOrWhiteSpace(TypeNameText)) && legacy!.ResultKinds != PackageSearchResultKinds.Asset)
+        if (!_useBundleProjection && (classId is not null || !string.IsNullOrWhiteSpace(TypeNameText)) && legacy!.ResultKinds != PackageSearchResultKinds.Asset)
         { Error = "Class ID / type-name filters require Assets only (disable Packages and Sources)."; return; }
         // Raw AssetName has no equivalent meaning for the shared mixed-result
         // Name column. A newly executed mixed query resumes the existing default.
@@ -601,6 +611,8 @@ public sealed class SearchWorkspaceViewModel : ViewModelBase, IDisposable
 
     public Task SortV2Async(PackageSearchSortField field)
     {
+        if (_useBundleProjection && field is not (PackageSearchSortField.SourceName or PackageSearchSortField.PackageName))
+            return Task.CompletedTask;
         if (!CanChangeV2Sort || (field == PackageSearchSortField.AssetName && !CanSortV2AssetName)
             || field is not (PackageSearchSortField.AssetName or PackageSearchSortField.PackageName or PackageSearchSortField.SourceName or PackageSearchSortField.PathId))
             return Task.CompletedTask;
@@ -636,7 +648,14 @@ public sealed class SearchWorkspaceViewModel : ViewModelBase, IDisposable
         try
         {
             RetireV2Operation(); IsStale = false;
-            var operation = await V2SearchOperation.OpenAsync(scope.Select(p => p.Package.V2!).ToArray(), request, owned.Token, _v2EngineFactory());
+            var selectedScope = scope.Select(p => p.Package.V2!).ToArray();
+            var operation = _useBundleProjection
+                ? await V2SearchOperation.OpenBundleAsync(selectedScope, new BundleSearchRequest(request.Query, request.ExcludedQuery,
+                    request.Fields, ExactText: request.ExactText, RequireNonEmptyMemo: request.RequireNonEmptyMemo,
+                    PathId: request.PathId, ClassId: request.ClassId, TypeName: request.TypeName,
+                    SortBy: request.SortBy == PackageSearchSortField.SourceName ? BundleSearchSort.Name : BundleSearchSort.Package,
+                    SortDirection: request.SortDirection, ResultKinds: request.ResultKinds), owned.Token, _v2EngineFactory())
+                : await V2SearchOperation.OpenAsync(selectedScope, request, owned.Token, _v2EngineFactory());
             if (version != _searchVersion || owned.IsCancellationRequested)
             { await operation.DisposeAsync(); return; }
             if (criteria.SelectedPaths != CaptureCriteria().SelectedPaths)

@@ -199,12 +199,18 @@ public sealed class V2BrowseIntegrationTests
         var selected = app.V2.SelectedAsset; app.SelectedWorkspaceIndex = 1; app.SelectedWorkspaceIndex = 0; Assert.Same(selected, app.V2.SelectedAsset);
         var scope = Assert.Single(app.Search.PackageScopes);
         Assert.Equal($"V2:{catalogItem.V2!.Epoch}", scope.ScopeKey); // Exact registration, not display-name matching.
-        app.Search.IncludeText = "Hero"; app.Search.IncludePackageResults = false; app.Search.IncludeSourceResults = false;
+        app.Search.IncludeText = "Hero"; app.Search.IncludePackageResults = false; app.Search.IncludeAssetResults = false; app.Search.IncludeSourceResults = true;
+        app.Search.FieldSelection = SearchWorkspaceFieldSelection.Assets;
         await app.Search.SearchAsync(); Assert.Null(app.Search.Error); Assert.NotEmpty(app.Search.Results);
         Assert.All(app.Search.Results, row => Assert.True(row.IsV2));
         Assert.Throws<InvalidOperationException>(() => app.Search.Results[0].Result); // No fabricated V1 provider.
         app.Search.SelectedResult = app.Search.Results[0]; await app.Search.MemoTransitionTask;
-        Assert.True(app.Search.MemoInspector.IsEditable); Assert.NotNull(app.Search.MemoInspector.Identity!.V2); Assert.Equal(0, factory.Calls);
+        Assert.False(app.Search.CanShowMemoEditor); Assert.Null(app.Search.SelectedResult.PathId);
+        Assert.Equal(UABS.UnityAssets.Packages.Search.PackageSearchResultKind.SourceFile, app.Search.SelectedResult.Kind);
+        Assert.NotNull(app.Search.SelectedResult.V2Result!.Key.SourceId); Assert.Equal(0, factory.Calls);
+        // Asset-owned memo editing remains available through the actual asset Inspector.
+        await app.V2.MemoTransitionTask;
+        Assert.True(app.V2.MemoInspector.IsEditable); Assert.NotNull(app.V2.MemoInspector.Identity!.V2);
         var results = app.Search.Results; var searchSelection = app.Search.SelectedResult;
         app.SelectedWorkspaceIndex = 1; await app.SearchNavigationTask;
         app.SelectedWorkspaceIndex = 2; app.SelectedWorkspaceIndex = 1; await app.SearchNavigationTask;

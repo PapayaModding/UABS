@@ -185,9 +185,9 @@ public partial class SearchWorkspaceView : UserControl
         if (e.PropertyName is nameof(SearchWorkspaceViewModel.IsSearching) or nameof(SearchWorkspaceViewModel.Results)) QueueViewport();
     }
 
-    private static PackageSearchSortField? GlobalSort(DataGridColumn column) => column.SortMemberPath switch
+    private PackageSearchSortField? GlobalSort(DataGridColumn column) => column.SortMemberPath switch
     {
-        "Name" => PackageSearchSortField.AssetName,
+        "Name" => _observedViewModel?.IsBundleSearch == true ? PackageSearchSortField.SourceName : PackageSearchSortField.AssetName,
         "PackageName" => PackageSearchSortField.PackageName,
         "SourceName" => PackageSearchSortField.SourceName,
         "PathId" => PackageSearchSortField.PathId,
@@ -255,6 +255,7 @@ public partial class SearchWorkspaceView : UserControl
             if (_sortHeaders.Add(header)) header.Classes.CollectionChanged += OnHeaderClassesChanged;
         foreach (var column in ResultsGrid.Columns)
         {
+            column.IsVisible = !vm.IsBundleSearch || column.SortMemberPath is "Name" or "PackageName";
             var field = GlobalSort(column);
             column.CanUserSort = vm.CanSortResultsLocally || (field is not null && vm.CanChangeV2Sort
                 && (field != PackageSearchSortField.AssetName || vm.CanSortV2AssetName));
