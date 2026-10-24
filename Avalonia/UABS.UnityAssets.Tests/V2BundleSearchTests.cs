@@ -8,9 +8,12 @@ namespace UABS.UnityAssets.Tests;
 
 public sealed class V2BundleSearchTests
 {
-    private sealed record Asset(string? Name, long Path = 1, int Class = 28, string? Type = "Texture2D", string? Memo = null);
+    private sealed record Asset(string? Name, long Path = 1, int Class = 28, string? Type = "Texture2D", string? Memo = null,
+        V2NameStatus? NameStatus = null);
     private sealed record Source(string Name, Asset[] Assets, UnityFileKind Kind = UnityFileKind.Bundle,
-        bool Partial = false, bool Verified = true);
+        bool Partial = false, bool Verified = true, string? Cab = "CAB", string? DependencyPath = null,
+        string? VirtualPath = null, string? DependencyCab = null,
+        V2DependencyStatus Dependencies = V2DependencyStatus.Complete);
 
     private sealed class Fixture : IDisposable
     {
@@ -65,11 +68,14 @@ public sealed class V2BundleSearchTests
                 await receive([new V2AssetType(0, i, a.Class, null, a.Type),
                     new V2Asset(0, i, a.Path, a.Class, i, null, i * 32, 16,
                         V2IdentityStatus.Addressable, a.Name,
-                        a.Name is null ? V2NameStatus.Absent : V2NameStatus.Present, a.Type)], cancellationToken);
+                        a.NameStatus ?? (a.Name is null ? V2NameStatus.Absent : V2NameStatus.Present), a.Type)], cancellationToken);
             }
+            if (source.DependencyPath is not null || source.VirtualPath is not null || source.DependencyCab is not null)
+                await receive([new V2Dependency(0, "external_file", 0, null, source.DependencyPath,
+                    source.DependencyPath, source.VirtualPath, source.DependencyCab, new string('0', 32), 0)], cancellationToken);
             var status = source.Partial ? V2ExtractionStatus.Partial : V2ExtractionStatus.Complete;
-            await receive([new V2LogicalFile(0, "CAB", "CAB", "2022.3.1f1", 22, true,
-                source.Assets.Length, source.Assets.Length, status, V2DependencyStatus.Complete)], cancellationToken);
+            await receive([new V2LogicalFile(0, "CAB", source.Cab, "2022.3.1f1", 22, true,
+                source.Assets.Length, source.Assets.Length, status, source.Dependencies)], cancellationToken);
             return new(new(request.SourceId, request.RevisionId, request.Path, request.Path, source.Kind,
                 1024, DateTime.UnixEpoch, new string('A', 64), source.Verified), status, 1, source.Assets.Length,
                 new(default, default, default, default, default, 0, 0, 2));
@@ -284,6 +290,157 @@ public sealed class V2BundleSearchTests
         using var session = Session(service, new("hero"), reg);
         var page = await service.ReadBundlePageAsync(session);
         Assert.Equal(SearchStatus.BudgetExceeded, page.Status); Assert.Empty(page.Rows); Assert.Null(page.NextCursor);
+    }
+
+    [Theory]
+    [InlineData(PackageSearchFields.SourcePath, "target.bundle", false)]
+    [InlineData(PackageSearchFields.IndexDirectory, "indexed", true)]
+    [InlineData(PackageSearchFields.CabCode, "cab-证据", true)]
+    [InlineData(PackageSearchFields.Dependency, "原始路径", false)]
+    [InlineData(PackageSearchFields.Dependency, "virtual:/虚拟路径", true)]
+    [InlineData(PackageSearchFields.Dependency, "cab-external", true)]
+    public async Task SourceFields_PreserveExistingSourceFileTextSemantics(PackageSearchFields fields, string query, bool exact)
+    {
+        using Fixture f = new(); string path = await f.Build("P", new Source("target.bundle", [new("unrelated")],
+            Cab: "CAB-证据", DependencyPath: "archive:/原始路径", VirtualPath: "virtual:/虚拟路径", DependencyCab: "CAB-external"));
+        V2SearchService service = new(); var reg = await Register(service, path);
+        using var bundle = Session(service, new(query, Fields: fields, ExactText: exact), reg);
+        var actual = Assert.Single(await Exhaust(service, bundle));
+        using var existing = V2SearchTests.Session(service, new(query, Fields: fields,
+            ResultKinds: PackageSearchResultKinds.SourceFile, ExactText: exact), reg);
+        var expected = Assert.Single(await V2SearchTests.Exhaust(service, existing));
+        Assert.Equal(expected.SourceName, actual.Name); Assert.Equal(expected.MatchCategories, actual.MatchEvidence);
+        Assert.Equal(expected.Key.SourceId, actual.Key.SourceId);
+        using var wrongField = Session(service, new(query, Fields: PackageSearchFields.AssetName, ExactText: exact), reg);
+        Assert.Empty(await Exhaust(service, wrongField));
+    }
+
+    [Theory]
+    [InlineData(PackageSearchFields.AssetName, "in-name", false)]
+    [InlineData(PackageSearchFields.AssetName, "in-memo", true)]
+    [InlineData(PackageSearchFields.Memo, "in-name", true)]
+    [InlineData(PackageSearchFields.Memo, "in-memo", false)]
+    [InlineData(PackageSearchFields.AssetName | PackageSearchFields.Memo, "in-memo", false)]
+    public async Task AssetOnlyExclusions_InheritSelectedFields_AndVetoAcrossChildren(
+        PackageSearchFields fields, string excluded, bool survives)
+    {
+        using Fixture f = new(); string path = await f.Build("P", new Source("in-name", [new("hero", Memo: "hero"),
+            new("in-name", 2, Memo: "in-memo")]));
+        V2SearchService service = new(); var reg = await Register(service, path);
+        var request = new BundleSearchRequest("hero", excluded, Fields: fields, ExactText: true);
+        using var session = Session(service, request, reg);
+        Assert.Null(request.ExclusionFields); Assert.Equal(fields, session.Criteria.ExclusionFields);
+        var rows = await Exhaust(service, session); Assert.Equal(survives ? 1 : 0, rows.Count);
+        Assert.Equal(rows.Count, (await service.CountBundlesAsync(session)).Count.Value);
+    }
+
+    [Theory]
+    [InlineData(PackageSearchResultKinds.None)]
+    [InlineData(PackageSearchResultKinds.Asset)]
+    [InlineData(PackageSearchResultKinds.Package)]
+    [InlineData(PackageSearchResultKinds.Asset | PackageSearchResultKinds.SourceFile)]
+    [InlineData(PackageSearchResultKinds.All)]
+    public void IncompatibleKinds_AreExplained_NotMappedToEvidence(PackageSearchResultKinds kinds)
+    {
+        var result = new V2SearchService().CreateBundleSession(new("hero", ResultKinds: kinds), []);
+        Assert.Equal(SearchStatus.InvalidRequest, result.Status); Assert.Null(result.Session);
+        Assert.Contains("membership mapping", result.Message);
+    }
+
+    [Theory]
+    [InlineData(PackageSearchFields.PackageName)]
+    [InlineData(PackageSearchFields.PackagePath)]
+    [InlineData(PackageSearchFields.PackageName | PackageSearchFields.SourceName | PackageSearchFields.AssetName)]
+    [InlineData(PackageSearchFields.All)]
+    public void PackageFields_AreNotSilentlyDroppedOrExpanded(PackageSearchFields fields)
+    {
+        var result = new V2SearchService().CreateBundleSession(new("hero", Fields: fields), []);
+        Assert.Equal(SearchStatus.InvalidRequest, result.Status); Assert.Null(result.Session);
+        Assert.Contains("Package fields", result.Message);
+    }
+
+    [Theory]
+    [InlineData(PackageSearchFields.SourceName)]
+    [InlineData(PackageSearchFields.AssetName | PackageSearchFields.SourceName)]
+    [InlineData(PackageSearchFields.CabCode)]
+    public void AutomaticMetadataExclusions_RemainExplicitlyUnsupported(PackageSearchFields fields)
+    {
+        var result = new V2SearchService().CreateBundleSession(new("hero", "debug", Fields: fields), []);
+        Assert.Equal(SearchStatus.InvalidRequest, result.Status); Assert.Null(result.Session);
+        Assert.Contains("source/mixed automatic scope", result.Message);
+    }
+
+    [Theory]
+    [InlineData(UnityFileKind.SerializedFile, true)]
+    [InlineData(UnityFileKind.Bundle, false)]
+    public async Task CompleteEligibleBundles_CanExcludeDespiteUnrelatedPartialPackage(
+        UnityFileKind unrelatedKind, bool verified)
+    {
+        using Fixture f = new(); string path = await f.Build("P", new("complete", [new("hero")]),
+            new("unrelated", [new("debug")], unrelatedKind, Partial: true, Verified: verified));
+        V2SearchService service = new(); var reg = await Register(service, path);
+        Assert.Equal("partial", reg.Package.IndexStatus);
+        using var session = Session(service, new("hero", "debug", Fields: PackageSearchFields.AssetName), reg);
+        Assert.Equal("complete", Assert.Single(await Exhaust(service, session)).Name);
+        Assert.Contains(session.Diagnostics, d => d.Code == "PartialIndex");
+    }
+
+    [Fact]
+    public async Task PartialEligibleBundle_BlocksWholeScope_NoSilentSkippingOrFalseExactCount()
+    {
+        using Fixture f = new(); V2SearchService service = new();
+        var complete = await Register(service, await f.Build("complete", new Source("complete", [new("hero")])));
+        var partial = await Register(service, await f.Build("partial", new Source("partial", [new("hero")], Partial: true)));
+        var result = service.CreateBundleSession(new("hero", "missing", Fields: PackageSearchFields.AssetName),
+            [complete.RegistrationId, partial.RegistrationId]);
+        Assert.Equal(SearchStatus.InvalidRequest, result.Status); Assert.Null(result.Session);
+        Assert.Contains("indeterminate", result.Message); Assert.Contains("No sources were skipped", result.Message);
+        using var safeScope = Session(service, new("hero", "missing", Fields: PackageSearchFields.AssetName), complete);
+        Assert.Single(await Exhaust(service, safeScope));
+    }
+
+    [Fact]
+    public async Task UnavailableNames_BlockNameExclusion_NotKnownMemoExclusion()
+    {
+        using Fixture f = new(); string path = await f.Build("P", new Source("complete", [new("hero"),
+            new(null, 2, Memo: "known", NameStatus: V2NameStatus.Budgeted)]));
+        V2SearchService service = new(); var reg = await Register(service, path);
+        Assert.Equal("complete", reg.Package.IndexStatus);
+        var blocked = service.CreateBundleSession(new("hero", "absent", Fields: PackageSearchFields.AssetName), [reg.RegistrationId]);
+        Assert.Equal(SearchStatus.InvalidRequest, blocked.Status); Assert.Contains("name evidence", blocked.Message);
+        using var memoScope = Session(service, new("complete", "absent", Fields: PackageSearchFields.SourceName,
+            ExclusionFields: PackageSearchFields.Memo), reg);
+        Assert.Single(await Exhaust(service, memoScope));
+        using var memoVeto = Session(service, memoScope.Criteria with { ExcludedQuery = "known" }, reg);
+        Assert.Empty(await Exhaust(service, memoVeto));
+    }
+
+    [Fact]
+    public async Task DependencyWarnings_DoNotInvalidateCompleteAssetCoverage()
+    {
+        using Fixture f = new(); string path = await f.Build("P", new Source("complete", [new("hero")],
+            Dependencies: V2DependencyStatus.Unavailable));
+        V2SearchService service = new(); var reg = await Register(service, path);
+        using var session = Session(service, new("hero", "debug", Fields: PackageSearchFields.AssetName), reg);
+        Assert.Single(await Exhaust(service, session));
+        Assert.Contains(session.Diagnostics, d => d.Code == "DependencyEvidence");
+    }
+
+    [Fact]
+    public async Task SourceEvidenceAndMandatoryFiltersAndExclusions_PageInGlobalOrder()
+    {
+        using Fixture f = new(); V2SearchService service = new();
+        var sources = Enumerable.Range(0, 9).Select(i => new Source($"bundle-{8 - i}",
+            [new(i == 0 ? "debug" : "hero", -77, 28, "Texture2D"), new("memo", 2, 83, "AudioClip", "known")],
+            Cab: "CAB-shared")).ToArray();
+        var reg = await Register(service, await f.Build("P", sources));
+        using var session = Session(service, new("CAB-shared", "debug", Fields: PackageSearchFields.CabCode,
+            ExclusionFields: PackageSearchFields.AssetName, RequireNonEmptyMemo: true,
+            PathId: -77, ClassId: 83, TypeName: "Texture2D"), reg);
+        var rows = await Exhaust(service, session, 2); Assert.Equal(8, rows.Count);
+        Assert.Equal(Enumerable.Range(0, 8).Select(i => $"bundle-{i}"), rows.Select(r => r.Name));
+        Assert.All(rows, r => Assert.True(r.MatchEvidence.HasFlag(PackageSearchMatchCategory.CabCode)));
+        Assert.Equal(8, (await service.CountBundlesAsync(session)).Count.Value);
     }
 
     private static int CompareText(string a, string b)

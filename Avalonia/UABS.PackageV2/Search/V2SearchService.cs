@@ -51,6 +51,17 @@ public sealed partial class V2SearchService
                 if (sql.Number("SELECT EXISTS(SELECT 1 FROM dependency) OR EXISTS(SELECT 1 FROM source WHERE dependency_status<>'complete')") != 0)
                     warnings.Add(new("DependencyEvidence", "Raw dependency declarations are not resolved targets; dependency enrichment may be incomplete.", id));
                 if (!info.DerivedFieldsCompatible) warnings.Add(new("RawTextFallback", "Derived text profile is unsupported; use authoritative raw .NET predicates.", id));
+                // Capture under the admitted revision, not the package-wide partial flag:
+                // unrelated serialized/failed sources cannot make complete eligible bundles uncertain.
+                const string eligibleBundle = "s.kind='bundle' AND s.index_status IN('complete','partial') "
+                    + "AND s.content_sha256 IS NOT NULL AND s.byte_size IS NOT NULL";
+                PackageSearchFields indeterminateExclusions = PackageSearchFields.None;
+                if (sql.Number("SELECT EXISTS(SELECT 1 FROM source s WHERE " + eligibleBundle + " AND s.index_status<>'complete')") != 0)
+                    indeterminateExclusions = PackageSearchFields.AssetName | PackageSearchFields.Memo;
+                if (sql.Number("SELECT EXISTS(SELECT 1 FROM asset a JOIN logical_file f ON f.file_id=a.file_id "
+                    + "JOIN source s ON s.source_id=f.source_id WHERE " + eligibleBundle
+                    + " AND a.name_status NOT IN('present','absent'))") != 0)
+                    indeterminateExclusions |= PackageSearchFields.AssetName;
                 long schemaVersion = sql.Number("PRAGMA schema_version");
                 // Canonical source columns are NOT NULL. Equal BINARY min/max proves exact constancy,
                 // not a guessed case-insensitive equality. Captured under this generation/revision.
@@ -72,6 +83,7 @@ public sealed partial class V2SearchService
                     if (_registrations.Values.Any(r => r.Value.Package.PackageId == info.PackageId))
                         return new SearchRegistrationResult(SearchStatus.RegistrationConflict, null, "A package UUID is already registered; unload it before registering an alias/copy.");
                     _registrations.Add(id, new(value, warnings.AsReadOnly()) { SchemaVersion = schemaVersion,
+                        IndeterminateBundleExclusions = indeterminateExclusions,
                         ConstantSortValues = new System.Collections.ObjectModel.ReadOnlyDictionary<string, string?>(constants) });
                 }
                 return new SearchRegistrationResult(SearchStatus.Success, value, "Read-only package registered.");
@@ -111,9 +123,10 @@ public sealed partial class V2SearchService
                 registrations.Add(registration);
             }
             if (bundle is not null && new PackageSearchRequest(bundle.ExcludedQuery).IncludeTerms.Count > 0
-                && registrations.Any(r => r.Value.Package.IndexStatus != "complete"))
+                && registrations.Any(r => (r.IndeterminateBundleExclusions & bundle.ExclusionFields!.Value) != 0))
                 return new(SearchStatus.InvalidRequest, null,
-                    "Bundle exclusions on incomplete packages require an approved unknown-coverage policy; no results were queried.");
+                    "Bundle exclusion is indeterminate: an eligible bundle has incomplete asset coverage or unavailable requested name evidence. "
+                    + "No sources were skipped or queried; an unknown-coverage policy is required for this selected scope.");
             return new(SearchStatus.Success, new(_owner, request, registrations.ToArray(), registrations.SelectMany(r => r.Diagnostics), bundle), "Criteria and scope captured.");
         }
     }

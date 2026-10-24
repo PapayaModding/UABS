@@ -6,8 +6,9 @@ public enum BundleSearchSort { Name, Package }
 
 /// <summary>
 /// Explicit bundle projection, not a reinterpretation of the UI's result-kind controls.
-/// SourceName/AssetName/Memo are supported positive fields. Exclusions require an explicit
-/// AssetName/Memo field mask; source metadata exclusion and other result kinds are unresolved.
+/// Source and contained asset/evidence fields are supported; package fields and other result kinds are unresolved.
+/// Asset-only field selections also define exclusion fields. Mixed/source selections require an explicit
+/// AssetName/Memo exclusion mask; source metadata exclusion semantics remain unresolved.
 /// </summary>
 public sealed record BundleSearchRequest(string? Query = null, string? ExcludedQuery = null,
     PackageSearchFields Fields = PackageSearchFields.SourceName | PackageSearchFields.AssetName,
@@ -51,16 +52,22 @@ public sealed partial class V2SearchService
     public BundleSearchSessionResult CreateBundleSession(BundleSearchRequest request, IReadOnlyList<Guid> selectedRegistrationIds)
     {
         ArgumentNullException.ThrowIfNull(request);
-        const PackageSearchFields supported = PackageSearchFields.SourceName | PackageSearchFields.AssetName | PackageSearchFields.Memo;
+        const PackageSearchFields supported = PackageSearchFields.SourceName | PackageSearchFields.SourcePath
+            | PackageSearchFields.IndexDirectory | PackageSearchFields.CabCode | PackageSearchFields.Dependency
+            | PackageSearchFields.AssetName | PackageSearchFields.Memo;
         const PackageSearchFields assetFields = PackageSearchFields.AssetName | PackageSearchFields.Memo;
         bool excludes = new PackageSearchRequest(request.ExcludedQuery).IncludeTerms.Count > 0;
+        if (excludes && request.ExclusionFields is null && request.Fields != PackageSearchFields.None
+            && (request.Fields & ~assetFields) == 0)
+            request = request with { ExclusionFields = request.Fields };
         if ((request.Fields & ~supported) != 0 || request.ResultKinds != PackageSearchResultKinds.SourceFile
             || !Enum.IsDefined(request.SortBy) || !Enum.IsDefined(request.SortDirection)
             || (request.ExclusionFields is { } fields && (fields & ~assetFields) != 0)
             || (excludes && (request.ExclusionFields is null or PackageSearchFields.None)))
             return new(SearchStatus.InvalidRequest, null,
-                "Bundle projection supports SourceName/AssetName/Memo and SourceFile results only. "
-                + "Exclusions require explicit AssetName/Memo scope. Other field/result-kind mappings remain unresolved.");
+                "Bundle projection supports source/name/path/index/CAB/dependency and asset name/memo fields, with SourceFile results only. "
+                + "Package fields and other result kinds require an approved bundle membership mapping. "
+                + "Exclusions use asset-only selected fields or an explicit AssetName/Memo mask; source/mixed automatic scope remains unresolved.");
         if (new PackageSearchRequest(request.Query).IncludeTerms.Count == 0 && request.PathId is null)
             return new(SearchStatus.InvalidRequest, null, "An include keyword or signed Path ID is required.");
         if (request.Fields == PackageSearchFields.None && request.PathId is null)

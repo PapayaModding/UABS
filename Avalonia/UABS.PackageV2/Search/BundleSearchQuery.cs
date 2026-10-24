@@ -22,9 +22,18 @@ internal static class BundleSearchQuery
             ? $"uabs_match({value},{(int)field})" : "0";
         string AssetMatch(PackageSearchFields field, string value) => r.Fields.HasFlag(field) && session.Include.Length > 0
             ? $"CASE WHEN {Any($"uabs_match({value},{(int)field})<>0")} THEN {(int)field} ELSE 0 END" : "0";
-        string categories = $"({Match("s.original_name", PackageSearchFields.SourceName)}|"
-            + AssetMatch(PackageSearchFields.AssetName, "a.name") + "|" + AssetMatch(PackageSearchFields.Memo, "a.memo")
-            + (r.PathId is null ? ")" : $"|{(int)PackageSearchMatchCategory.PathId})");
+        List<string> matches = [Match("s.original_name", PackageSearchFields.SourceName),
+            Match("s.original_path", PackageSearchFields.SourcePath), Match("s.index_directory", PackageSearchFields.IndexDirectory),
+            AssetMatch(PackageSearchFields.AssetName, "a.name"), AssetMatch(PackageSearchFields.Memo, "a.memo")];
+        if (r.Fields.HasFlag(PackageSearchFields.CabCode) && session.Include.Length > 0)
+            matches.Add("CASE WHEN EXISTS(SELECT 1 FROM logical_file f WHERE f.source_id=s.source_id "
+                + "AND uabs_match(f.cab_name,32)<>0) THEN 32 ELSE 0 END");
+        if (r.Fields.HasFlag(PackageSearchFields.Dependency) && session.Include.Length > 0)
+            matches.Add("CASE WHEN EXISTS(SELECT 1 FROM dependency d JOIN logical_file f ON f.file_id=d.file_id "
+                + "WHERE f.source_id=s.source_id AND (uabs_match(d.raw_path,256)|uabs_match(d.raw_virtual_path,256)"
+                + "|uabs_match(d.raw_cab,256))<>0) THEN 256 ELSE 0 END");
+        string textCategories = "(" + string.Join('|', matches) + ")";
+        string categories = r.PathId is null ? textCategories : $"({textCategories}|{(int)PackageSearchMatchCategory.PathId})";
         List<string> gates = ["s.kind='bundle'", "s.index_status IN('complete','partial')",
             "s.content_sha256 IS NOT NULL", "s.byte_size IS NOT NULL"];
         if (r.PathId is long path) gates.Add(Any("a.path_id=" + Param(path)));
@@ -33,8 +42,7 @@ internal static class BundleSearchQuery
         if (r.RequireNonEmptyMemo) gates.Add(Any("uabs_has_text_v1(a.memo)=1"));
         // With Path ID plus keywords, retain text as an independent mandatory OR-group.
         if (r.PathId is not null && session.Include.Length > 0)
-            gates.Add($"({Match("s.original_name", PackageSearchFields.SourceName)}|"
-                + AssetMatch(PackageSearchFields.AssetName, "a.name") + "|" + AssetMatch(PackageSearchFields.Memo, "a.memo") + ")<>0");
+            gates.Add(textCategories + "<>0");
         string excluded = "0";
         if (session.Exclude.Length > 0)
         {
