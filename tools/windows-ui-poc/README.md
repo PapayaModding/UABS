@@ -54,9 +54,13 @@ It never attaches to or closes a pre-existing UABS process.
    directory. Launch UABS with that working directory so `uabs_log.txt` is
    isolated from the user's normal log.
 2. Capture the initial UABS window and UIA element/pattern inventory.
-3. Select Packages, invoke Open V2, and operate the real Windows Common Item
-   Dialog through IDs 1148 (filename) and 1 (Open). Unsupported dialog layouts
-   are BLOCKED; no keystroke or coordinate workaround is attempted.
+3. Select Packages and observe Open V2 invocation concurrently with discovery.
+   Identify the picker by its exact application-configured title,
+   `Open read-only UABS V2 package`, and the launched process ID, among both
+   top-level windows and nested UIA windows. Its class is recorded rather than
+   assumed to be `#32770`. Operate the real Windows Common Item Dialog through
+   IDs 1148 (filename) and 1 (Open). Unsupported dialog layouts are BLOCKED;
+   no keystroke or coordinate workaround is attempted.
 4. Select Search and inspect untouched Sources-only / Assets-field defaults.
    Selectors are never changed to make the scenario pass.
 5. Set IncludeSearchTextBox and invoke SearchButton. Verify Table/Grid
@@ -82,6 +86,41 @@ capture, and provider responsiveness require **actual Windows execution**.
 Linux cross-compilation cannot verify any of them. Full Checkpoint 2.1,
 including selector retention, errors/tooltips, V1, sorting, selection, and
 Refresh, remains pending regardless of this single scenario's result.
+
+### Package admission investigation
+
+The tracked `OpenV2PackageAsync` always awaits
+`AvaloniaFilePickerService.PickV2PackageAsync`, which calls the owner's
+`StorageProvider.OpenFilePickerAsync` with the title above. Avalonia 11.3.3's
+Windows provider uses the COM file dialog on a worker task. There is no
+startup V2-registration restoration in the inspected composition:
+`MainWindowViewModel.InitializeAsync` initializes the directory browser;
+`V2BrowseViewModel` starts with an empty catalog and registration collection.
+Catalog scanning or opening a package explicitly can register packages.
+
+The Windows report of a loaded Smoke package after discovery timed out does
+not establish its file identity or explain the invocation timing. The earlier
+runner assumed Invoke had returned before the dialog needed observing and
+required class `#32770`. Those assumptions have been removed, but the precise
+Windows cause remains unproven until the new evidence is collected.
+
+`dialog-before-invoke.json`, up to four periodic snapshots, and
+`dialog-discovery-end.json` record invocation state and at most 30 windows
+from the launched process, including titles, classes, handles, visibility,
+enabled state, and at most 120 descendant UIA records per window. Discovery
+retains a 25-second deadline and the external watchdog. No other process's
+window is operated or captured. `open-dialog.png` records the discovered
+picker before its filename is set.
+
+Admission without an observed picker is allowed only when a single V2 scope
+exposes the **exact disposable-copy absolute path** through UIA HelpText and
+that copy still has the approved SHA256. Display name, source/asset counts,
+package GUID, or generation GUID alone do not qualify. The current XAML binds
+the scope path to a tooltip, so HelpText may not expose it: in that case the
+runner keeps waiting and reports BLOCKED instead of guessing. The fresh
+native-dialog path is retained. After either path, exactly one loaded package
+scope must exist, it must be selected, and the disposable-copy hash must
+remain unchanged. Search defaults and results are still asserted strictly.
 
 UIA inventory fields that throw (including unsupported properties or elements
 that disappear) are recorded as `{ "available": false, "reason": "..." }`.

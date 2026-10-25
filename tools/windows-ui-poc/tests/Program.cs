@@ -28,3 +28,15 @@ foreach (Exception error in new Exception[] {
     Check(!root.GetProperty("enabled").GetBoolean(), "Supported false was treated as unavailable.");
 }
 Console.WriteLine("PASS: supported values preserved; unsupported/provider failures recorded; later fields serialized.");
+
+Check(PackageAdmission.IsPicker(123, PackageAdmission.PickerTitle, 123), "Expected picker rejected.");
+Check(!PackageAdmission.IsPicker(456, PackageAdmission.PickerTitle, 123), "Other process picker accepted.");
+Check(!PackageAdmission.IsPicker(123, "Open", 123), "Wrong picker title accepted.");
+string copy = Path.GetFullPath("disposable/Smoke.uabs.sqlite");
+Check(PackageAdmission.IsVerifiedCopy(copy, copy, "abc", _ => "ABC"), "Verified copy rejected.");
+Check(!PackageAdmission.IsVerifiedCopy("Smoke", copy, "abc", _ => "abc"), "Display name accepted as identity.");
+Check(!PackageAdmission.IsVerifiedCopy(Path.GetFullPath("other/Smoke.uabs.sqlite"), copy, "abc", _ => "abc"), "Different same-name package accepted.");
+Check(!PackageAdmission.IsVerifiedCopy(copy, copy, "abc", _ => "wrong"), "Wrong hash accepted.");
+Check(!PackageAdmission.IsVerifiedCopy(null, copy, "abc", _ => "abc"), "Missing path accepted.");
+Check(!PackageAdmission.IsVerifiedCopy(copy, copy, "abc", _ => throw new IOException()), "Unreadable copy accepted.");
+Console.WriteLine("PASS: picker process/title and exact package-copy path/hash admission checks.");

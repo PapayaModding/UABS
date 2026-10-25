@@ -63,30 +63,60 @@ internal static class Program
             Evidence("initial");
             stage = "open package";
             Select(Find(Window!, ControlType.TabItem, "Packages"));
-            Invoke(Find(Window!, ControlType.Button, "Open V2..."));
+            Evidence("packages-before-open");
+            DialogSnapshot("before-invoke", null);
+            var openButton = Find(Window!, ControlType.Button, "Open V2...");
+            Require(openButton.IsEnabled && openButton.Patterns.Invoke.IsSupported, "Open V2 must be enabled with Invoke support.");
+            // Some UIA providers return from Invoke only after the modal interaction.
+            // Observe the dialog while Invoke is pending, not only after it returns.
+            var openTask = Task.Run(() => openButton.Patterns.Invoke.Pattern.Invoke());
             AutomationElement? dialog = null;
-            Wait("native file dialog", () =>
+            var discovery = Stopwatch.StartNew();
+            int snapshots = 0;
+            bool admitted = false;
+            try
             {
-                var dialogs = Automation.GetDesktop().FindAllChildren(Automation.ConditionFactory.ByProcessId(App.Id)
-                    .And(Automation.ConditionFactory.ByClassName("#32770")));
-                Require(dialogs.Length <= 1, "Multiple native dialogs owned by UABS; refusing ambiguous interaction.");
-                dialog = dialogs.SingleOrDefault();
-                return dialog != null;
-            });
-            Evidence("open-dialog", dialog);
-            // Windows Common Item Dialog uses control IDs 1148 (file name) and 1 (Open).
-            var fileName = ById(dialog!, "1148");
-            if (fileName.ControlType != ControlType.Edit)
-                fileName = Find(fileName, ControlType.Edit, null);
-            SetValue(fileName, copy);
-            Invoke(ById(dialog!, "1"));
-            Wait("file dialog closed", () => Automation.GetDesktop().FindAllChildren(Automation.ConditionFactory.ByProcessId(App.Id)
-                .And(Automation.ConditionFactory.ByClassName("#32770"))).Length == 0);
+                Wait("native file dialog or verified copy admission", () =>
+                {
+                    if (openTask.IsFaulted) openTask.GetAwaiter().GetResult();
+                    if (snapshots < 4 && discovery.Elapsed.TotalSeconds >= snapshots * 5)
+                    { DialogSnapshot("poll-" + snapshots++, openTask); }
+                    var dialogs = ProcessWindows().Where(e => PackageAdmission.IsPicker(
+                        e.Properties.ProcessId.Value, e.Name, App.Id)).ToArray();
+                    Require(dialogs.Length <= 1, "Multiple native dialogs owned by UABS; refusing ambiguous interaction.");
+                    dialog = dialogs.SingleOrDefault();
+                    if (dialog != null) return true;
+                    admitted = openTask.IsCompletedSuccessfully && HasVerifiedCopyScope(copy, sourceHash);
+                    return admitted;
+                });
+            }
+            finally { DialogSnapshot("discovery-end", openTask); }
+            if (!admitted)
+            {
+                Evidence("open-dialog", dialog);
+                // Windows Common Item Dialog uses control IDs 1148 (file name) and 1 (Open).
+                var fileName = ById(dialog!, "1148");
+                if (fileName.ControlType != ControlType.Edit)
+                    fileName = Find(fileName, ControlType.Edit, null);
+                SetValue(fileName, copy);
+                Invoke(ById(dialog!, "1"));
+                Wait("file dialog closed", () => !ProcessWindows().Any(e => PackageAdmission.IsPicker(
+                    e.Properties.ProcessId.Value, e.Name, App.Id)));
+            }
+            Wait("Open V2 invocation completed", () => openTask.IsCompleted);
+            openTask.GetAwaiter().GetResult();
+            Step("package admission path", admitted ? "verified exact copy path exposed by UIA" : "native picker submitted exact disposable copy path");
             stage = "V2 defaults";
             Select(Find(Window!, ControlType.TabItem, "Search"));
             var controls = ById(Window!, "SearchControlsPanel");
             Wait("V2 package admission", () => controls.FindAllDescendants(Automation.ConditionFactory.ByControlType(ControlType.CheckBox))
                 .Any(e => e.Name.StartsWith("[V2] ", StringComparison.Ordinal)));
+            var scopes = controls.FindAllDescendants(Automation.ConditionFactory.ByControlType(ControlType.CheckBox))
+                .Where(e => e.Name.StartsWith("[V2] ", StringComparison.Ordinal) || e.Name.StartsWith("[V1] ", StringComparison.Ordinal)).ToArray();
+            Require(scopes.Length == 1, "Expected exactly one package scope; refusing unrelated loaded packages.");
+            Require(scopes[0].Patterns.Toggle.IsSupported, "Package scope lacks Toggle pattern.");
+            Check(scopes[0].Patterns.Toggle.Pattern.ToggleState.Value == ToggleState.On, "Disposable package scope must be selected.");
+            Check(Hash(copy).Equals(sourceHash, StringComparison.OrdinalIgnoreCase), "Disposable package copy changed during admission.");
             CheckToggle(controls, "Sources", ToggleState.On);
             CheckToggle(controls, "Packages", ToggleState.Off);
             CheckToggle(controls, "Assets", ToggleState.Off);
@@ -191,11 +221,49 @@ internal static class Program
         Require(element.Patterns.Toggle.IsSupported, name + " lacks Toggle pattern.");
         Check(element.Patterns.Toggle.Pattern.ToggleState.Value == expected, name + " has incorrect untouched state.");
     }
+    private static AutomationElement[] ProcessWindows() => Automation!.GetDesktop()
+        .FindAllChildren(Automation.ConditionFactory.ByProcessId(App!.Id))
+        .Concat(Window!.FindAllDescendants(Automation.ConditionFactory.ByControlType(ControlType.Window)))
+        .Where(e => e.Properties.ProcessId.Value == App.Id).Distinct().ToArray();
+
+    private static bool HasVerifiedCopyScope(string copy, string expectedHash)
+    {
+        var scopes = Window!.FindAllDescendants(Automation!.ConditionFactory.ByControlType(ControlType.CheckBox))
+            .Where(e => e.Name.StartsWith("[V2] ", StringComparison.Ordinal)).ToArray();
+        return scopes.Length == 1 && scopes[0].Properties.HelpText.TryGetValue(out var path)
+            && PackageAdmission.IsVerifiedCopy(path, copy, expectedHash, Hash);
+    }
+
+    private static void DialogSnapshot(string label, Task? invocation)
+    {
+        try
+        {
+            var windows = ProcessWindows().Take(30).Select(e => new
+            {
+                name = EvidenceValue.Read(() => e.Name),
+                pid = EvidenceValue.Read(() => e.Properties.ProcessId.Value),
+                handle = EvidenceValue.Read(() => e.Properties.NativeWindowHandle.Value),
+                className = EvidenceValue.Read(() => e.ClassName),
+                enabled = EvidenceValue.Read(() => e.IsEnabled),
+                offscreen = EvidenceValue.Read(() => e.IsOffscreen),
+                elements = e.FindAllDescendants().Take(120).Select(child => new
+                {
+                    id = EvidenceValue.Read(() => child.AutomationId),
+                    name = EvidenceValue.Read(() => child.Name),
+                    type = EvidenceValue.Read(() => child.ControlType.ToString())
+                }).ToArray()
+            }).ToArray();
+            File.WriteAllText(Path.Combine(Output, "dialog-" + label + ".json"),
+                JsonSerializer.Serialize(new { utc = DateTime.UtcNow, invocation = invocation?.Status.ToString(), windows }, Json));
+        }
+        catch (Exception error) { Step("dialog diagnostic error", error.ToString()); }
+    }
     private static void Evidence(string label, AutomationElement? root = null)
     {
         root ??= Window!;
         Capture.Element(root).ToFile(Path.Combine(Output, label + ".png"));
-        var tree = root.FindAllDescendants().Take(2000).Select(e => new {
+        var tree = root.FindAllDescendants().Take(2000).Select(e => new
+        {
             id = EvidenceValue.Read(() => e.AutomationId),
             name = EvidenceValue.Read(() => e.Name),
             type = EvidenceValue.Read(() => e.ControlType.ToString()),
