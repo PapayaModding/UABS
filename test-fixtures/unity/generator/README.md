@@ -53,12 +53,11 @@ desktop session with the Windows Build Support module installed.
 
 The generator also pins `EditorUserBuildSettings.standaloneBuildSubtarget` to
 `Player` before building. In Unity 2021.3, the public `BuildAssetBundles`
-overload inherits the active subtarget independently of `BuildTarget`. A stale
-`Server` (Dedicated Server/headless) subtarget strips runtime modules such as
-Animation and produces bundles that the normal Editor cannot reopen. Managed
-assembly stripping and `PlayerSettings.stripEngineCode` are logged for
-diagnosis but are not changed: they are player-build settings and are not the
-supported control for this AssetBundle subtarget issue.
+overload inherits the active subtarget independently of `BuildTarget`. This
+prevents an accidental Dedicated Server build context, but Windows testing has
+shown that selecting `Player` alone does not resolve the disabled-module
+failure. Managed assembly stripping and `PlayerSettings.stripEngineCode` are
+logged for diagnosis but are not changed during normal generation.
 
 ### Engine-module diagnostic
 
@@ -79,6 +78,52 @@ and the original project setting is restored in `finally`. Reports and separate
 logs are written below `Generated/working/module-diagnostic/` and remain
 ignored. This command diagnoses the setting; it does not change normal fixture
 generation or treat a failed reopen as success.
+
+Windows Unity 2021.3.45f2 testing produced identical 442-byte, unloadable
+UnityFS bundles with engine-code stripping enabled and disabled. That result
+rules out `PlayerSettings.stripEngineCode` as the causal variable and does not
+justify a permanent stripping-setting change.
+
+### Native pipeline diagnostic
+
+To isolate the project package configuration from the installed Editor, run:
+
+```powershell
+python test-fixtures/unity/generator/tools/fixturectl.py diagnose-native-pipeline `
+  --unity "C:/Program Files/Unity/Hub/Editor/2021.3.45f2/Editor/Unity.exe"
+```
+
+The command creates two disposable projects below the ignored
+`Generated/working/native-pipeline-diagnostic/` directory. Both receive the
+same tracked `ProjectSettings`, target (`StandaloneWindows64`), Player
+subtarget, probe source, TextAsset, and build options. Their package manifests
+differ in exactly one dependency: `module-omitted` matches this generator's
+current manifest, while `module-explicit` adds Unity's built-in
+`com.unity.modules.assetbundle` package at `1.0.0`. The command does not edit
+the tracked manifest or normal generator assets.
+
+For each emitted bundle, the summary decodes the UnityFS format version,
+serialized Unity version and revision, declared and actual size, block-info
+sizes, flags, and SHA-256. It also records the Editor reopen result and every
+log line that reports a disabled module. Interpret the controlled result as
+follows:
+
+- omitted fails and explicit succeeds: the package manifest disabled the
+  native AssetBundle module; test an explicit Animation module separately
+  before correcting the full generator manifest;
+- both fail: the cause is independent of the AssetBundle package declaration,
+  so inspect the common Editor installation/build-support modules and decoded
+  UnityFS metadata;
+- both succeed: this isolated native path is healthy, and another difference
+  in the full fixture project or generated asset composition remains.
+
+Unity 2021.3 documents `com.unity.modules.*` dependencies as
+[built-in packages](https://docs.unity3d.com/2021.3/Documentation/Manual/pack-build-in.html)
+that a project can
+[disable](https://docs.unity3d.com/2021.3/Documentation/Manual/upm-ui-disable.html).
+The tracked generator manifest currently declares only
+`com.unity.2d.sprite`; this diagnostic provides the controlled confirmation
+required before any permanent package change.
 
 The standard profiles are:
 

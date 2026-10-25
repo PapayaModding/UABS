@@ -1,5 +1,6 @@
 import importlib.util
 import json
+import struct
 import sys
 import tempfile
 import unittest
@@ -45,6 +46,41 @@ class FixtureCtlTests(unittest.TestCase):
     def test_module_diagnostic_cli_requires_unity(self):
         args = fixturectl.parser().parse_args(["diagnose-modules", "--unity", "C:/Unity/Unity.exe"])
         self.assertIs(args.handler, fixturectl.diagnose_modules)
+
+    def test_native_pipeline_diagnostic_cli_requires_unity(self):
+        args = fixturectl.parser().parse_args(
+            ["diagnose-native-pipeline", "--unity", "C:/Unity/Unity.exe"])
+        self.assertIs(args.handler, fixturectl.diagnose_native_pipeline)
+
+    def test_unityfs_header_parser_decodes_version_metadata(self):
+        payload = (
+            b"UnityFS\0" + struct.pack(">I", 6) + b"2021.3.45f2\0" + b"88f88f591b2e\0"
+            + struct.pack(">QIII", 442, 71, 93, 0x243))
+        payload += bytes(442 - len(payload))
+        with tempfile.TemporaryDirectory() as temporary:
+            bundle = Path(temporary) / "probe.bundle"
+            bundle.write_bytes(payload)
+            header = fixturectl.parse_unityfs_header(bundle)
+        self.assertEqual("UnityFS", header["signature"])
+        self.assertEqual(6, header["formatVersion"])
+        self.assertEqual("2021.3.45f2", header["unityVersion"])
+        self.assertEqual("88f88f591b2e", header["unityRevision"])
+        self.assertEqual(442, header["declaredFileSize"])
+        self.assertEqual(442, header["actualFileSize"])
+
+    def test_native_probe_projects_differ_only_by_assetbundle_module(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            omitted = root / "omitted"
+            explicit = root / "explicit"
+            fixturectl.prepare_native_probe_project(omitted, False)
+            fixturectl.prepare_native_probe_project(explicit, True)
+            omitted_manifest = fixturectl.load_json(omitted / "Packages" / "manifest.json")
+            explicit_manifest = fixturectl.load_json(explicit / "Packages" / "manifest.json")
+        self.assertNotIn("com.unity.modules.assetbundle", omitted_manifest["dependencies"])
+        self.assertEqual("1.0.0", explicit_manifest["dependencies"]["com.unity.modules.assetbundle"])
+        explicit_manifest["dependencies"].pop("com.unity.modules.assetbundle")
+        self.assertEqual(omitted_manifest, explicit_manifest)
 
     def test_editor_generator_pins_standalone_player_subtarget(self):
         source = GENERATOR_SOURCE.read_text(encoding="utf-8")

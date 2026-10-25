@@ -44,6 +44,7 @@ REPO_ROOT = SCRIPT_PATH.parents[4]
 GENERATED_ROOT = GENERATOR_ROOT / "Generated" / "working"
 PUBLISHED_ROOT = UNITY_FIXTURE_ROOT / "published"
 INDEX_PATH = UNITY_FIXTURE_ROOT / "manifest.json"
+NATIVE_PROBE_SOURCE = SCRIPT_PATH.with_name("NativeBundleProbe.cs")
 
 
 class FixtureError(RuntimeError):
@@ -81,6 +82,49 @@ def sha256_file(path: Path) -> str:
         for block in iter(lambda: stream.read(1024 * 1024), b""):
             digest.update(block)
     return digest.hexdigest()
+
+
+def parse_unityfs_header(path: Path) -> dict[str, Any]:
+    """Decode the uncompressed prefix shared by UnityFS bundle format 6."""
+    data = path.read_bytes()
+    offset = 0
+
+    def cstring(label: str) -> str:
+        nonlocal offset
+        end = data.find(b"\0", offset)
+        if end < 0:
+            raise FixtureError(f"UnityFS {label} is not null terminated in '{path}'")
+        try:
+            value = data[offset:end].decode("utf-8")
+        except UnicodeDecodeError as exc:
+            raise FixtureError(f"UnityFS {label} is not UTF-8 in '{path}'") from exc
+        offset = end + 1
+        return value
+
+    def unsigned(length: int, label: str) -> int:
+        nonlocal offset
+        end = offset + length
+        if end > len(data):
+            raise FixtureError(f"UnityFS header ends before {label} in '{path}'")
+        value = int.from_bytes(data[offset:end], byteorder="big", signed=False)
+        offset = end
+        return value
+
+    signature = cstring("signature")
+    if signature != "UnityFS":
+        raise FixtureError(f"Expected UnityFS signature in '{path}', got {signature!r}")
+    return {
+        "signature": signature,
+        "formatVersion": unsigned(4, "format version"),
+        "unityVersion": cstring("Unity version"),
+        "unityRevision": cstring("Unity revision"),
+        "declaredFileSize": unsigned(8, "declared file size"),
+        "compressedBlocksInfoSize": unsigned(4, "compressed blocks-info size"),
+        "uncompressedBlocksInfoSize": unsigned(4, "uncompressed blocks-info size"),
+        "flags": unsigned(4, "flags"),
+        "actualFileSize": len(data),
+        "sha256": sha256_bytes(data),
+    }
 
 
 def require_contained(path: Path, root: Path, label: str) -> Path:
@@ -606,6 +650,93 @@ def diagnose_modules(args: argparse.Namespace) -> int:
     return 0
 
 
+def prepare_native_probe_project(project: Path, include_assetbundle_module: bool) -> None:
+    if project.exists():
+        shutil.rmtree(project)
+    (project / "Assets" / "Editor").mkdir(parents=True)
+    shutil.copy2(NATIVE_PROBE_SOURCE, project / "Assets" / "Editor" / NATIVE_PROBE_SOURCE.name)
+    shutil.copytree(GENERATOR_ROOT / "ProjectSettings", project / "ProjectSettings")
+    manifest = load_json(GENERATOR_ROOT / "Packages" / "manifest.json")
+    dependencies = manifest.get("dependencies")
+    if not isinstance(dependencies, dict):
+        raise FixtureError("Generator Packages/manifest.json has no dependencies object")
+    if include_assetbundle_module:
+        dependencies["com.unity.modules.assetbundle"] = "1.0.0"
+    else:
+        dependencies.pop("com.unity.modules.assetbundle", None)
+    (project / "Packages").mkdir()
+    (project / "Packages" / "manifest.json").write_bytes(canonical_json(manifest))
+
+
+def read_probe_result(path: Path) -> dict[str, Any]:
+    result: dict[str, Any] = {}
+    for line in path.read_text(encoding="utf-8").splitlines():
+        key, separator, value = line.partition("=")
+        if not separator or not key:
+            raise FixtureError(f"Malformed native probe result line in '{path}': {line!r}")
+        result[key] = value
+    return result
+
+
+def diagnose_native_pipeline(args: argparse.Namespace) -> int:
+    unity = Path(args.unity).resolve(strict=True)
+    root = GENERATED_ROOT / "native-pipeline-diagnostic"
+    results: dict[str, Any] = {}
+    for include_module in (False, True):
+        label = "module-omitted" if not include_module else "module-explicit"
+        condition = root / label
+        project = condition / "project"
+        output = condition / "output"
+        log_path = condition / "unity.log"
+        prepare_native_probe_project(project, include_module)
+        if output.exists():
+            shutil.rmtree(output)
+        if log_path.exists():
+            log_path.unlink()
+        output.mkdir(parents=True)
+        command = [
+            str(unity), "-batchmode", "-quit", "-buildTarget", "Win64",
+            "-projectPath", str(project),
+            "-executeMethod", "UabsFixturesProbe.Editor.NativeBundleProbe.Run",
+            "-probeOutput", str(output),
+            "-logFile", str(log_path),
+        ]
+        completed = subprocess.run(command, check=False)
+        condition_result: dict[str, Any] = {
+            "assetBundleModuleDeclared": include_module,
+            "unityExitCode": completed.returncode,
+            "log": str(log_path),
+        }
+        report_path = output / "probe-result.txt"
+        if report_path.is_file():
+            condition_result["editorReport"] = read_probe_result(report_path)
+        bundle_path = output / "bundles" / "uabs-native-probe.bundle"
+        if bundle_path.is_file():
+            try:
+                condition_result["unityFsHeader"] = parse_unityfs_header(bundle_path)
+            except FixtureError as exc:
+                condition_result["unityFsHeaderError"] = str(exc)
+        if log_path.is_file():
+            condition_result["moduleWarnings"] = [
+                line.strip() for line in log_path.read_text(encoding="utf-8", errors="replace").splitlines()
+                if "module" in line.lower() and "disable" in line.lower()
+            ]
+        results[label] = condition_result
+        print(f"{label}: {json.dumps(condition_result, sort_keys=True)}")
+
+    summary_path = root / "diagnostic-summary.json"
+    summary_path.write_bytes(canonical_json(results))
+    explicit_report = results["module-explicit"].get("editorReport", {})
+    if explicit_report.get("reopened") != "True":
+        raise FixtureError(
+            "The explicit AssetBundle-module probe did not reopen; the isolated result does not support a "
+            f"project-manifest correction. See {summary_path}")
+    print(
+        "The explicit AssetBundle-module probe reopened successfully. Compare module-omitted and "
+        f"module-explicit details in {summary_path}")
+    return 0
+
+
 def generate(args: argparse.Namespace) -> int:
     config_path = Path(args.config) if args.config else GENERATOR_ROOT / "config" / f"{args.profile}.json"
     config_path = require_contained(config_path, GENERATOR_ROOT / "config", "generator config")
@@ -661,6 +792,12 @@ def parser() -> argparse.ArgumentParser:
     diagnostic.add_argument("--profile", choices=("smoke", "regression", "stress"), default="smoke")
     diagnostic.add_argument("--unity", required=True, help="path to Unity Editor executable")
     diagnostic.set_defaults(handler=diagnose_modules)
+
+    native_diagnostic = sub.add_parser(
+        "diagnose-native-pipeline",
+        help="compare isolated Unity projects with the AssetBundle built-in module omitted and explicit")
+    native_diagnostic.add_argument("--unity", required=True, help="path to Unity Editor executable")
+    native_diagnostic.set_defaults(handler=diagnose_native_pipeline)
 
     publication = sub.add_parser("publish", help="plan or explicitly publish an allowlisted collection")
     mode = publication.add_mutually_exclusive_group(required=True)
