@@ -12,7 +12,8 @@ does not invoke Git. Publishing can occur only from a later, explicit command.
 
 ## Prerequisites
 
-- Unity Editor `2021.3.45f1` (or review and record a deliberate version update)
+- Unity Editor `2021.3.45f2` (the generator accepts the Unity 2021.3 LTS line,
+  while recording the exact version in every manifest)
 - Python 3.9 or newer; the tooling uses only the standard library
 - Git and network access only for publication preflight/push, not generation
 
@@ -39,9 +40,16 @@ On Windows PowerShell, for example:
 
 ```powershell
 python test-fixtures/unity/generator/tools/fixturectl.py generate `
-  --profile regression `
-  --unity "C:/Program Files/Unity/Hub/Editor/2021.3.45f1/Editor/Unity.exe"
+  --profile smoke `
+  --unity "C:/Program Files/Unity/Hub/Editor/2021.3.45f2/Editor/Unity.exe"
 ```
+
+`fixturectl` launches Unity in graphics-enabled batch mode and passes the
+configured standalone target through Unity's `-buildTarget` argument. Do not
+add `-nographics`: the smoke test deliberately reopens every generated bundle,
+including Material and Animation content, and treats disabled runtime modules
+or a null graphics device as a failed validation. Run the command in a Windows
+desktop session with the Windows Build Support module installed.
 
 The standard profiles are:
 
