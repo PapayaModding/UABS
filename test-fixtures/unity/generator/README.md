@@ -60,6 +60,26 @@ assembly stripping and `PlayerSettings.stripEngineCode` are logged for
 diagnosis but are not changed: they are player-build settings and are not the
 supported control for this AssetBundle subtarget issue.
 
+### Engine-module diagnostic
+
+If Unity reports disabled runtime modules or cannot reopen a bundle, run the
+opt-in controlled diagnostic before changing project stripping settings:
+
+```powershell
+python test-fixtures/unity/generator/tools/fixturectl.py diagnose-modules `
+  --profile smoke `
+  --unity "C:/Program Files/Unity/Hub/Editor/2021.3.45f2/Editor/Unity.exe"
+```
+
+The command starts two clean Unity processes. Each builds the same forced-rebuild,
+LZ4-compressed, TextAsset-only bundle for the same target and `Player`
+subtarget. One process temporarily enables `PlayerSettings.stripEngineCode`;
+the other temporarily disables it. Each must pass `AssetBundle.LoadFromFile`,
+and the original project setting is restored in `finally`. Reports and separate
+logs are written below `Generated/working/module-diagnostic/` and remain
+ignored. This command diagnoses the setting; it does not change normal fixture
+generation or treat a failed reopen as success.
+
 The standard profiles are:
 
 | Profile | Bundles | Assets per bundle | Purpose |

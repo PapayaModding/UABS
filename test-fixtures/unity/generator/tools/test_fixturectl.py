@@ -31,6 +31,21 @@ class FixtureCtlTests(unittest.TestCase):
         self.assertNotIn("-nographics", command)
         self.assertEqual("Win64", command[command.index("-buildTarget") + 1])
 
+    def test_module_diagnostic_command_is_explicit_and_isolated(self):
+        command = fixturectl.unity_command(
+            Path("C:/Unity/Unity.exe"), Path("smoke.json"), Path("diagnostic"), Path("diagnostic.log"),
+            "StandaloneWindows64", "UabsFixtures.Editor.FixtureGenerator.DiagnoseModuleStripping",
+            ("-fixtureStripEngineCode", "false"))
+        self.assertEqual(
+            "UabsFixtures.Editor.FixtureGenerator.DiagnoseModuleStripping",
+            command[command.index("-executeMethod") + 1])
+        self.assertEqual("false", command[command.index("-fixtureStripEngineCode") + 1])
+        self.assertNotIn("-nographics", command)
+
+    def test_module_diagnostic_cli_requires_unity(self):
+        args = fixturectl.parser().parse_args(["diagnose-modules", "--unity", "C:/Unity/Unity.exe"])
+        self.assertIs(args.handler, fixturectl.diagnose_modules)
+
     def test_editor_generator_pins_standalone_player_subtarget(self):
         source = GENERATOR_SOURCE.read_text(encoding="utf-8")
         self.assertIn(

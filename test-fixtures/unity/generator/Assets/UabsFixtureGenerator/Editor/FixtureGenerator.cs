@@ -82,6 +82,24 @@ namespace UabsFixtures.Editor
             public readonly List<SourceAssignment> Assignments = new List<SourceAssignment>();
         }
 
+        [Serializable]
+        private sealed class ModuleDiagnosticReport
+        {
+            public string unityVersion;
+            public string buildTarget;
+            public string standaloneSubtarget;
+            public string graphicsDevice;
+            public bool originalStripEngineCode;
+            public bool requestedStripEngineCode;
+            public string managedStrippingLevel;
+            public bool manifestCreated;
+            public bool bundleExists;
+            public long sizeBytes;
+            public string header;
+            public bool reopened;
+            public string error;
+        }
+
         public static void Generate()
         {
             string configArgument = RequiredArgument("-fixtureConfig");
@@ -176,6 +194,98 @@ namespace UabsFixtures.Editor
 
             File.WriteAllText(Path.Combine(outputRoot, "fixture-manifest.json"), JsonUtility.ToJson(manifest, true) + Environment.NewLine);
             Debug.Log($"Generated {manifest.bundles.Count} UABS fixture bundles at {outputRoot}");
+        }
+
+        public static void DiagnoseModuleStripping()
+        {
+            string configArgument = RequiredArgument("-fixtureConfig");
+            string outputArgument = RequiredArgument("-fixtureOutput");
+            bool requestedStripping = ParseBooleanArgument("-fixtureStripEngineCode");
+            string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
+            string generatedRoot = Path.GetFullPath(Path.Combine(projectRoot, "Generated", "working"));
+            string outputRoot = RequireContained(Path.GetFullPath(outputArgument), generatedRoot, "output");
+            string configRoot = Path.GetFullPath(Path.Combine(projectRoot, "config"));
+            string configPath = RequireContained(Path.GetFullPath(configArgument), configRoot, "configuration");
+            GeneratorConfig config = JsonUtility.FromJson<GeneratorConfig>(File.ReadAllText(configPath));
+            Validate(config);
+            if (!Enum.TryParse(config.buildTarget, out BuildTarget target)
+                || target != BuildTarget.StandaloneWindows64
+                   && target != BuildTarget.StandaloneLinux64
+                   && target != BuildTarget.StandaloneOSX)
+                throw new InvalidOperationException($"Unsupported standalone build target: {config.buildTarget}");
+
+            ConfigureStandalonePlayerSubtarget();
+            bool originalStripping = PlayerSettings.stripEngineCode;
+            ModuleDiagnosticReport report = new ModuleDiagnosticReport
+            {
+                unityVersion = Application.unityVersion,
+                buildTarget = target.ToString(),
+                standaloneSubtarget = EditorUserBuildSettings.standaloneBuildSubtarget.ToString(),
+                graphicsDevice = SystemInfo.graphicsDeviceType.ToString(),
+                originalStripEngineCode = originalStripping,
+                requestedStripEngineCode = requestedStripping,
+                managedStrippingLevel = PlayerSettings.GetManagedStrippingLevel(NamedBuildTarget.Standalone).ToString(),
+                error = string.Empty
+            };
+            bool outputPrepared = false;
+            string reportPath = Path.Combine(outputRoot, "module-diagnostic.json");
+
+            try
+            {
+                PlayerSettings.stripEngineCode = requestedStripping;
+                ValidateEditorContext(target);
+                PrepareOutput(outputRoot);
+                outputPrepared = true;
+                string assetDirectory = $"{GeneratedAssetRoot}/module-diagnostic";
+                EnsureAssetFolder(assetDirectory);
+                string assetPath = $"{assetDirectory}/minimal.txt";
+                File.WriteAllText(AbsoluteAssetPath(assetPath), "UABS minimal AssetBundle module diagnostic\n");
+                AssetDatabase.ImportAsset(assetPath, ImportAssetOptions.ForceSynchronousImport);
+
+                string bundleDirectory = Path.Combine(outputRoot, "bundles");
+                Directory.CreateDirectory(bundleDirectory);
+                const string bundleName = "uabs-module-diagnostic.bundle";
+                AssetBundleManifest manifest = BuildPipeline.BuildAssetBundles(
+                    bundleDirectory,
+                    new[] { new AssetBundleBuild { assetBundleName = bundleName, assetNames = new[] { assetPath } } },
+                    BuildOptions(config.compression) | BuildAssetBundleOptions.StrictMode
+                                                     | BuildAssetBundleOptions.ForceRebuildAssetBundle,
+                    target);
+                report.manifestCreated = manifest != null;
+                string bundlePath = Path.Combine(bundleDirectory, bundleName);
+                report.bundleExists = File.Exists(bundlePath);
+                if (report.bundleExists)
+                {
+                    report.sizeBytes = new FileInfo(bundlePath).Length;
+                    report.header = ReadHeader(bundlePath);
+                    AssetBundle loaded = AssetBundle.LoadFromFile(bundlePath);
+                    report.reopened = loaded != null;
+                    if (loaded != null) loaded.Unload(true);
+                }
+            }
+            catch (Exception exception)
+            {
+                report.error = exception.ToString();
+            }
+            finally
+            {
+                PlayerSettings.stripEngineCode = originalStripping;
+                AssetDatabase.SaveAssets();
+                if (outputPrepared)
+                {
+                    File.WriteAllText(
+                        reportPath,
+                        JsonUtility.ToJson(report, true) + Environment.NewLine);
+                }
+                Debug.Log(
+                    $"UABS_MODULE_DIAGNOSTIC stripping={requestedStripping} manifest={report.manifestCreated} " +
+                    $"bundle={report.bundleExists} reopened={report.reopened} error={report.error}");
+            }
+
+            if (!report.manifestCreated || !report.bundleExists || !report.reopened || !string.IsNullOrEmpty(report.error))
+                throw new InvalidOperationException(
+                    $"Module diagnostic failed with stripEngineCode={requestedStripping}; " +
+                    (outputPrepared ? $"see {reportPath}" : "the output directory was not prepared; see the Unity log."));
         }
 
         private static List<PlannedBundle> CreateAssets(GeneratorConfig config, System.Random random)
@@ -448,6 +558,14 @@ namespace UabsFixtures.Editor
             if (index < 0 || index + 1 >= arguments.Length || string.IsNullOrWhiteSpace(arguments[index + 1]))
                 throw new InvalidOperationException($"Missing required command-line argument {name}.");
             return arguments[index + 1];
+        }
+
+        private static bool ParseBooleanArgument(string name)
+        {
+            string value = RequiredArgument(name);
+            if (!bool.TryParse(value, out bool result))
+                throw new InvalidOperationException($"{name} must be true or false, got '{value}'.");
+            return result;
         }
 
         private static string RequireContained(string candidate, string root, string label)

@@ -549,16 +549,61 @@ def publish(args: argparse.Namespace) -> int:
 
 
 def unity_command(
-        unity: Path, config_path: Path, output: Path, log_path: Path, build_target: str) -> list[str]:
+        unity: Path,
+        config_path: Path,
+        output: Path,
+        log_path: Path,
+        build_target: str,
+        execute_method: str = "UabsFixtures.Editor.FixtureGenerator.Generate",
+        extra_arguments: Iterable[str] = ()) -> list[str]:
     return [
         str(unity), "-batchmode", "-quit",
         "-buildTarget", UNITY_BUILD_TARGET_ARGUMENTS[build_target],
         "-projectPath", str(GENERATOR_ROOT),
-        "-executeMethod", "UabsFixtures.Editor.FixtureGenerator.Generate",
+        "-executeMethod", execute_method,
         "-fixtureConfig", str(config_path),
         "-fixtureOutput", str(output),
         "-logFile", str(log_path),
+        *extra_arguments,
     ]
+
+
+def diagnose_modules(args: argparse.Namespace) -> int:
+    config_path = GENERATOR_ROOT / "config" / f"{args.profile}.json"
+    config = load_json(config_path)
+    validate_generator_config(config)
+    unity = Path(args.unity).resolve(strict=True)
+    diagnostic_root = GENERATED_ROOT / "module-diagnostic"
+    failures: list[str] = []
+    for stripping in (True, False):
+        label = "strip-enabled" if stripping else "strip-disabled"
+        output = diagnostic_root / label
+        log_path = diagnostic_root / f"{label}.unity-generator.log"
+        output.parent.mkdir(parents=True, exist_ok=True)
+        command = unity_command(
+            unity,
+            config_path,
+            output,
+            log_path,
+            config["buildTarget"],
+            "UabsFixtures.Editor.FixtureGenerator.DiagnoseModuleStripping",
+            ("-fixtureStripEngineCode", str(stripping).lower()),
+        )
+        result = subprocess.run(command, check=False)
+        report_path = output / "module-diagnostic.json"
+        if report_path.is_file():
+            report = load_json(report_path)
+            print(f"{label}: {json.dumps(report, sort_keys=True)}")
+            if report.get("reopened") is not True:
+                failures.append(f"{label} did not reopen its bundle")
+        else:
+            failures.append(f"{label} produced no diagnostic report")
+        if result.returncode != 0:
+            failures.append(f"{label} Unity exit code {result.returncode}; see {log_path}")
+    if failures:
+        raise FixtureError("Module diagnostic found failures:\n" + "\n".join(failures))
+    print("Both controlled module diagnostics built and reopened successfully.")
+    return 0
 
 
 def generate(args: argparse.Namespace) -> int:
@@ -610,6 +655,12 @@ def parser() -> argparse.ArgumentParser:
     verification = sub.add_parser("verify", help="validate a generated or published manifest and hashes")
     verification.add_argument("--manifest", required=True)
     verification.set_defaults(handler=verify)
+
+    diagnostic = sub.add_parser(
+        "diagnose-modules", help="compare minimal bundle loading with engine stripping enabled and disabled")
+    diagnostic.add_argument("--profile", choices=("smoke", "regression", "stress"), default="smoke")
+    diagnostic.add_argument("--unity", required=True, help="path to Unity Editor executable")
+    diagnostic.set_defaults(handler=diagnose_modules)
 
     publication = sub.add_parser("publish", help="plan or explicitly publish an allowlisted collection")
     mode = publication.add_mutually_exclusive_group(required=True)
