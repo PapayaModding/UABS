@@ -1,0 +1,13 @@
+{
+  "profile": "regression",
+  "buildTarget": "StandaloneWindows64",
+  "seed": 20211031,
+  "bundleCount": 18,
+  "assetsPerBundle": 12,
+  "compression": "lz4",
+  "dependencyDensity": 0.3,
+  "duplicateNameFrequency": 0.2,
+  "includeUnicodeNames": true,
+  "assetTypes": ["Texture2D", "Sprite", "Material", "Prefab", "TextAsset", "ScriptableObject", "AnimationClip", "SpriteAtlas"],
+  "outputDirectory": "Generated/working/regression"
+}

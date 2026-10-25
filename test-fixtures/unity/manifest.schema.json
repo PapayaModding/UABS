@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/PapayaModding/UABS/test-fixtures/unity/manifest.schema.json",
+  "title": "UABS Unity fixture manifest",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "generatorVersion",
+    "unityVersion",
+    "buildTarget",
+    "profile",
+    "seed",
+    "configuration",
+    "bundles",
+    "knownCharacteristics"
+  ],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "generatorVersion": { "type": "string", "minLength": 1 },
+    "unityVersion": { "type": "string", "minLength": 1 },
+    "buildTarget": { "type": "string", "minLength": 1 },
+    "profile": { "enum": ["smoke", "regression", "stress"] },
+    "seed": { "type": "integer" },
+    "configuration": { "type": "object" },
+    "bundles": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "file", "sizeBytes", "sha256", "sourceAssignments", "unityDependencies", "unityReportedContents"],
+        "properties": {
+          "name": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._-]*$" },
+          "file": { "type": "string", "pattern": "^bundles/[a-z0-9][a-z0-9._-]*$" },
+          "sizeBytes": { "type": "integer", "minimum": 1 },
+          "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+          "sourceAssignments": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["assetPath", "assetName", "assetType"],
+              "properties": {
+                "assetPath": { "type": "string" },
+                "assetName": { "type": "string" },
+                "assetType": { "type": "string" }
+              },
+              "additionalProperties": false
+            }
+          },
+          "unityDependencies": { "type": "array", "items": { "type": "string" } },
+          "unityReportedContents": { "type": "array", "items": { "type": "string" } }
+        },
+        "additionalProperties": false
+      }
+    },
+    "knownCharacteristics": { "type": "array", "items": { "type": "string" } },
+    "scopeNotice": { "type": "string" }
+  },
+  "additionalProperties": false
+}

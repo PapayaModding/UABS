@@ -1,0 +1,17 @@
+# Unity-generated project state
+generator/Library/
+generator/Temp/
+generator/Logs/
+generator/Obj/
+generator/UserSettings/
+generator/MemoryCaptures/
+generator/tools/__pycache__/
+generator/tools/*.pyc
+
+# Generated assets, bundles, manifests, and publication plans stay local until
+# an explicit allowlisted publish operation copies them into published/.
+generator/Assets/GeneratedFixtures/
+generator/Generated/
+
+# Published collections are intentionally not ignored. They are created only
+# by the guarded publisher after an approved dry-run plan.

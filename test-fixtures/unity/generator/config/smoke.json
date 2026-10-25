@@ -1,0 +1,13 @@
+{
+  "profile": "smoke",
+  "buildTarget": "StandaloneWindows64",
+  "seed": 20211031,
+  "bundleCount": 3,
+  "assetsPerBundle": 8,
+  "compression": "lz4",
+  "dependencyDensity": 0.35,
+  "duplicateNameFrequency": 0.15,
+  "includeUnicodeNames": true,
+  "assetTypes": ["Texture2D", "Sprite", "Material", "Prefab", "TextAsset", "ScriptableObject", "AnimationClip", "SpriteAtlas"],
+  "outputDirectory": "Generated/working/smoke"
+}

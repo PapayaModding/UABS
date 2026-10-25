@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "collection": "unity-2021.3-regression",
+  "manifest": "fixture-manifest.json",
+  "files": [
+    "bundles/uabs-regression-0000.bundle",
+    "bundles/uabs-regression-0001.bundle"
+  ],
+  "allowStress": false,
+  "limits": {
+    "maxBundles": 30,
+    "maxIndividualBytes": 20971520,
+    "maxTotalBytes": 209715200
+  }
+}

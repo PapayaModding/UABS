@@ -1,0 +1,13 @@
+{
+  "profile": "stress",
+  "buildTarget": "StandaloneWindows64",
+  "seed": 20211031,
+  "bundleCount": 250,
+  "assetsPerBundle": 40,
+  "compression": "lz4",
+  "dependencyDensity": 0.15,
+  "duplicateNameFrequency": 0.1,
+  "includeUnicodeNames": true,
+  "assetTypes": ["Texture2D", "Sprite", "Material", "Prefab", "TextAsset", "ScriptableObject", "AnimationClip", "SpriteAtlas"],
+  "outputDirectory": "Generated/working/stress"
+}
