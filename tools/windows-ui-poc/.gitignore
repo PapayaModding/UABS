@@ -3,3 +3,4 @@ obj/
 artifacts/
 *.local.json
 !WindowsUiPoc.csproj
+!tests/EvidenceChecks.csproj

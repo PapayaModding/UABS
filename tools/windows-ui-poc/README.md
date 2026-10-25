@@ -83,6 +83,17 @@ Linux cross-compilation cannot verify any of them. Full Checkpoint 2.1,
 including selector retention, errors/tooltips, V1, sorting, selection, and
 Refresh, remains pending regardless of this single scenario's result.
 
+UIA inventory fields that throw (including unsupported properties or elements
+that disappear) are recorded as `{ "available": false, "reason": "..." }`.
+Other fields and elements continue to be collected. This tolerance applies
+only to evidence; scenario discovery, required patterns, and assertions retain
+their strict reads. Screenshot or tree-enumeration failures still surface.
+Run the platform-independent diagnostic-reader regression checks with:
+
+```powershell
+dotnet run --project tools/windows-ui-poc/tests/EvidenceChecks.csproj
+```
+
 Source verification: dependency restore and Release cross-compilation on Linux
 passed with zero warnings/errors. JSON parsing, generated-file ignore rules,
 and whitespace checks passed. PowerShell execution and Windows UI Automation

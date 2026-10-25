@@ -196,10 +196,16 @@ internal static class Program
         root ??= Window!;
         Capture.Element(root).ToFile(Path.Combine(Output, label + ".png"));
         var tree = root.FindAllDescendants().Take(2000).Select(e => new {
-            id = e.AutomationId, name = e.Name, type = e.ControlType.ToString(), e.IsOffscreen, e.IsEnabled,
-            invoke = e.Patterns.Invoke.IsSupported, value = e.Patterns.Value.IsSupported,
-            toggle = e.Patterns.Toggle.IsSupported, selection = e.Patterns.Selection.IsSupported,
-            grid = e.Patterns.Grid.IsSupported
+            id = EvidenceValue.Read(() => e.AutomationId),
+            name = EvidenceValue.Read(() => e.Name),
+            type = EvidenceValue.Read(() => e.ControlType.ToString()),
+            IsOffscreen = EvidenceValue.Read(() => e.IsOffscreen),
+            IsEnabled = EvidenceValue.Read(() => e.IsEnabled),
+            invoke = EvidenceValue.Read(() => e.Patterns.Invoke.IsSupported),
+            value = EvidenceValue.Read(() => e.Patterns.Value.IsSupported),
+            toggle = EvidenceValue.Read(() => e.Patterns.Toggle.IsSupported),
+            selection = EvidenceValue.Read(() => e.Patterns.Selection.IsSupported),
+            grid = EvidenceValue.Read(() => e.Patterns.Grid.IsSupported)
         }).ToArray();
         File.WriteAllText(Path.Combine(Output, label + "-uia.json"), JsonSerializer.Serialize(tree, Json));
     }
