@@ -8,6 +8,7 @@ from unittest import mock
 
 
 MODULE_PATH = Path(__file__).with_name("fixturectl.py")
+GENERATOR_SOURCE = MODULE_PATH.parents[1] / "Assets" / "UabsFixtureGenerator" / "Editor" / "FixtureGenerator.cs"
 SPEC = importlib.util.spec_from_file_location("fixturectl", MODULE_PATH)
 fixturectl = importlib.util.module_from_spec(SPEC)
 assert SPEC.loader is not None
@@ -29,6 +30,12 @@ class FixtureCtlTests(unittest.TestCase):
             "StandaloneWindows64")
         self.assertNotIn("-nographics", command)
         self.assertEqual("Win64", command[command.index("-buildTarget") + 1])
+
+    def test_editor_generator_pins_standalone_player_subtarget(self):
+        source = GENERATOR_SOURCE.read_text(encoding="utf-8")
+        self.assertIn(
+            "EditorUserBuildSettings.standaloneBuildSubtarget = StandaloneBuildSubtarget.Player;", source)
+        self.assertIn("ConfigureStandalonePlayerSubtarget();", source)
 
     def test_unsafe_allowlist_paths_are_rejected(self):
         for value in ("../escape.bundle", "/absolute.bundle", "bundles/../escape", "other/a.bundle", "bundles\\a.bundle"):

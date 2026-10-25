@@ -101,6 +101,7 @@ namespace UabsFixtures.Editor
                 throw new InvalidOperationException($"Unsupported standalone build target: {config.buildTarget}");
             }
 
+            ConfigureStandalonePlayerSubtarget();
             ValidateEditorContext(target);
 
             PrepareOutput(outputRoot);
@@ -152,6 +153,7 @@ namespace UabsFixtures.Editor
                         $"Unity {Application.unityVersion} built but could not reopen '{file}' " +
                         $"({new FileInfo(file).Length} bytes, header '{ReadHeader(file)}'). " +
                         $"Configured/active target: {target}/{EditorUserBuildSettings.activeBuildTarget}; " +
+                        $"standalone subtarget: {EditorUserBuildSettings.standaloneBuildSubtarget}; " +
                         $"graphics device: {SystemInfo.graphicsDeviceType}. Check the preceding Unity module or " +
                         "bundle compatibility errors; generation is not successful until every bundle reopens.");
                 }
@@ -336,6 +338,21 @@ namespace UabsFixtures.Editor
             }
         }
 
+        private static void ConfigureStandalonePlayerSubtarget()
+        {
+            StandaloneBuildSubtarget previous = EditorUserBuildSettings.standaloneBuildSubtarget;
+            if (previous != StandaloneBuildSubtarget.Player)
+            {
+                Debug.LogWarning(
+                    $"Changing standalone build subtarget from {previous} to Player. Unity 2021.3's public " +
+                    "BuildAssetBundles overload inherits this setting; the Server subtarget strips runtime " +
+                    "modules required by the generated AnimationClip and AssetBundle content.");
+                EditorUserBuildSettings.standaloneBuildSubtarget = StandaloneBuildSubtarget.Player;
+            }
+            if (EditorUserBuildSettings.standaloneBuildSubtarget != StandaloneBuildSubtarget.Player)
+                throw new InvalidOperationException("Could not select the standalone Player build subtarget.");
+        }
+
         private static void ValidateEditorContext(BuildTarget target)
         {
             if (!Application.unityVersion.StartsWith("2021.3.", StringComparison.Ordinal))
@@ -355,7 +372,10 @@ namespace UabsFixtures.Editor
                     "load verification. Remove -nographics and run in a Windows desktop session.");
             Debug.Log(
                 $"UABS fixture context: Unity {Application.unityVersion}; target {target}; " +
-                $"graphics {SystemInfo.graphicsDeviceType}; batchMode={Application.isBatchMode}");
+                $"subtarget {EditorUserBuildSettings.standaloneBuildSubtarget}; " +
+                $"graphics {SystemInfo.graphicsDeviceType}; batchMode={Application.isBatchMode}; " +
+                $"stripEngineCode={PlayerSettings.stripEngineCode}; " +
+                $"managedStripping={PlayerSettings.GetManagedStrippingLevel(NamedBuildTarget.Standalone)}");
         }
 
         private static string ReadHeader(string path)

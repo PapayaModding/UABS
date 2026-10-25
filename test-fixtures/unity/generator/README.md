@@ -51,6 +51,15 @@ including Material and Animation content, and treats disabled runtime modules
 or a null graphics device as a failed validation. Run the command in a Windows
 desktop session with the Windows Build Support module installed.
 
+The generator also pins `EditorUserBuildSettings.standaloneBuildSubtarget` to
+`Player` before building. In Unity 2021.3, the public `BuildAssetBundles`
+overload inherits the active subtarget independently of `BuildTarget`. A stale
+`Server` (Dedicated Server/headless) subtarget strips runtime modules such as
+Animation and produces bundles that the normal Editor cannot reopen. Managed
+assembly stripping and `PlayerSettings.stripEngineCode` are logged for
+diagnosis but are not changed: they are player-build settings and are not the
+supported control for this AssetBundle subtarget issue.
+
 The standard profiles are:
 
 | Profile | Bundles | Assets per bundle | Purpose |
