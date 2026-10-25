@@ -29,14 +29,26 @@ Build UABS using the repository's normal Debug build procedure. Then:
 Set-Location E:\Projects\UABS
 dotnet build Avalonia/Avalonia.sln -c Debug
 Copy-Item tools/windows-ui-poc/scenario.example.json tools/windows-ui-poc/scenario.local.json
-git rev-parse HEAD
 Get-FileHash E:\DisposableFixtures\Smoke.uabs.sqlite -Algorithm SHA256
 ```
 
-Edit `scenario.local.json`: set `expectedCommit` to the full checkout SHA,
-`packageSha256` to that hash, and supply the approved disposable package,
+Edit `scenario.local.json`: set `packageSha256` to that hash, and supply the approved disposable package,
 known indexed keyword, and exact expected bundle/package display names. Do
 not infer expected results from this runner's observed output.
+
+The PowerShell launcher resolves the configured repository's full HEAD SHA
+automatically. It requires that exact working-tree root and an attached
+`v2-recovery` branch; invalid Git output, detached HEAD, missing Git, and
+unexpected branches stop execution. It never pulls or switches branches.
+`expectedCommit` in the local scenario can be absent or stale: the launcher
+copies the parsed configuration to a temporary JSON file and replaces only
+that property. Your original JSON is never written. The temporary file is
+removed in `finally`, including build, startup, and watchdog failures.
+The runner still independently verifies the branch and expectedCommit, so a
+checkout change between preparation and runner startup is rejected.
+The launcher prints the tested SHA and records repository/branch/commit in
+`checkout.json`, including launcher execution failures after resolution.
+The runner's existing preflight evidence also records the commit.
 
 ```powershell
 pwsh -File tools/windows-ui-poc/Run-WindowsUiPoc.ps1 `
@@ -196,12 +208,14 @@ Run the platform-independent diagnostic-reader regression checks with:
 
 ```powershell
 dotnet run --project tools/windows-ui-poc/tests/EvidenceChecks.csproj
+pwsh -File tools/windows-ui-poc/tests/ScenarioConfiguration.Tests.ps1
 ```
 
 Source verification: dependency restore and Release cross-compilation on Linux
 passed with zero warnings/errors. JSON parsing, generated-file ignore rules,
-and whitespace checks passed. PowerShell execution and Windows UI Automation
-have not been run in Cloud.
+and whitespace checks passed. The scenario-configuration PowerShell regression
+script and launcher syntax checks ran using PowerShell 7 on Linux. The full
+Windows launcher and Windows UI Automation have not been executed in Cloud.
 
 ## Remote handoff
 
