@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 using UnityEditor;
+using UnityEditor.Build;
 using UnityEditor.U2D;
 using UnityEngine;
 using UnityEngine.Rendering;
