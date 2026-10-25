@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -165,9 +166,12 @@ public sealed class SearchWorkspaceViewModel : ViewModelBase, IDisposable
     private bool _includeSourceResults = true;
     private bool _includeAssetResults = true;
     private SearchWorkspaceFieldSelection _fieldSelection = SearchWorkspaceFieldSelection.Names;
+    private bool _selectorsCustomized;
+    private bool _applyingSelectorDefaults;
     private bool _isSearching;
     private string _status = "Load a package catalog in Packages to establish search scope.";
     private string? _error;
+    private string? _errorDetails;
     private bool _hasExecutedSearch;
     private bool _criteriaChanged;
     private string _lastExecutedCriteria = "No search has been executed.";
@@ -399,25 +403,25 @@ public sealed class SearchWorkspaceViewModel : ViewModelBase, IDisposable
     public bool IncludePackageResults
     {
         get => _includePackageResults;
-        set => SetCriteriaField(ref _includePackageResults, value);
+        set => SetSelectorField(ref _includePackageResults, value);
     }
 
     public bool IncludeSourceResults
     {
         get => _includeSourceResults;
-        set => SetCriteriaField(ref _includeSourceResults, value);
+        set => SetSelectorField(ref _includeSourceResults, value);
     }
 
     public bool IncludeAssetResults
     {
         get => _includeAssetResults;
-        set => SetCriteriaField(ref _includeAssetResults, value);
+        set => SetSelectorField(ref _includeAssetResults, value);
     }
 
     public SearchWorkspaceFieldSelection FieldSelection
     {
         get => _fieldSelection;
-        set => SetCriteriaField(ref _fieldSelection, value);
+        set => SetSelectorField(ref _fieldSelection, value);
     }
 
     public bool IsSearching
@@ -446,12 +450,19 @@ public sealed class SearchWorkspaceViewModel : ViewModelBase, IDisposable
         get => _error;
         private set
         {
+            ErrorDetails = null;
             if (SetField(ref _error, value))
             {
                 OnPropertyChanged(nameof(HasError));
                 OnPropertyChanged(nameof(ShowEmptyState));
             }
         }
+    }
+
+    public string? ErrorDetails
+    {
+        get => _errorDetails;
+        private set => SetField(ref _errorDetails, value);
     }
 
     public bool HasExecutedSearch
@@ -717,7 +728,11 @@ public sealed class SearchWorkspaceViewModel : ViewModelBase, IDisposable
             if (version == _searchVersion)
             {
                 if (previousSort is not null) MarkV2Stale();
-                Error = "V2 Search failed: " + e.Message;
+                Error = _useBundleProjection && e is InvalidDataException
+                    && e.Message.StartsWith("InvalidRequest:", StringComparison.Ordinal)
+                    ? BundleCompatibilityMessage(request, e.Message)
+                    : "V2 Search failed: " + e.Message;
+                ErrorDetails = e.Message;
                 Status = previousSort is null ? "No new rows published." : "Sort not published; Refresh Search explicitly. Previous rows/drafts retained.";
             }
         }
@@ -1003,10 +1018,51 @@ public sealed class SearchWorkspaceViewModel : ViewModelBase, IDisposable
 
     private void UpdateScopeState()
     {
+        ApplyUntouchedSelectorDefaults();
         OnPropertyChanged(nameof(SelectedPackageCount));
         OnPropertyChanged(nameof(PackageSelectionSummary));
         SelectAllPackagesCommand?.NotifyCanExecuteChanged();
         ClearPackagesCommand?.NotifyCanExecuteChanged();
+    }
+
+    private void ApplyUntouchedSelectorDefaults()
+    {
+        if (!_useBundleProjection || _selectorsCustomized) return;
+        var selected = PackageScopes.Where(p => p.IsSelected).ToArray();
+        if (selected.Length == 0) return;
+        bool v2 = selected.All(p => p.Package.V2 is not null);
+        if (!v2 && selected.Any(p => p.Package.V2 is not null)) return; // No guessed mixed-format mode.
+        _applyingSelectorDefaults = true;
+        try
+        {
+            IncludePackageResults = !v2;
+            IncludeSourceResults = true;
+            IncludeAssetResults = !v2;
+            FieldSelection = v2 ? SearchWorkspaceFieldSelection.Assets : SearchWorkspaceFieldSelection.Names;
+        }
+        finally { _applyingSelectorDefaults = false; }
+    }
+
+    private void SetSelectorField<T>(ref T field, T value,
+        [System.Runtime.CompilerServices.CallerMemberName] string? propertyName = null)
+    {
+        if (!_applyingSelectorDefaults && !EqualityComparer<T>.Default.Equals(field, value))
+            _selectorsCustomized = true;
+        SetCriteriaField(ref field, value, propertyName);
+    }
+
+    private static string BundleCompatibilityMessage(SearchRequest request, string details)
+    {
+        if (request.ResultKinds != PackageSearchResultKinds.SourceFile)
+            return "V2 bundle Search requires Sources only. Disable Packages and Assets result kinds.";
+        if ((request.Fields & (PackageSearchFields.PackageName | PackageSearchFields.PackagePath)) != 0)
+            return "Select Assets, CAB codes or Dependencies search fields for V2 bundle Search. Names, Paths and All are not supported.";
+        if (details.Contains("indeterminate", StringComparison.OrdinalIgnoreCase))
+            return "Exclusions cannot be verified against incomplete asset/name evidence. Select fully indexed packages or clear exclusions.";
+        if (new PackageSearchRequest(request.ExcludedQuery).IncludeTerms.Count > 0
+            && (request.Fields & ~(PackageSearchFields.AssetName | PackageSearchFields.Memo)) != 0)
+            return "V2 bundle exclusions require Assets fields (optionally Search memos). Change the search-field scope or clear exclusions.";
+        return "V2 bundle Search cannot evaluate these filters safely. Review the diagnostic details and selected filters.";
     }
 
     private void RefreshVisiblePackages()

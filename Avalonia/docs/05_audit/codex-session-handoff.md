@@ -1,8 +1,17 @@
 # Codex Session Handoff
 
-**Updated:** 2026-10-23
+**Updated:** 2026-10-25
 
-**Current task:** Recovery Checkpoint2 — Search-only bundle UI integration verified (2026-10-23); user-operated Debug acceptance pending. No Go to Assets or issue closure.
+**Current task:** Recovery Checkpoint2.1 — Search defaults/compatibility feedback verified; user-operated Debug acceptance pending. No navigation or issue closure.
+
+### Checkpoint2.1 — final verified checkpoint
+
+- Entry baseline `f3a350a`, clean worktree/index. User reports Checkpoint2 works with Sources only / Assets fields / known asset keyword; Mixed/Names fails as expected. This is limited user-reported acceptance, not agent visual observation or full issue closure.
+- Root cause: production bundle Search retained V1's initial mixed kinds/Names selectors. Added unambiguous selected-scope defaults only while the four kind/field selectors remain untouched: V2 Sources/Assets; V1 original mixed/Names. Once any selector actually changes, all future scope/workspace/catalog transitions preserve it. Empty/mixed-format scope is not guessed; text and other criteria are never reset.
+- SearchWorkspaceViewModel formats backend InvalidRequest into corrective messages with original details retained in ErrorDetails; existing Search error TextBlock exposes a tooltip. Backend SQL/mapping/paging/schema/memos unchanged. Changed only these2 production files, V2BundleSearchWorkspaceTests and3 checkpoint/roadmap/handoff documents. No existing work discarded; index remains empty.
+- Focused bundle-workspace18/18 passed(3.58s), including4 new cases and prior sorting/paging/selection/D5 coverage. Existing focused ViewModel22/integration18/headers15/infinite-scroll7/bundle SQL49/raw Search54 passed. Full in-process xUnit792 total:791 passed,0 failed,1 existing hard-link permission skip(66.93s); not VSTest. Final Debug solution including startup0 warnings/errors(1.21s); runner0 warnings/errors(2.46s). Missing import/test-only lifecycle naming and a V1 fixture-order mistake corrected before successful verification; no outstanding build/test failures.
+- Schema/design/embedded-DDL equality, zero-Unity project/output scan,7 baseline fixture hashes, protected backend/Assets/Packages/Unity/persistence paths,52 documentation references/fences, whitespace/conflicts and unchanged17 Reported statuses passed. Removed only session-created diagnostic test log. Current worktree verified buildable and ready for scoped review/commit; no desktop observation, original source/real-package writes, staging or commit.
+- **Next exact action:** user launches `E:/Projects/UABS/Avalonia/UABS/bin/Debug/net9.0/UABS.exe` and follows [Checkpoint2.1 manual checklist](v2-recovery-checkpoint-02-1-search-defaults.md#limits-and-manual-acceptance): untouched V2 scope defaults Sources/Assets; explicit Names/mixed/error tooltip and retained criteria; V1 defaults; sorting/selection/Refresh unchanged. Issue #1 stays open pending acceptance. Unsupported package-field/kind/exclusion/coverage semantics remain explicit errors. Do not start Checkpoint3/navigation or any other recovery work automatically.
 
 ### Checkpoint2 — final verified checkpoint
 

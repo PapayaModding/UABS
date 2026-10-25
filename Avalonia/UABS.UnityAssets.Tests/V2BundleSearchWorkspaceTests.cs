@@ -49,7 +49,9 @@ public sealed class V2BundleSearchWorkspaceTests
         using var corpus = new V2SearchTests.Corpus(); await corpus.Add(36, sourceCount: 2);
         using var main = new MainWindowViewModel(new Picker(), new NoSourceLoads(), initialPath: corpus.DirectoryPath);
         await main.Packages.V2.OpenAsync(corpus.Packages[0].Path, select: false);
-        Configure(main.Search); await main.Search.SearchAsync();
+        Assert.False(main.Search.IncludePackageResults); Assert.False(main.Search.IncludeAssetResults);
+        Assert.True(main.Search.IncludeSourceResults); Assert.Equal(SearchWorkspaceFieldSelection.Assets, main.Search.FieldSelection);
+        main.Search.IncludeText = "hero"; await main.Search.SearchAsync();
         Assert.Null(main.Search.Error); Assert.Equal(2, main.Search.Results.Count); Assert.True(main.Search.IsBundleSearch);
         Assert.All(main.Search.Results, r => { Assert.Equal(PackageSearchResultKind.SourceFile, r.Kind);
             Assert.Null(r.PathId); Assert.Null(r.AssetName); Assert.Null(r.Memo); });
@@ -89,7 +91,9 @@ public sealed class V2BundleSearchWorkspaceTests
         if (input == "mixed-kinds") search.IncludePackageResults = true;
         if (input == "exclusion-scope") { search.FieldSelection = SearchWorkspaceFieldSelection.CabCodes; search.ExcludeText = "bad"; }
         await search.SearchAsync();
-        Assert.Contains("InvalidRequest", search.Error); Assert.Same(rows, search.Results); Assert.Same(selected, search.SelectedResult);
+        Assert.Contains("InvalidRequest", search.ErrorDetails); Assert.DoesNotContain("InvalidRequest", search.Error);
+        Assert.Contains(input == "package-field" ? "Select Assets" : input == "exclusion-scope" ? "exclusions require Assets" : "Sources only", search.Error);
+        Assert.Same(rows, search.Results); Assert.Same(selected, search.SelectedResult);
         Assert.True(search.CriteriaChanged); Assert.False(search.IsSearching);
         if (input == "package-field") Assert.Equal(SearchWorkspaceFieldSelection.Names, search.FieldSelection);
         if (input == "asset-kind") Assert.True(search.IncludeAssetResults);
@@ -258,6 +262,80 @@ public sealed class V2BundleSearchWorkspaceTests
             Assert.Equal(search.Results.Select(r => r.Name).OrderByDescending(n => n, Comparer<string>.Create(CompareText)),
                 search.Results.Select(r => r.Name));
         }
+    }
+
+    [AvaloniaTheory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task ExplicitSelectors_BeforeOrAfterAdmission_SurviveScopeAndWorkspaceChanges(bool beforeAdmission)
+    {
+        using var corpus = new V2SearchTests.Corpus(); await corpus.Add(2); await corpus.Add(2, "Other");
+        using var packages = V2SearchIntegrationTests.Packages(); using var search = Create(packages);
+        void Customize()
+        {
+            search.FieldSelection = SearchWorkspaceFieldSelection.Paths;
+            search.IncludePackageResults = true; search.IncludeAssetResults = true;
+            search.IncludeText = "hero"; search.ExcludeText = "kept"; search.ExactText = true; search.SearchMemos = true;
+        }
+        if (beforeAdmission) Customize();
+        await packages.V2.OpenAsync(corpus.Packages[0].Path, select: false);
+        if (!beforeAdmission) Customize();
+        await packages.V2.OpenAsync(corpus.Packages[1].Path, select: false);
+        search.ClearPackagesCommand.Execute(null); search.SelectAllPackagesCommand.Execute(null);
+        search.Deactivate(); await search.ActivateAsync(); await search.SearchAsync();
+        Assert.Equal(SearchWorkspaceFieldSelection.Paths, search.FieldSelection);
+        Assert.True(search.IncludePackageResults); Assert.True(search.IncludeAssetResults); Assert.True(search.IncludeSourceResults);
+        Assert.Equal("hero", search.IncludeText); Assert.Equal("kept", search.ExcludeText); Assert.True(search.ExactText); Assert.True(search.SearchMemos);
+        Assert.Contains("Sources only", search.Error); Assert.Contains("InvalidRequest", search.ErrorDetails);
+    }
+
+    [AvaloniaFact]
+    public async Task PristineSelectors_FollowUnambiguousFormat_V1DefaultsAndExplicitEditsArePreserved()
+    {
+        using var corpus = new V2SearchTests.Corpus();
+        var legacy = new PackageDocument([new PackageIndex("characters", [new PackageBundleReference {
+            Name = "legacy.bundle", Path = "legacy.bundle", AssetInfos = [new() { Name = "Hero", PathId = 42 }] }])]);
+        await new PackageService().SaveAsync(legacy, Path.Combine(corpus.DirectoryPath, "legacy"));
+        using var packages = V2SearchIntegrationTests.Packages(); using var search = Create(packages);
+        await packages.LoadCatalogAsync(corpus.DirectoryPath);
+        Assert.Equal(SearchWorkspaceFieldSelection.Names, search.FieldSelection);
+        Assert.True(search.IncludePackageResults); Assert.True(search.IncludeSourceResults); Assert.True(search.IncludeAssetResults);
+        search.IncludeText = "Hero"; await search.SearchAsync(); Assert.Null(search.Error); Assert.False(search.IsBundleSearch);
+        await corpus.Add(2); await packages.V2.OpenAsync(corpus.Packages[0].Path, select: false);
+        search.ClearPackagesCommand.Execute(null);
+        search.PackageScopes.Single(p => p.ScopeKey.StartsWith("V2:")).IsSelected = true;
+        Assert.Equal(SearchWorkspaceFieldSelection.Assets, search.FieldSelection); Assert.False(search.IncludePackageResults); Assert.False(search.IncludeAssetResults);
+        Assert.Equal("Hero", search.IncludeText); await search.SearchAsync(); Assert.Null(search.Error); Assert.True(search.IsBundleSearch);
+        search.ClearPackagesCommand.Execute(null);
+        search.PackageScopes.Single(p => p.ScopeKey.StartsWith("V1:")).IsSelected = true;
+        Assert.Equal(SearchWorkspaceFieldSelection.Names, search.FieldSelection); Assert.True(search.IncludePackageResults); Assert.True(search.IncludeAssetResults);
+        search.FieldSelection = SearchWorkspaceFieldSelection.Paths; // Explicit intent now takes priority in every scope.
+        search.SelectAllPackagesCommand.Execute(null); await search.SearchAsync(); Assert.Contains("Mixed-format", search.Error);
+        search.ClearPackagesCommand.Execute(null);
+        search.PackageScopes.Single(p => p.ScopeKey.StartsWith("V2:")).IsSelected = true;
+        Assert.Equal(SearchWorkspaceFieldSelection.Paths, search.FieldSelection); Assert.True(search.IncludePackageResults);
+        Assert.Equal("Hero", search.IncludeText);
+    }
+
+    [AvaloniaFact]
+    public async Task CompatibilityFeedback_RendersActionAndOriginalDiagnosticTooltip_ThenClearsOnSuccess()
+    {
+        using var corpus = new V2SearchTests.Corpus(); await corpus.Add(2);
+        using var packages = V2SearchIntegrationTests.Packages(); using var search = Create(packages);
+        await packages.V2.OpenAsync(corpus.Packages[0].Path, select: false); search.IncludeText = "hero";
+        search.FieldSelection = SearchWorkspaceFieldSelection.Names; await search.SearchAsync();
+        var view = new SearchWorkspaceView { DataContext = search };
+        var window = new Window { Content = view, Width = 1300, Height = 700 }; window.Show();
+        try
+        {
+            window.UpdateLayout(); Dispatcher.UIThread.RunJobs();
+            var error = view.FindControl<TextBlock>("SearchErrorText")!;
+            Assert.True(error.IsEffectivelyVisible); Assert.Equal(search.Error, error.Text);
+            Assert.Equal(search.ErrorDetails, ToolTip.GetTip(error)); Assert.Contains("InvalidRequest", search.ErrorDetails);
+            search.FieldSelection = SearchWorkspaceFieldSelection.Assets; await search.SearchAsync();
+            Dispatcher.UIThread.RunJobs(); Assert.Null(search.Error); Assert.Null(search.ErrorDetails); Assert.Null(ToolTip.GetTip(error));
+        }
+        finally { window.Close(); }
     }
 
     private static int CompareText(string a, string b)
