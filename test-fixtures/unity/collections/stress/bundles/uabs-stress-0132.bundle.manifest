@@ -1,0 +1,82 @@
+ManifestFileVersion: 0
+CRC: 2370431424
+Hashes:
+  AssetFileHash:
+    serializedVersion: 2
+    Hash: c1d78f4bc2e2c40c629fcc28d00cc1b4
+  TypeTreeHash:
+    serializedVersion: 2
+    Hash: 36f91ef8708acf20cff891a98a8274f5
+  IncrementalBuildHash:
+    serializedVersion: 2
+    Hash: c1d78f4bc2e2c40c629fcc28d00cc1b4
+HashAppended: 0
+ClassTypes:
+- Class: 1
+  Script: {instanceID: 0}
+- Class: 4
+  Script: {instanceID: 0}
+- Class: 21
+  Script: {instanceID: 0}
+- Class: 28
+  Script: {instanceID: 0}
+- Class: 48
+  Script: {instanceID: 0}
+- Class: 49
+  Script: {instanceID: 0}
+- Class: 74
+  Script: {instanceID: 0}
+- Class: 114
+  Script: {fileID: 11500000, guid: 0d2244cdcc2a4f63b01d4ce01da91f75, type: 3}
+- Class: 114
+  Script: {fileID: 11500000, guid: b793cecc5bb84c2b8295333372a77e86, type: 3}
+- Class: 115
+  Script: {instanceID: 0}
+- Class: 213
+  Script: {instanceID: 0}
+- Class: 687078895
+  Script: {instanceID: 0}
+SerializeReferenceClassIdentifiers: []
+Assets:
+- Assets/GeneratedFixtures/stress/bundle-0132/slot-00025/asset-0132-0025.png
+- "Assets/GeneratedFixtures/stress/bundle-0132/slot-00011/\u8D44\u6E90-\u30C6\u30B9\u30C8-0132-0011.prefab"
+- Assets/GeneratedFixtures/stress/bundle-0132/slot-00005/asset-0132-0005.asset
+- "Assets/GeneratedFixtures/stress/bundle-0132/slot-00000/\u8D44\u6E90-\u30C6\u30B9\u30C8-0132-0000.png"
+- Assets/GeneratedFixtures/stress/bundle-0132/slot-00024/asset-0132-0024.png
+- Assets/GeneratedFixtures/stress/bundle-0132/slot-00037/asset-0132-0037.asset
+- Assets/GeneratedFixtures/stress/bundle-0132/slot-00028/asset-0132-0028.txt
+- Assets/GeneratedFixtures/stress/bundle-0132/slot-00029/asset-0132-0029.asset
+- Assets/GeneratedFixtures/stress/bundle-0132/slot-00039/asset-0132-0039.spriteatlas
+- Assets/GeneratedFixtures/stress/bundle-0132/slot-00026/asset-0132-0026.mat
+- Assets/GeneratedFixtures/stress/bundle-0132/slot-00010/asset-0132-0010.mat
+- Assets/GeneratedFixtures/stress/bundle-0132/slot-00018/asset-0132-0018.mat
+- Assets/GeneratedFixtures/stress/bundle-0132/slot-00006/asset-0132-0006.anim
+- Assets/GeneratedFixtures/stress/bundle-0132/slot-00009/asset-0132-0009.png
+- Assets/GeneratedFixtures/stress/bundle-0132/slot-00001/asset-0132-0001.png
+- Assets/GeneratedFixtures/stress/bundle-0132/slot-00016/asset-0132-0016.png
+- Assets/GeneratedFixtures/stress/bundle-0132/slot-00002/asset-0132-0002.mat
+- Assets/GeneratedFixtures/stress/bundle-0132/slot-00008/asset-0132-0008.png
+- Assets/GeneratedFixtures/stress/bundle-0132/slot-00017/asset-0132-0017.png
+- Assets/GeneratedFixtures/stress/bundle-0132/slot-00012/asset-0132-0012.txt
+- Assets/GeneratedFixtures/stress/bundle-0132/slot-00027/asset-0132-0027.prefab
+- Assets/GeneratedFixtures/stress/bundle-0132/slot-00003/asset-0132-0003.prefab
+- Assets/GeneratedFixtures/stress/bundle-0132/slot-00020/asset-0132-0020.txt
+- "Assets/GeneratedFixtures/stress/bundle-0132/slot-00022/\u8D44\u6E90-\u30C6\u30B9\u30C8-0132-0022.anim"
+- Assets/GeneratedFixtures/stress/bundle-0132/slot-00004/asset-0132-0004.txt
+- Assets/GeneratedFixtures/stress/bundle-0132/slot-00032/asset-0132-0032.png
+- Assets/GeneratedFixtures/stress/bundle-0132/slot-00021/asset-0132-0021.asset
+- Assets/GeneratedFixtures/stress/bundle-0132/slot-00007/asset-0132-0007.spriteatlas
+- Assets/GeneratedFixtures/stress/bundle-0132/slot-00013/asset-0132-0013.asset
+- Assets/GeneratedFixtures/stress/bundle-0132/slot-00031/asset-0132-0031.spriteatlas
+- Assets/GeneratedFixtures/stress/bundle-0132/slot-00030/asset-0132-0030.anim
+- Assets/GeneratedFixtures/stress/bundle-0132/slot-00034/asset-0132-0034.mat
+- Assets/GeneratedFixtures/stress/bundle-0132/slot-00038/asset-0132-0038.anim
+- Assets/GeneratedFixtures/stress/bundle-0132/slot-00023/asset-0132-0023.spriteatlas
+- "Assets/GeneratedFixtures/stress/bundle-0132/slot-00033/\u8D44\u6E90-\u30C6\u30B9\u30C8-0132-0033.png"
+- Assets/GeneratedFixtures/stress/bundle-0132/slot-00015/asset-0132-0015.spriteatlas
+- Assets/GeneratedFixtures/stress/bundle-0132/slot-00035/asset-0132-0035.prefab
+- Assets/GeneratedFixtures/stress/bundle-0132/slot-00036/asset-0132-0036.txt
+- Assets/GeneratedFixtures/stress/bundle-0132/slot-00014/asset-0132-0014.anim
+- Assets/GeneratedFixtures/stress/bundle-0132/slot-00019/asset-0132-0019.prefab
+Dependencies:
+- E:/Projects/UABS/test-fixtures/unity/generator/Generated/working/stress/bundles/uabs-stress-0004.bundle

@@ -1,0 +1,219 @@
+{
+    "schemaVersion": 1,
+    "generatorVersion": "1.0.0",
+    "unityVersion": "2021.3.45f2",
+    "buildTarget": "StandaloneWindows64",
+    "profile": "smoke",
+    "seed": 20211031,
+    "configuration": {
+        "profile": "smoke",
+        "buildTarget": "StandaloneWindows64",
+        "seed": 20211031,
+        "bundleCount": 3,
+        "assetsPerBundle": 8,
+        "compression": "lz4",
+        "dependencyDensity": 0.3499999940395355,
+        "duplicateNameFrequency": 0.15000000596046449,
+        "includeUnicodeNames": true,
+        "assetTypes": [
+            "Texture2D",
+            "Sprite",
+            "Material",
+            "Prefab",
+            "TextAsset",
+            "ScriptableObject",
+            "AnimationClip",
+            "SpriteAtlas"
+        ],
+        "outputDirectory": "Generated/working/smoke"
+    },
+    "bundles": [
+        {
+            "name": "uabs-smoke-0000.bundle",
+            "file": "bundles/uabs-smoke-0000.bundle",
+            "sizeBytes": 52835,
+            "sha256": "884d3e421832787ea5021f3aa3e3949bc66e532d8ded90c42d8b2ae6842a76ea",
+            "sourceAssignments": [
+                {
+                    "assetPath": "Assets/GeneratedFixtures/smoke/bundle-0000/slot-00000/资源-テスト-0000-0000.png",
+                    "assetName": "资源-テスト-0000-0000",
+                    "assetType": "Texture2D"
+                },
+                {
+                    "assetPath": "Assets/GeneratedFixtures/smoke/bundle-0000/slot-00001/asset-0000-0001.png",
+                    "assetName": "asset-0000-0001",
+                    "assetType": "Sprite"
+                },
+                {
+                    "assetPath": "Assets/GeneratedFixtures/smoke/bundle-0000/slot-00002/asset-0000-0002.mat",
+                    "assetName": "asset-0000-0002",
+                    "assetType": "Material"
+                },
+                {
+                    "assetPath": "Assets/GeneratedFixtures/smoke/bundle-0000/slot-00003/asset-0000-0003.prefab",
+                    "assetName": "asset-0000-0003",
+                    "assetType": "Prefab"
+                },
+                {
+                    "assetPath": "Assets/GeneratedFixtures/smoke/bundle-0000/slot-00004/asset-0000-0004.txt",
+                    "assetName": "asset-0000-0004",
+                    "assetType": "TextAsset"
+                },
+                {
+                    "assetPath": "Assets/GeneratedFixtures/smoke/bundle-0000/slot-00005/asset-0000-0005.asset",
+                    "assetName": "asset-0000-0005",
+                    "assetType": "ScriptableObject"
+                },
+                {
+                    "assetPath": "Assets/GeneratedFixtures/smoke/bundle-0000/slot-00006/asset-0000-0006.anim",
+                    "assetName": "asset-0000-0006",
+                    "assetType": "AnimationClip"
+                },
+                {
+                    "assetPath": "Assets/GeneratedFixtures/smoke/bundle-0000/slot-00007/asset-0000-0007.spriteatlas",
+                    "assetName": "asset-0000-0007",
+                    "assetType": "SpriteAtlas"
+                }
+            ],
+            "unityDependencies": [],
+            "unityReportedContents": [
+                "assets/generatedfixtures/smoke/bundle-0000/slot-00000/资源-テスト-0000-0000.png",
+                "assets/generatedfixtures/smoke/bundle-0000/slot-00001/asset-0000-0001.png",
+                "assets/generatedfixtures/smoke/bundle-0000/slot-00002/asset-0000-0002.mat",
+                "assets/generatedfixtures/smoke/bundle-0000/slot-00003/asset-0000-0003.prefab",
+                "assets/generatedfixtures/smoke/bundle-0000/slot-00004/asset-0000-0004.txt",
+                "assets/generatedfixtures/smoke/bundle-0000/slot-00005/asset-0000-0005.asset",
+                "assets/generatedfixtures/smoke/bundle-0000/slot-00006/asset-0000-0006.anim",
+                "assets/generatedfixtures/smoke/bundle-0000/slot-00007/asset-0000-0007.spriteatlas"
+            ]
+        },
+        {
+            "name": "uabs-smoke-0001.bundle",
+            "file": "bundles/uabs-smoke-0001.bundle",
+            "sizeBytes": 52840,
+            "sha256": "a3174329fdc98994bdb5688c88ceac9c7e8d54c993a7902b9f8ac0ee1e509423",
+            "sourceAssignments": [
+                {
+                    "assetPath": "Assets/GeneratedFixtures/smoke/bundle-0001/slot-00000/asset-0001-0000.png",
+                    "assetName": "asset-0001-0000",
+                    "assetType": "Texture2D"
+                },
+                {
+                    "assetPath": "Assets/GeneratedFixtures/smoke/bundle-0001/slot-00001/asset-0001-0001.png",
+                    "assetName": "asset-0001-0001",
+                    "assetType": "Sprite"
+                },
+                {
+                    "assetPath": "Assets/GeneratedFixtures/smoke/bundle-0001/slot-00002/asset-0001-0002.mat",
+                    "assetName": "asset-0001-0002",
+                    "assetType": "Material"
+                },
+                {
+                    "assetPath": "Assets/GeneratedFixtures/smoke/bundle-0001/slot-00003/duplicate-00.prefab",
+                    "assetName": "duplicate-00",
+                    "assetType": "Prefab"
+                },
+                {
+                    "assetPath": "Assets/GeneratedFixtures/smoke/bundle-0001/slot-00004/asset-0001-0004.txt",
+                    "assetName": "asset-0001-0004",
+                    "assetType": "TextAsset"
+                },
+                {
+                    "assetPath": "Assets/GeneratedFixtures/smoke/bundle-0001/slot-00005/asset-0001-0005.asset",
+                    "assetName": "asset-0001-0005",
+                    "assetType": "ScriptableObject"
+                },
+                {
+                    "assetPath": "Assets/GeneratedFixtures/smoke/bundle-0001/slot-00006/asset-0001-0006.anim",
+                    "assetName": "asset-0001-0006",
+                    "assetType": "AnimationClip"
+                },
+                {
+                    "assetPath": "Assets/GeneratedFixtures/smoke/bundle-0001/slot-00007/duplicate-01.spriteatlas",
+                    "assetName": "duplicate-01",
+                    "assetType": "SpriteAtlas"
+                }
+            ],
+            "unityDependencies": [
+                "uabs-smoke-0000.bundle"
+            ],
+            "unityReportedContents": [
+                "assets/generatedfixtures/smoke/bundle-0001/slot-00000/asset-0001-0000.png",
+                "assets/generatedfixtures/smoke/bundle-0001/slot-00001/asset-0001-0001.png",
+                "assets/generatedfixtures/smoke/bundle-0001/slot-00002/asset-0001-0002.mat",
+                "assets/generatedfixtures/smoke/bundle-0001/slot-00003/duplicate-00.prefab",
+                "assets/generatedfixtures/smoke/bundle-0001/slot-00004/asset-0001-0004.txt",
+                "assets/generatedfixtures/smoke/bundle-0001/slot-00005/asset-0001-0005.asset",
+                "assets/generatedfixtures/smoke/bundle-0001/slot-00006/asset-0001-0006.anim",
+                "assets/generatedfixtures/smoke/bundle-0001/slot-00007/duplicate-01.spriteatlas"
+            ]
+        },
+        {
+            "name": "uabs-smoke-0002.bundle",
+            "file": "bundles/uabs-smoke-0002.bundle",
+            "sizeBytes": 53266,
+            "sha256": "87deecfeff3abd19a5864ad5d169437ac52fdc3100a889275d8bd04fd0d83ef1",
+            "sourceAssignments": [
+                {
+                    "assetPath": "Assets/GeneratedFixtures/smoke/bundle-0002/slot-00000/asset-0002-0000.png",
+                    "assetName": "asset-0002-0000",
+                    "assetType": "Texture2D"
+                },
+                {
+                    "assetPath": "Assets/GeneratedFixtures/smoke/bundle-0002/slot-00001/asset-0002-0001.png",
+                    "assetName": "asset-0002-0001",
+                    "assetType": "Sprite"
+                },
+                {
+                    "assetPath": "Assets/GeneratedFixtures/smoke/bundle-0002/slot-00002/asset-0002-0002.mat",
+                    "assetName": "asset-0002-0002",
+                    "assetType": "Material"
+                },
+                {
+                    "assetPath": "Assets/GeneratedFixtures/smoke/bundle-0002/slot-00003/duplicate-00.prefab",
+                    "assetName": "duplicate-00",
+                    "assetType": "Prefab"
+                },
+                {
+                    "assetPath": "Assets/GeneratedFixtures/smoke/bundle-0002/slot-00004/asset-0002-0004.txt",
+                    "assetName": "asset-0002-0004",
+                    "assetType": "TextAsset"
+                },
+                {
+                    "assetPath": "Assets/GeneratedFixtures/smoke/bundle-0002/slot-00005/asset-0002-0005.asset",
+                    "assetName": "asset-0002-0005",
+                    "assetType": "ScriptableObject"
+                },
+                {
+                    "assetPath": "Assets/GeneratedFixtures/smoke/bundle-0002/slot-00006/asset-0002-0006.anim",
+                    "assetName": "asset-0002-0006",
+                    "assetType": "AnimationClip"
+                },
+                {
+                    "assetPath": "Assets/GeneratedFixtures/smoke/bundle-0002/slot-00007/duplicate-01.spriteatlas",
+                    "assetName": "duplicate-01",
+                    "assetType": "SpriteAtlas"
+                }
+            ],
+            "unityDependencies": [
+                "uabs-smoke-0000.bundle"
+            ],
+            "unityReportedContents": [
+                "assets/generatedfixtures/smoke/bundle-0002/slot-00000/asset-0002-0000.png",
+                "assets/generatedfixtures/smoke/bundle-0002/slot-00001/asset-0002-0001.png",
+                "assets/generatedfixtures/smoke/bundle-0002/slot-00002/asset-0002-0002.mat",
+                "assets/generatedfixtures/smoke/bundle-0002/slot-00003/duplicate-00.prefab",
+                "assets/generatedfixtures/smoke/bundle-0002/slot-00004/asset-0002-0004.txt",
+                "assets/generatedfixtures/smoke/bundle-0002/slot-00005/asset-0002-0005.asset",
+                "assets/generatedfixtures/smoke/bundle-0002/slot-00006/asset-0002-0006.anim",
+                "assets/generatedfixtures/smoke/bundle-0002/slot-00007/duplicate-01.spriteatlas"
+            ]
+        }
+    ],
+    "knownCharacteristics": [
+        "Original programmatically generated assets only; no game-extracted content.",
+        "Includes duplicate names, Unicode names, and deliberate cross-bundle references when configured.",
+        "Stress output remains local unless separately allowlisted and explicitly approved."
+    ],
+    "scopeNotice": "sourceAssignments lists generator-known inputs only. Unity may create additional internal serialized objects; UABS-extracted records require separate validation."
+}

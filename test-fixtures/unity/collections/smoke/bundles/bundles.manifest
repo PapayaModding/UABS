@@ -1,0 +1,15 @@
+ManifestFileVersion: 0
+CRC: 310700939
+AssetBundleManifest:
+  AssetBundleInfos:
+    Info_0:
+      Name: uabs-smoke-0000.bundle
+      Dependencies: {}
+    Info_1:
+      Name: uabs-smoke-0001.bundle
+      Dependencies:
+        Dependency_0: uabs-smoke-0000.bundle
+    Info_2:
+      Name: uabs-smoke-0002.bundle
+      Dependencies:
+        Dependency_0: uabs-smoke-0000.bundle

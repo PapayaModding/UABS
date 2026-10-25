@@ -1,0 +1,79 @@
+ManifestFileVersion: 0
+CRC: 2144084129
+AssetBundleManifest:
+  AssetBundleInfos:
+    Info_0:
+      Name: uabs-regression-0000.bundle
+      Dependencies: {}
+    Info_1:
+      Name: uabs-regression-0001.bundle
+      Dependencies:
+        Dependency_0: uabs-regression-0000.bundle
+    Info_2:
+      Name: uabs-regression-0002.bundle
+      Dependencies:
+        Dependency_0: uabs-regression-0000.bundle
+        Dependency_1: uabs-regression-0001.bundle
+    Info_3:
+      Name: uabs-regression-0003.bundle
+      Dependencies:
+        Dependency_0: uabs-regression-0000.bundle
+        Dependency_1: uabs-regression-0001.bundle
+    Info_4:
+      Name: uabs-regression-0004.bundle
+      Dependencies:
+        Dependency_0: uabs-regression-0000.bundle
+        Dependency_1: uabs-regression-0001.bundle
+    Info_5:
+      Name: uabs-regression-0005.bundle
+      Dependencies:
+        Dependency_0: uabs-regression-0000.bundle
+        Dependency_1: uabs-regression-0001.bundle
+    Info_6:
+      Name: uabs-regression-0006.bundle
+      Dependencies:
+        Dependency_0: uabs-regression-0000.bundle
+    Info_7:
+      Name: uabs-regression-0007.bundle
+      Dependencies:
+        Dependency_0: uabs-regression-0001.bundle
+    Info_8:
+      Name: uabs-regression-0008.bundle
+      Dependencies:
+        Dependency_0: uabs-regression-0001.bundle
+    Info_9:
+      Name: uabs-regression-0009.bundle
+      Dependencies: {}
+    Info_10:
+      Name: uabs-regression-0010.bundle
+      Dependencies:
+        Dependency_0: uabs-regression-0001.bundle
+    Info_11:
+      Name: uabs-regression-0011.bundle
+      Dependencies: {}
+    Info_12:
+      Name: uabs-regression-0012.bundle
+      Dependencies:
+        Dependency_0: uabs-regression-0001.bundle
+        Dependency_1: uabs-regression-0002.bundle
+    Info_13:
+      Name: uabs-regression-0013.bundle
+      Dependencies:
+        Dependency_0: uabs-regression-0002.bundle
+    Info_14:
+      Name: uabs-regression-0014.bundle
+      Dependencies:
+        Dependency_0: uabs-regression-0001.bundle
+    Info_15:
+      Name: uabs-regression-0015.bundle
+      Dependencies:
+        Dependency_0: uabs-regression-0001.bundle
+    Info_16:
+      Name: uabs-regression-0016.bundle
+      Dependencies:
+        Dependency_0: uabs-regression-0001.bundle
+    Info_17:
+      Name: uabs-regression-0017.bundle
+      Dependencies:
+        Dependency_0: uabs-regression-0001.bundle
+        Dependency_1: uabs-regression-0002.bundle

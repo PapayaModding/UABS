@@ -1,0 +1,54 @@
+ManifestFileVersion: 0
+CRC: 1207852114
+Hashes:
+  AssetFileHash:
+    serializedVersion: 2
+    Hash: cebbe6758d7a0075acc0ae62e2aa8916
+  TypeTreeHash:
+    serializedVersion: 2
+    Hash: 36f91ef8708acf20cff891a98a8274f5
+  IncrementalBuildHash:
+    serializedVersion: 2
+    Hash: cebbe6758d7a0075acc0ae62e2aa8916
+HashAppended: 0
+ClassTypes:
+- Class: 1
+  Script: {instanceID: 0}
+- Class: 4
+  Script: {instanceID: 0}
+- Class: 21
+  Script: {instanceID: 0}
+- Class: 28
+  Script: {instanceID: 0}
+- Class: 48
+  Script: {instanceID: 0}
+- Class: 49
+  Script: {instanceID: 0}
+- Class: 74
+  Script: {instanceID: 0}
+- Class: 114
+  Script: {fileID: 11500000, guid: 0d2244cdcc2a4f63b01d4ce01da91f75, type: 3}
+- Class: 114
+  Script: {fileID: 11500000, guid: b793cecc5bb84c2b8295333372a77e86, type: 3}
+- Class: 115
+  Script: {instanceID: 0}
+- Class: 213
+  Script: {instanceID: 0}
+- Class: 687078895
+  Script: {instanceID: 0}
+SerializeReferenceClassIdentifiers: []
+Assets:
+- Assets/GeneratedFixtures/regression/bundle-0010/slot-00003/asset-0010-0003.prefab
+- Assets/GeneratedFixtures/regression/bundle-0010/slot-00002/asset-0010-0002.mat
+- Assets/GeneratedFixtures/regression/bundle-0010/slot-00007/asset-0010-0007.spriteatlas
+- Assets/GeneratedFixtures/regression/bundle-0010/slot-00011/asset-0010-0011.prefab
+- Assets/GeneratedFixtures/regression/bundle-0010/slot-00005/asset-0010-0005.asset
+- Assets/GeneratedFixtures/regression/bundle-0010/slot-00009/asset-0010-0009.png
+- Assets/GeneratedFixtures/regression/bundle-0010/slot-00008/asset-0010-0008.png
+- Assets/GeneratedFixtures/regression/bundle-0010/slot-00001/duplicate-01.png
+- Assets/GeneratedFixtures/regression/bundle-0010/slot-00010/asset-0010-0010.mat
+- Assets/GeneratedFixtures/regression/bundle-0010/slot-00006/asset-0010-0006.anim
+- Assets/GeneratedFixtures/regression/bundle-0010/slot-00000/asset-0010-0000.png
+- Assets/GeneratedFixtures/regression/bundle-0010/slot-00004/asset-0010-0004.txt
+Dependencies:
+- E:/Projects/UABS/test-fixtures/unity/generator/Generated/working/regression/bundles/uabs-regression-0001.bundle
