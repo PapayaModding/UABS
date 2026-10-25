@@ -260,11 +260,14 @@ internal static class Program
     {
         try
         {
-            var windows = ProcessWindows().Take(30).Select(e => new
+            var snapshot = EvidenceValue.CreateDialogSnapshot(App!.Id, PackageAdmission.PickerTitle, invocation,
+                () => ProcessWindows().Take(30).Select(e => new
             {
+                id = EvidenceValue.Read(() => e.AutomationId),
+                type = EvidenceValue.Read(() => e.ControlType.ToString()),
                 name = EvidenceValue.Read(() => e.Name),
                 pid = EvidenceValue.Read(() => e.Properties.ProcessId.Value),
-                handle = EvidenceValue.Read(() => e.Properties.NativeWindowHandle.Value),
+                handle = EvidenceValue.ReadHandle(() => e.Properties.NativeWindowHandle.Value),
                 className = EvidenceValue.Read(() => e.ClassName),
                 enabled = EvidenceValue.Read(() => e.IsEnabled),
                 offscreen = EvidenceValue.Read(() => e.IsOffscreen),
@@ -274,9 +277,9 @@ internal static class Program
                     name = EvidenceValue.Read(() => child.Name),
                     type = EvidenceValue.Read(() => child.ControlType.ToString())
                 }).ToArray()
-            }).ToArray();
+            }).ToArray());
             File.WriteAllText(Path.Combine(Output, "dialog-" + label + ".json"),
-                JsonSerializer.Serialize(new { utc = DateTime.UtcNow, invocation = invocation?.Status.ToString(), windows }, Json));
+                JsonSerializer.Serialize(snapshot, Json));
         }
         catch (Exception error) { Step("dialog diagnostic error", error.ToString()); }
     }

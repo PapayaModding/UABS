@@ -59,3 +59,42 @@ string delayed = PackageAdmission.WaitForUnique(
     TimeSpan.FromSeconds(1), () => pauses++);
 Check(delayed == "filename Edit" && probes == 3 && pauses == 2, "Delayed unique field was not awaited.");
 Console.WriteLine("PASS: zero matches time out; duplicate matches reject; delayed unique matches succeed.");
+
+foreach (long handle in new long[] { 0, 12345, -1 })
+{
+    // Serialize the same nested window shape used by DialogSnapshot, not just the reader result.
+    var snapshot = EvidenceValue.CreateDialogSnapshot(123, PackageAdmission.PickerTitle, Task.CompletedTask,
+        () => new[] { new { handle = EvidenceValue.ReadHandle(() => new IntPtr(handle)) } });
+    using var json = JsonDocument.Parse(JsonSerializer.Serialize(snapshot));
+    Check(json.RootElement.GetProperty("windows")[0].GetProperty("handle").GetInt64() == handle,
+        "Native handle did not serialize as an integer.");
+}
+using (var unavailable = JsonDocument.Parse(JsonSerializer.Serialize(
+    EvidenceValue.ReadHandle(() => throw new NotSupportedException("NativeWindowHandle unsupported")))))
+{
+    Check(!unavailable.RootElement.GetProperty("available").GetBoolean(), "Unsupported handle missing unavailable marker.");
+    Check(unavailable.RootElement.GetProperty("reason").GetString()!.Contains("NativeWindowHandle unsupported"),
+        "Unsupported handle lost diagnostic reason.");
+}
+var pending = new TaskCompletionSource();
+foreach (var (task, expected) in new (Task?, string)[] {
+    (null, "not-started"), (pending.Task, "pending"), (Task.CompletedTask, "completed"),
+    (Task.FromException(new Exception("Invoke failed")), "faulted"),
+    (Task.FromCanceled(new CancellationToken(true)), "canceled") })
+{
+    using var json = JsonDocument.Parse(JsonSerializer.Serialize(
+        EvidenceValue.CreateDialogSnapshot(123, PackageAdmission.PickerTitle, task, () => Array.Empty<object>())));
+    Check(json.RootElement.GetProperty("invocation").GetProperty("state").GetString() == expected, "Incorrect Invoke state.");
+    if (expected == "faulted") Check(json.RootElement.GetProperty("invocation").GetProperty("error").GetString()!
+        .Contains("Invoke failed"), "Invoke fault details missing.");
+}
+using (var failed = JsonDocument.Parse(JsonSerializer.Serialize(EvidenceValue.CreateDialogSnapshot(
+    123, PackageAdmission.PickerTitle, pending.Task, () => throw new COMException("Enumeration failed")))))
+{
+    Check(!failed.RootElement.GetProperty("windows").GetProperty("available").GetBoolean(), "Enumeration gap missing.");
+    Check(failed.RootElement.GetProperty("invocation").GetProperty("state").GetString() == "pending", "Enumeration failure lost Invoke state.");
+}
+using (var subsequent = JsonDocument.Parse(JsonSerializer.Serialize(EvidenceValue.CreateDialogSnapshot(
+    123, PackageAdmission.PickerTitle, Task.CompletedTask, () => new[] { "later attempt" }))))
+    Check(subsequent.RootElement.GetProperty("windows")[0].GetString() == "later attempt", "Subsequent diagnostic attempt failed.");
+Console.WriteLine("PASS: native handles serialize; unavailable handles and enumeration failures retain diagnostics; Invoke states and later snapshots preserved.");

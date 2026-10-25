@@ -119,6 +119,18 @@ retains a 25-second deadline and the external watchdog. No other process's
 window is operated or captured. `open-dialog.png` records the discovered
 picker before its filename is set.
 
+Native handles are serialized as signed 64-bit JSON integers (zero is a valid
+observed value), never as `IntPtr`. Unsupported handle reads retain the
+unavailable/reason marker. Snapshots include the expected process/title and
+an invocation object with pending/completed/faulted/canceled/not-started
+state, raw task status, and fault details. If window enumeration fails, its
+unavailable marker is written alongside that invocation state; subsequent
+snapshot attempts still run. File-write errors are recorded in results steps.
+Window records include AutomationId, control type, title (`name`), class,
+process ID, and handle. The exact-title/process ownership checks and discovery
+deadline are unchanged. Timing, a different title, or a window absent from the
+owned UIA tree remain hypotheses until Windows diagnostics establish them.
+
 Admission without an observed picker is allowed only when a single V2 scope
 exposes the **exact disposable-copy absolute path** through UIA HelpText and
 that copy still has the approved SHA256. Display name, source/asset counts,
