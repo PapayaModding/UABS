@@ -224,3 +224,68 @@ fills local paths and starts this finite script; the resulting evidence is
 uploaded for review. No shell commands are accepted from the scenario JSON,
 and the tool performs no Git writes or network listening. Generated binaries,
 local configuration, DB copies, screenshots, and logs must stay untracked.
+
+## GitHub-hosted Windows proof of concept
+
+`.github/workflows/windows-ui-poc.yml` adds one **manual-only** job on
+`windows-latest`. It runs only for `PapayaModding/UABS` on `v2-recovery`, with
+`contents: read`, pinned checkout/setup/upload actions, and no persisted Git
+credentials, personal credentials, services, or desktop listener. It does not
+run on pull requests or accept arbitrary commands/ref inputs.
+
+Dispatch through Actions → **Windows UI POC - Smoke Search** → Run workflow
+→ `v2-recovery`, or with an authorized GitHub CLI account:
+
+```powershell
+gh workflow run windows-ui-poc.yml --repo PapayaModding/UABS --ref v2-recovery
+gh run list --repo PapayaModding/UABS --workflow windows-ui-poc.yml --limit 5
+gh run view <run-id> --repo PapayaModding/UABS
+gh run download <run-id> --repo PapayaModding/UABS --dir ui-evidence
+```
+
+The checkout must remain attached to `v2-recovery` and HEAD must equal the
+immutable dispatch `github.sha`. If the branch advances before checkout, the
+job blocks and must be dispatched again; it never resets or substitutes a
+different commit. Paths come from `GITHUB_WORKSPACE`. The existing launcher
+resolves this same HEAD and the runner independently verifies it.
+
+The job builds UABS Debug, cross-checks the runner's regressions, and uses the
+isolated `ci/PrepareSmoke.csproj` tool to index the three bundles explicitly
+listed in the published Smoke manifest. It verifies their sizes/hashes before
+indexing and rechecks hashes afterwards. The collection's root Unity manifest
+bundle is not a listed fixture and is excluded. Preparation calls the existing
+public PackageBuilder/AssetsTools extractor with real bundle bytes, rejects
+partial indexing/issues, and never changes production behavior or fixtures.
+
+The fixed expectation for the published Smoke seed is keyword `テスト`, exactly
+one row `{ Name: uabs-smoke-0000.bundle, Package: Smoke }`. The tool checks the
+manifest assignments and independently reads all raw indexed asset names with
+read-only SQLite queries to prove this expectation. It never derives expected
+results from the Search engine or UI output. `preparation.json` records hashes,
+package/generation identity, counts, and matching raw asset witnesses. A fresh
+scenario points to the generated SQLite package; the existing runner copies
+and SHA-verifies it as usual.
+
+The actual FlaUI run has a 180-second watchdog and the job a 15-minute timeout.
+It records the hosted image, interactive-session flag, session ID, exact SHA,
+and run URL in `environment.json`. Hosted Windows is a candidate graphical
+environment, **not a guarantee of usable UIA**: the real existing launch,
+dialog, control, and exact-result assertions decide PASS/FAIL/BLOCKED. No
+assertion is relaxed for CI. Missing desktop access or required UIA exposure
+must remain BLOCKED. Checkpoint 2.1 stays open even if this one scenario passes.
+
+Evidence uploads run even on failure: `ci-results.json`, environment and
+preparation JSON, runner results/checkout/UIA/diagnostic JSON, screenshots,
+and the isolated application log. The workflow publishes a result summary and
+retains artifacts for seven days. It excludes SQLite copies, local scenario
+configuration, bundles, and binaries. Build/preparation errors leave no UI
+result and are summarized as BLOCKED; inspect the job logs for their cause.
+
+Verified remotely during implementation: the real published bundles indexed
+on Linux into a complete 45-asset, three-source package with zero issues, and
+the independent Unicode expectation check passed. This validates preparation,
+not the hosted Windows desktop. If the hosted job cannot access an interactive
+desktop, use a dedicated disposable Windows VM with an unlocked interactive
+test session and the same finite runner as a separately authorized fallback.
+Do not use a shared privileged self-hosted runner for untrusted code, enable
+autologon, or install remote desktop services as part of this proof of concept.

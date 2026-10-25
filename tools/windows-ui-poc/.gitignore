@@ -4,3 +4,4 @@ artifacts/
 *.local.json
 !WindowsUiPoc.csproj
 !tests/EvidenceChecks.csproj
+!ci/PrepareSmoke.csproj

@@ -1,0 +1,96 @@
+name: Windows UI POC - Smoke Search
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  smoke-search:
+    if: github.repository == 'PapayaModding/UABS' && github.ref == 'refs/heads/v2-recovery'
+    runs-on: windows-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: v2-recovery
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Verify exact dispatch commit and record desktop session
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $head = git rev-parse HEAD
+          $branch = git symbolic-ref --quiet --short HEAD
+          if ($LASTEXITCODE -ne 0 -or $branch -cne 'v2-recovery' -or $head -cne $env:GITHUB_SHA) {
+            throw 'BLOCKED: checkout differs from the exact v2-recovery workflow dispatch commit. Dispatch again; no reset or branch substitution.'
+          }
+          New-Item -ItemType Directory -Path tools/windows-ui-poc/artifacts/ci -Force | Out-Null
+          @{
+            commit = $head; branch = $branch; runnerImage = $env:ImageOS
+            imageVersion = $env:ImageVersion; interactive = [Environment]::UserInteractive
+            sessionId = [Diagnostics.Process]::GetCurrentProcess().SessionId
+            sessionName = $env:SESSIONNAME; os = [Environment]::OSVersion.ToString()
+            runUrl = "https://github.com/$env:GITHUB_REPOSITORY/actions/runs/$env:GITHUB_RUN_ID"
+          } | ConvertTo-Json | Set-Content tools/windows-ui-poc/artifacts/ci/environment.json -Encoding utf8NoBOM
+          Write-Host "Testing exact workflow commit $head; interactive=$([Environment]::UserInteractive)"
+      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4
+        with:
+          dotnet-version: 9.0.x
+      - name: Runner regression checks
+        run: |
+          dotnet run --project tools/windows-ui-poc/tests/EvidenceChecks.csproj
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          & tools/windows-ui-poc/tests/ScenarioConfiguration.Tests.ps1
+      - name: Build actual UABS Debug and isolated runner
+        run: |
+          dotnet build Avalonia/Avalonia.sln -c Debug --nologo
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          dotnet build tools/windows-ui-poc/WindowsUiPoc.csproj -c Release --nologo
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Prepare disposable fully indexed Smoke package and independent oracle
+        run: |
+          dotnet run --project tools/windows-ui-poc/ci/PrepareSmoke.csproj -- `
+            "$env:GITHUB_WORKSPACE" `
+            "$env:GITHUB_WORKSPACE/tools/windows-ui-poc/artifacts/ci/prepared" `
+            "$env:GITHUB_SHA"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Exercise real Windows FlaUI Smoke Search
+        run: |
+          & tools/windows-ui-poc/Run-WindowsUiPoc.ps1 `
+            -Scenario tools/windows-ui-poc/artifacts/ci/prepared/scenario.local.json `
+            -OutputDirectory tools/windows-ui-poc/artifacts/ci/run `
+            -TimeoutSeconds 180
+          exit $LASTEXITCODE
+      - name: Summarize actual result
+        if: always()
+        env:
+          JOB_STATUS: ${{ job.status }}
+        run: |
+          New-Item -ItemType Directory -Path tools/windows-ui-poc/artifacts/ci -Force | Out-Null
+          $resultPath = 'tools/windows-ui-poc/artifacts/ci/run/results.json'
+          if (Test-Path $resultPath) {
+            $result = Get-Content $resultPath -Raw | ConvertFrom-Json
+          } else {
+            $result = @{ status = 'BLOCKED'; detail = "No UI result was produced; inspect job logs ($env:JOB_STATUS)." }
+          }
+          $result | ConvertTo-Json -Depth 100 | Set-Content tools/windows-ui-poc/artifacts/ci/ci-results.json -Encoding utf8NoBOM
+          "## Windows Smoke Search: $($result.status)" >> $env:GITHUB_STEP_SUMMARY
+          "Commit: $env:GITHUB_SHA" >> $env:GITHUB_STEP_SUMMARY
+          "Full Checkpoint 2.1 acceptance remains open. See evidence and job logs." >> $env:GITHUB_STEP_SUMMARY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: windows-ui-smoke-${{ github.sha }}-${{ github.run_attempt }}
+          retention-days: 7
+          if-no-files-found: warn
+          path: |
+            tools/windows-ui-poc/artifacts/ci/environment.json
+            tools/windows-ui-poc/artifacts/ci/ci-results.json
+            tools/windows-ui-poc/artifacts/ci/prepared/preparation.json
+            tools/windows-ui-poc/artifacts/ci/run/*.json
+            tools/windows-ui-poc/artifacts/ci/run/*.png
+            tools/windows-ui-poc/artifacts/ci/run/work/*.txt
