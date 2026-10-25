@@ -40,3 +40,22 @@ Check(!PackageAdmission.IsVerifiedCopy(copy, copy, "abc", _ => "wrong"), "Wrong 
 Check(!PackageAdmission.IsVerifiedCopy(null, copy, "abc", _ => "abc"), "Missing path accepted.");
 Check(!PackageAdmission.IsVerifiedCopy(copy, copy, "abc", _ => throw new IOException()), "Unreadable copy accepted.");
 Console.WriteLine("PASS: picker process/title and exact package-copy path/hash admission checks.");
+
+try
+{
+    PackageAdmission.WaitForUnique(() => Array.Empty<string>(), TimeSpan.Zero);
+    throw new Exception("Zero matches were accepted.");
+}
+catch (TimeoutException error) { Check(error.Message.Contains("found 0"), "Zero-match diagnostic missing."); }
+try
+{
+    PackageAdmission.WaitForUnique(() => new[] { "edit1", "edit2" }, TimeSpan.FromSeconds(1));
+    throw new Exception("Duplicate matches were accepted.");
+}
+catch (InvalidOperationException error) { Check(error.Message.Contains("found 2"), "Duplicate-match diagnostic missing."); }
+int probes = 0, pauses = 0;
+string delayed = PackageAdmission.WaitForUnique(
+    () => ++probes < 3 ? Array.Empty<string>() : new[] { "filename Edit" },
+    TimeSpan.FromSeconds(1), () => pauses++);
+Check(delayed == "filename Edit" && probes == 3 && pauses == 2, "Delayed unique field was not awaited.");
+Console.WriteLine("PASS: zero matches time out; duplicate matches reject; delayed unique matches succeed.");

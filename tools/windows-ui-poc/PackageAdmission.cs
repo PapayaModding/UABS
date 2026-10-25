@@ -1,5 +1,22 @@
 internal static class PackageAdmission
 {
+    internal static T WaitForUnique<T>(Func<T[]> query, TimeSpan timeout, Action? pause = null,
+        string description = "Filename Edit AutomationId 1148")
+    {
+        var watch = System.Diagnostics.Stopwatch.StartNew();
+        while (true)
+        {
+            var matches = query();
+            if (matches.Length == 1) return matches[0];
+            if (matches.Length > 1)
+                throw new InvalidOperationException($"Ambiguous {description}: found {matches.Length}.");
+            if (watch.Elapsed >= timeout)
+                throw new TimeoutException($"{description} did not become available (found 0).");
+            if (pause is null) System.Threading.Thread.Sleep(100);
+            else pause();
+        }
+    }
+
     internal const string PickerTitle = "Open read-only UABS V2 package";
 
     internal static bool IsPicker(int processId, string title, int expectedProcessId) =>

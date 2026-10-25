@@ -61,6 +61,13 @@ It never attaches to or closes a pre-existing UABS process.
    assumed to be `#32770`. Operate the real Windows Common Item Dialog through
    IDs 1148 (filename) and 1 (Open). Unsupported dialog layouts are BLOCKED;
    no keystroke or coordinate workaround is attempted.
+   Filename discovery waits up to 25 seconds for exactly one **Edit** with
+   ID 1148; the enclosing ComboBox with the same ID is excluded. Duplicate
+   Edits block immediately. The Value pattern must exist and be writable;
+   the absolute disposable path is set and read back before invoking the
+   unique Button with ID 1. Missing/ambiguous controls or a value that never
+   confirms produce BLOCKED with `dialog-filename-failure.json` and picker
+   screenshot/UIA evidence where available.
 4. Select Search and inspect untouched Sources-only / Assets-field defaults.
    Selectors are never changed to make the scenario pass.
 5. Set IncludeSearchTextBox and invoke SearchButton. Verify Table/Grid

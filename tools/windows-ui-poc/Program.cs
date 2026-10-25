@@ -94,12 +94,34 @@ internal static class Program
             if (!admitted)
             {
                 Evidence("open-dialog", dialog);
-                // Windows Common Item Dialog uses control IDs 1148 (file name) and 1 (Open).
-                var fileName = ById(dialog!, "1148");
-                if (fileName.ControlType != ControlType.Edit)
-                    fileName = Find(fileName, ControlType.Edit, null);
-                SetValue(fileName, copy);
-                Invoke(ById(dialog!, "1"));
+                // The ComboBox and its Edit share 1148. Query the Edit explicitly,
+                // and allow the dialog's UIA children time to be published.
+                try
+                {
+                    var fileName = PackageAdmission.WaitForUnique(() => dialog!.FindAllDescendants(
+                        Automation.ConditionFactory.ByAutomationId("1148")
+                            .And(Automation.ConditionFactory.ByControlType(ControlType.Edit))), TimeSpan.FromSeconds(25));
+                    Require(fileName.Patterns.Value.IsSupported, "Filename Edit 1148 lacks Value pattern.");
+                    Require(!fileName.Patterns.Value.Pattern.IsReadOnly.Value, "Filename Edit 1148 is read-only.");
+                    string absoluteCopy = Path.GetFullPath(copy);
+                    SetValue(fileName, absoluteCopy);
+                    Wait("filename value confirmation", () => string.Equals(
+                        fileName.Patterns.Value.Pattern.Value.Value, absoluteCopy, StringComparison.OrdinalIgnoreCase));
+                    Step("confirmed filename", fileName.Patterns.Value.Pattern.Value.Value);
+                    var open = PackageAdmission.WaitForUnique(() => dialog!.FindAllDescendants(
+                        Automation.ConditionFactory.ByAutomationId("1")
+                            .And(Automation.ConditionFactory.ByControlType(ControlType.Button))), TimeSpan.FromSeconds(25),
+                        description: "Open Button AutomationId 1");
+                    Require(open.IsEnabled, "Native Open button is disabled.");
+                    Invoke(open);
+                }
+                catch (Exception error)
+                {
+                    DialogSnapshot("filename-failure", openTask);
+                    try { Evidence("filename-failure", dialog); }
+                    catch (Exception diagnosticError) { Step("filename diagnostic error", diagnosticError.ToString()); }
+                    throw new Blocked("Native filename/Open controls could not be safely operated: " + error.Message);
+                }
                 Wait("file dialog closed", () => !ProcessWindows().Any(e => PackageAdmission.IsPicker(
                     e.Properties.ProcessId.Value, e.Name, App.Id)));
             }
