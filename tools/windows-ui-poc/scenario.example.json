@@ -1,0 +1,10 @@
+{
+  "repository": "E:\\Projects\\UABS",
+  "expectedCommit": "REPLACE_WITH_FULL_CHECKOUT_SHA",
+  "package": "E:\\DisposableFixtures\\Smoke.uabs.sqlite",
+  "packageSha256": "REPLACE_WITH_PACKAGE_SHA256",
+  "keyword": "REPLACE_WITH_KNOWN_INDEXED_ASSET_KEYWORD",
+  "expectedRows": [
+    { "name": "REPLACE_WITH_BUNDLE_NAME", "package": "REPLACE_WITH_PACKAGE_DISPLAY_NAME" }
+  ]
+}

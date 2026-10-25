@@ -1,0 +1,5 @@
+bin/
+obj/
+artifacts/
+*.local.json
+!WindowsUiPoc.csproj

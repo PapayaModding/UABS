@@ -1,0 +1,206 @@
+using System.Diagnostics;
+using System.Security.Cryptography;
+using System.Text.Json;
+using FlaUI.Core;
+using FlaUI.Core.AutomationElements;
+using FlaUI.Core.Capturing;
+using FlaUI.Core.Definitions;
+using FlaUI.UIA3;
+
+internal sealed record ExpectedRow(string Name, string Package);
+internal sealed record Scenario(string Repository, string ExpectedCommit, string Package,
+    string PackageSha256, string Keyword, ExpectedRow[] ExpectedRows);
+internal sealed class Blocked(string message) : Exception(message);
+
+internal static class Program
+{
+    private static readonly JsonSerializerOptions Json = new() { PropertyNameCaseInsensitive = true, WriteIndented = true };
+    private static readonly List<object> Steps = [];
+    private static string Output = "";
+    private static Process? App;
+    private static AutomationElement? Window;
+    private static UIA3Automation? Automation;
+
+    [STAThread]
+    private static int Main(string[] args)
+    {
+        if (args.Length != 2) { Console.Error.WriteLine("Usage: WindowsUiPoc <scenario.json> <new-output-directory>"); return 2; }
+        Output = Path.GetFullPath(args[1]);
+        if (Directory.Exists(Output)) { Console.Error.WriteLine("Output must be a new directory."); return 2; }
+        Directory.CreateDirectory(Output);
+        string status = "BLOCKED", detail = "", stage = "preflight";
+        string? sourceHash = null;
+        Scenario? config = null;
+        try
+        {
+            Require(OperatingSystem.IsWindows() && Environment.UserInteractive, "Requires interactive Windows desktop.");
+            config = JsonSerializer.Deserialize<Scenario>(File.ReadAllText(args[0]), Json) ?? throw new Blocked("Invalid scenario JSON.");
+            Require(Git(config.Repository, "branch", "--show-current") == "v2-recovery", "Repository must be on v2-recovery.");
+            string remote = Git(config.Repository, "remote", "get-url", "origin").TrimEnd('/');
+            Require(remote is "https://github.com/PapayaModding/UABS.git" or "https://github.com/PapayaModding/UABS" or "git@github.com:PapayaModding/UABS.git", "Unexpected origin repository.");
+            Require(config.ExpectedCommit.Length == 40 && Git(config.Repository, "rev-parse", "HEAD").Equals(config.ExpectedCommit, StringComparison.OrdinalIgnoreCase), "Checkout SHA does not match expectedCommit.");
+            Require(Git(config.Repository, "diff", "--name-only").Length == 0 && Git(config.Repository, "diff", "--cached", "--name-only").Length == 0, "Tracked repository changes must be reviewed before running.");
+            Require(!string.IsNullOrWhiteSpace(config.Keyword) && config.ExpectedRows.Length > 0, "Keyword and independently known expectedRows are required.");
+            string exe = Path.Combine(config.Repository, "Avalonia/UABS/bin/Debug/net9.0/UABS.exe");
+            Require(File.Exists(exe), "Build the existing UABS Debug executable first.");
+            Require(File.Exists(config.Package) && config.Package.EndsWith(".uabs.sqlite", StringComparison.OrdinalIgnoreCase), "Supply an indexed disposable .uabs.sqlite package.");
+            Require(!File.Exists(config.Package + "-wal") && !File.Exists(config.Package + "-shm"), "Close/checkpoint the disposable package before running; sidecars are not copied.");
+            sourceHash = Hash(config.Package);
+            Require(sourceHash.Equals(config.PackageSha256, StringComparison.OrdinalIgnoreCase), "Package SHA256 mismatch.");
+            using (var stream = File.OpenRead(config.Package))
+            {
+                byte[] signature = new byte[16];
+                Require(stream.Read(signature) == 16 && System.Text.Encoding.ASCII.GetString(signature) == "SQLite format 3\0", "Package is not SQLite.");
+            }
+            string work = Path.Combine(Output, "work"); Directory.CreateDirectory(work);
+            string copy = Path.Combine(work, Path.GetFileName(config.Package)); File.Copy(config.Package, copy);
+            Step("preflight", new { commit = config.ExpectedCommit, executableSha256 = Hash(exe), packageSha256 = sourceHash });
+            Automation = new UIA3Automation();
+            stage = "launch";
+            App = Process.Start(new ProcessStartInfo(exe) { WorkingDirectory = work, UseShellExecute = false }) ?? throw new Blocked("Launch failed.");
+            var attached = FlaUI.Core.Application.Attach(App.Id);
+            Wait("main window", () => (Window = attached.GetMainWindow(Automation, TimeSpan.FromSeconds(1))) != null);
+            Evidence("initial");
+            stage = "open package";
+            Select(Find(Window!, ControlType.TabItem, "Packages"));
+            Invoke(Find(Window!, ControlType.Button, "Open V2..."));
+            AutomationElement? dialog = null;
+            Wait("native file dialog", () =>
+            {
+                var dialogs = Automation.GetDesktop().FindAllChildren(Automation.ConditionFactory.ByProcessId(App.Id)
+                    .And(Automation.ConditionFactory.ByClassName("#32770")));
+                Require(dialogs.Length <= 1, "Multiple native dialogs owned by UABS; refusing ambiguous interaction.");
+                dialog = dialogs.SingleOrDefault();
+                return dialog != null;
+            });
+            Evidence("open-dialog", dialog);
+            // Windows Common Item Dialog uses control IDs 1148 (file name) and 1 (Open).
+            var fileName = ById(dialog!, "1148");
+            if (fileName.ControlType != ControlType.Edit)
+                fileName = Find(fileName, ControlType.Edit, null);
+            SetValue(fileName, copy);
+            Invoke(ById(dialog!, "1"));
+            Wait("file dialog closed", () => Automation.GetDesktop().FindAllChildren(Automation.ConditionFactory.ByProcessId(App.Id)
+                .And(Automation.ConditionFactory.ByClassName("#32770"))).Length == 0);
+            stage = "V2 defaults";
+            Select(Find(Window!, ControlType.TabItem, "Search"));
+            var controls = ById(Window!, "SearchControlsPanel");
+            Wait("V2 package admission", () => controls.FindAllDescendants(Automation.ConditionFactory.ByControlType(ControlType.CheckBox))
+                .Any(e => e.Name.StartsWith("[V2] ", StringComparison.Ordinal)));
+            CheckToggle(controls, "Sources", ToggleState.On);
+            CheckToggle(controls, "Packages", ToggleState.Off);
+            CheckToggle(controls, "Assets", ToggleState.Off);
+            var fields = Find(controls, ControlType.ComboBox, null);
+            Require(fields.Patterns.Selection.IsSupported, "Field selector lacks Selection pattern.");
+            Check(fields.Patterns.Selection.Pattern.Selection.Value.SingleOrDefault()?.Name == "Assets", "Untouched field selection must be Assets.");
+            Step("defaults", new { sources = true, packages = false, assets = false, fields = "Assets" });
+            stage = "search";
+            SetValue(ById(controls, "IncludeSearchTextBox"), config.Keyword);
+            Invoke(ById(controls, "SearchButton"));
+            var grid = ById(Window!, "ResultsGrid");
+            Require(grid.Patterns.Grid.IsSupported, "ResultsGrid lacks Grid pattern; cannot verify cell identity.");
+            Wait("search result", () =>
+            {
+                var errors = Window!.FindAllDescendants(Automation.ConditionFactory.ByAutomationId("SearchErrorText"));
+                if (errors.Any(e => !e.IsOffscreen && !string.IsNullOrWhiteSpace(e.Name))) throw new InvalidOperationException("Search error: " + errors[0].Name);
+                return grid.Patterns.Grid.Pattern.RowCount.Value > 0;
+            });
+            Require(grid.Patterns.Table.IsSupported, "ResultsGrid lacks Table pattern; cannot verify headers.");
+            var headers = grid.Patterns.Table.Pattern.ColumnHeaders.Value.Select(e => e.Name).ToArray();
+            Check(headers.SequenceEqual(new[] { "Name", "Package" }), "Expected exactly Name/Package headers; observed " + string.Join(", ", headers));
+            var pattern = grid.Patterns.Grid.Pattern;
+            Check(pattern.ColumnCount.Value == 2, "Expected two bundle-result columns.");
+            Require(pattern.RowCount.Value <= 100, "POC supports at most 100 loaded rows; choose a narrower keyword.");
+            var rows = Enumerable.Range(0, pattern.RowCount.Value).Select(i => new ExpectedRow(
+                pattern.GetItem(i, 0).Name, pattern.GetItem(i, 1).Name)).ToArray();
+            Step("observed rows", rows);
+            Check(rows.Length == config.ExpectedRows.Length && rows.OrderBy(r => r.Name).ThenBy(r => r.Package)
+                .SequenceEqual(config.ExpectedRows.OrderBy(r => r.Name).ThenBy(r => r.Package)), "Bundle Name/Package results differ from expectedRows.");
+            Evidence("final");
+            status = "PASS"; detail = "One real Windows V2 Search default scenario exercised; full Checkpoint 2.1 acceptance remains pending.";
+        }
+        catch (Exception exception)
+        {
+            status = exception is Blocked ? "BLOCKED" : "FAIL";
+            detail = $"{stage}: {exception}";
+            try { if (Window != null) Evidence("failure"); } catch (Exception evidenceError) { Step("evidence error", evidenceError.ToString()); }
+        }
+        finally
+        {
+            if (App != null)
+            {
+                try { if (!App.HasExited) { App.CloseMainWindow(); if (!App.WaitForExit(3000)) App.Kill(entireProcessTree: true); } }
+                catch (Exception error) { Step("cleanup error", error.ToString()); }
+            }
+            try
+            {
+                if (config != null && sourceHash != null && Hash(config.Package) != sourceHash)
+                { status = "FAIL"; detail += " Original package hash changed during execution."; }
+            }
+            catch (Exception error) { status = "FAIL"; detail += " Cannot verify original package: " + error.Message; }
+            Automation?.Dispose();
+            File.WriteAllText(Path.Combine(Output, "results.json"), JsonSerializer.Serialize(new { status, detail, steps = Steps, completedUtc = DateTime.UtcNow }, Json));
+            Console.WriteLine($"{status}: {detail}\nEvidence: {Output}");
+        }
+        return status == "PASS" ? 0 : status == "FAIL" ? 1 : 2;
+    }
+
+    private static void Require(bool condition, string message) { if (!condition) throw new Blocked(message); }
+    private static void Check(bool condition, string message) { if (!condition) throw new InvalidOperationException(message); }
+    private static void Step(string action, object observed) => Steps.Add(new { action, observed, utc = DateTime.UtcNow });
+    private static string Hash(string path) => Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(path)));
+    private static string Git(string repository, params string[] arguments)
+    {
+        var info = new ProcessStartInfo("git") { WorkingDirectory = repository, RedirectStandardOutput = true, RedirectStandardError = true, UseShellExecute = false };
+        foreach (string argument in arguments) info.ArgumentList.Add(argument);
+        using var process = Process.Start(info) ?? throw new Blocked("Cannot run Git.");
+        string value = process.StandardOutput.ReadToEnd();
+        Require(process.WaitForExit(10000) && process.ExitCode == 0, "Git preflight failed.");
+        return value.Trim();
+    }
+    private static void Wait(string description, Func<bool> predicate)
+    {
+        var watch = Stopwatch.StartNew();
+        while (watch.Elapsed < TimeSpan.FromSeconds(25))
+        {
+            if (App?.HasExited == true) throw new InvalidOperationException("UABS exited during " + description);
+            if (predicate()) { Step(description, "completed"); return; }
+            Thread.Sleep(200);
+        }
+        throw new Blocked("Timed out waiting for " + description);
+    }
+    private static AutomationElement Find(AutomationElement root, ControlType type, string? name)
+    {
+        var candidates = root.FindAllDescendants(Automation!.ConditionFactory.ByControlType(type))
+            .Where(e => name == null || e.Name == name).ToArray();
+        Require(candidates.Length == 1, $"Expected one {type} '{name}', found {candidates.Length}.");
+        return candidates[0];
+    }
+    private static AutomationElement ById(AutomationElement root, string id)
+    {
+        var elements = root.FindAllDescendants(Automation!.ConditionFactory.ByAutomationId(id));
+        Require(elements.Length == 1, $"Required AutomationId '{id}': found {elements.Length}.");
+        return elements[0];
+    }
+    private static void Invoke(AutomationElement element) { Require(element.Patterns.Invoke.IsSupported, element.Name + " lacks Invoke pattern."); element.Patterns.Invoke.Pattern.Invoke(); Step("invoke", element.Name); }
+    private static void Select(AutomationElement element) { Require(element.Patterns.SelectionItem.IsSupported, element.Name + " lacks SelectionItem pattern."); element.Patterns.SelectionItem.Pattern.Select(); Step("select", element.Name); }
+    private static void SetValue(AutomationElement element, string value) { Require(element.Patterns.Value.IsSupported, element.Name + " lacks Value pattern."); element.Patterns.Value.Pattern.SetValue(value); Step("set value", value); }
+    private static void CheckToggle(AutomationElement root, string name, ToggleState expected)
+    {
+        var element = Find(root, ControlType.CheckBox, name);
+        Require(element.Patterns.Toggle.IsSupported, name + " lacks Toggle pattern.");
+        Check(element.Patterns.Toggle.Pattern.ToggleState.Value == expected, name + " has incorrect untouched state.");
+    }
+    private static void Evidence(string label, AutomationElement? root = null)
+    {
+        root ??= Window!;
+        Capture.Element(root).ToFile(Path.Combine(Output, label + ".png"));
+        var tree = root.FindAllDescendants().Take(2000).Select(e => new {
+            id = e.AutomationId, name = e.Name, type = e.ControlType.ToString(), e.IsOffscreen, e.IsEnabled,
+            invoke = e.Patterns.Invoke.IsSupported, value = e.Patterns.Value.IsSupported,
+            toggle = e.Patterns.Toggle.IsSupported, selection = e.Patterns.Selection.IsSupported,
+            grid = e.Patterns.Grid.IsSupported
+        }).ToArray();
+        File.WriteAllText(Path.Combine(Output, label + "-uia.json"), JsonSerializer.Serialize(tree, Json));
+    }
+}
