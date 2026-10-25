@@ -22,6 +22,14 @@ class FixtureCtlTests(unittest.TestCase):
             fixturectl.validate_generator_config(config)
             self.assertEqual(profile, config["profile"])
 
+    def test_unity_targets_have_command_line_mappings_without_nographics(self):
+        self.assertEqual({"Win64", "Linux64", "OSXUniversal"}, set(fixturectl.UNITY_BUILD_TARGET_ARGUMENTS.values()))
+        command = fixturectl.unity_command(
+            Path("C:/Unity/Unity.exe"), Path("smoke.json"), Path("output"), Path("unity.log"),
+            "StandaloneWindows64")
+        self.assertNotIn("-nographics", command)
+        self.assertEqual("Win64", command[command.index("-buildTarget") + 1])
+
     def test_unsafe_allowlist_paths_are_rejected(self):
         for value in ("../escape.bundle", "/absolute.bundle", "bundles/../escape", "other/a.bundle", "bundles\\a.bundle"):
             with self.subTest(value=value), self.assertRaises(fixturectl.FixtureError):

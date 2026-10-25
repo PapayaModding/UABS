@@ -29,6 +29,11 @@ EXPECTED_BRANCH = "v2-recovery"
 DEFAULT_MAX_BUNDLES = 30
 DEFAULT_MAX_INDIVIDUAL_BYTES = 20 * 1024 * 1024
 DEFAULT_MAX_TOTAL_BYTES = 200 * 1024 * 1024
+UNITY_BUILD_TARGET_ARGUMENTS = {
+    "StandaloneWindows64": "Win64",
+    "StandaloneLinux64": "Linux64",
+    "StandaloneOSX": "OSXUniversal",
+}
 COLLECTION_RE = re.compile(r"^[a-z0-9][a-z0-9._-]{0,63}$")
 SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 
@@ -125,7 +130,7 @@ def validate_generator_config(config: dict[str, Any]) -> None:
             raise FixtureError(f"{name} must be an integer in [{minimum}, {maximum}]")
     if config.get("compression") not in {"lz4", "lzma", "uncompressed"}:
         raise FixtureError("compression must be lz4, lzma, or uncompressed")
-    if config.get("buildTarget") not in {"StandaloneWindows64", "StandaloneLinux64", "StandaloneOSX"}:
+    if config.get("buildTarget") not in UNITY_BUILD_TARGET_ARGUMENTS:
         raise FixtureError("buildTarget must be StandaloneWindows64, StandaloneLinux64, or StandaloneOSX")
     for name in ("dependencyDensity", "duplicateNameFrequency"):
         value = config.get(name)
@@ -543,6 +548,19 @@ def publish(args: argparse.Namespace) -> int:
     return 0
 
 
+def unity_command(
+        unity: Path, config_path: Path, output: Path, log_path: Path, build_target: str) -> list[str]:
+    return [
+        str(unity), "-batchmode", "-quit",
+        "-buildTarget", UNITY_BUILD_TARGET_ARGUMENTS[build_target],
+        "-projectPath", str(GENERATOR_ROOT),
+        "-executeMethod", "UabsFixtures.Editor.FixtureGenerator.Generate",
+        "-fixtureConfig", str(config_path),
+        "-fixtureOutput", str(output),
+        "-logFile", str(log_path),
+    ]
+
+
 def generate(args: argparse.Namespace) -> int:
     config_path = Path(args.config) if args.config else GENERATOR_ROOT / "config" / f"{args.profile}.json"
     config_path = require_contained(config_path, GENERATOR_ROOT / "config", "generator config")
@@ -559,14 +577,7 @@ def generate(args: argparse.Namespace) -> int:
         return 0
     unity = Path(args.unity).resolve(strict=True)
     log_path = output.parent / f"{output.name}.unity-generator.log"
-    command = [
-        str(unity), "-batchmode", "-nographics", "-quit",
-        "-projectPath", str(GENERATOR_ROOT),
-        "-executeMethod", "UabsFixtures.Editor.FixtureGenerator.Generate",
-        "-fixtureConfig", str(config_path),
-        "-fixtureOutput", str(output),
-        "-logFile", str(log_path),
-    ]
+    command = unity_command(unity, config_path, output, log_path, config["buildTarget"])
     output.parent.mkdir(parents=True, exist_ok=True)
     result = subprocess.run(command, check=False)
     if result.returncode != 0:

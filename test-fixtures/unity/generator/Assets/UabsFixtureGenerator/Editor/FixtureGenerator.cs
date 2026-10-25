@@ -7,6 +7,7 @@ using System.Security.Cryptography;
 using UnityEditor;
 using UnityEditor.U2D;
 using UnityEngine;
+using UnityEngine.Rendering;
 using UnityEngine.U2D;
 using Object = UnityEngine.Object;
 
@@ -100,6 +101,8 @@ namespace UabsFixtures.Editor
                 throw new InvalidOperationException($"Unsupported standalone build target: {config.buildTarget}");
             }
 
+            ValidateEditorContext(target);
+
             PrepareOutput(outputRoot);
             PrepareGeneratedAssets(config.profile);
             List<PlannedBundle> plans = CreateAssets(config, new System.Random(config.seed));
@@ -116,7 +119,7 @@ namespace UabsFixtures.Editor
             AssetBundleManifest built = BuildPipeline.BuildAssetBundles(
                 bundleDirectory,
                 builds,
-                BuildOptions(config.compression),
+                BuildOptions(config.compression) | BuildAssetBundleOptions.StrictMode,
                 target);
             if (built == null)
                 throw new InvalidOperationException("Unity returned no AssetBundleManifest.");
@@ -144,7 +147,14 @@ namespace UabsFixtures.Editor
                     throw new FileNotFoundException("Unity did not emit an expected bundle.", file);
                 AssetBundle loadedBundle = AssetBundle.LoadFromFile(file);
                 if (loadedBundle == null)
-                    throw new InvalidOperationException($"Unity could not reopen generated bundle: {file}");
+                {
+                    throw new InvalidOperationException(
+                        $"Unity {Application.unityVersion} built but could not reopen '{file}' " +
+                        $"({new FileInfo(file).Length} bytes, header '{ReadHeader(file)}'). " +
+                        $"Configured/active target: {target}/{EditorUserBuildSettings.activeBuildTarget}; " +
+                        $"graphics device: {SystemInfo.graphicsDeviceType}. Check the preceding Unity module or " +
+                        "bundle compatibility errors; generation is not successful until every bundle reopens.");
+                }
                 string[] reportedContents = loadedBundle.GetAllAssetNames()
                     .OrderBy(value => value, StringComparer.Ordinal)
                     .ToArray();
@@ -324,6 +334,38 @@ namespace UabsFixtures.Editor
                 case "uncompressed": return options | BuildAssetBundleOptions.UncompressedAssetBundle;
                 default: throw new InvalidOperationException($"Unsupported compression: {compression}");
             }
+        }
+
+        private static void ValidateEditorContext(BuildTarget target)
+        {
+            if (!Application.unityVersion.StartsWith("2021.3.", StringComparison.Ordinal))
+                throw new InvalidOperationException(
+                    $"The fixture project requires Unity 2021.3 LTS; running {Application.unityVersion}.");
+            BuildTargetGroup group = BuildPipeline.GetBuildTargetGroup(target);
+            if (!BuildPipeline.IsBuildTargetSupported(group, target))
+                throw new InvalidOperationException(
+                    $"Unity {Application.unityVersion} does not have the {target} build support module installed.");
+            if (EditorUserBuildSettings.activeBuildTarget != target)
+                throw new InvalidOperationException(
+                    $"Configured target {target} does not match the active Editor target " +
+                    $"{EditorUserBuildSettings.activeBuildTarget}. Launch through fixturectl so -buildTarget is set.");
+            if (SystemInfo.graphicsDeviceType == GraphicsDeviceType.Null)
+                throw new InvalidOperationException(
+                    "The fixture smoke test requires a graphics-enabled batch Editor for post-build AssetBundle " +
+                    "load verification. Remove -nographics and run in a Windows desktop session.");
+            Debug.Log(
+                $"UABS fixture context: Unity {Application.unityVersion}; target {target}; " +
+                $"graphics {SystemInfo.graphicsDeviceType}; batchMode={Application.isBatchMode}");
+        }
+
+        private static string ReadHeader(string path)
+        {
+            byte[] header = new byte[Math.Min(16, new FileInfo(path).Length)];
+            using (FileStream stream = File.OpenRead(path))
+                stream.Read(header, 0, header.Length);
+            return string.Concat(header.Select(value => value >= 32 && value <= 126
+                ? ((char)value).ToString()
+                : $"\\x{value:x2}"));
         }
 
         private static void Validate(GeneratorConfig config)
