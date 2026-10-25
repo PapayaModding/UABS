@@ -82,6 +82,20 @@ class FixtureCtlTests(unittest.TestCase):
         explicit_manifest["dependencies"].pop("com.unity.modules.assetbundle")
         self.assertEqual(omitted_manifest, explicit_manifest)
 
+    def test_generator_declares_required_native_modules(self):
+        generator_root = MODULE_PATH.parents[1]
+        manifest = fixturectl.load_json(generator_root / "Packages" / "manifest.json")
+        lock = fixturectl.load_json(generator_root / "Packages" / "packages-lock.json")
+        for package in ("com.unity.modules.assetbundle", "com.unity.modules.animation"):
+            with self.subTest(package=package):
+                self.assertEqual("1.0.0", manifest["dependencies"].get(package))
+                self.assertEqual({
+                    "version": "1.0.0",
+                    "depth": 0,
+                    "source": "builtin",
+                    "dependencies": {},
+                }, lock["dependencies"].get(package))
+
     def test_editor_generator_pins_standalone_player_subtarget(self):
         source = GENERATOR_SOURCE.read_text(encoding="utf-8")
         self.assertIn(

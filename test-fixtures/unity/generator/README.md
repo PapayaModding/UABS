@@ -109,21 +109,28 @@ log line that reports a disabled module. Interpret the controlled result as
 follows:
 
 - omitted fails and explicit succeeds: the package manifest disabled the
-  native AssetBundle module; test an explicit Animation module separately
-  before correcting the full generator manifest;
+  native AssetBundle module; the full generator also requires the Animation
+  module because its profiles include `AnimationClip` assets;
 - both fail: the cause is independent of the AssetBundle package declaration,
   so inspect the common Editor installation/build-support modules and decoded
   UnityFS metadata;
 - both succeed: this isolated native path is healthy, and another difference
   in the full fixture project or generated asset composition remains.
 
+The Windows comparison proved the package configuration was causal:
+`module-omitted` emitted a 441-byte bundle, reported three disabled-module
+warnings, and failed to reopen; `module-explicit` emitted a 1,221-byte bundle
+without those warnings and reopened successfully. The generator therefore
+declares both `com.unity.modules.assetbundle` and
+`com.unity.modules.animation` at `1.0.0`. Animation is explicit because every
+profile retains `AnimationClip` coverage.
+
 Unity 2021.3 documents `com.unity.modules.*` dependencies as
 [built-in packages](https://docs.unity3d.com/2021.3/Documentation/Manual/pack-build-in.html)
 that a project can
 [disable](https://docs.unity3d.com/2021.3/Documentation/Manual/upm-ui-disable.html).
-The tracked generator manifest currently declares only
-`com.unity.2d.sprite`; this diagnostic provides the controlled confirmation
-required before any permanent package change.
+The native diagnostic remains available as a regression tool and still creates
+its two isolated manifests without modifying the tracked generator project.
 
 The standard profiles are:
 
