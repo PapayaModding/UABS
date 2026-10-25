@@ -116,3 +116,23 @@ Inaccessible(["Name", "Package"], [["bundle", "Smoke"]], "1–2 displayed / 2 ex
 Inaccessible(["Name", "Package"], [["bundle", "Smoke"]], "1–1 displayed / at least 1 indexed matches");
 Inaccessible(["Name", "Package"], [["bundle", "Smoke"]], "2–2 displayed / 2 exact indexed matches");
 Console.WriteLine("PASS: structural rows preserve Unicode/column association; ambiguous headers/cells and partial/virtualized counts block.");
+
+void Field(string expected, string? value, string?[]? selection, string[]? text)
+    => Check(SearchAccessibility.VerifyField(value, selection, text).Status == expected,
+        $"Incorrect field verdict: {expected}, Value={value}.");
+Field("PASS", "Assets", [null], null); // Unrealized item has no usable Name.
+Field("PASS", "Assets", ["ComboBoxItem"], null); // Unusable item identity cannot override a supported Value.
+Field("PASS", "Assets", [], ["Assets"]);
+Field("PASS", null, ["Assets"], null);
+Field("PASS", null, [null], ["Assets"]);
+Field("FAIL", "Names", [null], null);
+Field("FAIL", null, ["Paths"], ["Paths"]);
+Field("FAIL", null, null, ["Dependencies"]);
+Field("BLOCKED", null, [null], null);
+Field("BLOCKED", null, [], ["Assets", "Names"]);
+Field("BLOCKED", "Assets", ["Names"], null);
+Field("BLOCKED", "Assets", ["Assets"], ["Names"]);
+Field("BLOCKED", "Assets", ["Assets", "Assets"], null);
+Field("BLOCKED", "ComboBoxItem", ["Unknown"], null);
+Field("BLOCKED", "Unknown", ["Assets"], ["Assets"]);
+Console.WriteLine("PASS: field Value/selection/collapsed text verification distinguishes Assets, wrong values, missing and conflicting evidence.");

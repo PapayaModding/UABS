@@ -143,8 +143,7 @@ internal static class Program
             CheckToggle(controls, "Packages", ToggleState.Off);
             CheckToggle(controls, "Assets", ToggleState.Off);
             var fields = Find(controls, ControlType.ComboBox, null);
-            Require(fields.Patterns.Selection.IsSupported, "Field selector lacks Selection pattern.");
-            Check(fields.Patterns.Selection.Pattern.Selection.Value.SingleOrDefault()?.Name == "Assets", "Untouched field selection must be Assets.");
+            VerifyFieldSelection(fields);
             Step("defaults", new { sources = true, packages = false, assets = false, fields = "Assets" });
             stage = "search";
             var include = ById(controls, "IncludeSearchTextBox");
@@ -277,6 +276,28 @@ internal static class Program
         Step("structural result evidence", new { headers, cells, countSummaries = summaries });
         Require(summaries.Length == 1, "Expected one accessible result count summary.");
         return SearchAccessibility.CompleteRows(headers, cells, summaries[0]);
+    }
+
+    private static void VerifyFieldSelection(AutomationElement fields)
+    {
+        // Evidence reads never mutate or expand the ComboBox. An unavailable read
+        // cannot count as Assets; only a usable, unambiguous representation can.
+        object? valueSupported = EvidenceValue.Read(() => fields.Patterns.Value.IsSupported);
+        object? value = EvidenceValue.Read(() => fields.Patterns.Value.Pattern.Value.Value);
+        object? selectionSupported = EvidenceValue.Read(() => fields.Patterns.Selection.IsSupported);
+        object? selection = EvidenceValue.Read(() => fields.Patterns.Selection.Pattern.Selection.Value
+            .Select(item => EvidenceValue.Read(() => item.Name)).ToArray());
+        object? expansion = EvidenceValue.Read(() => fields.Patterns.ExpandCollapse.Pattern.ExpandCollapseState.Value.ToString());
+        object? text = EvidenceValue.Read(() => fields.FindAllDescendants(Automation!.ConditionFactory.ByControlType(ControlType.Text))
+            .Where(item => !item.IsOffscreen).Select(item => item.Name).ToArray());
+        var verdict = SearchAccessibility.VerifyField(valueSupported is true ? value as string : null,
+            selectionSupported is true && selection is object?[] selected ? selected.Select(item => item as string).ToArray() : null,
+            expansion is "Collapsed" ? text as string[] : null);
+        var evidence = new { valueSupported, value, selectionSupported, selection, expansion, visibleText = text, verdict };
+        Step("field selector UIA evidence", evidence);
+        File.WriteAllText(Path.Combine(Output, "field-selection.json"), JsonSerializer.Serialize(evidence, Json));
+        Require(verdict.Status != "BLOCKED", verdict.Reason + " See field-selection.json.");
+        Check(verdict.Status == "PASS", verdict.Reason + " See field-selection.json.");
     }
 
     private static bool HasVerifiedCopyScope(string copy, string expectedHash)

@@ -3,9 +3,29 @@ using System.Text.RegularExpressions;
 
 internal sealed record ExpectedRow(string Name, string Package);
 internal sealed class AccessibilityUnavailable(string message) : Exception(message);
+internal sealed record FieldVerdict(string Status, string Reason);
 
 internal static class SearchAccessibility
 {
+    internal static FieldVerdict VerifyField(string? value, string?[]? selectedNames, string[]? collapsedTexts)
+    {
+        string[] known = ["All", "Names", "Paths", "CabCodes", "Assets", "Dependencies"];
+        if (selectedNames is { Length: > 1 })
+            return new("BLOCKED", "Field selector reports multiple selected items.");
+        if (!string.IsNullOrEmpty(value) && !known.Contains(value))
+            return new("BLOCKED", "ComboBox Value is not a recognized field selection: " + value);
+        var strong = new[] { value, selectedNames is { Length: 1 } ? selectedNames[0] : null }
+            .Where(text => text is not null && known.Contains(text)).Distinct().ToArray();
+        string? display = collapsedTexts is { Length: 1 } && known.Contains(collapsedTexts[0]) ? collapsedTexts[0] : null;
+        if (strong.Length > 1 || (strong.Length == 1 && display is not null && display != strong[0]))
+            return new("BLOCKED", "Conflicting ComboBox Value, selected-item Name, or collapsed text evidence.");
+        string? observed = strong.SingleOrDefault() ?? display;
+        if (observed is null)
+            return new("BLOCKED", "No unique supported field value/selection or collapsed display text could be established.");
+        return observed == "Assets" ? new("PASS", "Observed Assets through UI Automation.")
+            : new("FAIL", "Untouched field selection is " + observed + "; expected Assets.");
+    }
+
     // The visible header/cell child order is the column order in this fresh,
     // uncustomized grid. Never flatten text across rows or guess missing cells.
     internal static ExpectedRow[] CompleteRows(string[] headers, string[][] cells, string countSummary)

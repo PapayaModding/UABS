@@ -98,9 +98,22 @@ Refresh, remains pending regardless of this single scenario's result.
 
 ### Search accessibility paths
 
-Untouched defaults are read from real Toggle and Selection patterns within
-SearchControlsScroller. Unsupported patterns/properties block; XAML values
-are not a substitute. Keyword entry uses Value and exact Unicode readback
+Untouched defaults are read from real Toggle states and ComboBox evidence
+within SearchControlsScroller. The unique ComboBox's supported Value is
+preferred; a uniquely named selected item is also usable. Avalonia 11.3.3's
+[ComboBox peer](https://github.com/AvaloniaUI/Avalonia/blob/11.3.3/src/Avalonia.Controls/Automation/Peers/ComboBoxAutomationPeer.cs)
+exposes read-only Value and an unrealized selected-item peer when collapsed.
+A missing selected-item Name does not prove the displayed value is wrong.
+When those representations are unavailable, exactly one visible Text
+descendant of the confirmed collapsed ComboBox can establish the field.
+No option is selected, expanded, or changed during verification.
+
+`field-selection.json` and result steps record support flags, raw Value,
+selected names/unavailable markers, expansion state, visible text, and verdict.
+Only a recognized, unambiguous field value can pass. Known non-Assets values
+fail; missing, multiple, unknown, or conflicting evidence blocks. Unsupported
+properties remain unavailable, never assumed to mean Assets. The screenshot
+does not supply an assertion value. Keyword entry uses Value and exact Unicode readback
 (including `テスト`) before SearchButton Invoke.
 
 The Grid/Table path remains available when those patterns are supported.
