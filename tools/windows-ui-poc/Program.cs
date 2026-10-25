@@ -7,7 +7,6 @@ using FlaUI.Core.Capturing;
 using FlaUI.Core.Definitions;
 using FlaUI.UIA3;
 
-internal sealed record ExpectedRow(string Name, string Package);
 internal sealed record Scenario(string Repository, string ExpectedCommit, string Package,
     string PackageSha256, string Keyword, ExpectedRow[] ExpectedRows);
 internal sealed class Blocked(string message) : Exception(message);
@@ -130,7 +129,8 @@ internal static class Program
             Step("package admission path", admitted ? "verified exact copy path exposed by UIA" : "native picker submitted exact disposable copy path");
             stage = "V2 defaults";
             Select(Find(Window!, ControlType.TabItem, "Search"));
-            var controls = ById(Window!, "SearchControlsPanel");
+            var controls = ById(Window!, "SearchControlsScroller");
+            Require(controls.ControlType == ControlType.Pane, "SearchControlsScroller must be the expected Pane.");
             Wait("V2 package admission", () => controls.FindAllDescendants(Automation.ConditionFactory.ByControlType(ControlType.CheckBox))
                 .Any(e => e.Name.StartsWith("[V2] ", StringComparison.Ordinal)));
             var scopes = controls.FindAllDescendants(Automation.ConditionFactory.ByControlType(ControlType.CheckBox))
@@ -147,24 +147,36 @@ internal static class Program
             Check(fields.Patterns.Selection.Pattern.Selection.Value.SingleOrDefault()?.Name == "Assets", "Untouched field selection must be Assets.");
             Step("defaults", new { sources = true, packages = false, assets = false, fields = "Assets" });
             stage = "search";
-            SetValue(ById(controls, "IncludeSearchTextBox"), config.Keyword);
+            var include = ById(controls, "IncludeSearchTextBox");
+            SetValue(include, config.Keyword);
+            Check(include.Patterns.Value.Pattern.Value.Value == config.Keyword, "Search keyword readback differs (including Unicode).");
             Invoke(ById(controls, "SearchButton"));
             var grid = ById(Window!, "ResultsGrid");
-            Require(grid.Patterns.Grid.IsSupported, "ResultsGrid lacks Grid pattern; cannot verify cell identity.");
+            Require(grid.ControlType == ControlType.DataGrid, "ResultsGrid must expose DataGrid control type.");
             Wait("search result", () =>
             {
                 var errors = Window!.FindAllDescendants(Automation.ConditionFactory.ByAutomationId("SearchErrorText"));
                 if (errors.Any(e => !e.IsOffscreen && !string.IsNullOrWhiteSpace(e.Name))) throw new InvalidOperationException("Search error: " + errors[0].Name);
-                return grid.Patterns.Grid.Pattern.RowCount.Value > 0;
+                return grid.Patterns.Grid.IsSupported ? grid.Patterns.Grid.Pattern.RowCount.Value > 0
+                    : grid.FindAllDescendants(Automation.ConditionFactory.ByControlType(ControlType.DataItem)).Length > 0;
             });
-            Require(grid.Patterns.Table.IsSupported, "ResultsGrid lacks Table pattern; cannot verify headers.");
-            var headers = grid.Patterns.Table.Pattern.ColumnHeaders.Value.Select(e => e.Name).ToArray();
-            Check(headers.SequenceEqual(new[] { "Name", "Package" }), "Expected exactly Name/Package headers; observed " + string.Join(", ", headers));
-            var pattern = grid.Patterns.Grid.Pattern;
-            Check(pattern.ColumnCount.Value == 2, "Expected two bundle-result columns.");
-            Require(pattern.RowCount.Value <= 100, "POC supports at most 100 loaded rows; choose a narrower keyword.");
-            var rows = Enumerable.Range(0, pattern.RowCount.Value).Select(i => new ExpectedRow(
-                pattern.GetItem(i, 0).Name, pattern.GetItem(i, 1).Name)).ToArray();
+            ExpectedRow[] rows;
+            if (grid.Patterns.Grid.IsSupported)
+            {
+                Require(grid.Patterns.Table.IsSupported, "ResultsGrid lacks Table pattern; cannot verify headers.");
+                var headers = grid.Patterns.Table.Pattern.ColumnHeaders.Value.Select(e => e.Name).ToArray();
+                Check(headers.SequenceEqual(new[] { "Name", "Package" }), "Expected exactly Name/Package headers; observed " + string.Join(", ", headers));
+                var pattern = grid.Patterns.Grid.Pattern;
+                Check(pattern.ColumnCount.Value == 2, "Expected two bundle-result columns.");
+                Require(pattern.RowCount.Value <= 100, "POC supports at most 100 loaded rows; choose a narrower keyword.");
+                rows = Enumerable.Range(0, pattern.RowCount.Value).Select(i => new ExpectedRow(
+                    pattern.GetItem(i, 0).Name, pattern.GetItem(i, 1).Name)).ToArray();
+            }
+            else
+            {
+                try { rows = ReadAccessibleRows(grid); }
+                catch (Exception error) { throw new Blocked("ResultsGrid structural accessibility unavailable: " + error.Message); }
+            }
             Step("observed rows", rows);
             Check(rows.Length == config.ExpectedRows.Length && rows.OrderBy(r => r.Name).ThenBy(r => r.Package)
                 .SequenceEqual(config.ExpectedRows.OrderBy(r => r.Name).ThenBy(r => r.Package)), "Bundle Name/Package results differ from expectedRows.");
@@ -173,7 +185,7 @@ internal static class Program
         }
         catch (Exception exception)
         {
-            status = exception is Blocked ? "BLOCKED" : "FAIL";
+            status = exception is Blocked or NotSupportedException ? "BLOCKED" : "FAIL";
             detail = $"{stage}: {exception}";
             try { if (Window != null) Evidence("failure"); } catch (Exception evidenceError) { Step("evidence error", evidenceError.ToString()); }
         }
@@ -248,6 +260,25 @@ internal static class Program
         .Concat(Window!.FindAllDescendants(Automation.ConditionFactory.ByControlType(ControlType.Window)))
         .Where(e => e.Properties.ProcessId.Value == App.Id).Distinct().ToArray();
 
+    private static ExpectedRow[] ReadAccessibleRows(AutomationElement grid)
+    {
+        var headers = grid.FindAllDescendants(Automation!.ConditionFactory.ByControlType(ControlType.HeaderItem))
+            .Select(e => e.Name).ToArray();
+        var rows = grid.FindAllDescendants(Automation.ConditionFactory.ByControlType(ControlType.DataItem));
+        var cells = rows.Select(row => row.FindAllDescendants(Automation.ConditionFactory.ByClassName("DataGridCell"))
+            .Select(cell =>
+            {
+                var text = cell.FindAllDescendants(Automation.ConditionFactory.ByControlType(ControlType.Text));
+                Require(text.Length == 1, "DataGridCell must expose exactly one Text descendant.");
+                return text[0].Name;
+            }).ToArray()).ToArray();
+        var summaries = Window!.FindAllDescendants(Automation.ConditionFactory.ByControlType(ControlType.Text))
+            .Select(e => e.Name).Where(name => name.Contains(" displayed / ", StringComparison.Ordinal)).ToArray();
+        Step("structural result evidence", new { headers, cells, countSummaries = summaries });
+        Require(summaries.Length == 1, "Expected one accessible result count summary.");
+        return SearchAccessibility.CompleteRows(headers, cells, summaries[0]);
+    }
+
     private static bool HasVerifiedCopyScope(string copy, string expectedHash)
     {
         var scopes = Window!.FindAllDescendants(Automation!.ConditionFactory.ByControlType(ControlType.CheckBox))
@@ -262,22 +293,22 @@ internal static class Program
         {
             var snapshot = EvidenceValue.CreateDialogSnapshot(App!.Id, PackageAdmission.PickerTitle, invocation,
                 () => ProcessWindows().Take(30).Select(e => new
-            {
-                id = EvidenceValue.Read(() => e.AutomationId),
-                type = EvidenceValue.Read(() => e.ControlType.ToString()),
-                name = EvidenceValue.Read(() => e.Name),
-                pid = EvidenceValue.Read(() => e.Properties.ProcessId.Value),
-                handle = EvidenceValue.ReadHandle(() => e.Properties.NativeWindowHandle.Value),
-                className = EvidenceValue.Read(() => e.ClassName),
-                enabled = EvidenceValue.Read(() => e.IsEnabled),
-                offscreen = EvidenceValue.Read(() => e.IsOffscreen),
-                elements = e.FindAllDescendants().Take(120).Select(child => new
                 {
-                    id = EvidenceValue.Read(() => child.AutomationId),
-                    name = EvidenceValue.Read(() => child.Name),
-                    type = EvidenceValue.Read(() => child.ControlType.ToString())
-                }).ToArray()
-            }).ToArray());
+                    id = EvidenceValue.Read(() => e.AutomationId),
+                    type = EvidenceValue.Read(() => e.ControlType.ToString()),
+                    name = EvidenceValue.Read(() => e.Name),
+                    pid = EvidenceValue.Read(() => e.Properties.ProcessId.Value),
+                    handle = EvidenceValue.ReadHandle(() => e.Properties.NativeWindowHandle.Value),
+                    className = EvidenceValue.Read(() => e.ClassName),
+                    enabled = EvidenceValue.Read(() => e.IsEnabled),
+                    offscreen = EvidenceValue.Read(() => e.IsOffscreen),
+                    elements = e.FindAllDescendants().Take(120).Select(child => new
+                    {
+                        id = EvidenceValue.Read(() => child.AutomationId),
+                        name = EvidenceValue.Read(() => child.Name),
+                        type = EvidenceValue.Read(() => child.ControlType.ToString())
+                    }).ToArray()
+                }).ToArray());
             File.WriteAllText(Path.Combine(Output, "dialog-" + label + ".json"),
                 JsonSerializer.Serialize(snapshot, Json));
         }

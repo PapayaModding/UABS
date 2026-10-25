@@ -98,3 +98,21 @@ using (var subsequent = JsonDocument.Parse(JsonSerializer.Serialize(EvidenceValu
     123, PackageAdmission.PickerTitle, Task.CompletedTask, () => new[] { "later attempt" }))))
     Check(subsequent.RootElement.GetProperty("windows")[0].GetString() == "later attempt", "Subsequent diagnostic attempt failed.");
 Console.WriteLine("PASS: native handles serialize; unavailable handles and enumeration failures retain diagnostics; Invoke states and later snapshots preserved.");
+
+var paired = SearchAccessibility.CompleteRows(["Name", "Package"],
+    [["テスト.bundle", "Smoke"], ["other.bundle", "Other"]], "1–2 displayed / 2 exact indexed matches");
+Check(paired.SequenceEqual(new[] { new ExpectedRow("テスト.bundle", "Smoke"), new ExpectedRow("other.bundle", "Other") }),
+    "Name/Package association or Unicode was lost.");
+void Inaccessible(string[] headers, string[][] cells, string summary)
+{
+    try { SearchAccessibility.CompleteRows(headers, cells, summary); }
+    catch (AccessibilityUnavailable) { return; }
+    throw new Exception("Ambiguous/incomplete accessibility was accepted.");
+}
+Inaccessible(["Package", "Name"], [["bundle", "Smoke"]], "1–1 displayed / 1 exact indexed matches");
+Inaccessible(["Name", "Package"], [["bundle"]], "1–1 displayed / 1 exact indexed matches");
+Inaccessible(["Name", "Package"], [["bundle", "Smoke", "extra"]], "1–1 displayed / 1 exact indexed matches");
+Inaccessible(["Name", "Package"], [["bundle", "Smoke"]], "1–2 displayed / 2 exact indexed matches");
+Inaccessible(["Name", "Package"], [["bundle", "Smoke"]], "1–1 displayed / at least 1 indexed matches");
+Inaccessible(["Name", "Package"], [["bundle", "Smoke"]], "2–2 displayed / 2 exact indexed matches");
+Console.WriteLine("PASS: structural rows preserve Unicode/column association; ambiguous headers/cells and partial/virtualized counts block.");

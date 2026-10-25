@@ -71,7 +71,8 @@ It never attaches to or closes a pre-existing UABS process.
 4. Select Search and inspect untouched Sources-only / Assets-field defaults.
    Selectors are never changed to make the scenario pass.
 5. Set IncludeSearchTextBox and invoke SearchButton. Verify Table/Grid
-   patterns, exactly Name/Package columns, and the complete expected row set.
+   patterns or the strict structural accessibility path below, exactly
+   Name/Package columns, and the complete expected row set.
 6. Capture final evidence and close only the launched application. Confirm
    the original input DB hash is unchanged.
 
@@ -86,13 +87,45 @@ Screenshots and UIA text can contain local paths and package names: review
 before sharing. Upload only reviewed evidence, not the disposable DB copy.
 
 The current IDs come from existing Avalonia `x:Name` fallback. Unnamed
-checkboxes are found by type/name within SearchControlsPanel; the field
+checkboxes are found by type/name within the verified SearchControlsScroller
+Pane (SearchControlsPanel is not exposed on Windows); the field
 ComboBox must be unique. Ambiguity or inaccessible cells fail explicitly.
 Grid virtualization, native picker discovery, accessible cell text, desktop
 capture, and provider responsiveness require **actual Windows execution**.
 Linux cross-compilation cannot verify any of them. Full Checkpoint 2.1,
 including selector retention, errors/tooltips, V1, sorting, selection, and
 Refresh, remains pending regardless of this single scenario's result.
+
+### Search accessibility paths
+
+Untouched defaults are read from real Toggle and Selection patterns within
+SearchControlsScroller. Unsupported patterns/properties block; XAML values
+are not a substitute. Keyword entry uses Value and exact Unicode readback
+(including `テスト`) before SearchButton Invoke.
+
+The Grid/Table path remains available when those patterns are supported.
+Avalonia DataGrid 11.3.3 also exposes a structural path: its
+[grid peer](https://github.com/AvaloniaUI/Avalonia.Controls.DataGrid/blob/11.3.3/src/Avalonia.Controls.DataGrid/Automation/Peers/DataGridAutomationPeer.cs)
+has no Grid provider, while row peers expose DataItem, cell peers expose
+Custom controls of class DataGridCell, and column header peers expose
+HeaderItem. The fallback requires ordered Name/Package headers and two
+DataGridCell descendants per DataItem, each with exactly one Text descendant.
+Pairs are assembled within their row in column order in this freshly launched,
+unreordered grid; text is never flattened across rows or associated by name
+matching. There is no OCR or mouse-coordinate inference.
+
+Completeness must be independently visible in the application's count text:
+`1–N displayed / N exact indexed matches`. Exactly N DataItems (at most 100)
+must be represented. Partial counts, virtualized/missing rows, missing or
+ambiguous cells/headers, and unavailable UIA reads produce BLOCKED. Narrow
+the keyword to a small result set if necessary. Observed headers, cell pairs,
+and count text are recorded in result steps. The final expectedRows comparison
+is still exact, including package association and duplicate multiplicity;
+an accessible but incorrect result set is FAIL.
+
+This path is supported by the peer source and the reported Windows DataGrid
+limitation. Its actual hierarchy/text exposure still requires Windows
+execution; Linux regression tests do not establish UI acceptance.
 
 ### Package admission investigation
 
