@@ -91,13 +91,11 @@ internal static partial class Program
         var ordered = ReadAccessibleRows(Grid());
         string copy = Path.Combine(work, Path.GetFileName(config.Package));
         SelectBoundaryWithKeyboard(false);
-        Wait("first-row selected Inspector identity", () => SearchAccessibility.SelectedInspectorMatches(ReadSelectedInspector(), ordered[0], copy));
-        string first = ReadSelectedInspector()!;
+        string first = WaitForInspectorIdentity("first", ordered[0], copy, ordered);
         Step("first selected Inspector", first);
         Evidence("CP21-09-first-selection");
         SelectBoundaryWithKeyboard(true);
-        Wait("last-row selected Inspector identity", () => SearchAccessibility.SelectedInspectorMatches(ReadSelectedInspector(), ordered[^1], copy));
-        string last = ReadSelectedInspector()!;
+        string last = WaitForInspectorIdentity("last", ordered[^1], copy, ordered);
         Check(first != last, "Keyboard navigation did not change the selected source identity.");
         Step("last selected Inspector", last);
         Evidence("CP21-09-last-selection");
@@ -108,5 +106,45 @@ internal static partial class Program
         Check(retained == last, "Compatibility rejection changed the selected immutable source Inspector identity.");
         Rows(config.ExpectedSortRows!);
         Check(Hash(copy).Equals(config.PackageSha256, StringComparison.OrdinalIgnoreCase), "Disposable package hash changed during selection test.");
+    }
+
+    private static string WaitForInspectorIdentity(string boundary, ExpectedRow expected, string copy, ExpectedRow[] ordered)
+    {
+        string? observed = null;
+        try
+        {
+            Wait(boundary + "-row selected Inspector identity", () => {
+                observed = ReadSelectedInspector();
+                return SearchAccessibility.SelectedInspectorMatches(observed, expected, copy);
+            });
+            return observed!;
+        }
+        finally
+        {
+            // The previous runner only recorded Inspector text AFTER matching,
+            // so a timeout discarded the very evidence needed to diagnose it.
+            try
+            {
+                var inspectors = Window!.FindAllDescendants(Automation!.ConditionFactory.ByAutomationId("V2SearchDetails"))
+                    .Select(e => new {
+                        name = EvidenceValue.Read(() => e.Name),
+                        offscreen = EvidenceValue.Read(() => e.IsOffscreen),
+                        text = EvidenceValue.Read(() => e.Patterns.Text.Pattern.DocumentRange.GetText(-1)),
+                        comparisonFromRawName = EvidenceValue.Read(() => SearchAccessibility.ExplainInspector(e.Name, expected, copy))
+                    }).ToArray();
+                var headers = Grid().FindAllDescendants(Automation.ConditionFactory.ByControlType(ControlType.HeaderItem))
+                    .Select(e => new { name = EvidenceValue.Read(() => e.Name), helpText = EvidenceValue.Read(() => e.Properties.HelpText.Value) }).ToArray();
+                var report = new {
+                    boundary, expected, expectedPackagePath = copy,
+                    uiaDescendantRowOrder = ordered,
+                    comparison = SearchAccessibility.ExplainInspector(observed, expected, copy),
+                    inspectors, headers,
+                    gridHasKeyboardFocus = EvidenceValue.Read(() => Grid().Properties.HasKeyboardFocus.Value)
+                };
+                Step(boundary + " Inspector comparison", report);
+                File.WriteAllText(Path.Combine(Output, "CP21-09-" + boundary + "-identity.json"), JsonSerializer.Serialize(report, Json));
+            }
+            catch (Exception error) { Step("Inspector comparison diagnostic error", error.ToString()); }
+        }
     }
 }

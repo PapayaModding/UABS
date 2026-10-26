@@ -178,3 +178,18 @@ Check(!SearchAccessibility.SelectedInspectorMatches(inspector + "\nName: duplica
 Check(!SearchAccessibility.SelectedInspectorMatches("Name: " + selectedRow.Name, selectedRow, selectionCopy), "Incomplete identity accepted.");
 Check(!SearchAccessibility.SelectedInspectorMatches(null, selectedRow, selectionCopy), "Unavailable Inspector accepted.");
 Console.WriteLine("PASS: keyboard ownership/focus gating, selected Inspector identity validation, and unsupported sorting stays blocked.");
+
+var matchReport = SearchAccessibility.ExplainInspector(inspector, selectedRow, selectionCopy);
+Check(matchReport.Matches && matchReport.Checks.Values.All(value => value), "Valid identity diagnostics disagree with strict matching.");
+var wrongFirst = SearchAccessibility.ExplainInspector(inspector, new("uabs-smoke-0002.bundle", "Smoke"), selectionCopy);
+Check(!wrongFirst.Matches && !wrongFirst.Checks["name"] && wrongFirst.ActualFields["Name"] == selectedRow.Name,
+    "Expected/actual row-order mismatch not explicitly recorded.");
+var wrongPath = SearchAccessibility.ExplainInspector(inspector, selectedRow, Path.GetFullPath("unrelated/Smoke.uabs.sqlite"));
+Check(!wrongPath.Matches && !wrongPath.Checks["packagePathEqualsCopy"], "Copy-path mismatch diagnostic lost.");
+var unavailableReport = SearchAccessibility.ExplainInspector(null, selectedRow, selectionCopy);
+Check(!unavailableReport.Matches && !unavailableReport.Checks["hasDetails"], "Unavailable Inspector diagnostics silently passed.");
+using (var reportJson = JsonDocument.Parse(JsonSerializer.Serialize(wrongFirst)))
+    Check(reportJson.RootElement.GetProperty("Expected").GetProperty("Name").GetString() == "uabs-smoke-0002.bundle"
+        && reportJson.RootElement.GetProperty("ActualFields").GetProperty("Name").GetString() == selectedRow.Name,
+        "Serialized comparison lacks exact expected/actual identities.");
+Console.WriteLine("PASS: Inspector comparison diagnostics retain strict verdicts and report exact row/path/unavailable mismatches.");

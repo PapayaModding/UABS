@@ -4,9 +4,47 @@ using System.Text.RegularExpressions;
 internal sealed record ExpectedRow(string Name, string Package);
 internal sealed class AccessibilityUnavailable(string message) : Exception(message);
 internal sealed record FieldVerdict(string Status, string Reason);
+internal sealed record InspectorComparison(ExpectedRow Expected, string ExpectedPackagePath, string? RawDetails,
+    Dictionary<string, string> ActualFields, string[] DuplicateFields, Dictionary<string, bool> Checks,
+    bool Matches, string? ReadError);
 
 internal static class SearchAccessibility
 {
+    // Diagnostic only. Keep SelectedInspectorMatches as the independent strict predicate.
+    internal static InspectorComparison ExplainInspector(string? details, ExpectedRow expected, string copy)
+    {
+        var fields = new Dictionary<string, string>(StringComparer.Ordinal);
+        var duplicates = new List<string>();
+        foreach (string line in (details ?? "").Replace("\r\n", "\n").Split('\n'))
+        {
+            int separator = line.IndexOf(": ", StringComparison.Ordinal);
+            if (separator > 0 && !fields.TryAdd(line[..separator], line[(separator + 2)..])) duplicates.Add(line[..separator]);
+        }
+        var checks = new Dictionary<string, bool> {
+            ["hasDetails"] = !string.IsNullOrWhiteSpace(details),
+            ["uniqueFields"] = duplicates.Count == 0,
+            ["name"] = fields.GetValueOrDefault("Name") == expected.Name,
+            ["package"] = fields.GetValueOrDefault("Package") == expected.Package
+        };
+        bool matches = false;
+        string? error = null;
+        try
+        {
+            string path = fields.GetValueOrDefault("Package path") ?? "";
+            checks["absolutePackagePath"] = Path.IsPathFullyQualified(path);
+            checks["packagePathEqualsCopy"] = checks["absolutePackagePath"]
+                && Path.GetFullPath(path).Equals(Path.GetFullPath(copy), StringComparison.OrdinalIgnoreCase);
+            string source = fields.GetValueOrDefault("Original indexed source") ?? "";
+            checks["absoluteSourcePath"] = Path.IsPathFullyQualified(source);
+            checks["sourceFileName"] = Path.GetFileName(source) == expected.Name;
+            foreach (string key in new[] { "Package UUID", "Generation", "Source UUID", "Source revision" })
+                checks[key] = Guid.TryParse(fields.GetValueOrDefault(key), out var id) && id != Guid.Empty;
+            matches = SelectedInspectorMatches(details, expected, copy);
+        }
+        catch (Exception failure) { error = failure.ToString(); }
+        return new(expected, copy, details, fields, duplicates.ToArray(), checks, matches, error);
+    }
+
     internal static void RequireSortInvoke(bool supported)
     {
         if (!supported) throw new AccessibilityUnavailable(

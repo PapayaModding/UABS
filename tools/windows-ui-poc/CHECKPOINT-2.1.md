@@ -106,3 +106,30 @@ unchanged. Missing Inspector exposure or unverifiable navigation is BLOCKED;
 an observed identity change after rejection is FAIL. Capability JSON, first/
 last selection screenshots, and all three Inspector strings are retained.
 This is an evidence-backed input strategy, not a Windows execution result.
+
+## CP21-09 timeout investigation
+
+The user reports [run 40251315631](https://github.com/PapayaModding/UABS/actions/runs/40251315631)
+at `dc2518e93f5d8a8ee731147938bac43b5616ddee` still times out waiting
+for the first Inspector identity, although the captured UIA tree contains
+V2SearchDetails for `uabs-smoke-0000.bundle`. The current session cannot
+download the artifact: GitHub's artifact API returns Forbidden, including on
+retry. A populated Inspector alone cannot establish which strict condition
+failed, whether the boundary row differs from UIA descendant order, or whether
+the Inspector was excluded by its visibility/readability gate.
+
+The runner's old timeout path recorded Inspector text only after a successful
+match. That diagnostic omission is corrected: `CP21-09-first-identity.json`
+and `CP21-09-last-identity.json` are now emitted in finally, even on timeout.
+They contain the exact expected boundary row and DB-copy path, captured UIA
+row order, actual parsed fields/raw text, every name/package/path/UUID check,
+duplicate fields, raw Inspector Name/Text/IsOffscreen observations, header
+sort HelpText, and grid focus. The original strict predicate, boundary-row
+choice, keyboard input, ownership checks, and sorting blocker are unchanged.
+No functional selection correction is claimed without the actual evidence.
+
+To diagnose the existing run, provide its V2 artifact ZIP (especially
+acceptance.json, CP21-09-selection-uia.json, CP21-09-selection.png,
+grid-keyboard-capabilities.json, and results.json), or dispatch this diagnostic
+commit and inspect the new comparison JSON. UIA descendant order versus
+logical boundary order remains a hypothesis, not an established root cause.
