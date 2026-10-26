@@ -2,7 +2,14 @@
 
 **Updated:** 2026-10-26
 
-**Current task:** Recovery Checkpoint2.1 — final closure-readiness audit; NOT READY pending G6/evidence review and regression disposition. No navigation or issue closure.
+**Current task:** Recovery Checkpoint2.1 — approved Search Results error layout polish; Windows visual review pending. No navigation or issue closure.
+
+### Checkpoint2.1 — approved error layout polish
+
+- User confirms human corrective-error/technical-tooltip appearance and separately approves focused layout polish; no automatic G6/closure decision. [Layout record](v2-recovery-checkpoint-02-1-search-error-layout-polish.md) documents the presentation-only correction and remaining Windows/DPI review.
+- XAML separates persistent heading, bounded corrective error, confirmed count/status/collapsible complete warnings, grid and existing actions. Retained results get a stale-for-current-criteria notice only where applicable; backend IsStale/counts/criteria, scope/sort/Inspector and diagnostic binding remain unchanged.
+- Focused Search/UI regressions178/178 pass, including two new small/normal-window geometry/retention/long-text cases. Debug and Windows runner builds, existing runner/launcher checks and workflow lint pass. No backend/ViewModel/runner/scenario changes or dataset publication.
+- G6, Checkpoint2.1 and regression-risk disposition remain open. No Checkpoint3.
 
 ### Checkpoint2.1 — six-job Windows baseline, final decisions pending
 

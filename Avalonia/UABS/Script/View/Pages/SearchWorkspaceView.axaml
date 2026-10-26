@@ -129,20 +129,40 @@
                       DragDelta="OnSearchControlsSplitterDragDelta"
                       DragCompleted="OnSearchControlsSplitterDragCompleted"/>
 
-        <Grid Grid.Column="2" RowDefinitions="Auto,Auto,*,Auto" Margin="8,0" RowSpacing="6">
-            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
-                <StackPanel>
-                    <TextBlock Text="Search Results" FontSize="18" FontWeight="SemiBold"/>
-                    <TextBlock Text="{Binding Status}" Foreground="#666666" TextWrapping="Wrap"/>
-                    <ScrollViewer IsVisible="{Binding HasWarnings}" MaxHeight="100" HorizontalScrollBarVisibility="Disabled">
-                        <TextBlock Text="{Binding Warnings}" TextWrapping="Wrap"/>
+        <Grid x:Name="SearchResultsRegion" Grid.Column="2" RowDefinitions="Auto,Auto,Auto,*,Auto" Margin="8,0" RowSpacing="6">
+            <StackPanel Spacing="4">
+                <TextBlock x:Name="SearchResultsHeading" Text="Search Results" FontSize="18" FontWeight="SemiBold"/>
+                <ProgressBar IsVisible="{Binding IsInitialSearching}" IsIndeterminate="True" Height="4"/>
+            </StackPanel>
+            <Border x:Name="SearchErrorRegion" Grid.Row="1" Background="#FFF2F2" BorderBrush="#D94848" BorderThickness="1"
+                    CornerRadius="4" Padding="8" IsVisible="{Binding HasError}">
+                <StackPanel Spacing="4">
+                    <ScrollViewer x:Name="SearchErrorScroller" MaxHeight="96" HorizontalScrollBarVisibility="Disabled"
+                                  VerticalScrollBarVisibility="Auto">
+                        <TextBlock x:Name="SearchErrorText" Text="{Binding Error}" ToolTip.Tip="{Binding ErrorDetails}"
+                                   Foreground="#9A2020" TextWrapping="Wrap"/>
                     </ScrollViewer>
+                    <TextBlock Text="{Binding Status}" Foreground="#666666" TextWrapping="Wrap"/>
+                    <StackPanel IsVisible="{Binding HasResults}">
+                        <TextBlock x:Name="SearchRetainedResultsNotice" IsVisible="{Binding CriteriaChanged}"
+                                   Text="Previous results — stale for the current Search." FontWeight="SemiBold" TextWrapping="Wrap"/>
+                    </StackPanel>
                 </StackPanel>
-                <TextBlock Grid.Column="1" Text="{Binding CountSummary}" MaxWidth="230" TextWrapping="Wrap"
-                           VerticalAlignment="Center" FontWeight="SemiBold"/>
-            </Grid>
-            <ProgressBar Grid.Row="1" IsVisible="{Binding IsInitialSearching}" IsIndeterminate="True" Height="4"/>
-            <Grid Grid.Row="2">
+            </Border>
+            <ScrollViewer x:Name="SearchResultsInfo" Grid.Row="2" IsVisible="{Binding HasExecutedSearch}" MaxHeight="120"
+                          HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+                <StackPanel Spacing="4">
+                    <TextBlock x:Name="SearchResultCount" Text="{Binding CountSummary}" TextWrapping="Wrap" FontWeight="SemiBold"/>
+                    <StackPanel IsVisible="{Binding HasResults}">
+                        <TextBlock Text="{Binding Status}" IsVisible="{Binding !HasError}" Foreground="#666666" TextWrapping="Wrap"/>
+                    </StackPanel>
+                    <Expander x:Name="SearchIndexingWarnings" Header="Indexing warnings" IsVisible="{Binding HasWarnings}"
+                              IsExpanded="False" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch">
+                        <TextBlock x:Name="SearchIndexingWarningsText" Text="{Binding Warnings}" TextWrapping="Wrap"/>
+                    </Expander>
+                </StackPanel>
+            </ScrollViewer>
+            <Grid Grid.Row="3">
                 <DataGrid x:Name="ResultsGrid" Classes="assetList" AutoGenerateColumns="False" IsReadOnly="True"
                           CanUserResizeColumns="True" GridLinesVisibility="Horizontal"
                           CanUserSortColumns="True" Sorting="OnResultsSorting"
@@ -198,13 +218,7 @@
                               Data="{StaticResource PanelChevronLeftGeometry}"/>
                 </Button>
             </Grid>
-            <Border Grid.Row="2" Background="#FFF2F2" BorderBrush="#D94848" BorderThickness="1"
-                    CornerRadius="4" Padding="8" IsVisible="{Binding HasError}"
-                    VerticalAlignment="Top" Margin="8">
-                <TextBlock x:Name="SearchErrorText" Text="{Binding Error}" ToolTip.Tip="{Binding ErrorDetails}"
-                           Foreground="#9A2020" TextWrapping="Wrap"/>
-            </Border>
-            <WrapPanel Grid.Row="3" Orientation="Horizontal" ItemSpacing="8" LineSpacing="6">
+            <WrapPanel Grid.Row="4" Orientation="Horizontal" ItemSpacing="8" LineSpacing="6">
                 <Button x:Name="RefreshSearchButton" Content="Refresh Search" Command="{Binding RefreshSearchCommand}"/>
                 <Button x:Name="SearchNameSortButton" Content="Sort Name" AutomationProperties.Name="Sort Name"
                         IsVisible="{Binding IsBundleSearch}" IsEnabled="False" Click="OnNameSortClick"/>
