@@ -1,8 +1,18 @@
 # Codex Session Handoff
 
-**Updated:** 2026-10-25
+**Updated:** 2026-10-26
 
-**Current task:** Recovery Checkpoint2.1 — Search defaults/compatibility feedback verified; user-operated Debug acceptance pending. No navigation or issue closure.
+**Current task:** Recovery Checkpoint2.1 — final acceptance gap audit; implemented Windows scenarios pass, remaining evidence/signoff pending. No navigation or issue closure.
+
+### Checkpoint2.1 — final acceptance gap audit (2026-10-26)
+
+- User confirms [Windows run 40259657455](https://github.com/PapayaModding/UABS/actions/runs/40259657455) at `26f38e68511cd6eaf0d0c23b7ce9fac9228aab70` passed Smoke, expanded V2 and fresh V1, including accessible Name sorting. These are real user-confirmed Windows outcomes; this audit's API read returned Forbidden and no artifacts were independently inspected.
+- [Final acceptance audit](v2-recovery-checkpoint-02-1-final-acceptance-gap-audit.md) maps the checklist to passing cases. Mandatory remaining evidence: nontrivial Package order; non-default numeric/type/exclude/flag retention; text before admission/defaulting; metadata-exclusion error feedback; indeterminate-coverage feedback; literal tooltip hover or explicit acceptance of equivalent accessible diagnostic evidence. Existing passing cases are not implementation work to repeat.
+- Full Linux VSTest remains failed/aborted, with an unchanged-baseline reproduction and 184 clean focused passes from the implementation task. Not all first-run failures were proven identical to baseline. Hosted UI jobs do not execute full application xUnit. Record regression-risk disposition rather than claiming the full suite is green or automatically waiving failures.
+- **Next proposed implementation slice:** test-only G2/G3/G4 retention, pre-admission text/defaulting and existing metadata-exclusion feedback using the same complete Smoke fixtures. Separate partial-evidence preparation for G5; manual Package-header and tooltip evidence or separately reviewed accessibility/equivalence decisions for G1/G6. No implementation is performed/authorized by this audit. Checkpoint2.1 and all issue statuses remain open; no Checkpoint3.
+
+The implementation/build records below are historical, not a claim that the
+remaining audit gaps have been exercised.
 
 ### Checkpoint2.1 — final verified checkpoint
 

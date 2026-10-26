@@ -18,16 +18,15 @@ These are user-confirmed previous-run outcomes; this session's API access is
 still Forbidden. Subsequent outcomes are recorded below; source tests/builds
 do not establish UI acceptance for a newer commit.
 
-Latest user-confirmed baseline: [run 40256326602](https://github.com/PapayaModding/UABS/actions/runs/40256326602)
-passed Smoke, V1, and 12 implemented V2 cases. CP21-09 selection retention
-and CP21-10 mixed-format rejection PASS; only CP21-08 Name sorting is BLOCKED.
-This investigation has not independently downloaded or rerun those artifacts.
-See the [Name-sort accessibility proposal](NAME-SORT-ACCESSIBILITY-PROPOSAL.md)
-for the separately approved production option and implementation record. The
-new V2-only standard Button now routes to the existing global Name sort. Its
-updated CP21-08 case requires actual Invoke and focused Enter, exact ascending
-and descending independent Name/Package sequences, and verified visible row
-geometry. It has not yet run on Windows; no checkpoint or separate gap closes.
+Latest user-confirmed baseline: [run 40259657455](https://github.com/PapayaModding/UABS/actions/runs/40259657455)
+at `26f38e68511cd6eaf0d0c23b7ce9fac9228aab70` passed all three jobs:
+Smoke, checkpoint21-v2 and checkpoint21-v1. Implemented CP21-01–CP21-11 checks,
+including Name sorting, now have real Windows evidence. This investigation's
+read-only run API request returned Forbidden; artifacts were not independently
+downloaded or rerun. The [final acceptance gap audit](../../Avalonia/docs/05_audit/v2-recovery-checkpoint-02-1-final-acceptance-gap-audit.md)
+classifies five remaining behavioral coverage gaps, the literal tooltip evidence/
+equivalence decision, regression disposition, deferred work and the next slice.
+No checkpoint or unrelated coverage gap closes merely because these jobs pass.
 
 | Documented requirement | Scenario/case | User-confirmed Windows result before this change | Evidence / remaining validation |
 | --- | --- | --- | --- |
@@ -39,18 +38,19 @@ geometry. It has not yet run on Windows; no checkpoint or separate gap closes.
 | Explicit selectors/text/other criteria survive scope and workspace transitions | CP21-05 | PASS | Toggle/ComboBox readback and all readable Edit/criterion-flag snapshots before/after |
 | Explicit choices survive catalog reload | CP21-06 | PASS | Exact disposable catalog path, native folder Edit Value readback, Refresh Invoke, retained criteria |
 | Explicit Refresh unchanged; editing criteria alone does not rerun | CP21-07 | PASS | Prior row retained, Refresh publishes exact empty result, second Refresh restores Unicode result |
-| Search sorting unchanged | CP21-08 | BLOCKED in baseline; approved button/updated case pending Windows | Button capabilities, both exact visual directions and independently indexed three-bundle oracle. Nontrivial Package sorting remains uncovered |
-| Selection retained including after rejection | CP21-09 | PASS, user-confirmed run 40256326602 | Strict positional bounds, UIA focus and Ctrl+Home/End, exact Inspector identity/retention |
-| Mixed V1/V2 scope rejects rather than guesses | CP21-10 | PASS, user-confirmed run 40256326602 | Fresh bounded UIA reads and exact dialog/catalog identity; actual rejection exercised per reported outcome |
+| Name sorting through the accessible action | CP21-08 | PASS, user-confirmed run 40259657455 | Button Invoke/focused Enter, both exact visual directions and independently indexed three-bundle oracle. Nontrivial Package sorting remains mandatory G1 |
+| Selection retained including after rejection | CP21-09 | PASS, user-confirmed run 40259657455 | Strict positional bounds, UIA focus and Ctrl+Home/End, exact Inspector identity/retention |
+| Mixed V1/V2 scope rejects rather than guesses | CP21-10 | PASS, user-confirmed run 40259657455 | Fresh bounded UIA reads and exact dialog/catalog identity; actual rejection exercised per reported outcome |
 | Fresh V1-only original mixed/Names defaults and Search behavior | separate `checkpoint21-v1`, CP21-11 | PASS | SHA-checked LegacyPackage copy, six-column exact portrait/LegacyPackage/character.ab/1001/memo row and exact count |
 
 The metadata/mixed-exclusion and indeterminate-coverage guidance described in
-the report has no new real-desktop fixture here. Numeric/type filters are
+the report has no real-desktop case here. Numeric/type filters are
 captured for retention but non-default numeric/type values and text entered
 before initial package admission are not newly exercised. These remain gaps;
-do not infer acceptance from headless tests. Sorting/selection post-reload
-identity beyond the explicitly exercised checks also remains subject to the
-actual per-case evidence.
+do not infer acceptance from headless tests. See G1–G6 in the final audit for
+mandatory evidence and explicit classification. Extra post-reload sort/selection
+cross-products and stress variants are optional additional coverage, not silently
+passed cases or newly invented checkpoint gates.
 
 ## Execution and evidence
 
@@ -74,7 +74,7 @@ Legacy metadata is copied from the tracked disposable fixture (three explicit
 files), SHA-checked, and opened only from the run workspace. Embedded historic
 game source paths are metadata; no original Unity source is opened or edited.
 Catalog/mixed-format scenarios use that workspace and the already SHA-verified
-Smoke SQLite copy. Native folder controls, ComboBox selection, header Invoke,
+Smoke SQLite copy. Native folder controls, ComboBox selection, Name-sort Button Invoke,
 and either row SelectionItem or verified keyboard focus require supported UIA capabilities. A missing pattern or
 ambiguous control blocks; there is no coordinate/OCR substitute. Original
 diagnostic tooltips are not assumed to be accessible because the binding exists.

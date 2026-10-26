@@ -48,6 +48,15 @@ Worktree is verified buildable and ready for review/commit as this scoped correc
 
 ## Limits and manual acceptance
 
+**2026-10-26 evidence update:** the user confirms all three jobs in
+[Windows run 40259657455](https://github.com/PapayaModding/UABS/actions/runs/40259657455)
+passed at `26f38e68511cd6eaf0d0c23b7ce9fac9228aab70`. Implemented desktop
+cases are supported, not the entire scope of the promises above. The
+[final acceptance gap audit](v2-recovery-checkpoint-02-1-final-acceptance-gap-audit.md)
+records satisfied requirements, remaining mandatory evidence, deferred/optional
+work and regression limitations. The original checklist below is unchanged;
+neither this update nor green jobs formally accept/close Checkpoint2.1.
+
 Package-field/result-kind membership, source/mixed exclusion scope and incomplete-index policy are still unsupported, not silently reinterpreted. Empty keywords still require the existing keyword/Path ID validation. No SQL, identity, aggregation, cursors, sorting, scrolling, source Inspector, schema/version, memo persistence, V1 behavior or Assets/Packages UI changes. No navigation or Checkpoint 3 implementation. No real OWL/source/package mutation or desktop automation.
 
 User-operated current Debug checklist:
