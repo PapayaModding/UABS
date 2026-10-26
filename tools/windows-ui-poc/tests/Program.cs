@@ -471,11 +471,19 @@ foreach (var invalid in new[] { fixtureVectors.Take(1).ToArray(), new[] { fixtur
 }
 if (args.Length != 0)
 {
-    Check(args.Length == 2 && args[0] == "--package-fixture", "Expected --package-fixture <prepared scenario>.");
+    Check(args.Length == 2 && args[0] is "--package-fixture" or "--indeterminate-fixture", "Expected --package-fixture or --indeterminate-fixture <prepared scenario>.");
     using var fixtureJson = JsonDocument.Parse(File.ReadAllText(args[1]));
-    var metadata = JsonSerializer.Deserialize<PackageSortFixture[]>(fixtureJson.RootElement.GetProperty("packageSortFixtures").GetRawText(), new JsonSerializerOptions { PropertyNameCaseInsensitive = true })!;
-    PackageSortContract.Validate(metadata);
-    Console.WriteLine("PASS: real prepared Alpha/Zeta metadata passes the runner contract (UUID JSON and canonical path round trip).");
+    if (args[0] == "--package-fixture")
+    {
+        var metadata = JsonSerializer.Deserialize<PackageSortFixture[]>(fixtureJson.RootElement.GetProperty("packageSortFixtures").GetRawText(), new JsonSerializerOptions { PropertyNameCaseInsensitive = true })!;
+        PackageSortContract.Validate(metadata);
+        Console.WriteLine("PASS: real prepared Alpha/Zeta metadata passes the runner contract (UUID JSON and canonical path round trip).");
+    }
+    else
+    {
+        IndeterminateContract.Validate(JsonSerializer.Deserialize<IndeterminateFixture[]>(fixtureJson.RootElement.GetProperty("indeterminateFixtures").GetRawText(), new JsonSerializerOptions { PropertyNameCaseInsensitive = true }));
+        Console.WriteLine("PASS: real acknowledged coverage fixture JSON/UUID/path metadata passes the runner contract.");
+    }
 }
 Console.WriteLine("PASS: Package primary/tie oracle, geometry-derived order, active-field state and invalid fixture metadata; independent of Search/comparer/UI enumeration.");
 Check(PackageSortContract.Completed(new("Ascending", "Descending", false), new("Descending", "Ascending", false), false, "Descending",
@@ -493,3 +501,39 @@ for (int missing = 0; missing < 5; missing++)
     try { PackageSortContract.RequireAction(capability[0], capability[1], capability[2], capability[3], capability[4]); throw new Exception("Unsupported Package action accepted."); }
     catch (AccessibilityUnavailable) { }
 }
+
+IndeterminateFixture CoverageVector(bool partial) => new("G5 " + (partial ? "partial" : "complete") + " synthetic metadata",
+    Path.GetFullPath("G5-" + (partial ? "partial" : "complete") + ".uabs.sqlite"), new string('a', 64), Guid.NewGuid(), Guid.NewGuid(),
+    Path.GetFullPath("g5-" + (partial ? "partial" : "complete") + ".metadata.json"), new string('b', 64), Guid.NewGuid(), Guid.NewGuid(), partial);
+IndeterminateFixture[] coverageVectors = [CoverageVector(false), CoverageVector(true)];
+IndeterminateContract.Validate(coverageVectors);
+foreach (var invalid in new IndeterminateFixture[]?[] { null, [], [coverageVectors[0]], [coverageVectors[0], coverageVectors[0]],
+    [coverageVectors[0], coverageVectors[1] with { SourceId = coverageVectors[0].SourceId }],
+    [coverageVectors[0], coverageVectors[1] with { Package = "Smoke" }],
+    [coverageVectors[0], coverageVectors[1] with { SourceSha256 = "bad" }],
+    [coverageVectors[0], coverageVectors[1] with { SourcePath = "relative.metadata.json" }] })
+{
+    try { IndeterminateContract.Validate(invalid); throw new Exception("Invalid G5 fixture admitted."); }
+    catch (AccessibilityUnavailable) { }
+}
+string[] g5Summary = ["1–2 displayed / 2 exact indexed matches"], g5Executed = ["confirmed query"], g5Status = ["No new rows published."];
+IndeterminateContract.Rejection(IndeterminateContract.Corrective, IndeterminateContract.Backend, g5Summary, g5Summary, g5Executed, g5Executed, g5Status);
+foreach (var wrong in new Action[] {
+    () => IndeterminateContract.Rejection("Wrong guidance", IndeterminateContract.Backend, g5Summary, g5Summary, g5Executed, g5Executed, g5Status),
+    () => IndeterminateContract.Rejection(IndeterminateContract.Corrective, "InvalidRequest: indeterminate", g5Summary, g5Summary, g5Executed, g5Executed, g5Status),
+    () => IndeterminateContract.Rejection(IndeterminateContract.Corrective, IndeterminateContract.Backend, g5Summary, ["0 exact"], g5Executed, g5Executed, g5Status),
+    () => IndeterminateContract.Rejection(IndeterminateContract.Corrective, IndeterminateContract.Backend, g5Summary, g5Summary, g5Executed, ["new exclusion query"], g5Status),
+    () => IndeterminateContract.Rejection(IndeterminateContract.Corrective, IndeterminateContract.Backend, g5Summary, g5Summary, g5Executed, g5Executed, ["success"]) })
+{
+    try { wrong(); throw new Exception("Wrong G5 rejection accepted."); } catch (InvalidOperationException) { }
+}
+foreach (var missing in new Action[] {
+    () => IndeterminateContract.Rejection(null, IndeterminateContract.Backend, g5Summary, g5Summary, g5Executed, g5Executed, g5Status),
+    () => IndeterminateContract.Rejection(IndeterminateContract.Corrective, null, g5Summary, g5Summary, g5Executed, g5Executed, g5Status),
+    () => IndeterminateContract.Rejection(IndeterminateContract.Corrective, IndeterminateContract.Backend, [], g5Summary, g5Executed, g5Executed, g5Status),
+    () => IndeterminateContract.Rejection(IndeterminateContract.Corrective, IndeterminateContract.Backend, g5Summary, [g5Summary[0], g5Summary[0]], g5Executed, g5Executed, g5Status),
+    () => IndeterminateContract.Rejection(IndeterminateContract.Corrective, IndeterminateContract.Backend, g5Summary, g5Summary, g5Executed, g5Executed, []) })
+{
+    try { missing(); throw new Exception("Missing/ambiguous G5 evidence accepted."); } catch (AccessibilityUnavailable) { }
+}
+Console.WriteLine("PASS: G5 independent fixture identities, exact corrective/full backend diagnostic, retained confirmed count/query, no publication and strict missing/ambiguous evidence classification.");

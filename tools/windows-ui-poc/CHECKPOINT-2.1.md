@@ -5,6 +5,16 @@ Source of truth: [manual checklist](../../Avalonia/docs/05_audit/v2-recovery-che
 [roadmap](../../Avalonia/docs/05_audit/v2-ui-workflow-recovery-roadmap.md).
 No recovery issue or checkpoint status is changed by this tool document.
 
+**Latest baseline and G5 implementation:** user-confirmed [run 40365210988](https://github.com/PapayaModding/UABS/actions/runs/40365210988)
+at `a1bb77b694545c25e90d5b07b0c894b664d4302f` passed all five jobs, including G1.
+The separate [G5 guide](INDETERMINATE-ACCEPTANCE.md) documents the new sixth
+`checkpoint21-indeterminate` job, explicitly synthetic acknowledged-partial
+metadata fixture, proven headless application admission and strict real UI
+rejection/retention/recovery checks. G5 Windows execution is pending; no G5 PASS
+is inferred from local tests. G6 tooltip equivalence and Linux regression
+disposition remain open. Historical pending-G1 statements below are superseded
+by the user's five-job evidence, not an independent artifact inspection here.
+
 The user confirmed [run 40246911317](https://github.com/PapayaModding/UABS/actions/runs/40246911317)
 at `6991888bd7f8fe7704290f4b3c777b3ec45feedb` passed the original Smoke
 scenario. This establishes hosted desktop feasibility and that scenario's

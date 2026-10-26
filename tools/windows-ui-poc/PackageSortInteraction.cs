@@ -130,7 +130,7 @@ internal static partial class Program
             && fields.TryGetValue("Original indexed source", out var path)
             && Path.GetFullPath(path).Equals(source.OriginalPath, StringComparison.OrdinalIgnoreCase);
     }
-    private static string WaitPackageInspector(string label, ExpectedRow row, PackageSortFixture fixture, string work)
+    private static string WaitPackageInspector(string label, ExpectedRow row, PackageSortFixture fixture, string work, string caseId = "CP21-G1")
     {
         string? actual = null;
         try
@@ -149,7 +149,7 @@ internal static partial class Program
         }
         finally
         {
-            GapReport("CP21-G1-inspector-" + label, new { row, expectedCopy = PackageCopy(work, fixture), fixture.PackageId, fixture.GenerationId,
+            GapReport(caseId + "-inspector-" + label, new { row, expectedCopy = PackageCopy(work, fixture), fixture.PackageId, fixture.GenerationId,
                 expectedSource = fixture.Sources.Single(s => s.Name == row.Name), actual,
                 comparison = SearchAccessibility.ExplainInspector(actual, row, PackageCopy(work, fixture)) });
         }

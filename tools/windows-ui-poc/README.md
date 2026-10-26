@@ -6,6 +6,11 @@ It launches the existing Debug application and uses UI Automation patterns;
 there is no coordinate fallback, listener, service, or production reference.
 It does not establish acceptance of the remaining checkpoint scenarios.
 
+The optional [G5 indeterminate-coverage scenario](INDETERMINATE-ACCEPTANCE.md)
+adds acknowledged synthetic metadata fixtures and real UI rejection/recovery
+checks in a separate hosted job. The five earlier scenarios retain their paths;
+new Windows evidence is required before G5 acceptance.
+
 ## Prerequisites
 
 - Windows with an unlocked interactive desktop reserved for the run; no UAC

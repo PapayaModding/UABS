@@ -7,6 +7,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Remove="package-sort/**/*.cs" />
+    <Compile Remove="indeterminate/**/*.cs" />
     <ProjectReference Include="../../../Avalonia/UABS.PackageV2/UABS.PackageV2.csproj" />
   </ItemGroup>
 </Project>

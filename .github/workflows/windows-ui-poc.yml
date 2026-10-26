@@ -14,7 +14,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        scenario: [smoke, checkpoint21-v2, checkpoint21-v1, checkpoint21-gaps, checkpoint21-package-sort]
+        scenario: [smoke, checkpoint21-v2, checkpoint21-v1, checkpoint21-gaps, checkpoint21-package-sort, checkpoint21-indeterminate]
     timeout-minutes: 15
     defaults:
       run:
@@ -58,7 +58,7 @@ jobs:
           dotnet build tools/windows-ui-poc/WindowsUiPoc.csproj -c Release --nologo
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Prepare disposable fully indexed Smoke package and independent oracle
-        if: matrix.scenario != 'checkpoint21-package-sort'
+        if: matrix.scenario != 'checkpoint21-package-sort' && matrix.scenario != 'checkpoint21-indeterminate'
         run: |
           dotnet run --project tools/windows-ui-poc/ci/PrepareSmoke.csproj -- `
             "$env:GITHUB_WORKSPACE" `
@@ -74,6 +74,16 @@ jobs:
             "$env:GITHUB_SHA"
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           python tools/windows-ui-poc/tests/test_package_sort_fixture.py --repository "$env:GITHUB_WORKSPACE" --prepared "$env:GITHUB_WORKSPACE/tools/windows-ui-poc/artifacts/ci/prepared"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Prepare acknowledged synthetic indeterminate-coverage packages
+        if: matrix.scenario == 'checkpoint21-indeterminate'
+        run: |
+          dotnet run --project tools/windows-ui-poc/ci/indeterminate/PrepareIndeterminate.csproj -- `
+            "$env:GITHUB_WORKSPACE" `
+            "$env:GITHUB_WORKSPACE/tools/windows-ui-poc/artifacts/ci/prepared" `
+            "$env:GITHUB_SHA"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python tools/windows-ui-poc/tests/test_indeterminate_fixture.py --prepared "$env:GITHUB_WORKSPACE/tools/windows-ui-poc/artifacts/ci/prepared"
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Exercise real Windows FlaUI Smoke Search
         env:

@@ -13,5 +13,6 @@
     <Compile Include="../CriteriaContract.cs" Link="CriteriaContract.cs" />
     <Compile Include="../RetainedResultsContract.cs" Link="RetainedResultsContract.cs" />
     <Compile Include="../PackageSortContract.cs" Link="PackageSortContract.cs" />
+    <Compile Include="../IndeterminateContract.cs" Link="IndeterminateContract.cs" />
   </ItemGroup>
 </Project>

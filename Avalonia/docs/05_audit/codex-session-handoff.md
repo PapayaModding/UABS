@@ -2,7 +2,14 @@
 
 **Updated:** 2026-10-26
 
-**Current task:** Recovery Checkpoint2.1 — approved Package button and isolated two-package acceptance implementation; Windows verification pending. No navigation or issue closure.
+**Current task:** Recovery Checkpoint2.1 — G5 acknowledged-partial acceptance implementation; Windows verification pending. No navigation or issue closure.
+
+### Checkpoint2.1 — G5 implementation, Windows pending
+
+- User confirms [run 40365210988](https://github.com/PapayaModding/UABS/actions/runs/40365210988) at `a1bb77b694545c25e90d5b07b0c894b664d4302f` passed all five prior jobs, including G1. This supersedes historical pending G1 statements below; it is not a new artifact inspection.
+- [G5 guide](../../../tools/windows-ui-poc/INDETERMINATE-ACCEPTANCE.md): two independent, explicitly synthetic IV2MetadataExtractor/PackageBuilder packages (complete and verified eligible partial bundle metadata), explicit partial acknowledgement, raw SQLite/provenance/hash/UUID validation. No post-admission mutation, fake Unity extraction, published Smoke changes or production changes.
+- Actual catalog/Search view composition admits and exercises the fixture in headless tests; native Windows UI admission/rejection still requires the isolated sixth job. G5 asserts full backend/corrective feedback, retained complete row set/count/confirmed criteria and exact Inspector identity, plus both recovery paths. Original five scenario paths remain intact.
+- Local focused tests: 122/122; independent fixture and runner contracts passed. G5 desktop acceptance, G6 tooltip equivalence and Linux regression disposition remain open. Do not close Checkpoint2.1 or begin Checkpoint3.
 
 ### Checkpoint2.1 — approved G1 implementation (Windows pending)
 

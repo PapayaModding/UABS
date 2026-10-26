@@ -6,3 +6,4 @@ artifacts/
 !tests/EvidenceChecks.csproj
 !ci/PrepareSmoke.csproj
 !ci/package-sort/PreparePackageSort.csproj
+!ci/indeterminate/PrepareIndeterminate.csproj
