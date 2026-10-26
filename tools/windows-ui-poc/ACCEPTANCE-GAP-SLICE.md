@@ -1,8 +1,13 @@
 # Checkpoint 2.1 G2/G3/G4 test-only slice
 
 Authority: [final acceptance-gap audit](../../Avalonia/docs/05_audit/v2-recovery-checkpoint-02-1-final-acceptance-gap-audit.md)
-at `cd2e01e8e2b504b49319e51d2a42158bec41302b`. Implementation is present;
-**Windows execution is pending**, not acceptance or checkpoint closure.
+at `cd2e01e8e2b504b49319e51d2a42158bec41302b`. The user confirms
+[run 40338427998](https://github.com/PapayaModding/UABS/actions/runs/40338427998)
+at `7343b139c20795a4dbc66928663db10987dc97df` passed all four jobs, including
+G2/G3/G4. These are user-confirmed Windows results, not a new artifact inspection.
+Failure/pending-run statements below preserve earlier revisions' investigation;
+this latest result supersedes them for these executed cases, not for checkpoint
+closure or the remaining Package/coverage/tooltip/Linux obligations.
 
 The manual-only Windows workflow adds one independent `checkpoint21-gaps` matrix
 job. Existing `smoke`, `checkpoint21-v2` and `checkpoint21-v1` paths/assertions
@@ -177,5 +182,7 @@ older SHA is not proof of this slice. STOP at BLOCKED evidence; further producti
 accessibility changes or relaxed identity assertions need separate approval.
 
 Remaining open: **G1 Package sorting, G5 indeterminate coverage, G6 tooltip-hover/
-HelpText equivalence, Linux full-suite regression disposition**, and actual Windows
-validation of G2/G3/G4. Checkpoint 2.1 remains open; no Checkpoint 3 work.
+HelpText equivalence and Linux full-suite regression disposition**. See the
+[separate Package proposal](PACKAGE-SORT-ACCESSIBILITY-PROPOSAL.md) for its approval
+boundary. G2/G3/G4 have the user-confirmed Windows evidence recorded above.
+Checkpoint 2.1 remains open; no Checkpoint 3 work.

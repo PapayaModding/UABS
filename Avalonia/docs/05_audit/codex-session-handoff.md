@@ -2,7 +2,13 @@
 
 **Updated:** 2026-10-26
 
-**Current task:** Recovery Checkpoint2.1 — test-only G2 stale retained-result evidence correction; updated Windows retention run pending. No navigation or issue closure.
+**Current task:** Recovery Checkpoint2.1 — Package sorting accessibility/fixture proposal; separate production approval required. No navigation or issue closure.
+
+### Checkpoint2.1 — G1 Package sorting investigation/proposal
+
+- User confirms [run 40338427998](https://github.com/PapayaModding/UABS/actions/runs/40338427998) at `7343b139c20795a4dbc66928663db10987dc97df` passed all four jobs, including G2/G3/G4. Those cases need no new workaround or duplicated implementation. No independent artifact inspection/new Windows execution is claimed by this investigation.
+- [Package-sort proposal](../../../tools/windows-ui-poc/PACKAGE-SORT-ACCESSIBILITY-PROPOSAL.md) records current shared global sort routing, absent Package-header Invoke/keyboard route, and the Name Button's Name-only action. A headless real-header capability regression verifies the source-level limitation; G1 remains BLOCKED. Proposed V2-only standard Sort Package button must share existing guards/direction/selection restoration and needs separate production approval. No production, runner, fixture preparation or workflow changes implement it here.
+- Minimum future fixture: two independently built packages using the three verified Smoke bundles (Alpha has 0001/0002; Zeta has 0000). Source-path ties stay ascending in both directions; only primary Package order reverses. Explicit future oracle and raw-metadata/hash/UUID validation preconditions are documented, not fabricated as an already generated fixture. New Windows coverage is required after approval/implementation. G5, G6, Linux regression disposition and Checkpoint2.1 remain open; no Checkpoint3.
 
 ### Checkpoint2.1 — G2 retained stale-result evidence correction
 

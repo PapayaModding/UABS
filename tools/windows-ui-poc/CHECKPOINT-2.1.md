@@ -28,6 +28,20 @@ classifies five remaining behavioral coverage gaps, the literal tooltip evidence
 equivalence decision, regression disposition, deferred work and the next slice.
 No checkpoint or unrelated coverage gap closes merely because these jobs pass.
 
+**Latest user-confirmed execution:** [run 40338427998](https://github.com/PapayaModding/UABS/actions/runs/40338427998)
+at `7343b139c20795a4dbc66928663db10987dc97df` passed all four jobs, including
+the complete G2/G3/G4 slice. These are user-confirmed Windows results, not a
+new artifact inspection. The historical gap investigation below is superseded
+for those executed cases, not for remaining G1/G5/G6/Linux obligations.
+
+G1 Package sorting still has no supported coordinate-free action: the Package
+header lacks Invoke/keyboard sort and the Name Button targets Name only. The
+[Package accessibility/fixture proposal](PACKAGE-SORT-ACCESSIBILITY-PROPOSAL.md)
+documents the smallest new Button approval scope, a three-row/two-package fixture
+and an independent oracle whose descending order retains ascending tie-breakers.
+No Package action, fixture, workflow or production change is implemented here.
+Separate production approval is required before the automated G1 test can proceed.
+
 ## Next test-only G2/G3/G4 slice — implemented, Windows pending
 
 The additive `checkpoint21-gaps` job and [slice/evidence guide](ACCEPTANCE-GAP-SLICE.md)
