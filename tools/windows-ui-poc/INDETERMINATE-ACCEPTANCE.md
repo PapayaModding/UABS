@@ -9,6 +9,60 @@ The user confirms all five jobs in [run 40365210988](https://github.com/PapayaMo
 passed at `a1bb77b694545c25e90d5b07b0c894b664d4302f`, including G1 Package sorting.
 That is the preserved Windows baseline, not evidence for the new G5 job.
 
+## Hash preflight correction — 2026-10-26 (Windows rerun required)
+
+The user reports [run 40369214549](https://github.com/PapayaModding/UABS/actions/runs/40369214549)
+at `606a5e0e22e86129d7c4a3303701d59e920a30f5` passed the five existing jobs
+but G5 stopped at `Invalid prepared G5 database/source hashes`, before UI
+execution. The artifact API returned Forbidden here; the Windows artifact's
+individual digest values were not downloaded or independently inspected.
+
+Source inspection and reproduction with real prepared files prove a test-runner
+representation bug, requiring no mutation hypothesis: `Program.Hash` returns
+uppercase Convert.ToHexString output, while the G5 builder records lowercase.
+The shared initial package check uses OrdinalIgnoreCase, but G5 incorrectly used
+case-sensitive `==` for original/source/copy verification. Its first guard also
+short-circuited on the first mismatching database, hiding the other comparisons.
+
+With the retained locally prepared fixture, all four files fail the old string
+comparison yet have identical digest bytes: `G5-complete.uabs.sqlite`,
+`inputs/g5-complete.metadata.json`, `G5-partial.uabs.sqlite` and
+`inputs/g5-partial.metadata.json`. For example the complete metadata's expected
+digest is `2e0f103161f9bedd2c989df07a4b477cbbdb8ae28ec130241954434d15863d4e`;
+the runner reports the exact same hex digits in uppercase. These are local
+reproduction findings, not invented Windows artifact values.
+
+The G5-only correction requires two valid 64-hex strings and compares them with
+OrdinalIgnoreCase. It changes no source bytes, expected hashes, preparer,
+PackageBuilder contract, SQLite configuration or Search/UI assertions. Actual
+digest differences, missing/malformed hashes and unreadable files remain BLOCKED.
+Cleanup cannot promote unavailable G5 evidence to PASS or overwrite a prior FAIL.
+Canonical identity/path, closed/unlinked-file and sidecar guards remain in place.
+The five existing runner paths and the shared Hash implementation are unchanged.
+
+Before asserting, the runner records every file independently: expected/observed
+SHA in its original representation, package/generation/source UUIDs, role, path,
+phase, match and read error. Evidence files are `CP21-G5-hashes-before-copy.json`
+(both original databases and metadata files), `CP21-G5-hashes-after-copy.json`
+(also both copied databases), and `CP21-G5-hashes-verify.json`. All observations
+also remain in results.json steps. One mismatch/read failure does not hide later
+files. These existing run-root JSON paths are already uploaded on failure.
+
+The builder closes admission/read-only SQLite readers before recording DB hashes;
+the preparer then opens SQLite read-only with pooling disabled and rechecks hashes.
+The independent Python regression now explicitly hashes all four files before and
+after real read-only SQLite validation: unchanged. Focused application tests also
+verify hashes after actual catalog admission and Search rejection/recovery. This
+rules out mutation as necessary to reproduce this blocker, not every possible
+future external file change. No Windows mutation claim is made without evidence.
+
+Validation: 51/51 focused G5/bundle backend tests, four independent Python fixture
+tests and runner contracts passed, including mixed-case digests, changed/invalid
+digests, unavailable reads, continued diagnostics and copy checks. Release Windows
+cross-build and workflow actionlint passed. New Windows execution must still prove
+G5 preflight, native admission and every subsequent acceptance case. Checkpoint
+2.1, G6 tooltip equivalence and Linux regression disposition remain open.
+
 ## Investigation and fixture
 
 `PartialEligibleBundle_BlocksWholeScope_NoSilentSkippingOrFalseExactCount`

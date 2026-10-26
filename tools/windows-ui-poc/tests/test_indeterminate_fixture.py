@@ -52,6 +52,12 @@ def validate(config):
 
 
 class CoverageFixtureTests(unittest.TestCase):
+    def test_readonly_sqlite_validation_preserves_all_four_file_hashes(self):
+        paths = [Path(f[key]) for f in CONFIG['indeterminateFixtures'] for key in ('path', 'sourcePath')]
+        before = [digest(path) for path in paths]
+        validate(CONFIG)  # Opens both real databases with mode=ro and runs raw metadata queries.
+        self.assertEqual(before, [digest(path) for path in paths])
+
     def test_raw_eligible_partial_and_complete_contract(self):
         validate(CONFIG)
 

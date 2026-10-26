@@ -259,6 +259,8 @@ internal static partial class Program
                 if (config?.Acceptance == "checkpoint21-package-sort" && PackageCopiesPrepared) VerifyPackageFiles(config, Path.Combine(Output, "work"));
                 if (config?.Acceptance == "checkpoint21-indeterminate" && IndeterminateCopiesPrepared) VerifyCoverageFiles(config, Path.Combine(Output, "work"));
             }
+            catch (AccessibilityUnavailable error) when (config?.Acceptance == "checkpoint21-indeterminate")
+            { if (status != "FAIL") status = "BLOCKED"; detail += " Cannot verify G5 fixture hashes: " + error.Message; }
             catch (Exception error) { status = "FAIL"; detail += " Cannot verify original package: " + error.Message; }
             Automation?.Dispose();
             File.WriteAllText(Path.Combine(Output, "results.json"), JsonSerializer.Serialize(new { status, detail, steps = Steps, completedUtc = DateTime.UtcNow }, Json));

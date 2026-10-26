@@ -481,7 +481,19 @@ if (args.Length != 0)
     }
     else
     {
-        IndeterminateContract.Validate(JsonSerializer.Deserialize<IndeterminateFixture[]>(fixtureJson.RootElement.GetProperty("indeterminateFixtures").GetRawText(), new JsonSerializerOptions { PropertyNameCaseInsensitive = true }));
+        var coverage = JsonSerializer.Deserialize<IndeterminateFixture[]>(fixtureJson.RootElement.GetProperty("indeterminateFixtures").GetRawText(), new JsonSerializerOptions { PropertyNameCaseInsensitive = true })!;
+        IndeterminateContract.Validate(coverage);
+        // Identical to the real runner's Hash expression, deliberately uppercase.
+        string RunnerHash(string path) => Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(File.ReadAllBytes(path)));
+        var beforeReads = IndeterminateContract.ObserveHashes(coverage, "before-readonly-validation", RunnerHash);
+        IndeterminateContract.RequireHashes(beforeReads);
+        Check(beforeReads.Length == 4 && beforeReads.All(o => o.Matches) && beforeReads.Any(o => o.Expected != o.Observed), "Actual lowercase-prepared/uppercase-runner defect was not reproduced.");
+        Console.WriteLine(JsonSerializer.Serialize(beforeReads));
+        // Optional fixture mode performs only reads, then verifies no file digest changed.
+        foreach (var f in coverage) { using var input = File.OpenRead(f.SourcePath); using var database = File.OpenRead(f.Path); }
+        var afterReads = IndeterminateContract.ObserveHashes(coverage, "after-readonly-validation", RunnerHash);
+        Check(beforeReads.Select(o => o.Observed).SequenceEqual(afterReads.Select(o => o.Observed)), "Read-only validation changed prepared bytes.");
+        IndeterminateContract.RequireHashes(afterReads);
         Console.WriteLine("PASS: real acknowledged coverage fixture JSON/UUID/path metadata passes the runner contract.");
     }
 }
@@ -537,3 +549,32 @@ foreach (var missing in new Action[] {
     try { missing(); throw new Exception("Missing/ambiguous G5 evidence accepted."); } catch (AccessibilityUnavailable) { }
 }
 Console.WriteLine("PASS: G5 independent fixture identities, exact corrective/full backend diagnostic, retained confirmed count/query, no publication and strict missing/ambiguous evidence classification.");
+
+const string abcSha = "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad";
+Check(IndeterminateContract.HashMatches(abcSha, abcSha.ToUpperInvariant()), "SHA hex letter case must not change digest identity.");
+Check(IndeterminateContract.HashMatches(abcSha.ToUpperInvariant(), abcSha), "Expected uppercase SHA rejected.");
+Check(IndeterminateContract.HashMatches(abcSha, "Ba7816BF" + abcSha[8..]), "Mixed hex case rejected.");
+foreach (string? wrong in new[] { null, "", "abc", new string('g', 64), abcSha[..63] + "0", " " + abcSha, abcSha + "\n" })
+    Check(!IndeterminateContract.HashMatches(abcSha, wrong), "Unavailable/malformed/changed digest accepted.");
+Check(!IndeterminateContract.HashMatches("junk", "junk"), "Equal invalid strings are not verified hashes.");
+var unavailableHashes = IndeterminateContract.ObserveHashes(coverageVectors, "regression-unavailable", path => {
+    if (path == coverageVectors[0].Path) throw new IOException("locked database");
+    if (path == coverageVectors[0].SourcePath) throw new UnauthorizedAccessException("unreadable metadata");
+    return path == coverageVectors[1].Path ? new string('c', 64) : coverageVectors[1].SourceSha256.ToUpperInvariant();
+});
+Check(unavailableHashes.Length == 4 && unavailableHashes.Count(o => o.Error != null) == 2 && unavailableHashes.Count(o => o.Matches) == 1,
+    "One bad file must not hide later mismatches or successful reads.");
+try { IndeterminateContract.RequireHashes(unavailableHashes); throw new Exception("Bad hash evidence was not BLOCKED."); }
+catch (AccessibilityUnavailable error) { Check(error.Message.Contains("locked database") && error.Message.Contains("unreadable metadata") && error.Message.Contains(coverageVectors[1].Path), "Per-file failed evidence missing."); }
+using (var hashJson = JsonDocument.Parse(JsonSerializer.Serialize(unavailableHashes)))
+{
+    var first = hashJson.RootElement[0];
+    Check(first.GetProperty("Expected").GetString() == coverageVectors[0].Sha256 && first.GetProperty("Observed").ValueKind == JsonValueKind.Null
+        && first.GetProperty("PackageId").GetGuid() == coverageVectors[0].PackageId && first.GetProperty("Phase").GetString() == "regression-unavailable",
+        "Missing expected/observed/fixture/phase diagnostics.");
+}
+var copiedHashes = IndeterminateContract.ObserveHashes(coverageVectors, "regression-copies", path =>
+    path.EndsWith(".sqlite", StringComparison.Ordinal) ? new string('a', 64) : new string('b', 64), Path.GetFullPath("copied-unit-fixtures"));
+Check(copiedHashes.Length == 6 && copiedHashes.Count(o => o.Role == "disposable-database") == 2, "Both copied databases must also be verified.");
+IndeterminateContract.RequireHashes(copiedHashes);
+Console.WriteLine("PASS: strict 64-hex SHA identity ignores representation case only; all originals/sources/copies and unavailable/mismatch diagnostics remain strict.");

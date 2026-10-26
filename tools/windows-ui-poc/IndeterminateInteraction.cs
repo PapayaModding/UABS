@@ -8,7 +8,7 @@ internal static partial class Program
     {
         IndeterminateContract.Validate(config.IndeterminateFixtures);
         var fixtures = config.IndeterminateFixtures!; var complete = fixtures.Single(f => !f.Partial);
-        Require(config.Keyword == IndeterminateContract.Keyword && config.Package == complete.Path && config.PackageSha256 == complete.Sha256,
+        Require(config.Keyword == IndeterminateContract.Keyword && config.Package == complete.Path && IndeterminateContract.HashMatches(config.PackageSha256, complete.Sha256),
             "G5 primary baseline does not match the verified complete fixture.");
         Require(config.ExpectedRows.SequenceEqual(new[] { IndeterminateContract.Row(complete) }), "G5 complete baseline oracle differs.");
         return fixtures;
@@ -16,23 +16,29 @@ internal static partial class Program
     private static string CoverageCopy(string work, IndeterminateFixture f) => Path.Combine(work, Path.GetFileName(f.Path));
     private static void VerifyCoverageFiles(Scenario config, string work)
     {
-        foreach (var f in CoverageFixtures(config))
-        {
-            Check(Hash(f.Path) == f.Sha256 && Hash(CoverageCopy(work, f)) == f.Sha256, "G5 original/disposable database changed.");
-            Check(Hash(f.SourcePath) == f.SourceSha256, "G5 synthetic source provenance changed.");
-        }
+        var observations = IndeterminateContract.ObserveHashes(CoverageFixtures(config), "verify-originals-sources-and-copies", Hash, work);
+        GapReport("CP21-G5-hashes-verify", observations);
+        IndeterminateContract.RequireHashes(observations);
     }
     private static void PrepareCoverageCopies(Scenario config, string work)
     {
-        foreach (var f in CoverageFixtures(config))
+        var fixtures = CoverageFixtures(config);
+        foreach (var f in fixtures)
         {
             Require(File.Exists(f.Path) && File.Exists(f.SourcePath)
                 && (File.GetAttributes(f.Path) & FileAttributes.ReparsePoint) == 0 && (File.GetAttributes(f.SourcePath) & FileAttributes.ReparsePoint) == 0
                 && !File.Exists(f.Path + "-wal") && !File.Exists(f.Path + "-shm"), "G5 fixture must be closed and unlinked.");
-            Require(Hash(f.Path) == f.Sha256 && Hash(f.SourcePath) == f.SourceSha256, "Invalid prepared G5 database/source hashes.");
-            string copy = CoverageCopy(work, f); if (!File.Exists(copy)) File.Copy(f.Path, copy);
-            Require(Hash(copy) == f.Sha256, "G5 disposable copy hash differs.");
         }
+        var originals = IndeterminateContract.ObserveHashes(fixtures, "preflight-before-copy", Hash);
+        GapReport("CP21-G5-hashes-before-copy", originals);
+        IndeterminateContract.RequireHashes(originals);
+        foreach (var f in fixtures)
+        {
+            string copy = CoverageCopy(work, f); if (!File.Exists(copy)) File.Copy(f.Path, copy);
+        }
+        var copies = IndeterminateContract.ObserveHashes(fixtures, "preflight-after-copy", Hash, work);
+        GapReport("CP21-G5-hashes-after-copy", copies);
+        IndeterminateContract.RequireHashes(copies);
         IndeterminateCopiesPrepared = true; GapReport("CP21-G5-fixtures", CoverageFixtures(config));
     }
     private static AutomationElement CoverageScope(Scenario config, string work, bool partial)
