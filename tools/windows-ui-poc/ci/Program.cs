@@ -3,6 +3,7 @@ using System.Text.Json;
 using Microsoft.Data.Sqlite;
 using UABS.PackageV2;
 using UABS.UnityAssets.Metadata;
+using UABS.UnityAssets.Packages;
 
 // Preparation only: real AssetsTools metadata extraction, no synthetic records,
 // no Search backend calls, and no fixture publication.
@@ -62,6 +63,7 @@ if (package.Info.IndexStatus != "complete" || package.Info.Sources != 3 || packa
 
 var witnesses = new List<object>();
 var observedNames = new HashSet<string>(StringComparer.Ordinal);
+var sortNames = new HashSet<string>(StringComparer.Ordinal);
 using (var sql = new SqliteConnection(new SqliteConnectionStringBuilder {
     DataSource = database, Mode = SqliteOpenMode.ReadOnly, Pooling = false }.ToString()))
 {
@@ -85,19 +87,34 @@ using (var sql = new SqliteConnection(new SqliteConnectionStringBuilder {
         command.CommandText = "SELECT s.original_name, a.name FROM asset a JOIN logical_file f ON f.file_id=a.file_id JOIN source s ON s.source_id=f.source_id WHERE a.name IS NOT NULL";
         using var rows = command.ExecuteReader();
         while (rows.Read())
+        {
+            if (rows.GetString(1).Contains("asset", StringComparison.OrdinalIgnoreCase)) sortNames.Add(rows.GetString(0));
             if (rows.GetString(1).Contains(keyword, StringComparison.OrdinalIgnoreCase))
             { observedNames.Add(rows.GetString(0)); witnesses.Add(new { bundle = rows.GetString(0), assetName = rows.GetString(1) }); }
+        }
     }
 }
 if (!observedNames.Order().SequenceEqual(expectedNames))
     throw new InvalidDataException("Raw indexed Unicode witnesses disagree with independently fixed expected bundle results.");
+string[] expectedSortNames = ["uabs-smoke-0000.bundle", "uabs-smoke-0001.bundle", "uabs-smoke-0002.bundle"];
+if (!sortNames.Order().SequenceEqual(expectedSortNames)) throw new InvalidDataException("Independent multirow sort oracle differs.");
 foreach (string path in sourcePaths)
     if (!Hash(path).Equals(sourceHashes[Path.GetFileName(path)], StringComparison.OrdinalIgnoreCase))
         throw new InvalidDataException("Published fixture changed during preparation.");
 var expectedRows = expectedNames.Select(name => new { name, package = "Smoke" }).ToArray();
-Write("preparation.json", new { commit, keyword, manifestSha256 = Hash(manifestPath), sourceHashes, package.Info, witnesses, expectedRows });
+var expectedSortRows = expectedSortNames.Select(name => new { name, package = "Smoke" }).ToArray();
+string legacyRoot = Path.Combine(repository, "Avalonia/UABS.UnityAssets.Tests/Fixtures/LegacyPackage");
+var legacy = await new PackageService().LoadAsync(legacyRoot);
+var legacyMatches = legacy.Bundles.SelectMany(bundle => bundle.AssetInfos.Select(asset => new { bundle.Name, asset }))
+    .Where(row => row.asset.Name == "portrait").ToArray();
+if (legacyMatches.Length != 1 || legacyMatches[0].Name != "character.ab"
+    || legacyMatches[0].asset.PathId != 1001 || legacyMatches[0].asset.Memo != "legacy memo")
+    throw new InvalidDataException("Independent legacy fixture expectation changed.");
+var legacyHashes = new[] { "Validation.txt", "index.json", "nested/index.json" }.ToDictionary(file => file, file => Hash(Path.Combine(legacyRoot, file)));
+Write("preparation.json", new { commit, keyword, manifestSha256 = Hash(manifestPath), sourceHashes, package.Info, witnesses, expectedRows,
+    sortKeyword = "asset", expectedSortRows, legacyHashes, legacyMatches });
 Write("scenario.local.json", new { repository, expectedCommit = commit, package = database,
-    packageSha256 = Hash(database), keyword, expectedRows });
+    packageSha256 = Hash(database), keyword, expectedRows, expectedSortRows });
 Console.WriteLine($"Prepared fully indexed Smoke package: {package.Info.Assets} assets; Unicode query expects {expectedRows.Length} bundle.");
 
 static string Hash(string path)

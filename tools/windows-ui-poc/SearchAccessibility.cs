@@ -7,7 +7,13 @@ internal sealed record FieldVerdict(string Status, string Reason);
 
 internal static class SearchAccessibility
 {
-    internal static FieldVerdict VerifyField(string? value, string?[]? selectedNames, string[]? collapsedTexts)
+    internal static string AggregateAcceptance(IEnumerable<string> statuses)
+    {
+        var observed = statuses.ToArray();
+        return observed.Contains("FAIL") ? "FAIL"
+            : observed.Length == 0 || observed.Any(status => status != "PASS") ? "BLOCKED" : "PASS";
+    }
+    internal static FieldVerdict VerifyField(string? value, string?[]? selectedNames, string[]? collapsedTexts, string expected = "Assets")
     {
         string[] known = ["All", "Names", "Paths", "CabCodes", "Assets", "Dependencies"];
         if (selectedNames is { Length: > 1 })
@@ -22,8 +28,8 @@ internal static class SearchAccessibility
         string? observed = strong.SingleOrDefault() ?? display;
         if (observed is null)
             return new("BLOCKED", "No unique supported field value/selection or collapsed display text could be established.");
-        return observed == "Assets" ? new("PASS", "Observed Assets through UI Automation.")
-            : new("FAIL", "Untouched field selection is " + observed + "; expected Assets.");
+        return observed == expected ? new("PASS", "Observed " + expected + " through UI Automation.")
+            : new("FAIL", "Field selection is " + observed + "; expected " + expected + ".");
     }
 
     // The visible header/cell child order is the column order in this fresh,

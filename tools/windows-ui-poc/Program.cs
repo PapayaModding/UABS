@@ -8,10 +8,11 @@ using FlaUI.Core.Definitions;
 using FlaUI.UIA3;
 
 internal sealed record Scenario(string Repository, string ExpectedCommit, string Package,
-    string PackageSha256, string Keyword, ExpectedRow[] ExpectedRows);
+    string PackageSha256, string Keyword, ExpectedRow[] ExpectedRows,
+    string? Acceptance = null, ExpectedRow[]? ExpectedSortRows = null);
 internal sealed class Blocked(string message) : Exception(message);
 
-internal static class Program
+internal static partial class Program
 {
     private static readonly JsonSerializerOptions Json = new() { PropertyNameCaseInsensitive = true, WriteIndented = true };
     private static readonly List<object> Steps = [];
@@ -34,6 +35,7 @@ internal static class Program
         {
             Require(OperatingSystem.IsWindows() && Environment.UserInteractive, "Requires interactive Windows desktop.");
             config = JsonSerializer.Deserialize<Scenario>(File.ReadAllText(args[0]), Json) ?? throw new Blocked("Invalid scenario JSON.");
+            Require(config.Acceptance is null or "checkpoint21-v2" or "checkpoint21-v1", "Unknown acceptance scenario.");
             Require(Git(config.Repository, "branch", "--show-current") == "v2-recovery", "Repository must be on v2-recovery.");
             string remote = Git(config.Repository, "remote", "get-url", "origin").TrimEnd('/');
             Require(remote is "https://github.com/PapayaModding/UABS.git" or "https://github.com/PapayaModding/UABS" or "git@github.com:PapayaModding/UABS.git", "Unexpected origin repository.");
@@ -60,6 +62,13 @@ internal static class Program
             var attached = FlaUI.Core.Application.Attach(App.Id);
             Wait("main window", () => (Window = attached.GetMainWindow(Automation, TimeSpan.FromSeconds(1))) != null);
             Evidence("initial");
+            if (config.Acceptance == "checkpoint21-v1")
+            {
+                stage = "Checkpoint 2.1 V1";
+                status = RunFreshV1(config, work);
+                detail = "Checkpoint 2.1 V1 checks; see acceptance.json. Checkpoint remains open.";
+                goto ScenarioFinished;
+            }
             stage = "open package";
             Select(Find(Window!, ControlType.TabItem, "Packages"));
             Evidence("packages-before-open");
@@ -181,6 +190,13 @@ internal static class Program
                 .SequenceEqual(config.ExpectedRows.OrderBy(r => r.Name).ThenBy(r => r.Package)), "Bundle Name/Package results differ from expectedRows.");
             Evidence("final");
             status = "PASS"; detail = "One real Windows V2 Search default scenario exercised; full Checkpoint 2.1 acceptance remains pending.";
+            if (config.Acceptance == "checkpoint21-v2")
+            {
+                stage = "Checkpoint 2.1 V2";
+                status = RunCheckpoint21(config, work);
+                detail = "Checkpoint 2.1 V2 checks; see acceptance.json. Checkpoint remains open.";
+            }
+        ScenarioFinished:;
         }
         catch (Exception exception)
         {
@@ -278,7 +294,7 @@ internal static class Program
         return SearchAccessibility.CompleteRows(headers, cells, summaries[0]);
     }
 
-    private static void VerifyFieldSelection(AutomationElement fields)
+    private static void VerifyFieldSelection(AutomationElement fields, string expected = "Assets")
     {
         // Evidence reads never mutate or expand the ComboBox. An unavailable read
         // cannot count as Assets; only a usable, unambiguous representation can.
@@ -292,7 +308,7 @@ internal static class Program
             .Where(item => !item.IsOffscreen).Select(item => item.Name).ToArray());
         var verdict = SearchAccessibility.VerifyField(valueSupported is true ? value as string : null,
             selectionSupported is true && selection is object?[] selected ? selected.Select(item => item as string).ToArray() : null,
-            expansion is "Collapsed" ? text as string[] : null);
+            expansion is "Collapsed" ? text as string[] : null, expected);
         var evidence = new { valueSupported, value, selectionSupported, selection, expansion, visibleText = text, verdict };
         Step("field selector UIA evidence", evidence);
         File.WriteAllText(Path.Combine(Output, "field-selection.json"), JsonSerializer.Serialize(evidence, Json));

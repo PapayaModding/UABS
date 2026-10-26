@@ -10,6 +10,11 @@ jobs:
   smoke-search:
     if: github.repository == 'PapayaModding/UABS' && github.ref == 'refs/heads/v2-recovery'
     runs-on: windows-latest
+    name: ${{ matrix.scenario }}
+    strategy:
+      fail-fast: false
+      matrix:
+        scenario: [smoke, checkpoint21-v2, checkpoint21-v1]
     timeout-minutes: 15
     defaults:
       run:
@@ -35,6 +40,7 @@ jobs:
             sessionId = [Diagnostics.Process]::GetCurrentProcess().SessionId
             sessionName = $env:SESSIONNAME; os = [Environment]::OSVersion.ToString()
             runUrl = "https://github.com/$env:GITHUB_REPOSITORY/actions/runs/$env:GITHUB_RUN_ID"
+            scenario = '${{ matrix.scenario }}'
           } | ConvertTo-Json | Set-Content tools/windows-ui-poc/artifacts/ci/environment.json -Encoding utf8NoBOM
           Write-Host "Testing exact workflow commit $head; interactive=$([Environment]::UserInteractive)"
       - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4
@@ -59,16 +65,28 @@ jobs:
             "$env:GITHUB_SHA"
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Exercise real Windows FlaUI Smoke Search
+        env:
+          UI_SCENARIO: ${{ matrix.scenario }}
         run: |
+          $scenario = 'tools/windows-ui-poc/artifacts/ci/prepared/scenario.local.json'
+          $timeout = 180
+          if ($env:UI_SCENARIO -ne 'smoke') {
+            $configuration = Get-Content $scenario -Raw | ConvertFrom-Json -AsHashtable
+            $configuration['acceptance'] = $env:UI_SCENARIO
+            $scenario = 'tools/windows-ui-poc/artifacts/ci/prepared/acceptance.local.json'
+            $configuration | ConvertTo-Json -Depth 100 | Set-Content $scenario -Encoding utf8NoBOM
+            $timeout = 600
+          }
           & tools/windows-ui-poc/Run-WindowsUiPoc.ps1 `
-            -Scenario tools/windows-ui-poc/artifacts/ci/prepared/scenario.local.json `
+            -Scenario $scenario `
             -OutputDirectory tools/windows-ui-poc/artifacts/ci/run `
-            -TimeoutSeconds 180
+            -TimeoutSeconds $timeout
           exit $LASTEXITCODE
       - name: Summarize actual result
         if: always()
         env:
           JOB_STATUS: ${{ job.status }}
+          UI_SCENARIO: ${{ matrix.scenario }}
         run: |
           New-Item -ItemType Directory -Path tools/windows-ui-poc/artifacts/ci -Force | Out-Null
           $resultPath = 'tools/windows-ui-poc/artifacts/ci/run/results.json'
@@ -78,13 +96,21 @@ jobs:
             $result = @{ status = 'BLOCKED'; detail = "No UI result was produced; inspect job logs ($env:JOB_STATUS)." }
           }
           $result | ConvertTo-Json -Depth 100 | Set-Content tools/windows-ui-poc/artifacts/ci/ci-results.json -Encoding utf8NoBOM
-          "## Windows Smoke Search: $($result.status)" >> $env:GITHUB_STEP_SUMMARY
+          "## Windows $env:UI_SCENARIO : $($result.status)" >> $env:GITHUB_STEP_SUMMARY
           "Commit: $env:GITHUB_SHA" >> $env:GITHUB_STEP_SUMMARY
+          $acceptancePath = 'tools/windows-ui-poc/artifacts/ci/run/acceptance.json'
+          if (Test-Path $acceptancePath) {
+            foreach ($case in (Get-Content $acceptancePath -Raw | ConvertFrom-Json)) {
+              "- $($case.Requirement): $($case.Status)" >> $env:GITHUB_STEP_SUMMARY
+            }
+          } elseif ($env:UI_SCENARIO -ne 'smoke') {
+            'Expanded cases were not reached; none are accepted.' >> $env:GITHUB_STEP_SUMMARY
+          }
           "Full Checkpoint 2.1 acceptance remains open. See evidence and job logs." >> $env:GITHUB_STEP_SUMMARY
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: always()
         with:
-          name: windows-ui-smoke-${{ github.sha }}-${{ github.run_attempt }}
+          name: windows-ui-${{ matrix.scenario }}-${{ github.sha }}-${{ github.run_attempt }}
           retention-days: 7
           if-no-files-found: warn
           path: |

@@ -227,7 +227,15 @@ local configuration, DB copies, screenshots, and logs must stay untracked.
 
 ## GitHub-hosted Windows proof of concept
 
-`.github/workflows/windows-ui-poc.yml` adds one **manual-only** job on
+Checkpoint 2.1 expansion: see the [requirement-to-test matrix](CHECKPOINT-2.1.md).
+The workflow now has independent `smoke`, `checkpoint21-v2`, and
+`checkpoint21-v1` matrix jobs. Smoke keeps its existing path; the latter two
+set optional `acceptance` in a generated scenario and use a 600-second
+watchdog. Each uploads separate artifacts, including per-case
+`acceptance.json`. Expanded checks require their own real Windows evidence;
+the user's confirmed baseline run does not accept the additional cases.
+
+`.github/workflows/windows-ui-poc.yml` runs **manual-only** jobs on
 `windows-latest`. It runs only for `PapayaModding/UABS` on `v2-recovery`, with
 `contents: read`, pinned checkout/setup/upload actions, and no persisted Git
 credentials, personal credentials, services, or desktop listener. It does not
@@ -266,7 +274,7 @@ package/generation identity, counts, and matching raw asset witnesses. A fresh
 scenario points to the generated SQLite package; the existing runner copies
 and SHA-verifies it as usual.
 
-The actual FlaUI run has a 180-second watchdog and the job a 15-minute timeout.
+The Smoke FlaUI run has a 180-second watchdog and each job a 15-minute timeout.
 It records the hosted image, interactive-session flag, session ID, exact SHA,
 and run URL in `environment.json`. Hosted Windows is a candidate graphical
 environment, **not a guarantee of usable UIA**: the real existing launch,
