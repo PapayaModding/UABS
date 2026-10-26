@@ -2,7 +2,15 @@
 
 **Updated:** 2026-10-26
 
-**Current task:** Recovery Checkpoint2.1 — G5 acknowledged-partial acceptance implementation; Windows verification pending. No navigation or issue closure.
+**Current task:** Recovery Checkpoint2.1 — final closure-readiness audit; NOT READY pending G6/evidence review and regression disposition. No navigation or issue closure.
+
+### Checkpoint2.1 — six-job Windows baseline, final decisions pending
+
+- User verifies [run40371215461](https://github.com/PapayaModding/UABS/actions/runs/40371215461) at `709c615abc9cd362ac03578ddc6c4b62f5716339`: all six jobs passed, supporting G1–G5. Earlier pending Windows statements below are historical. This session's run/jobs/artifact APIs returned Forbidden; no independent image or per-case content review claimed.
+- [Final readiness audit](v2-recovery-checkpoint-02-1-closure-readiness-audit.md) separates supplied job evidence, source-reviewed fixture/assertion guarantees and missing artifact re-review. Do not infer a full diagnostic or hover screenshot merely from green jobs. No new scenarios or production changes.
+- G6: current exact tooltip-binding/clearing headless test passes; CP21-04 only asserts HelpText contains InvalidRequest. Inspect its existing full value. User must choose literal hover/screenshot or explicitly accept HelpText plus binding evidence as equivalent; no automatic equivalence decision.
+- Current Linux full VSTest:731 passed,38 failed,1 existing skip, PAL_SEHException abort. Focused122/122 and isolated paging20/20 pass; isolated representative failures reproduce8/10, isolated raw Search aborts after27 passes. Full inventory/platform evidence and unresolved native/counter risks are recorded; no green full-suite or harmless-failure claim.
+- Recommendation **NOT READY for formal closure** until artifact/diagnostic review, G6 choice and explicit regression-risk disposition. Prefer supported-Windows full application regression evidence; UI jobs do not run that suite. Checkpoint2.1 remains open until explicit user acceptance. No Checkpoint3.
 
 ### Checkpoint2.1 — G5 implementation, Windows pending
 

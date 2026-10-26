@@ -5,6 +5,16 @@ Source of truth: [manual checklist](../../Avalonia/docs/05_audit/v2-recovery-che
 [roadmap](../../Avalonia/docs/05_audit/v2-ui-workflow-recovery-roadmap.md).
 No recovery issue or checkpoint status is changed by this tool document.
 
+**Final readiness audit (2026-10-26):** [review and decision matrix](../../Avalonia/docs/05_audit/v2-recovery-checkpoint-02-1-closure-readiness-audit.md)
+records user-verified six-job run40371215461 at
+`709c615abc9cd362ac03578ddc6c4b62f5716339`, supporting G1–G5. APIs remain
+Forbidden for independent case/screenshot review. G6 literal-hover evidence or
+explicit user HelpText/binding-equivalence acceptance and regression-risk
+disposition remain pending. Current Linux full run:731 pass/38 fail/1 skip then
+PAL_SEHException; focused122 and isolated paging20 pass. Recommendation NOT READY
+for formal closure. No issue/checkpoint status change, new scenarios or Checkpoint3.
+Historical G1–G5 pending-run statements below are superseded by the user's baseline.
+
 **Latest baseline and G5 implementation:** user-confirmed [run 40365210988](https://github.com/PapayaModding/UABS/actions/runs/40365210988)
 at `a1bb77b694545c25e90d5b07b0c894b664d4302f` passed all five jobs, including G1.
 The separate [G5 guide](INDETERMINATE-ACCEPTANCE.md) documents the new sixth

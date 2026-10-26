@@ -3,6 +3,16 @@
 **Date:** 2026-10-26. **Audited commit:** `26f38e68511cd6eaf0d0c23b7ce9fac9228aab70`,
 `v2-recovery`. Documentation/planning only. Checkpoint 2.1 is **not closed**.
 
+**Latest closure-readiness audit (2026-10-26):** [current review](v2-recovery-checkpoint-02-1-closure-readiness-audit.md)
+audits `709c615abc9cd362ac03578ddc6c4b62f5716339` and user-verified six-job
+Windows run40371215461 supporting G1–G5. Earlier pending G1–G5 implementation
+statements below are historical. Artifact APIs remain Forbidden; case records/
+full CP21-04 HelpText need review. G6 hover/equivalence remains a user decision;
+current Linux full suite failed38/aborted with PAL_SEHException despite122 focused
+and20 isolated paging passes. Recommendation **NOT READY for formal closure**,
+pending evidence/decision and regression-risk disposition. No closure, new
+scenario, production implementation or Checkpoint3 authorization.
+
 ## Authority and evidence boundary
 
 Sources: [Checkpoint 2.1 correction and manual checklist](v2-recovery-checkpoint-02-1-search-defaults.md),

@@ -48,6 +48,14 @@ Worktree is verified buildable and ready for review/commit as this scoped correc
 
 ## Limits and manual acceptance
 
+**Latest readiness review (2026-10-26):** the user verifies six-job Windows
+[run40371215461](https://github.com/PapayaModding/UABS/actions/runs/40371215461)
+at `709c615abc9cd362ac03578ddc6c4b62f5716339`, supporting G1–G5. The
+[closure-readiness audit](v2-recovery-checkpoint-02-1-closure-readiness-audit.md)
+records inaccessible case artifacts, pending G6 literal-hover/equivalence choice
+and failed/aborted Linux regression disposition. Recommendation NOT READY for
+formal closure; checklist unchanged, no automatic acceptance or Checkpoint3.
+
 **2026-10-26 evidence update:** the user confirms all three jobs in
 [Windows run 40259657455](https://github.com/PapayaModding/UABS/actions/runs/40259657455)
 passed at `26f38e68511cd6eaf0d0c23b7ce9fac9228aab70`. Implemented desktop

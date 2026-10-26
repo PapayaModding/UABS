@@ -32,6 +32,17 @@ Preserve immutable identities, safe session ownership, cancellation/stale-result
 
 ## Status register
 
+**Checkpoint2.1 closure readiness (2026-10-26):** [final readiness review](v2-recovery-checkpoint-02-1-closure-readiness-audit.md)
+audits user-verified six-job Windows run40371215461 at
+`709c615abc9cd362ac03578ddc6c4b62f5716339`, supporting G1–G5. Independent
+artifact review remains blocked by Forbidden APIs; G6 hover/equivalence requires
+the user's decision. Current Linux full suite failed38/aborted with PAL_SEHException;
+focused122/122 and isolated paging20/20 pass, not a full regression clearance.
+Recommendation **NOT READY for formal closure** pending evidence/decision and
+explicit regression-risk disposition. All17 issue rows remain unchanged;
+Checkpoint2.1 stays open and Checkpoint3 is not authorized. Older gap plans below
+are historical where superseded by the six-job baseline.
+
 **Checkpoint2.1 acceptance gap audit (2026-10-26):** user confirms [Windows run 40259657455](https://github.com/PapayaModding/UABS/actions/runs/40259657455) at `26f38e68511cd6eaf0d0c23b7ce9fac9228aab70` passed Smoke/V2/V1 and all implemented CP21 cases, including Name sorting. The [final audit](v2-recovery-checkpoint-02-1-final-acceptance-gap-audit.md) identifies remaining mandatory evidence (Package ordering, non-default criteria retention, pre-admission text, metadata-exclusion and indeterminate feedback, literal tooltip/equivalence decision), Linux regression disposition and the smallest test-only next slice. This is not closure, new UI authorization, a change to acceptance requirements or Checkpoint3 work; all17 issue rows retain their existing statuses. Earlier pending/manual statements below describe historical checkpoints.
 
 **Checkpoint2.1 defaults/feedback (2026-10-25):** user reports Sources only / Assets / known asset keyword works in Checkpoint2; this is limited user-reported acceptance, not issue closure. [Scoped correction report](v2-recovery-checkpoint-02-1-search-defaults.md) records untouched V2 selector defaults, preserved explicit choices and actionable compatibility errors with original diagnostic tooltip. V1 defaults, backend semantics and other workflows are unchanged. Focused bundle-workspace18/18 and existing Search regressions pass; full in-process791 passed/1 existing skip/0 failures, Debug solution/startup0 warnings/errors and safety/docs checks passed. Issue #1 and all17 statuses remain Reported pending user acceptance; no Checkpoint3/navigation authorization.
