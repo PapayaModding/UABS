@@ -17,6 +17,14 @@ internal sealed record PositionedRow(ExpectedRow Identity, UiBounds Bounds, bool
 
 internal static class SearchAccessibility
 {
+    internal static void PrepareMaximizedWindow(bool windowPattern, bool alreadyMaximized, bool canMaximize, Action maximize)
+    {
+        if (!windowPattern) throw new AccessibilityUnavailable("Owned test window lacks UIA Window pattern.");
+        if (alreadyMaximized) return;
+        if (!canMaximize) throw new AccessibilityUnavailable("Owned test window cannot maximize; no fabricated viewport fallback.");
+        maximize();
+    }
+
     internal static ExpectedRow[] VisualRowOrder(PositionedRow[] rows, UiBounds viewport)
     {
         if (!viewport.Valid || rows.Length < 2 || rows.Select(row => row.Identity).Distinct().Count() != rows.Length)

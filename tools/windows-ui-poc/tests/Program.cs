@@ -228,3 +228,49 @@ AmbiguousLayout([Positioned("a", 50), Positioned("b", double.NaN)]);
 AmbiguousLayout([Positioned("a", 50), Positioned("a", 75)]);
 AmbiguousLayout([Positioned("a", 50), Positioned("b", 75)], new(0, 0, 0, 0));
 Console.WriteLine("PASS: visual bounds determine Home/End boundaries independently of UIA enumeration; ambiguous/clipped/offscreen layouts block.");
+
+bool maximizedAction = false;
+SearchAccessibility.PrepareMaximizedWindow(true, false, true, () => maximizedAction = true);
+Check(maximizedAction, "Supported deterministic window maximization not requested.");
+maximizedAction = false;
+SearchAccessibility.PrepareMaximizedWindow(true, true, true, () => maximizedAction = true);
+Check(!maximizedAction, "Already maximized window was unnecessarily changed.");
+foreach (var capability in new[] { (false, true), (true, false) })
+{
+    try { SearchAccessibility.PrepareMaximizedWindow(capability.Item1, false, capability.Item2, () => maximizedAction = true); throw new Exception("Unsupported maximize accepted."); }
+    catch (AccessibilityUnavailable) { Check(!maximizedAction, "Unsupported window action attempted."); }
+}
+AmbiguousLayout(reversedEnumeration, new UiBounds(394, 626, 264, -5)); // Actual 27px grid minus 32px header.
+int queries = 0, pausesRead = 0, recordedFailures = 0;
+string recovered = UiaRead.Fresh("fresh picker", () => {
+    if (++queries < 3) throw new COMException("Provider transition", unchecked((int)0x80004005));
+    return "fresh window";
+}, (_, _) => recordedFailures++, () => pausesRead++);
+Check(recovered == "fresh window" && queries == 3 && pausesRead == 2 && recordedFailures == 2, "Bounded fresh-query recovery failed.");
+queries = 0;
+try {
+    UiaRead.Fresh<string>("catalog completion", () => { queries++; throw new COMException("Persistent provider", unchecked((int)0x80004005)); }, pause: () => { });
+    throw new Exception("Persistent provider error was swallowed.");
+}
+catch (AccessibilityUnavailable error) { Check(queries == 3 && error.Message.Contains("80004005") && error.Message.Contains("catalog completion"), "Persistent COM failure lacks phase/HRESULT/bound."); }
+queries = 0;
+try {
+    UiaRead.Fresh<string>("denied", () => { queries++; throw new COMException("Denied", unchecked((int)0x80070005)); }, pause: () => { });
+    throw new Exception("Access denied was swallowed.");
+}
+catch (AccessibilityUnavailable) { Check(queries == 1, "Non-transient provider failure was retried."); }
+foreach (int code in new[] { unchecked((int)0x80040201), unchecked((int)0x80010108) })
+{
+    queries = 0;
+    Check(UiaRead.Fresh("stale provider", () => {
+        if (++queries == 1) throw new COMException("Disconnected element", code);
+        return "rediscovered";
+    }, pause: () => { }) == "rediscovered" && queries == 2, "Known stale-element read did not rediscover safely.");
+}
+queries = 0;
+try {
+    UiaRead.Fresh<string>("application assertion", () => { queries++; throw new InvalidOperationException("Wrong result"); }, pause: () => { });
+    throw new Exception("Assertion failure was swallowed.");
+}
+catch (InvalidOperationException error) { Check(queries == 1 && error.Message == "Wrong result", "Application assertion retried or reclassified."); }
+Console.WriteLine("PASS: supported maximization, reported negative viewport rejection, bounded fresh COM read recovery, persistent provider blocking, and strict assertion preservation.");

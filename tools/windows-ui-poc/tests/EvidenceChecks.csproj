@@ -9,5 +9,6 @@
     <Compile Include="../EvidenceValue.cs" Link="EvidenceValue.cs" />
     <Compile Include="../PackageAdmission.cs" Link="PackageAdmission.cs" />
     <Compile Include="../SearchAccessibility.cs" Link="SearchAccessibility.cs" />
+    <Compile Include="../UiaRead.cs" Link="UiaRead.cs" />
   </ItemGroup>
 </Project>

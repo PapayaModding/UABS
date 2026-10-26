@@ -85,6 +85,7 @@ internal static partial class Program
     private static void VerifyKeyboardSelectionRetention(Scenario config, string work)
     {
         Require(config.ExpectedSortRows is { Length: > 1 }, "Independent multirow fixture oracle is needed to prove selection moves.");
+        PrepareSelectionWindowLayout();
         SetValue(ById(Controls(), "IncludeSearchTextBox"), "asset"); ExecuteSearch();
         Wait("selection multirow query", () => Grid().FindAllDescendants(Automation!.ConditionFactory.ByControlType(ControlType.DataItem)).Length >= config.ExpectedSortRows!.Length);
         Rows(config.ExpectedSortRows!);

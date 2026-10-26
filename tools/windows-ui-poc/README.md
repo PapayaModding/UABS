@@ -247,6 +247,14 @@ expected rows fully visible. Bounds are diagnostic evidence only: there is
 no coordinate-based input. See the matrix's confirmed row-order section for
 the strict layout gates and new evidence files. Windows rerun is pending.
 
+Hosted layout/provider hardening: CP21-09 alone maximizes the owned test window
+through UIA and logs before/after monitor/window/panel/scroll geometry. It
+still blocks on a nonpositive or clipped grid viewport. Catalog reads use
+bounded fresh-element discovery; provider COM failures remain explicit BLOCKED
+outcomes, never a substitute for mixed-format testing. No UI action is retried.
+See the coverage matrix's hosted layout/provider section for retry codes and
+evidence filenames. Smoke/V1 assertions and production behavior are unchanged.
+
 `.github/workflows/windows-ui-poc.yml` runs **manual-only** jobs on
 `windows-latest`. It runs only for `PapayaModding/UABS` on `v2-recovery`, with
 `contents: read`, pinned checkout/setup/upload actions, and no persisted Git

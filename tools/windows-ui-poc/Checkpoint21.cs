@@ -239,42 +239,7 @@ internal static partial class Program
         return target;
     }
     private static void OpenCatalog(string directory)
-    {
-        Select(Find(Window!, ControlType.TabItem, "Packages"));
-        var button = Find(Window!, ControlType.Button, "Open Package Catalog...");
-        Require(button.Patterns.Invoke.IsSupported, "Catalog button requires Invoke.");
-        var task = Task.Run(() => button.Patterns.Invoke.Pattern.Invoke());
-        const string title = "Open package catalog root or package directory";
-        AutomationElement? dialog = null;
-        try
-        {
-            Wait("owned catalog folder picker", () =>
-            {
-                if (task.IsFaulted) task.GetAwaiter().GetResult();
-                var windows = ProcessWindows().Where(e => e.Name == title).ToArray();
-                Require(windows.Length <= 1, "Ambiguous owned folder picker."); dialog = windows.SingleOrDefault(); return dialog != null;
-            });
-            Evidence("catalog-dialog", dialog);
-            var edit = PackageAdmission.WaitForUnique(() => dialog!.FindAllDescendants(Automation!.ConditionFactory.ByControlType(ControlType.Edit)
-                .And(Automation.ConditionFactory.ByAutomationId("1152"))), TimeSpan.FromSeconds(10), description: "catalog folder Edit 1152");
-            SetValue(edit, Path.GetFullPath(directory));
-            Check(edit.Patterns.Value.Pattern.Value.Value == Path.GetFullPath(directory), "Folder path readback differs.");
-            Invoke(ById(dialog!, "1"));
-            Wait("catalog load completion", () => Window!.FindAllDescendants(Automation!.ConditionFactory.ByControlType(ControlType.Text))
-                .Any(e => e.Name.StartsWith("Found ", StringComparison.Ordinal) && e.Name.Contains("0 error(s)", StringComparison.Ordinal)));
-            Wait("catalog command completed", () => button.IsEnabled);
-            Wait("catalog Invoke returned", () => task.IsCompleted); task.GetAwaiter().GetResult();
-        }
-        catch
-        {
-            if (dialog != null)
-            {
-                try { Evidence("catalog-failure", dialog); Invoke(ById(dialog, "2")); }
-                catch (Exception error) { Step("catalog diagnostic/cancel unavailable", error.Message); }
-            }
-            throw;
-        }
-    }
+        => OpenCatalogWithFreshReads(directory);
     private static string RunFreshV1(Scenario config, string work)
     {
         Case("CP21-11-fresh-v1", () =>

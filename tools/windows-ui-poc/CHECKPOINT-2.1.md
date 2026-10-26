@@ -29,8 +29,8 @@ Source tests/builds do not establish UI acceptance for the updated commit.
 | Explicit choices survive catalog reload | CP21-06 | PASS | Exact disposable catalog path, native folder Edit Value readback, Refresh Invoke, retained criteria |
 | Explicit Refresh unchanged; editing criteria alone does not rerun | CP21-07 | PASS | Prior row retained, Refresh publishes exact empty result, second Refresh restores Unicode result |
 | Search sorting unchanged | CP21-08 | BLOCKED; remains blocked without Invoke | Capability JSON plus independently indexed three-bundle oracle. Nontrivial Package sorting remains uncovered |
-| Selection retained including after rejection | CP21-09 | BLOCKED in latest run; visual-order correction pending | Verified positional row bounds, UIA SetFocus and guarded Ctrl+Home/End, exact Inspector identity before/after rejection |
-| Mixed V1/V2 scope rejects rather than guesses | CP21-10 | PASS | Exact two disposable scopes, error text, selected states retained |
+| Selection retained including after rejection | CP21-09 | BLOCKED in latest run: no usable viewport; maximized-layout setup pending | Strict positional bounds, UIA focus and Ctrl+Home/End, exact Inspector identity/retention |
+| Mixed V1/V2 scope rejects rather than guesses | CP21-10 | Previously PASS; latest run failed on a provider COM exception | Fresh bounded UIA reads and provider BLOCKED classification pending Windows rerun; rejection must still be exercised |
 | Fresh V1-only original mixed/Names defaults and Search behavior | separate `checkpoint21-v1`, CP21-11 | PASS | SHA-checked LegacyPackage copy, six-column exact portrait/LegacyPackage/character.ab/1001/memo row and exact count |
 
 The metadata/mixed-exclusion and indeterminate-coverage guidance described in
@@ -173,3 +173,61 @@ Regression tests cover reversed and scrambled enumeration and ambiguous,
 clipped, hidden, invalid, and duplicate-row layouts. Real Windows validation
 of this correction is still required. CP21-08 remains BLOCKED and the
 checkpoint is not closed.
+
+## Hosted layout and catalog provider investigation
+
+The user reports [run 40253986638](https://github.com/PapayaModding/UABS/actions/runs/40253986638)
+at `463d7408af3c0dc47a3eaa8c82901a9320e701b4`: Smoke and V1 passed;
+expanded V2 had 10 PASS, 2 BLOCKED, 1 FAIL. CP21-09 reported grid bounds
+394,594,264,27, a header at Y594 with height32, and hence a -5px data viewport.
+All three expected row identities existed but had zero-sized, offscreen bounds.
+This is a real unusable viewport, not justification to bypass visibility.
+
+Source inspection: MainWindow specifies minimum 900x560 but no initial
+runtime Width/Height. Search reserves default widths of 290 and 310 for Controls
+and Inspector plus splitters, while Results has an Auto-sized wrapping status
+header above the star-sized DataGrid. The count label can consume 230px of the
+narrow 264px results column, leaving very little width for the wrapping status
+text. Auto header growth can consume the grid's available height. This is a
+source-supported explanation consistent with the measurements; exact live
+window/splitter/work-area dimensions were not available through the artifact
+API (Forbidden), so the full causal layout chain is not claimed as verified.
+
+Only CP21-09 now requests UIA WindowVisualState.Maximized on the verified owned
+UABS window, requiring Window support/CanMaximize and confirming the resulting
+state. There are no hard-coded screen sizes, splitter moves, synthetic row
+coordinates, or app layout changes. Smoke and fresh V1 do not use this setup.
+`CP21-09-window-{before,after}-maximize.json` records real window/work-area
+bounds, exposed Controls/Inspector/splitter geometry, and actual grid scroll
+panes/bars. Inaccessible elements are recorded as unavailable or zero matches.
+The existing row-layout reports then enforce a valid data viewport and visible
+complete row bounds. An insufficient maximized viewport remains BLOCKED;
+all Inspector/path/UUID/focus/foreground/retention and SHA assertions remain.
+
+CP21-10's generic `FindAll` E_FAIL (0x80004005) does not prove teardown versus
+a stale wrapper or inaccessible provider. The old helper used a cached owner
+wrapper and always walked its descendants even after finding a top-level
+picker. Catalog reads now reacquire the same owned HWND through UIA FromHandle
+and freshly discover the exact process/title picker each attempt. A matching
+top-level picker avoids an unnecessary disabled-owner tree walk. Native folder
+IDs, path readback, exact catalog identity, and mixed-format assertions remain.
+
+Only read-only queries retry, at most three attempts with 100ms pauses, for
+E_FAIL, UIA_E_ELEMENTNOTAVAILABLE, and RPC_E_DISCONNECTED. The existing10/25s
+discovery waits and external watchdog still apply. Other COM codes block
+immediately; persistent errors block with phase/HRESULT/attempt evidence.
+Select/SetValue/Invoke are never replayed. Completion requires the picker to
+be absent, the freshly discovered command button to be re-enabled, and the
+actual catalog to report zero load errors. Readback errors, incorrect catalog
+results, and an observed application exit remain FAIL; provider inaccessibility
+is BLOCKED and cannot count as exercised mixed-format rejection.
+
+`catalog-provider-*.json` records owner HWND/PID, exact title/directory, failed
+phase, read attempts, invocation state/fault, and the original exception.
+Cleanup errors are logged without replacing the primary failure or enabling
+a PASS. Transience and any teardown hypothesis require the next Windows run's
+actual phase evidence. No remote acceptance or checkpoint closure is claimed.
+
+CP21-08 remains untouched and BLOCKED: a separately approved production or
+upstream header Invoke provider routed to existing user-sort behavior is
+needed for accessible sorting. No additional runner shortcut is attempted.
