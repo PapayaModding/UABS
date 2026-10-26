@@ -2,7 +2,14 @@
 
 **Updated:** 2026-10-26
 
-**Current task:** Recovery Checkpoint2.1 — approved Search Results error layout polish; Windows visual review pending. No navigation or issue closure.
+**Current task:** Recovery Checkpoint2.1 — standalone full Windows application regression workflow; real execution pending. No navigation or issue closure.
+
+### Checkpoint2.1 — full Windows application regression workflow
+
+- User visually verifies layout polish `8875ba4c9468b5fc8da64eb1d9cbba398d4b158e`; earlier pending visual-review statements below are historical. This is not an automatic G6/closure decision.
+- Separate manual [full application regression workflow](../../../.github/workflows/windows-application-regression.yml), [execution/evidence guide](../../../tools/windows-regression/README.md). Exact recovery branch/repository/SHA verification; full Debug UABS.UnityAssets.Tests project with no test filters/assertion changes/parallelism overrides. Existing six UI jobs and production code remain unchanged.
+- Complete TRX/console/VSTest/blame evidence, actual exit receipt, explicit failed/skipped/aborted/incomplete outcomes and always-upload artifacts. Machine-readable comparison against all38 recorded Linux failures is informational, never an expected-failure waiver. PAL_SEHException/counter risks are not assumed resolved.
+- Windows results remain pending actual dispatch/evidence inspection. Checkpoint2.1 stays open; no Checkpoint3 or new FlaUI scenario.
 
 ### Checkpoint2.1 — approved error layout polish
 
