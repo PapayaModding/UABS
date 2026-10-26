@@ -29,27 +29,47 @@ metadata; no CAB-name hit or additional fixture capability is assumed.
 
 ## Deterministic control identity, not textbox order
 
-The production controls have one existing include AutomationId and four unnamed
-numeric/type/exclude TextBoxes. Inspection of pinned Avalonia 11.3.3
+The user reports [Windows run 40326632909](https://github.com/PapayaModding/UABS/actions/runs/40326632909)
+at `aaadcd0cb26af075a9087de108f475b1e0768bf7` passed Smoke/V1/V2 but blocked
+G3 before input: six empty writable Edits, every Watermarks array empty.
+The artifact API returned Forbidden; this is supplied Windows evidence, not an
+independently inspected screenshot/tree. Headless peer traversal did not prove
+native UIA discoverability. Inspection of pinned Avalonia 11.3.3
 [TextBoxAutomationPeer](https://github.com/AvaloniaUI/Avalonia/blob/11.3.3/src/Avalonia.Controls/Automation/Peers/TextBoxAutomationPeer.cs),
 [ControlAutomationPeer](https://github.com/AvaloniaUI/Avalonia/blob/11.3.3/src/Avalonia.Controls/Automation/Peers/ControlAutomationPeer.cs)
-and [Fluent TextBox template](https://github.com/AvaloniaUI/Avalonia/blob/11.3.3/src/Avalonia.Themes.Fluent/Controls/TextBox.xaml)
-establishes the Value provider and visible named `PART_Watermark` TextBlocks.
-No unsupported inference that the Edit's own Name equals its watermark is used.
+and [TextBlockAutomationPeer](https://github.com/AvaloniaUI/Avalonia/blob/11.3.3/src/Avalonia.Controls/Automation/Peers/TextBlockAutomationPeer.cs)
+establishes the distinction: template-internal TextBlocks return false for
+IsControlElement; TextBox inherits Name from explicit Name/LabeledBy, not
+Watermark. A visual peer can exist without the expected public UIA descendant
+identity. The exact native filtering path in that artifact remains uninspected;
+no claim that a different raw-tree search would succeed is needed for this fix.
 
-Initially empty Edits are bound to roles by **exact unique descendant watermark
-text**, then to their supported UIA RuntimeIds. Include additionally must agree
-with `IncludeSearchTextBox`. Every later read reacquires the same RuntimeIds
-within the owned SearchControlsScroller. Neither descendant position nor an
-expected sentinel value is used to rediscover a role. Duplicate/missing labels,
-unsupported Value/runtime identity, disabled/read-only controls, or replaced
-identities are BLOCKED; actual changed values are FAIL. There is no “clear it
-to reveal a watermark” fallback after typing or transition.
+The user separately approved production accessibility metadata only. The five
+TextBoxes now expose these exact stable ID/Name pairs:
 
-The headless control-peer test experimentally verifies the actual application
-template's unique watermark exposure, standard writable Value providers and
-peer/value retention across tab switches. **It does not prove hosted Windows
-UIA RuntimeIds or native dialog behavior**; those require the new job's evidence.
+| Role | AutomationId (x:Name, exposed by the standard Avalonia peer) | Accessible Name |
+| --- | --- | --- |
+| include | IncludeSearchTextBox (preserved) | Include terms |
+| exclude | ExcludeSearchTextBox | Exclude terms |
+| pathId | PathIdSearchTextBox | Exact Path ID |
+| classId | ClassIdSearchTextBox | V2 Class ID |
+| typeName | TypeNameSearchTextBox | V2 exact type name |
+
+Initially empty writable Edits bind by **both exact properties**. Matching either
+property detects duplicates/conflicts; exactly one candidate must match both.
+Each role retains its supported RuntimeId. Before later reads/writes, all five
+roles are revalidated by RuntimeId plus ID/Name within SearchControlsScroller.
+Unrelated unnamed Edits are not assigned roles. No descendant position, watermark
+internals or expected input values identify a field. Missing/duplicate/conflicting/
+replaced identities or unavailable writable Value remain BLOCKED; incorrect
+retained values remain FAIL. Nothing is cleared or remapped to manufacture a pass.
+
+Headless tests verify public ID/Name pairs, unchanged watermarks/bindings/defaults,
+writable Value and peer/value/label retention across tab switches. A separate
+regression proves a template watermark is not a control element and does not
+name/label its parent Edit. **These do not prove hosted Windows RuntimeId stability
+or native dialog behavior**; the updated gap job still needs Windows execution.
+Search behavior, visible watermarks and result expectations are unchanged.
 Fresh preparation refuses persisted/nonempty role values or loaded scopes rather
 than silently removing unrelated packages/state. Read-only COM queries use the
 existing bounded reader; actions are not retried. Provider/action COM failures
@@ -69,12 +89,12 @@ Failures during admission/defaulting/query outside a subcase add an explicit
 
 ## Available validation
 
-- 185 application tests PASS in clean focused runs: bundle workspace/header/memo
-  plus new control-peer contract 62; Search ViewModel 22; integration 18; infinite
+- 186 application tests PASS in clean focused runs: bundle workspace/header/memo
+  plus control-peer regressions 63; Search ViewModel 22; integration 18; infinite
   scroll 7; result window 7; bundle SQL 49; paging/performance 20.
-- Runner contract regressions PASS, including ambiguous/missing/read-only/nonempty
-  watermark binding, swapped/default/changed values, lost/replaced/duplicate
-  RuntimeIds, Unicode readback and enumeration-order independence.
+- Runner contract regressions PASS, including missing/duplicate/conflicting ID/Name,
+  unavailable/read-only/nonempty binding, swapped/default/changed values,
+  lost/replaced/duplicate RuntimeIds, Unicode readback and enumeration independence.
 - PowerShell scenario regressions PASS; Debug solution and Release Windows
   cross-build PASS with zero warnings/errors; workflow actionlint and documentation
   checks PASS. No full Linux suite rerun/green claim: the prior baseline failures/
@@ -101,8 +121,8 @@ the original. The launcher independently resolves/verifies HEAD and cleans its
 temporary expectedCommit scenario. Inspect the tested SHA, all five case results,
 G3 before/after values and untouched defaults, each G2 transition, and G4 exact
 identity/error/recovery evidence. A green compile or a prior Windows run at an
-older SHA is not proof of this slice. STOP at BLOCKED evidence; do not add
-production AutomationIds or relax identity assertions without separate approval.
+older SHA is not proof of this slice. STOP at BLOCKED evidence; further production
+accessibility changes or relaxed identity assertions need separate approval.
 
 Remaining open: **G1 Package sorting, G5 indeterminate coverage, G6 tooltip-hover/
 HelpText equivalence, Linux full-suite regression disposition**, and actual Windows

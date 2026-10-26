@@ -39,6 +39,15 @@ do not accept these gaps; actual Windows evidence at the new SHA is required.
 G1 Package order, G5 indeterminate feedback, G6 tooltip equivalence/hover and
 Linux regression disposition remain explicitly open. No checkpoint closure.
 
+User-confirmed [run 40326632909](https://github.com/PapayaModding/UABS/actions/runs/40326632909)
+at `aaadcd0cb26af075a9087de108f475b1e0768bf7` passed the original three jobs
+but blocked G3 before typing: six empty writable Edits, no watermark matches.
+The separately approved correction adds public Name/ID metadata to the five
+criteria controls and replaces watermark discovery with strict paired ID/Name
+plus retained RuntimeId verification. See the slice guide for identities/tests.
+This correction is not a Windows PASS: G3 and the unexecuted G2/G4 still need
+the updated hosted run. No production Search semantics or other gaps changed.
+
 | Documented requirement | Scenario/case | User-confirmed Windows result before this change | Evidence / remaining validation |
 | --- | --- | --- | --- |
 | Untouched V2 Sources-only / Assets defaults | unchanged `smoke`; CP21-01 | PASS, user-confirmed baseline | Linked baseline run; fresh SHA gets its own artifact |

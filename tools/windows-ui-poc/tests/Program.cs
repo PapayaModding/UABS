@@ -320,10 +320,10 @@ try { SearchAccessibility.NameOrderOracle(sortOracle, "unknown"); throw new Exce
 catch (AccessibilityUnavailable) { }
 Console.WriteLine("PASS: exact independent ascending/descending visual Name order, wrong sets/orders fail, and ambiguous direction/target/oracle evidence blocks.");
 
-CriteriaEdit[] emptyCriteria = CriteriaContract.Watermarks.Select((pair, index) => new CriteriaEdit("runtime-" + index, [pair.Value], true, "")).ToArray();
+CriteriaEdit[] emptyCriteria = CriteriaContract.Fields.Select((pair, index) => new CriteriaEdit("runtime-" + index, pair.Value.AutomationId, pair.Value.AccessibleName, true, "")).ToArray();
 var boundCriteria = CriteriaContract.Bind(emptyCriteria.Reverse().ToArray());
 var sentinels = CriteriaContract.Sentinels("テスト");
-var populatedCriteria = emptyCriteria.Select(edit => edit with { Watermarks = [], Value = sentinels[boundCriteria.Single(pair => pair.Value == edit.RuntimeId).Key] }).ToArray();
+var populatedCriteria = emptyCriteria.Select(edit => edit with { Value = sentinels[boundCriteria.Single(pair => pair.Value == edit.RuntimeId).Key] }).ToArray();
 CriteriaContract.Equal(sentinels, CriteriaContract.Read(boundCriteria, populatedCriteria.Reverse().ToArray()));
 foreach (var changed in new[] {
     populatedCriteria.Select(edit => edit with { Value = "" }).ToArray(),
@@ -338,8 +338,13 @@ foreach (var unsupported in new[] {
     emptyCriteria.Select(edit => edit with { RuntimeId = "same-id" }).ToArray(),
     emptyCriteria.Select(edit => edit with { Writable = false }).ToArray(),
     emptyCriteria.Select(edit => edit with { Value = "persisted" }).ToArray(),
-    emptyCriteria.Select(edit => edit with { Watermarks = [] }).ToArray(),
-    emptyCriteria.Select(edit => edit with { Watermarks = [edit.Watermarks[0], edit.Watermarks[0]] }).ToArray() })
+    emptyCriteria.Select(edit => edit with { AutomationId = null }).ToArray(),
+    emptyCriteria.Select(edit => edit with { AccessibleName = null }).ToArray(),
+    emptyCriteria.Select(edit => edit with { AutomationId = "wrong-id" }).ToArray(),
+    emptyCriteria.Select(edit => edit with { AccessibleName = "wrong-name" }).ToArray(),
+    emptyCriteria.Append(emptyCriteria[0] with { RuntimeId = "duplicate-id", AccessibleName = "Other" }).ToArray(),
+    emptyCriteria.Append(emptyCriteria[0] with { RuntimeId = "duplicate-name", AutomationId = "Other" }).ToArray(),
+    emptyCriteria.Select(edit => edit with { RuntimeId = "" }).ToArray() })
 {
     try { CriteriaContract.Bind(unsupported); throw new Exception("Ambiguous/nonempty/unsupported criterion binding accepted."); }
     catch (AccessibilityUnavailable) { }
@@ -347,10 +352,18 @@ foreach (var unsupported in new[] {
 foreach (var unsupported in new[] {
     populatedCriteria.Skip(1).ToArray(), populatedCriteria.Append(populatedCriteria[0]).ToArray(),
     populatedCriteria.Select(edit => edit with { RuntimeId = "replacement-" + edit.RuntimeId }).ToArray(),
-    populatedCriteria.Select(edit => edit with { Writable = false }).ToArray() })
+    populatedCriteria.Select(edit => edit with { Writable = false }).ToArray(),
+    populatedCriteria.Select(edit => edit with { AccessibleName = "changed-name" }).ToArray(),
+    populatedCriteria.Select(edit => edit with { AutomationId = "changed-id" }).ToArray(),
+    populatedCriteria.Append(populatedCriteria[0] with { RuntimeId = "duplicate-name", AutomationId = "Other" }).ToArray(),
+    populatedCriteria.Append(populatedCriteria[0] with { RuntimeId = "duplicate-id", AccessibleName = "Other" }).ToArray() })
 {
     try { CriteriaContract.Read(boundCriteria, unsupported); throw new Exception("Lost/replaced/ambiguous runtime identity accepted."); }
     catch (AccessibilityUnavailable) { }
 }
 Check(CriteriaContract.Sentinels("テスト")["pathId"].StartsWith('-') && sentinels.Values.All(value => value.Length > 0), "Non-default signed/numeric/type sentinels missing.");
-Console.WriteLine("PASS: semantic watermark binding, stable runtime identities, reordered discovery, exact Unicode/non-default readback; changed values FAIL and ambiguous/replaced/unavailable controls BLOCK.");
+CriteriaContract.Equal(sentinels, CriteriaContract.Read(boundCriteria,
+    populatedCriteria.Append(new CriteriaEdit("unrelated", null, null, true, "")).Reverse().ToArray()));
+Check(CriteriaContract.Bind(emptyCriteria.Append(new CriteriaEdit("unrelated", null, null, true, "")).ToArray()).Count == 5,
+    "An unrelated unnamed Edit was used as a role or blocked verified fields.");
+Console.WriteLine("PASS: unique paired AutomationId/Name binding, stable runtime identities, reordered discovery, exact Unicode/non-default readback; changed values FAIL and missing/duplicate/conflicting/replaced identities BLOCK.");

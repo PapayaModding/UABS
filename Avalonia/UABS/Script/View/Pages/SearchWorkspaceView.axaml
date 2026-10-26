@@ -81,15 +81,15 @@
 
                             <Separator Margin="0,4"/>
                             <TextBlock Text="Criteria" FontWeight="SemiBold"/>
-                            <TextBox x:Name="IncludeSearchTextBox" Watermark="Include terms (comma = OR)"
+                            <TextBox x:Name="IncludeSearchTextBox" AutomationProperties.Name="Include terms" Watermark="Include terms (comma = OR)"
                                      Text="{Binding IncludeText}" KeyDown="OnSearchFieldKeyDown"/>
-                            <TextBox Watermark="Exclude terms" Text="{Binding ExcludeText}"
+                            <TextBox x:Name="ExcludeSearchTextBox" AutomationProperties.Name="Exclude terms" Watermark="Exclude terms" Text="{Binding ExcludeText}"
                                      KeyDown="OnSearchFieldKeyDown"/>
-                            <TextBox Watermark="Exact Path ID (optional)" Text="{Binding PathIdText}"
+                            <TextBox x:Name="PathIdSearchTextBox" AutomationProperties.Name="Exact Path ID" Watermark="Exact Path ID (optional)" Text="{Binding PathIdText}"
                                      KeyDown="OnSearchFieldKeyDown"/>
-                            <TextBox Watermark="V2 Class ID (asset-only, optional)" Text="{Binding ClassIdText}"
+                            <TextBox x:Name="ClassIdSearchTextBox" AutomationProperties.Name="V2 Class ID" Watermark="V2 Class ID (asset-only, optional)" Text="{Binding ClassIdText}"
                                      KeyDown="OnSearchFieldKeyDown"/>
-                            <TextBox Watermark="V2 exact type name (asset-only, optional)" Text="{Binding TypeNameText}"
+                            <TextBox x:Name="TypeNameSearchTextBox" AutomationProperties.Name="V2 exact type name" Watermark="V2 exact type name (asset-only, optional)" Text="{Binding TypeNameText}"
                                      KeyDown="OnSearchFieldKeyDown"/>
                             <ComboBox ItemsSource="{Binding FieldSelections}" SelectedItem="{Binding FieldSelection}"/>
                             <CheckBox Content="Exact name" IsChecked="{Binding ExactText}"

@@ -2,12 +2,18 @@
 
 **Updated:** 2026-10-26
 
-**Current task:** Recovery Checkpoint2.1 — final acceptance gap audit; implemented Windows scenarios pass, remaining evidence/signoff pending. No navigation or issue closure.
+**Current task:** Recovery Checkpoint2.1 — approved criteria accessibility metadata and strict runner discovery correction; Windows verification pending. No navigation or issue closure.
+
+### Checkpoint2.1 — approved Search criteria accessibility correction
+
+- User reports run [40326632909](https://github.com/PapayaModding/UABS/actions/runs/40326632909) at `aaadcd0cb26af075a9087de108f475b1e0768bf7`: original three jobs PASS, gaps BLOCKED before input because all six Edits had empty watermark evidence. Artifact API Forbidden; no full Windows tree inspection claimed. Template TextBlock peers are not control elements and do not label their parent Edits; prior headless traversal did not establish native discoverability.
+- With separate user approval, changed only the five criteria TextBoxes' accessibility names and four new x:Names in production XAML. Existing IncludeSearchTextBox ID, visible watermarks, bindings, handlers/defaults and Search behavior are preserved. The [updated slice guide](../../../tools/windows-ui-poc/ACCEPTANCE-GAP-SLICE.md) lists exact public ID/Name pairs; the runner requires unique paired identities plus stable RuntimeIds on every read/write. Missing/conflicting/replaced identities BLOCK; wrong values FAIL. No watermark, position or input-value identification fallback.
+- Public accessibility/binding/tab-retention regressions and runner contract tests added. Updated Windows execution is still required for G3 then G2/G4; none of the previously unexecuted gap cases is accepted. G1, G5, G6 and Linux regression disposition remain open. No Checkpoint2.1 closure or Checkpoint3.
 
 ### Checkpoint2.1 — next test-only G2/G3/G4 slice (Windows pending)
 
 - Added optional `checkpoint21-gaps` hosted job without changing the passing Smoke/V1/V2 paths. [Slice guide](../../../tools/windows-ui-poc/ACCEPTANCE-GAP-SLICE.md) describes real pre-admission input/defaulting, non-default numeric/type/exclude/flag retention across scope/workspace/catalog changes and metadata-exclusion rejection with exact state/result/Inspector preservation.
-- Controls bind by unique actual template watermark evidence while empty, then supported runtime identity, never Edit order or expected values. A headless control-peer regression verifies the existing template/Value provider; actual Windows runtime identity/native picker verification remains pending. No production files, fixtures or result expectations changed.
+- Historical initial implementation bound template watermark evidence while empty; the Windows failure and approved public identity correction above supersede that discovery strategy. The original slice changed no production files, fixtures or result expectations.
 - G1 Package ordering, G5 indeterminate-coverage feedback, G6 tooltip-hover/HelpText equivalence and full Linux regression disposition remain open. No Checkpoint2.1 closure, additional accessibility implementation or Checkpoint3 authorization. The final audit remains the acceptance authority.
 
 ### Checkpoint2.1 — final acceptance gap audit (2026-10-26)

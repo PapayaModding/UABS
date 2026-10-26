@@ -13,31 +13,35 @@ internal static partial class Program
         catch (COMException error) { throw new Blocked($"UIA provider/action unavailable (0x{error.HResult:X8}); actions were not replayed: {error}"); }
     });
 
-    private static CriteriaEdit ObserveEdit(AutomationElement edit, bool watermarks)
+    private static CriteriaEdit ObserveEdit(AutomationElement edit)
     {
         Require(edit.Properties.RuntimeId.TryGetValue(out var id) && id is { Length: > 0 }, "Criteria Edit lacks UIA RuntimeId.");
         Require(edit.Patterns.Value.IsSupported, "Criteria Edit lacks Value pattern.");
         var pattern = edit.Patterns.Value.Pattern;
-        return new(string.Join(".", id!), watermarks ? edit.FindAllDescendants(Automation!.ConditionFactory.ByControlType(ControlType.Text)
-            .And(Automation.ConditionFactory.ByAutomationId("PART_Watermark"))).Select(e => e.Name).ToArray() : [],
+        bool hasId = edit.Properties.AutomationId.TryGetValue(out var automationId);
+        bool hasName = edit.Properties.Name.TryGetValue(out var name);
+        // An unrelated Edit may omit these properties; required role identities still must match both.
+        return new(string.Join(".", id!), hasId ? automationId : null, hasName ? name : null,
             edit.IsEnabled && !pattern.IsReadOnly.Value, pattern.Value.Value);
     }
     private static AutomationElement[] GapEdits() => Controls().FindAllDescendants(Automation!.ConditionFactory.ByControlType(ControlType.Edit));
     private static AutomationElement BoundEdit(string role)
     {
-        var matches = GapEdits().Where(edit => ObserveEdit(edit, false).RuntimeId == GapRoles[role]).ToArray();
+        var edits = GapEdits();
+        CriteriaContract.Read(GapRoles, edits.Select(ObserveEdit).ToArray()); // verify all semantic identities before any write
+        var matches = edits.Where(edit => ObserveEdit(edit).RuntimeId == GapRoles[role]).ToArray();
         Require(matches.Length == 1, "Bound " + role + " Edit was replaced or ambiguous; no guessed remapping.");
-        Require(ObserveEdit(matches[0], false).Writable, "Bound " + role + " Edit is disabled or read-only; no Value action sent.");
+        Require(ObserveEdit(matches[0]).Writable, "Bound " + role + " Edit is disabled or read-only; no Value action sent.");
         return matches[0];
     }
     private static Dictionary<string, string> GapValues() => UiaRead.Fresh("semantic criterion readback", () =>
-        CriteriaContract.Read(GapRoles, GapEdits().Select(edit => ObserveEdit(edit, false)).ToArray()));
+        CriteriaContract.Read(GapRoles, GapEdits().Select(ObserveEdit).ToArray()));
     private static void SetGapValues(Dictionary<string, string> values)
     {
         foreach (var (role, value) in values) SetValue(BoundEdit(role), value);
         CriteriaContract.Equal(values, GapValues()); // actual changed/read-back values, not control existence
     }
-    private static Dictionary<string, string> SupportedGapValues(Scenario config) => CriteriaContract.Watermarks.Keys
+    private static Dictionary<string, string> SupportedGapValues(Scenario config) => CriteriaContract.Fields.Keys
         .ToDictionary(role => role, role => role == "include" ? config.Keyword : "");
     private static void GapReport(string label, object report)
     {
@@ -57,11 +61,11 @@ internal static partial class Program
     {
         Select(Find(Window!, ControlType.TabItem, "Search"));
         Require(Scopes().Length == 0, "Pre-admission requires no loaded V1/V2 scopes; existing packages are not silently unloaded or substituted.");
-        var observed = GapEdits().Select(edit => ObserveEdit(edit, true)).ToArray();
+        var observed = GapEdits().Select(ObserveEdit).ToArray();
         GapReport("CP21-G3-empty-control-identities", observed);
         GapRoles = CriteriaContract.Bind(observed);
         // Independently anchor the include role to the existing production AutomationId.
-        Require(ObserveEdit(ById(Controls(), "IncludeSearchTextBox"), false).RuntimeId == GapRoles["include"], "Include role watermark/AutomationId disagree.");
+        Require(ObserveEdit(ById(Controls(), "IncludeSearchTextBox")).RuntimeId == GapRoles["include"], "Include role accessibility/AutomationId disagree.");
         SetGapValues(CriteriaContract.Sentinels(config.Keyword));
         GapReport("CP21-G3-before-admission", new { roles = GapRoles, observed = GapValues(), scopes = Scopes().Length });
         // Do not touch kind/field selectors: their untouched-default state is the subject of this test.

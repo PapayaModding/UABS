@@ -1,23 +1,26 @@
-internal sealed record CriteriaEdit(string RuntimeId, string[] Watermarks, bool Writable, string Value);
+internal sealed record CriteriaEdit(string RuntimeId, string? AutomationId, string? AccessibleName, bool Writable, string Value);
+internal sealed record CriteriaField(string AutomationId, string AccessibleName);
 
 internal static class CriteriaContract
 {
-    internal static readonly IReadOnlyDictionary<string, string> Watermarks = new Dictionary<string, string> {
-        ["include"] = "Include terms (comma = OR)", ["exclude"] = "Exclude terms",
-        ["pathId"] = "Exact Path ID (optional)", ["classId"] = "V2 Class ID (asset-only, optional)",
-        ["typeName"] = "V2 exact type name (asset-only, optional)"
+    internal static readonly IReadOnlyDictionary<string, CriteriaField> Fields = new Dictionary<string, CriteriaField> {
+        ["include"] = new("IncludeSearchTextBox", "Include terms"), ["exclude"] = new("ExcludeSearchTextBox", "Exclude terms"),
+        ["pathId"] = new("PathIdSearchTextBox", "Exact Path ID"), ["classId"] = new("ClassIdSearchTextBox", "V2 Class ID"),
+        ["typeName"] = new("TypeNameSearchTextBox", "V2 exact type name")
     };
 
     internal static Dictionary<string, string> Bind(CriteriaEdit[] edits)
     {
         var result = new Dictionary<string, string>();
-        foreach (var (role, watermark) in Watermarks)
+        foreach (var (role, field) in Fields)
         {
-            var matches = edits.Where(edit => edit.Watermarks.Contains(watermark, StringComparer.Ordinal)).ToArray();
-            if (matches.Length != 1 || matches[0].Watermarks.Count(text => text == watermark) != 1
+            // Matching either property also detects conflicting or duplicate identities;
+            // accepting just the correctly paired candidate would hide ambiguity.
+            var matches = edits.Where(edit => edit.AutomationId == field.AutomationId || edit.AccessibleName == field.AccessibleName).ToArray();
+            if (matches.Length != 1 || matches[0].AutomationId != field.AutomationId || matches[0].AccessibleName != field.AccessibleName
                 || string.IsNullOrWhiteSpace(matches[0].RuntimeId) || !matches[0].Writable
                 || matches[0].Value != "")
-                throw new AccessibilityUnavailable($"Cannot bind empty writable {role} Edit by unique PART_Watermark '{watermark}'; matches={matches.Length}.");
+                throw new AccessibilityUnavailable($"Cannot bind empty writable {role} Edit by unique AutomationId '{field.AutomationId}' and Name '{field.AccessibleName}'; matches={matches.Length}.");
             result.Add(role, matches[0].RuntimeId);
         }
         if (result.Values.Distinct(StringComparer.Ordinal).Count() != result.Count)
@@ -31,8 +34,12 @@ internal static class CriteriaContract
         foreach (var (role, id) in roles)
         {
             var matches = edits.Where(edit => edit.RuntimeId == id).ToArray();
-            if (matches.Length != 1 || !matches[0].Writable)
-                throw new AccessibilityUnavailable($"Bound {role} Edit RuntimeId is missing, ambiguous or lacks writable Value. No positional/value-based remapping.");
+            var field = Fields[role];
+            if (matches.Length != 1 || !matches[0].Writable || matches[0].AutomationId != field.AutomationId
+                || matches[0].AccessibleName != field.AccessibleName)
+                throw new AccessibilityUnavailable($"Bound {role} Edit RuntimeId/AutomationId/Name is missing, ambiguous, changed or lacks writable Value. No positional/value-based remapping.");
+            if (edits.Count(edit => edit.AutomationId == field.AutomationId || edit.AccessibleName == field.AccessibleName) != 1)
+                throw new AccessibilityUnavailable($"Duplicate/conflicting accessible identity for bound {role} Edit.");
             result.Add(role, matches[0].Value);
         }
         return result;
