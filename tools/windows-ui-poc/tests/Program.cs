@@ -415,6 +415,22 @@ catch (InvalidOperationException) { }
 Console.WriteLine("PASS: exact retained stale/fresh phase distinction; complete row multisets and unchanged executed criteria; wrong counts/identities/implicit execution FAIL; missing, virtualized or ambiguous evidence BLOCKS; fresh reader unchanged.");
 
 var packageAsc = PackageSortContract.Oracle("Ascending"); var packageDesc = PackageSortContract.Oracle("Descending");
+var keySequence = new List<string>();
+PackageSortContract.PressAndRelease(() => keySequence.Add("down"), () => keySequence.Add("up"));
+Check(keySequence.SequenceEqual(new[] { "down", "up" }), "Package key must have exactly one down/up, not Type plus an extra Release.");
+keySequence.Clear();
+try
+{
+    PackageSortContract.PressAndRelease(() => { keySequence.Add("down"); throw new InvalidOperationException("input failed"); }, () => keySequence.Add("up"));
+    throw new Exception("Input failure swallowed.");
+}
+catch (InvalidOperationException error) when (error.Message == "input failed") { }
+Check(keySequence.SequenceEqual(new[] { "down", "up" }), "Failed input must still release exactly once.");
+int releases = 0;
+try { PackageSortContract.PressAndRelease(() => { }, () => { releases++; throw new InvalidOperationException("release failed"); }); throw new Exception("Release failure swallowed."); }
+catch (InvalidOperationException error) when (error.Message == "release failed") { }
+Check(releases == 1, "Failed release must not be retried as another activation.");
+Console.WriteLine("PASS: Package key down/up paired exactly once; press failure cleans up; release failures propagate without duplicate key-up.");
 PackageSortContract.VerifyOrder(packageAsc, "Ascending"); PackageSortContract.VerifyOrder(packageDesc, "Descending");
 Check(!packageDesc.SequenceEqual(packageAsc.Reverse()), "Descending must not reverse ascending ties.");
 foreach (var wrong in new[] { packageAsc.Reverse().ToArray(), new[] { packageDesc[0], packageDesc[2], packageDesc[1] },

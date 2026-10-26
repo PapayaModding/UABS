@@ -5,6 +5,13 @@ internal sealed record PackageSortFixture(string Package, string Path, string Sh
 
 internal static class PackageSortContract
 {
+    // FlaUI Type already releases the key. A second Space key-up activates an
+    // Avalonia Release-mode Button again; pair Press with exactly one Release.
+    internal static void PressAndRelease(Action press, Action release)
+    {
+        try { press(); }
+        finally { release(); }
+    }
     internal static void RequireAction(bool correctButton, bool enabled, bool visible, bool owned, bool invoke)
     {
         if (!correctButton || !enabled || !visible || !owned || !invoke)

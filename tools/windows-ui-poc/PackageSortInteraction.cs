@@ -112,8 +112,12 @@ internal static partial class Program
         }
         var button = PackageSortButton(); var key = action == 1 ? VirtualKeyShort.RETURN : VirtualKeyShort.SPACE;
         SearchAccessibility.GuardedSelectionKeys(() => { }, () => OwnedFocus(button), () =>
-        { try { Keyboard.Type(key); } finally { Keyboard.Release(key); } }, "Sort Package");
-        Step("Package keyboard input", new { input = action == 1 ? "Tab then Enter" : "Space", ownedProcess = App!.Id, windowHandle = Window.Properties.NativeWindowHandle.Value.ToInt64() });
+        {
+            PackageSortContract.PressAndRelease(
+                () => { Step("Package key down requested", new { key = key.ToString(), ownedFocus = OwnedFocus(button) }); Keyboard.Press(key); },
+                () => { Keyboard.Release(key); Step("Package key up sent", new { key = key.ToString() }); });
+        }, "Sort Package");
+        Step("Package keyboard input", new { input = action == 1 ? "Tab then Enter" : "Space", sequence = "Press, one finally Release", ownedProcess = App!.Id, windowHandle = Window.Properties.NativeWindowHandle.Value.ToInt64() });
     }
     private static bool PackageInspectorMatches(string? text, ExpectedRow row, PackageSortFixture fixture, string work)
     {

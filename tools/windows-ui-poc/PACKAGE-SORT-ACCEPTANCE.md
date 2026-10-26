@@ -6,6 +6,56 @@ this is **not** a claim of Windows acceptance. G5 indeterminate-coverage feedbac
 G6 tooltip equivalence, Linux full-suite regression disposition and Checkpoint 2.1
 remain open. No Checkpoint 3 work or fixture dataset publication.
 
+## Space activation correction (2026-10-26; new Windows run required)
+
+User-confirmed [run 40363149266](https://github.com/PapayaModding/UABS/actions/runs/40363149266)
+at `f74e35c52b411a93cbb2414958663627b54016c3` passed the original four jobs.
+The Package job validated the real fixture, Invoke/Descending and Tab/Enter/
+Ascending, exact orders/ties and canonical identity, then BLOCKED waiting for
+Space/Descending with Current=Ascending, Next=Descending, Busy=false. These are
+the user's Windows observations, not newly downloaded artifacts: this session's
+artifact API request was Forbidden. That final state alone cannot distinguish
+ignored input from two sort requests.
+
+Source inspection establishes a runner input defect:
+
+- Pinned [FlaUI 5.0.0 Keyboard.Type](https://github.com/FlaUI/FlaUI/blob/v5.0.0/src/FlaUI.Core/Input/Keyboard.cs)
+  calls Press **and** Release. The old runner then called Release again in
+  `finally`, emitting down/up/up, not a single down/up.
+- Pinned [Avalonia 11.3.3 Button](https://github.com/AvaloniaUI/Avalonia/blob/11.3.3/src/Avalonia.Controls/Button.cs)
+  handles Enter on KeyDown, but a focused Release-mode Button handles Space on
+  KeyUp. It does not require IsPressed before that KeyUp activation. UABS uses
+  the standard Release-mode Button; its click handler uses the guarded existing
+  global sort lifecycle, with no custom keyboard handler.
+- A real headless UABS regression reproduces exactly two clicks: Space down does
+  not sort, the first up sorts Ascending to Descending, and an extra up without
+  another down sorts back to Ascending. Existing focused Tab/Enter/Space and
+  queued-sort tests still pass. This proves the duplicate-release defect and
+  resulting behavior under Avalonia, not the exact event trace of the hosted run.
+
+The test-only correction pairs explicit FlaUI Press with **one** finally Release
+for Package Enter/Space actions. It does not replace Space with Invoke/Enter,
+insert a shortcut, delay/retry activation, or change production code. The helper
+releases once even when Press fails and propagates release failures without
+retrying another activation. Evidence records down requests, sent key-up and the
+sequence; the existing owned foreground/focus gate and strict completion, active
+field, geometry, complete-set/tie, canonical Inspector and confirmed-query
+assertions remain unchanged. Input diagnostics are not acceptance evidence alone.
+
+Validation: focused application suites **71/71 passed** (including duplicate-up
+reproduction); runner/launcher regressions passed; Debug solution and Release
+Windows-targeted runner builds passed; real Alpha/Zeta fixture preparation,
+three independent Python fixture tests and prepared runner metadata checks passed;
+actionlint and whitespace checks passed. The preparer still reports NU1900 for
+the unavailable vulnerability feed. Full Linux suite disposition remains open.
+
+Next: manually dispatch the [Windows workflow](https://github.com/PapayaModding/UABS/actions/workflows/windows-ui-poc.yml)
+on the newly published `v2-recovery` commit. Inspect all five jobs and action 2's
+down/up evidence, Current=Descending/Next=Ascending completion, exact descending
+sequence with ascending Alpha ties and retained identity/criteria. No Space or
+G1 PASS is claimed until that real Windows execution succeeds. Checkpoint 2.1,
+G5, G6 and Linux regression disposition remain open.
+
 ## Changed components
 
 | Files | Responsibility |

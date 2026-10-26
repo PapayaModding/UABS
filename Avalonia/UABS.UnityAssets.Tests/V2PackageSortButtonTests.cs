@@ -75,6 +75,35 @@ public sealed partial class V2BundleSearchWorkspaceTests
     }
 
     [AvaloniaFact]
+    public async Task FocusedPackageSpaceReleaseActivatesOnce_ExtraReleaseActivatesAgain()
+    {
+        using var corpus = new V2SearchTests.Corpus(); await corpus.Add(2, sourceCount: 3);
+        using var packages = V2SearchIntegrationTests.Packages(); using var search = Create(packages);
+        await packages.V2.OpenAsync(corpus.Packages[0].Path, select: false); Configure(search); await search.SearchAsync();
+        var view = new SearchWorkspaceView { DataContext = search }; var window = new Window { Content = view, Width = 1300, Height = 700 }; window.Show();
+        try
+        {
+            Layout(window); var button = view.FindControl<Button>("SearchPackageSortButton")!;
+            Assert.Equal(ClickMode.Release, button.ClickMode); Assert.True(button.Focus());
+            Assert.Equal(PackageSearchSortDirection.Ascending, search.DisplayedSortDirection);
+            var before = view.HeaderSortTask; int clicks = 0; button.Click += (_, _) => clicks++;
+            window.KeyPress(Key.Space, RawInputModifiers.None, PhysicalKey.Space, " ");
+            Dispatcher.UIThread.RunJobs(); Assert.True(button.IsPressed); Assert.Equal(0, clicks); Assert.Same(before, view.HeaderSortTask);
+            window.KeyRelease(Key.Space, RawInputModifiers.None, PhysicalKey.Space, " ");
+            Dispatcher.UIThread.RunJobs(); await view.HeaderSortTask; Layout(window);
+            Assert.False(button.IsPressed); Assert.Equal(1, clicks);
+            Assert.Equal(PackageSearchSortDirection.Descending, search.DisplayedSortDirection);
+            // Reproduce the old runner's Type(SPACE) + finally Release(SPACE).
+            // Avalonia does not require IsPressed for its focused Space key-up.
+            Assert.True(button.IsFocused);
+            window.KeyRelease(Key.Space, RawInputModifiers.None, PhysicalKey.Space, " ");
+            Dispatcher.UIThread.RunJobs(); await view.HeaderSortTask; Layout(window);
+            Assert.Equal(2, clicks); Assert.Equal(PackageSearchSortDirection.Ascending, search.DisplayedSortDirection);
+        }
+        finally { window.Close(); }
+    }
+
+    [AvaloniaFact]
     public async Task PackageButtonDisabledForStaleOrDisabledGridAndHiddenWithoutBundles()
     {
         using var corpus = new V2SearchTests.Corpus(); await corpus.Add(2);
