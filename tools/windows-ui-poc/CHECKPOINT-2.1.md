@@ -9,23 +9,29 @@ The user confirmed [run 40246911317](https://github.com/PapayaModding/UABS/actio
 at `6991888bd7f8fe7704290f4b3c777b3ec45feedb` passed the original Smoke
 scenario. This establishes hosted desktop feasibility and that scenario's
 observed defaults/query/results only. The current session could not independently
-download that run through the GitHub API (Forbidden). All expanded checks below
-require a new actual Windows run; source tests/builds do not establish UI acceptance.
+download that run through the GitHub API (Forbidden).
 
-| Documented requirement | Scenario/case | Windows result before expanded run | Evidence / remaining validation |
+The user subsequently confirmed [run 40249915733](https://github.com/PapayaModding/UABS/actions/runs/40249915733):
+Smoke and fresh V1 passed; the implemented V2 cases passed except CP21-08 and
+CP21-09, which were BLOCKED by missing Invoke and SelectionItem respectively.
+These are user-confirmed previous-run outcomes; this session's API access is
+still Forbidden and the new keyboard strategy has not run on Windows.
+Source tests/builds do not establish UI acceptance for the updated commit.
+
+| Documented requirement | Scenario/case | User-confirmed Windows result before this change | Evidence / remaining validation |
 | --- | --- | --- | --- |
 | Untouched V2 Sources-only / Assets defaults | unchanged `smoke`; CP21-01 | PASS, user-confirmed baseline | Linked baseline run; fresh SHA gets its own artifact |
 | Known Unicode keyword returns exact bundle Name/Package identities | unchanged `smoke`; CP21-01 | PASS, user-confirmed baseline | `preparation.json`, `final.png`, observed rows in `results.json` |
-| Explicit Names choice, corrective error, controls and confirmed rows retained | CP21-02-Names (also Paths/All feedback) | Not executed | Per-case screenshot/tree, field-selection evidence, error text and exact rows |
-| Mixed result kinds produce corrective feedback and retain choices/rows | CP21-03 | Not executed | Toggle readback, corrective text, exact rows |
-| Original backend diagnostic available through tooltip | CP21-04 | Not executed; UIA support unknown | Requires original `InvalidRequest` through UIA HelpText; otherwise BLOCKED and actual hover validation remains outstanding |
-| Explicit selectors/text/other criteria survive scope and workspace transitions | CP21-05 | Not executed | Toggle/ComboBox readback and all readable Edit/criterion-flag snapshots before/after |
-| Explicit choices survive catalog reload | CP21-06 | Not executed; folder-picker accessibility unknown | Exact disposable catalog path, native folder Edit 1152 Value readback, real Refresh Invoke, retained criteria |
-| Explicit Refresh unchanged; editing criteria alone does not rerun | CP21-07 | Not executed | Prior row retained, Refresh publishes exact empty result, second Refresh restores Unicode result |
-| Search sorting unchanged | CP21-08 | Not executed; header Invoke support unknown | Independently indexed three-bundle `asset` oracle, complete reversed Name order; unsupported action is BLOCKED. Nontrivial Package sorting remains uncovered (one package) |
-| Selection retained including after rejection | CP21-09 | Not executed; row SelectionItem support unknown | UIA selected state before/after unsupported Names query; unsupported action is BLOCKED |
-| Mixed V1/V2 scope rejects rather than guesses | CP21-10 | Not executed | Exact two disposable scopes, error text, selected states retained |
-| Fresh V1-only original mixed/Names defaults and Search behavior | separate `checkpoint21-v1`, CP21-11 | Not executed; folder-picker accessibility unknown | SHA-checked copy of LegacyPackage fixture, six-column exact portrait/LegacyPackage/character.ab/1001/memo row and exact count |
+| Explicit Names choice, corrective error, controls and confirmed rows retained | CP21-02-Names (also Paths/All feedback) | PASS | Per-case screenshot/tree, field-selection evidence, error text and exact rows |
+| Mixed result kinds produce corrective feedback and retain choices/rows | CP21-03 | PASS | Toggle readback, corrective text, exact rows |
+| Original backend diagnostic available through tooltip | CP21-04 | PASS | Original `InvalidRequest` through UIA HelpText in the previous run |
+| Explicit selectors/text/other criteria survive scope and workspace transitions | CP21-05 | PASS | Toggle/ComboBox readback and all readable Edit/criterion-flag snapshots before/after |
+| Explicit choices survive catalog reload | CP21-06 | PASS | Exact disposable catalog path, native folder Edit Value readback, Refresh Invoke, retained criteria |
+| Explicit Refresh unchanged; editing criteria alone does not rerun | CP21-07 | PASS | Prior row retained, Refresh publishes exact empty result, second Refresh restores Unicode result |
+| Search sorting unchanged | CP21-08 | BLOCKED; remains blocked without Invoke | Capability JSON plus independently indexed three-bundle oracle. Nontrivial Package sorting remains uncovered |
+| Selection retained including after rejection | CP21-09 | BLOCKED; new keyboard path pending | UIA SetFocus and guarded Ctrl+Home/End, exact Inspector identity before/after rejection |
+| Mixed V1/V2 scope rejects rather than guesses | CP21-10 | PASS | Exact two disposable scopes, error text, selected states retained |
+| Fresh V1-only original mixed/Names defaults and Search behavior | separate `checkpoint21-v1`, CP21-11 | PASS | SHA-checked LegacyPackage copy, six-column exact portrait/LegacyPackage/character.ab/1001/memo row and exact count |
 
 The metadata/mixed-exclusion and indeterminate-coverage guidance described in
 the report has no new real-desktop fixture here. Numeric/type filters are
@@ -58,9 +64,45 @@ files), SHA-checked, and opened only from the run workspace. Embedded historic
 game source paths are metadata; no original Unity source is opened or edited.
 Catalog/mixed-format scenarios use that workspace and the already SHA-verified
 Smoke SQLite copy. Native folder controls, ComboBox selection, header Invoke,
-and row SelectionItem require supported UIA patterns. A missing pattern or
+and either row SelectionItem or verified keyboard focus require supported UIA capabilities. A missing pattern or
 ambiguous control blocks; there is no coordinate/OCR substitute. Original
 diagnostic tooltips are not assumed to be accessible because the binding exists.
 
 Final acceptance requires inspection of every applicable actual case result
 and resolution of remaining gaps. Checkpoint 2.1 and issue #1 remain open.
+
+## Two UIA blockers: source investigation and isolated runner change
+
+Avalonia DataGrid 11.3.3's
+[header peer](https://github.com/AvaloniaUI/Avalonia.Controls.DataGrid/blob/11.3.3/src/Avalonia.Controls.DataGrid/Automation/Peers/DataGridColumnHeaderAutomationPeer.cs)
+does not implement Invoke. The
+[header control](https://github.com/AvaloniaUI/Avalonia.Controls.DataGrid/blob/11.3.3/src/Avalonia.Controls.DataGrid/DataGridColumnHeader.cs)
+routes pointer release to InvokeProcessSort but has no key handler, and the
+[grid key dispatcher](https://github.com/AvaloniaUI/Avalonia.Controls.DataGrid/blob/11.3.3/src/Avalonia.Controls.DataGrid/DataGrid.cs)
+has no sorting shortcut. UABS's header HelpText exposes sort state, not an
+action. The runner records header/child capabilities, access/accelerator keys,
+and legacy-pattern availability in `name-sort-capabilities.json`. It does not
+invent an Enter/F3 shortcut, call the ViewModel, use a generic child action,
+or synthesize pointer coordinates. CP21-08 stays BLOCKED without Invoke.
+A separate production/upstream accessibility proposal would expose a header
+Invoke provider routed through the existing user-sort behavior; it is not
+implemented or authorized by these tool changes.
+
+For selection, DataGrid is keyboard-focusable. Its ProcessHomeKey and
+ProcessEndKey explicitly call UpdateSelectionAndCurrency with SelectCurrent
+when Control is held. CP21-09 keeps its existing SelectionItem route when
+supported. Otherwise it verifies the independent three-row `asset` oracle,
+uses UIA SetFocus on the owned grid, checks HasKeyboardFocus and that the
+foreground HWND is the launched UABS window, then sends only Ctrl+Home/End
+through normal Windows keyboard input (no pointer action). Unsupported focus
+or unverified ownership blocks before any keys. Control is released in finally.
+
+The first and last rows must produce different, readable V2SearchDetails
+Inspectors. Each must match the expected Name/Package, exact SHA-verified
+disposable DB path, original source filename, and nonempty package/generation/
+source/revision UUIDs. After Names rejection, the full Inspector text must
+remain identical and the complete row multiset and package SHA must remain
+unchanged. Missing Inspector exposure or unverifiable navigation is BLOCKED;
+an observed identity change after rejection is FAIL. Capability JSON, first/
+last selection screenshots, and all three Inspector strings are retained.
+This is an evidence-backed input strategy, not a Windows execution result.

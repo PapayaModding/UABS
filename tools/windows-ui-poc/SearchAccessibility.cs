@@ -7,6 +7,38 @@ internal sealed record FieldVerdict(string Status, string Reason);
 
 internal static class SearchAccessibility
 {
+    internal static void RequireSortInvoke(bool supported)
+    {
+        if (!supported) throw new AccessibilityUnavailable(
+            "Name HeaderItem lacks Invoke. Avalonia 11.3.3 header has no keyboard sort handler and DataGrid has no sort key; supported coordinate-free sorting remains unavailable. See name-sort-capabilities.json.");
+    }
+
+    internal static void GuardedSelectionKeys(Action focus, Func<bool> hasOwnedFocus, Action sendKeys)
+    {
+        focus();
+        if (!hasOwnedFocus()) throw new AccessibilityUnavailable("Owned foreground DataGrid keyboard focus could not be verified; no keys sent.");
+        sendKeys();
+    }
+
+    internal static bool SelectedInspectorMatches(string? details, ExpectedRow expected, string copy)
+    {
+        if (string.IsNullOrWhiteSpace(details)) return false;
+        var fields = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (string line in details.Replace("\r\n", "\n").Split('\n'))
+        {
+            int separator = line.IndexOf(": ", StringComparison.Ordinal);
+            if (separator > 0 && !fields.TryAdd(line[..separator], line[(separator + 2)..])) return false;
+        }
+        if (!fields.TryGetValue("Name", out var name) || name != expected.Name
+            || !fields.TryGetValue("Package", out var package) || package != expected.Package
+            || !fields.TryGetValue("Package path", out var path) || !Path.IsPathFullyQualified(path)
+            || !Path.GetFullPath(path).Equals(Path.GetFullPath(copy), StringComparison.OrdinalIgnoreCase)
+            || !fields.TryGetValue("Original indexed source", out var source) || !Path.IsPathFullyQualified(source)
+            || Path.GetFileName(source) != expected.Name) return false;
+        return new[] { "Package UUID", "Generation", "Source UUID", "Source revision" }
+            .All(key => fields.TryGetValue(key, out var value) && Guid.TryParse(value, out var id) && id != Guid.Empty);
+    }
+
     internal static string AggregateAcceptance(IEnumerable<string> statuses)
     {
         var observed = statuses.ToArray();

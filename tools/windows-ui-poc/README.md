@@ -232,8 +232,13 @@ The workflow now has independent `smoke`, `checkpoint21-v2`, and
 `checkpoint21-v1` matrix jobs. Smoke keeps its existing path; the latter two
 set optional `acceptance` in a generated scenario and use a 600-second
 watchdog. Each uploads separate artifacts, including per-case
-`acceptance.json`. Expanded checks require their own real Windows evidence;
-the user's confirmed baseline run does not accept the additional cases.
+`acceptance.json`. The user confirmed a later remote run passed Smoke, V1,
+and all implemented V2 cases except sorting and selection. The latest
+[coverage matrix](CHECKPOINT-2.1.md#two-uia-blockers-source-investigation-and-isolated-runner-change)
+records those outcomes and the source investigation. CP21-09 now has a guarded
+UIA-focus/keyboard selection path with exact Inspector identity retention;
+that new path still needs Windows execution. CP21-08 remains BLOCKED without
+a supported header Invoke action. No production accessibility code changed.
 
 `.github/workflows/windows-ui-poc.yml` runs **manual-only** jobs on
 `windows-latest`. It runs only for `PapayaModding/UABS` on `v2-recovery`, with

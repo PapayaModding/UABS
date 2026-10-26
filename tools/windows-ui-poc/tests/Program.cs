@@ -144,3 +144,37 @@ Check(SearchAccessibility.AggregateAcceptance(["PASS", "PASS"]) == "PASS", "Pass
 Check(SearchAccessibility.AggregateAcceptance([]) == "BLOCKED", "Unexercised acceptance was promoted to PASS.");
 Check(SearchAccessibility.AggregateAcceptance(["UNKNOWN"]) == "BLOCKED", "Unknown acceptance was promoted to PASS.");
 Console.WriteLine("PASS: explicit selector intent and acceptance PASS/FAIL/BLOCKED aggregation.");
+
+var actions = new List<string>();
+SearchAccessibility.GuardedSelectionKeys(() => actions.Add("focus"), () => {
+    actions.Add("verify owned focus"); return true;
+}, () => actions.Add("keys"));
+Check(actions.SequenceEqual(new[] { "focus", "verify owned focus", "keys" }), "Keyboard selection order/gate changed.");
+bool sentKeys = false;
+try
+{
+    SearchAccessibility.GuardedSelectionKeys(() => { }, () => false, () => sentKeys = true);
+    throw new Exception("Unverified keyboard focus was accepted.");
+}
+catch (AccessibilityUnavailable) { Check(!sentKeys, "Keys sent without verified owned focus."); }
+try
+{
+    SearchAccessibility.GuardedSelectionKeys(() => throw new NotSupportedException(), () => true, () => sentKeys = true);
+    throw new Exception("Unsupported UIA focus was accepted.");
+}
+catch (NotSupportedException) { Check(!sentKeys, "Keys sent after focus failed."); }
+SearchAccessibility.RequireSortInvoke(true);
+try { SearchAccessibility.RequireSortInvoke(false); throw new Exception("Unsupported sorting was accepted."); }
+catch (AccessibilityUnavailable) { }
+string selectionCopy = Path.GetFullPath("selection/Smoke.uabs.sqlite");
+var selectedRow = new ExpectedRow("uabs-smoke-0000.bundle", "Smoke");
+string inspector = $"Name: {selectedRow.Name}\nPackage: Smoke\nPackage path: {selectionCopy}\nOriginal indexed source: {Path.GetFullPath(selectedRow.Name)}\n"
+    + $"Package UUID: {Guid.NewGuid()}\nGeneration: {Guid.NewGuid()}\nSource UUID: {Guid.NewGuid()}\nSource revision: {Guid.NewGuid()}";
+Check(SearchAccessibility.SelectedInspectorMatches(inspector, selectedRow, selectionCopy), "Valid selected source identity rejected.");
+Check(!SearchAccessibility.SelectedInspectorMatches(inspector, new("wrong.bundle", "Smoke"), selectionCopy), "Wrong selected bundle accepted.");
+Check(!SearchAccessibility.SelectedInspectorMatches(inspector, new(selectedRow.Name, "Other"), selectionCopy), "Wrong package accepted.");
+Check(!SearchAccessibility.SelectedInspectorMatches(inspector, selectedRow, Path.GetFullPath("other/Smoke.uabs.sqlite")), "Unrelated same-name package accepted.");
+Check(!SearchAccessibility.SelectedInspectorMatches(inspector + "\nName: duplicate", selectedRow, selectionCopy), "Duplicate Inspector identity accepted.");
+Check(!SearchAccessibility.SelectedInspectorMatches("Name: " + selectedRow.Name, selectedRow, selectionCopy), "Incomplete identity accepted.");
+Check(!SearchAccessibility.SelectedInspectorMatches(null, selectedRow, selectionCopy), "Unavailable Inspector accepted.");
+Console.WriteLine("PASS: keyboard ownership/focus gating, selected Inspector identity validation, and unsupported sorting stays blocked.");

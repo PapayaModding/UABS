@@ -188,7 +188,8 @@ internal static partial class Program
             Wait("multirow query", () => Grid().FindAllDescendants(Automation!.ConditionFactory.ByControlType(ControlType.DataItem)).Length >= config.ExpectedSortRows!.Length);
             Rows(config.ExpectedSortRows!);
             var header = Find(Grid(), ControlType.HeaderItem, "Name");
-            Require(header.Patterns.Invoke.IsSupported, "Name HeaderItem lacks Invoke; sorting cannot be exercised without a supported UIA action.");
+            InteractionEvidence("name-sort", header);
+            SearchAccessibility.RequireSortInvoke(header.Patterns.Invoke.IsSupported);
             var before = ReadAccessibleRows(Grid()); Invoke(header);
             Wait("first Name sort changes order", () => !ReadAccessibleRows(Grid()).SequenceEqual(before));
             var first = ReadAccessibleRows(Grid()); Invoke(header);
@@ -201,10 +202,14 @@ internal static partial class Program
         {
             ResetSupported(config); Search(config);
             var row = Find(Grid(), ControlType.DataItem, null);
-            Require(row.Patterns.SelectionItem.IsSupported, "Result DataItem lacks SelectionItem; selection remains blocked.");
-            Select(row); Check(row.Patterns.SelectionItem.Pattern.IsSelected.Value, "Result selection did not persist.");
-            Field("Names"); ExecuteSearch(); Error("Select Assets");
-            Check(row.Patterns.SelectionItem.Pattern.IsSelected.Value, "Compatibility rejection lost confirmed selection.");
+            InteractionEvidence("result-selection", row);
+            if (row.Patterns.SelectionItem.IsSupported)
+            {
+                Select(row); Check(row.Patterns.SelectionItem.Pattern.IsSelected.Value, "Result selection did not persist.");
+                Field("Names"); ExecuteSearch(); Error("Select Assets");
+                Check(row.Patterns.SelectionItem.Pattern.IsSelected.Value, "Compatibility rejection lost confirmed selection.");
+            }
+            else VerifyKeyboardSelectionRetention(config, work);
         });
         Case("CP21-10-mixed-formats", () =>
         {
