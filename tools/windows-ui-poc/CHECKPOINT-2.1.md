@@ -23,8 +23,11 @@ passed Smoke, V1, and 12 implemented V2 cases. CP21-09 selection retention
 and CP21-10 mixed-format rejection PASS; only CP21-08 Name sorting is BLOCKED.
 This investigation has not independently downloaded or rerun those artifacts.
 See the [Name-sort accessibility proposal](NAME-SORT-ACCESSIBILITY-PROPOSAL.md)
-for a separately reviewed production option. No production change is made or
-authorized by that proposal, and no checkpoint or separate coverage gap closes.
+for the separately approved production option and implementation record. The
+new V2-only standard Button now routes to the existing global Name sort. Its
+updated CP21-08 case requires actual Invoke and focused Enter, exact ascending
+and descending independent Name/Package sequences, and verified visible row
+geometry. It has not yet run on Windows; no checkpoint or separate gap closes.
 
 | Documented requirement | Scenario/case | User-confirmed Windows result before this change | Evidence / remaining validation |
 | --- | --- | --- | --- |
@@ -36,7 +39,7 @@ authorized by that proposal, and no checkpoint or separate coverage gap closes.
 | Explicit selectors/text/other criteria survive scope and workspace transitions | CP21-05 | PASS | Toggle/ComboBox readback and all readable Edit/criterion-flag snapshots before/after |
 | Explicit choices survive catalog reload | CP21-06 | PASS | Exact disposable catalog path, native folder Edit Value readback, Refresh Invoke, retained criteria |
 | Explicit Refresh unchanged; editing criteria alone does not rerun | CP21-07 | PASS | Prior row retained, Refresh publishes exact empty result, second Refresh restores Unicode result |
-| Search sorting unchanged | CP21-08 | BLOCKED; remains blocked without Invoke | Capability JSON plus independently indexed three-bundle oracle. Nontrivial Package sorting remains uncovered |
+| Search sorting unchanged | CP21-08 | BLOCKED in baseline; approved button/updated case pending Windows | Button capabilities, both exact visual directions and independently indexed three-bundle oracle. Nontrivial Package sorting remains uncovered |
 | Selection retained including after rejection | CP21-09 | PASS, user-confirmed run 40256326602 | Strict positional bounds, UIA focus and Ctrl+Home/End, exact Inspector identity/retention |
 | Mixed V1/V2 scope rejects rather than guesses | CP21-10 | PASS, user-confirmed run 40256326602 | Fresh bounded UIA reads and exact dialog/catalog identity; actual rejection exercised per reported outcome |
 | Fresh V1-only original mixed/Names defaults and Search behavior | separate `checkpoint21-v1`, CP21-11 | PASS | SHA-checked LegacyPackage copy, six-column exact portrait/LegacyPackage/character.ab/1001/memo row and exact count |

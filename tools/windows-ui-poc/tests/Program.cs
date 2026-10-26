@@ -163,9 +163,14 @@ try
     throw new Exception("Unsupported UIA focus was accepted.");
 }
 catch (NotSupportedException) { Check(!sentKeys, "Keys sent after focus failed."); }
-SearchAccessibility.RequireSortInvoke(true);
-try { SearchAccessibility.RequireSortInvoke(false); throw new Exception("Unsupported sorting was accepted."); }
-catch (AccessibilityUnavailable) { }
+SearchAccessibility.RequireNameSortTarget(true, true, true, true, true);
+for (int unavailable = 0; unavailable < 5; unavailable++)
+{
+    bool[] capability = [true, true, true, true, true]; capability[unavailable] = false;
+    try { SearchAccessibility.RequireNameSortTarget(capability[0], capability[1], capability[2], capability[3], capability[4]);
+        throw new Exception("Unsupported or unowned sorting target was accepted."); }
+    catch (AccessibilityUnavailable) { }
+}
 string selectionCopy = Path.GetFullPath("selection/Smoke.uabs.sqlite");
 var selectedRow = new ExpectedRow("uabs-smoke-0000.bundle", "Smoke");
 string inspector = $"Name: {selectedRow.Name}\nPackage: Smoke\nPackage path: {selectionCopy}\nOriginal indexed source: {Path.GetFullPath(selectedRow.Name)}\n"
@@ -274,3 +279,43 @@ try {
 }
 catch (InvalidOperationException error) { Check(queries == 1 && error.Message == "Wrong result", "Application assertion retried or reclassified."); }
 Console.WriteLine("PASS: supported maximization, reported negative viewport rejection, bounded fresh COM read recovery, persistent provider blocking, and strict assertion preservation.");
+
+foreach (var sample in new[] {
+    ("Current Name order: not active (PackageName Ascending). Next Name order: Ascending.", "not active (PackageName Ascending)", "Ascending", false),
+    ("Current Name order: Ascending. Next Name order: Descending.", "Ascending", "Descending", false),
+    ("Current Name order: Descending. Next Name order: Ascending.", "Descending", "Ascending", false),
+    ("Sorting in progress. Current Name order: Ascending. Next Name order: Ascending.", "Ascending", "Ascending", true) })
+{
+    var state = SearchAccessibility.ReadNameSortState(sample.Item1);
+    Check(state == new NameSortState(sample.Item2, sample.Item3, sample.Item4), "Name sort direction/busy evidence changed.");
+}
+foreach (string? unavailable in new[] { null, "", "Ascending", "Current Name order: Ascending. Next Name order: Ascending.",
+    "Current Name order: Descending. Next Name order: Descending.",
+    "Current Name order: not active (PackageName Ascending). Next Name order: Descending.",
+    "Current Name order: Ascending. Next Name order: Descending. extra" })
+{
+    try { SearchAccessibility.ReadNameSortState(unavailable); throw new Exception("Missing/conflicting sort evidence accepted."); }
+    catch (AccessibilityUnavailable) { }
+}
+ExpectedRow[] sortOracle = [new("a", "Smoke"), new("b", "Smoke"), new("c", "Smoke")];
+PositionedRow[] sortEnumeration = [Positioned("c", 100), Positioned("b", 75), Positioned("a", 50)];
+var visualAscending = SearchAccessibility.VisualRowOrder(sortEnumeration, viewport);
+SearchAccessibility.VerifyNameOrder(visualAscending, sortOracle, "Ascending");
+SearchAccessibility.VerifyNameOrder(SearchAccessibility.VisualRowOrder(
+    [Positioned("a", 100), Positioned("c", 50), Positioned("b", 75)], viewport), sortOracle, "Descending");
+foreach (var wrong in new[] { sortOracle.Reverse().ToArray(), new[] { sortOracle[0], sortOracle[2], sortOracle[1] },
+    new[] { sortOracle[0], sortOracle[1] }, new[] { sortOracle[0], sortOracle[1], sortOracle[1] },
+    new[] { sortOracle[0], sortOracle[1], new ExpectedRow("c", "Other") } })
+{
+    try { SearchAccessibility.VerifyNameOrder(wrong, sortOracle, "Ascending"); throw new Exception("Incorrect Name order or set accepted."); }
+    catch (InvalidOperationException error) { Check(error.Message.Contains("independent"), "Wrong order did not remain an assertion failure."); }
+}
+foreach (var ambiguous in new[] { Array.Empty<ExpectedRow>(), new[] { sortOracle[0] },
+    new[] { sortOracle[0], sortOracle[0] }, new[] { sortOracle[0], new ExpectedRow("a", "Other") } })
+{
+    try { SearchAccessibility.NameOrderOracle(ambiguous, "Ascending"); throw new Exception("Ambiguous sort oracle accepted."); }
+    catch (AccessibilityUnavailable) { }
+}
+try { SearchAccessibility.NameOrderOracle(sortOracle, "unknown"); throw new Exception("Unknown direction accepted."); }
+catch (AccessibilityUnavailable) { }
+Console.WriteLine("PASS: exact independent ascending/descending visual Name order, wrong sets/orders fail, and ambiguous direction/target/oracle evidence blocks.");

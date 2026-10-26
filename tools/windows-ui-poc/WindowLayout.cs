@@ -4,9 +4,9 @@ using FlaUI.Core.Definitions;
 
 internal static partial class Program
 {
-    private static void PrepareSelectionWindowLayout()
+    private static void PrepareSelectionWindowLayout(string caseId = "CP21-09")
     {
-        LayoutEvidence("before-maximize");
+        LayoutEvidence("before-maximize", caseId);
         try
         {
             Require(Window!.Properties.ProcessId.Value == App!.Id, "Layout target must be the launched UABS window.");
@@ -16,14 +16,14 @@ internal static partial class Program
             SearchAccessibility.PrepareMaximizedWindow(supported, maximized, canMaximize,
                 () => Window.Patterns.Window.Pattern.SetWindowVisualState(WindowVisualState.Maximized));
             Wait("maximized test window", () => Window.Patterns.Window.Pattern.WindowVisualState.Value == WindowVisualState.Maximized);
-            Step("CP21-09 test window", "UIA WindowVisualState.Maximized; existing panel widths/splitters unchanged.");
+            Step(caseId + " test window", "UIA WindowVisualState.Maximized; existing panel widths/splitters unchanged.");
         }
         catch (Exception error) when (error is not Blocked && error is not AccessibilityUnavailable)
         { throw new Blocked("Could not establish maximized test window: " + error); }
-        finally { LayoutEvidence("after-maximize"); }
+        finally { LayoutEvidence("after-maximize", caseId); }
     }
 
-    private static void LayoutEvidence(string label)
+    private static void LayoutEvidence(string label, string caseId)
     {
         try
         {
@@ -72,7 +72,7 @@ internal static partial class Program
                 viewports, headers
             };
             Step("window layout " + label, report);
-            File.WriteAllText(Path.Combine(Output, "CP21-09-window-" + label + ".json"), JsonSerializer.Serialize(report, Json));
+            File.WriteAllText(Path.Combine(Output, caseId + "-window-" + label + ".json"), JsonSerializer.Serialize(report, Json));
         }
         catch (Exception error) { Step("window layout diagnostic error", error.ToString()); }
     }

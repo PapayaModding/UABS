@@ -237,10 +237,14 @@ and 12 implemented V2 cases, including selection and mixed-format rejection. The
 [coverage matrix](CHECKPOINT-2.1.md)
 records those user-confirmed outcomes and the source investigation. CP21-09 has
 a guarded UIA-focus/keyboard selection path with exact Inspector identity
-retention. CP21-08 remains BLOCKED without a supported sorting action. The
-[Name-sort accessibility proposal](NAME-SORT-ACCESSIBILITY-PROPOSAL.md) requires
-separate approval before production implementation. No production accessibility
-code changed, and separate Checkpoint 2.1 coverage gaps remain open.
+retention. CP21-08 was BLOCKED in that baseline. The separately approved
+[Name-sort accessibility implementation](NAME-SORT-ACCESSIBILITY-PROPOSAL.md)
+adds one V2-only standard Sort Name button beside Refresh, with current/next
+direction HelpText and a wrapping results footer. CP21-08 now requires real
+Button Invoke and focused Enter and exact ascending/descending visual order
+against the independent fixture oracle. Complete-set, ownership, visibility and
+geometry gates remain strict. The new case still needs Windows execution;
+separate Checkpoint 2.1 coverage gaps remain open.
 
 The subsequent CP21-09 comparison confirmed reversed UIA enumeration relative
 to Ctrl+Home navigation. Boundary expectations now come from verified,
@@ -250,7 +254,7 @@ no coordinate-based input. See the matrix's confirmed row-order section for
 the strict layout gates and evidence files. The latest user-confirmed run
 passed selection; future behavior changes still require their own Windows run.
 
-Hosted layout/provider hardening: CP21-09 alone maximizes the owned test window
+Hosted layout/provider hardening: CP21-08 and CP21-09 maximize the owned test window
 through UIA and logs before/after monitor/window/panel/scroll geometry. It
 still blocks on a nonpositive or clipped grid viewport. Catalog reads use
 bounded fresh-element discovery; provider COM failures remain explicit BLOCKED

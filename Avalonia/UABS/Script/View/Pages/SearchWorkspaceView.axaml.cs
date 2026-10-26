@@ -199,10 +199,21 @@ public partial class SearchWorkspaceView : UserControl
         if (_observedViewModel is not { } vm || vm.CanSortResultsLocally) return; // unchanged V1 native route
         e.Handled = true; // never let DataGrid sort the retained V2 window
         if (GlobalSort(e.Column) is { } field)
-        {
-            _restoringHeaderSelection = true;
-            HeaderSortTask = SortHeaderAsync(vm, field, ++_headerSortVersion);
-        }
+            BeginHeaderSort(vm, field);
+    }
+
+    private void BeginHeaderSort(SearchWorkspaceViewModel vm, PackageSearchSortField field)
+    {
+        _restoringHeaderSelection = true;
+        HeaderSortTask = SortHeaderAsync(vm, field, ++_headerSortVersion);
+    }
+
+    private void OnNameSortClick(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        if (_observedViewModel is not { IsBundleSearch: true, CanChangeV2Sort: true } vm) return;
+        var column = ResultsGrid.Columns.Single(c => c.SortMemberPath == "Name");
+        if (column.IsVisible && column.CanUserSort && GlobalSort(column) is { } field)
+            BeginHeaderSort(vm, field);
     }
 
     private async Task SortHeaderAsync(SearchWorkspaceViewModel vm, PackageSearchSortField field, int version)
@@ -243,7 +254,15 @@ public partial class SearchWorkspaceView : UserControl
 
     private void UpdateSortHeaders()
     {
-        if (_observedViewModel is not { } vm) return;
+        if (_observedViewModel is not { } vm) { SearchNameSortButton.IsEnabled = false; return; }
+        SearchNameSortButton.IsEnabled = vm.IsBundleSearch && vm.CanChangeV2Sort;
+        string current = vm.DisplayedSortBy == PackageSearchSortField.SourceName
+            ? vm.DisplayedSortDirection.ToString()
+            : $"not active ({vm.DisplayedSortBy} {vm.DisplayedSortDirection})";
+        string nameSortHelp = (vm.IsSearching ? "Sorting in progress. " : "")
+            + $"Current Name order: {current}. Next Name order: {vm.NextV2SortDirection(PackageSearchSortField.SourceName)}.";
+        AutomationProperties.SetHelpText(SearchNameSortButton, nameSortHelp);
+        ToolTip.SetTip(SearchNameSortButton, nameSortHelp);
         // A prior V1 query may have left native sort descriptions on the grid.
         // Global V2 ordering must never inherit a local fragment sort.
         if (!vm.CanSortResultsLocally && ResultsGrid.CollectionView is { } collection && collection.SortDescriptions.Count > 0)

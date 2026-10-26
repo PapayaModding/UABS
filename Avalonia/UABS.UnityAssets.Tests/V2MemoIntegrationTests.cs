@@ -6,6 +6,7 @@ using UABS.ViewModels;
 using UABS.UnityAssets.Packages;
 using UABS.UnityAssets.Metadata;
 using Avalonia.Headless.XUnit;
+using Avalonia.Controls;
 using System.Globalization;
 
 namespace UABS.UnityAssets.Tests;
@@ -100,6 +101,26 @@ public sealed class V2MemoIntegrationTests
         await app.Search.SearchAsync(); Assert.Null(app.Search.Error); app.Search.SelectedResult = Assert.Single(app.Search.Results);
         await app.Search.MemoTransitionTask; Assert.False(app.Search.CanShowMemoEditor); Assert.Null(app.Search.SelectedResult.Memo);
         Assert.Equal("shared pending", app.AssetList.MemoInspector.MemoText); Assert.Equal("shared pending", assetSearch.MemoInspector.MemoText);
+        var sortView = new UABS.Page.SearchWorkspaceView { DataContext = app.Search };
+        var sortWindow = new Avalonia.Controls.Window { Content = sortView, Width = 1300, Height = 700 }; sortWindow.Show();
+        try
+        {
+            sortWindow.UpdateLayout(); Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+            var sortButton = sortView.FindControl<Avalonia.Controls.Button>("SearchNameSortButton")!;
+            var selectedBundle = app.Search.SelectedResult;
+            for (int action = 0; action < 2; action++)
+            {
+                Avalonia.Automation.Peers.ControlAutomationPeer.CreatePeerForElement(sortButton)!
+                    .GetProvider<Avalonia.Automation.Provider.IInvokeProvider>()!.Invoke();
+                Avalonia.Threading.Dispatcher.UIThread.RunJobs(); await sortView.HeaderSortTask;
+                Assert.Same(selectedBundle, app.Search.SelectedResult);
+                Assert.True(PackageMemoIdentityComparer.Same(identity, assetSearch.MemoInspector.Identity));
+                Assert.Equal("shared pending", app.AssetList.MemoInspector.MemoText);
+                Assert.Equal("shared pending", assetSearch.MemoInspector.MemoText);
+                Assert.Equal("shared pending", app.V2.MemoInspector.MemoText);
+            }
+        }
+        finally { sortWindow.Close(); }
         var rows = assetSearch.Results; var selected = assetSearch.SelectedResult;
         await assetSearch.MemoInspector.SaveNowCommand.ExecuteAsync();
         Assert.Equal(MemoDraftSaveState.Saved, assetSearch.MemoInspector.SaveState);

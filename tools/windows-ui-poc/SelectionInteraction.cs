@@ -161,7 +161,7 @@ internal static partial class Program
         }
     }
 
-    private static ExpectedRow[] CaptureVisualRowOrder(string label, ExpectedRow[] expected)
+    private static ExpectedRow[] CaptureVisualRowOrder(string label, ExpectedRow[] expected, string caseId = "CP21-09")
     {
         Rows(expected); // Keep independent complete-set/count validation unchanged.
         var observations = new List<PositionedRow>();
@@ -223,7 +223,7 @@ internal static partial class Program
                 failure
             };
             Step("visual boundary evidence " + label, report);
-            try { File.WriteAllText(Path.Combine(Output, "CP21-09-layout-" + label + ".json"), JsonSerializer.Serialize(report, Json)); }
+            try { File.WriteAllText(Path.Combine(Output, caseId + "-layout-" + label + ".json"), JsonSerializer.Serialize(report, Json)); }
             catch (Exception error) { Step("layout diagnostic write error", error.ToString()); }
         }
     }

@@ -187,16 +187,7 @@ internal static partial class Program
             SetValue(ById(Controls(), "IncludeSearchTextBox"), "asset"); ExecuteSearch();
             Wait("multirow query", () => Grid().FindAllDescendants(Automation!.ConditionFactory.ByControlType(ControlType.DataItem)).Length >= config.ExpectedSortRows!.Length);
             Rows(config.ExpectedSortRows!);
-            var header = Find(Grid(), ControlType.HeaderItem, "Name");
-            InteractionEvidence("name-sort", header);
-            SearchAccessibility.RequireSortInvoke(header.Patterns.Invoke.IsSupported);
-            var before = ReadAccessibleRows(Grid()); Invoke(header);
-            Wait("first Name sort changes order", () => !ReadAccessibleRows(Grid()).SequenceEqual(before));
-            var first = ReadAccessibleRows(Grid()); Invoke(header);
-            Wait("second Name sort reverses order", () => ReadAccessibleRows(Grid()).SequenceEqual(first.Reverse()));
-            var second = ReadAccessibleRows(Grid());
-            Check(first.Length > 1 && first.SequenceEqual(second.Reverse()), "Name sort did not reverse the complete global order.");
-            Rows(config.ExpectedSortRows!);
+            VerifyAccessibleNameSorting(config.ExpectedSortRows!);
         });
         Case("CP21-09-selection", () =>
         {

@@ -1,8 +1,93 @@
 # CP21-08: narrowly scoped Name-sort accessibility proposal
 
-Status: proposal only, pending separate production review/authorization. No
-application, runner, workflow, or acceptance assertions change in this commit.
-Checkpoint 2.1 remains open; Checkpoint 3 is out of scope.
+Status: the user separately approved this proposal at baseline
+`59c7e0762c056e55bb9be0dee67e0f7120d55942`. The scoped production/runner
+implementation is now present; real Windows verification at its exact commit
+is still required. Checkpoint 2.1 remains open; Checkpoint 3 is out of scope.
+
+## Approved implementation record
+
+- Production: `SearchWorkspaceView.axaml`, its code-behind, and
+  `SearchWorkspaceViewModel.cs`. One V2-bundle-only standard `SearchNameSortButton`
+  beside Refresh uses the same `BeginHeaderSort`/`SortHeaderAsync` lifecycle as
+  the pointer header. The existing next-direction calculation is extracted,
+  not duplicated, so HelpText describes both confirmed and queued sort state.
+  IsEnabled follows the existing current-session guard; the click also guards
+  mode/column/field availability. A wrapping results footer accommodates the
+  added action without changing columns, splitters or other workspace layouts.
+- Production regressions: `V2BundleNameSortAccessibilityTests.cs` adds five
+  cases (two Invoke/Enter/window-size combinations, stale/unavailable state,
+  and two queued-toggle/cancellation cases). Existing bundle header tests now
+  check the accessible route after both Name and Package headers; V1 and raw
+  asset-mode tests verify the button stays hidden. The shared memo integration
+  case exercises the button while an asset draft is pending in other Inspectors.
+  Re-admission changes registration IDs by design; stable selected row identity,
+  package/source UUIDs and paths remain verified, not the transient registration.
+- Runner: `SortingInteraction.cs` replaces only CP21-08's unreachable header
+  Invoke/enumeration assertions. `SearchAccessibility.cs` and its regressions
+  check readable current/next/busy evidence and exact independent Name/Package
+  sequences. `SelectionInteraction.cs` and `WindowLayout.cs` accept an optional
+  case evidence prefix; CP21-09 keeps its previous defaults and assertions.
+  Smoke and V1 runner paths and the workflow are unchanged.
+- Evidence: `name-sort-capabilities.json`, `CP21-08-window-*.json`,
+  `CP21-08-layout-*.json`, `CP21-08-order-{Ascending,Descending}.json`, both
+  direction screenshots/UIA trees, and the existing acceptance/results logs.
+  Both actual UIA Invoke and owned, focused Enter must succeed. Unsupported or
+  ambiguous controls/state/geometry block; an observed wrong row/order or
+  application error fails. No coordinates, OCR, or application API manipulation.
+
+The original design rationale and release plan below remain relevant; their
+conditional approval language records the original proposal, not a claim that
+the current Windows run has passed. The new button does not add Invoke to the
+header peer itself. Further UI changes still require separate authorization.
+
+### Implementation verification (Linux)
+
+- **184 tests PASS in completed runs:** bundle workspace + headers + shared memo
+  integration 61/61 (including all five new cases); Search ViewModel 22/22;
+  Search integration 18/18; infinite scrolling 7/7; result window 7/7; bundle SQL
+  49/49; paging/performance 20/20. Suites were also run individually to separate
+  native test-host failures from assertion failures.
+- Runner `tests/EvidenceChecks.csproj`: PASS, including the new exact-order,
+  current/next/busy, wrong-row/package, duplicate-oracle, and unavailable-target
+  checks. Existing ambiguous/offscreen/overlapping geometry and unowned-focus
+  regressions remain enforced. PowerShell scenario configuration regressions PASS.
+- Debug solution and Release Windows runner cross-build: zero warnings/errors.
+  Workflow actionlint and whitespace checks PASS. No workflow change.
+- **Full suite is not green on this Linux host.** The first attempt reported
+  724 PASS, 38 FAIL, one skip before `PAL_SEHException` aborted VSTest. A separate
+  untouched worktree at the approved baseline also aborted with the same native
+  exception, reporting 726 PASS, 36 FAIL, one skip. Its failures include Windows
+  NTFS/kernel32-only creation/discovery checks, legacy Windows-path expectations
+  and file-admission/replacement checks. The first implementation run also had
+  two global Activity query-counter failures; paging/performance passes 20/20
+  in isolation. Do not claim a clean full-suite regression result or invent a
+  definitive native-crash root cause from this comparison.
+- A repeated full implementation run aborted after 298 passing tests with no
+  assertion failures. Broader Search runs also aborted. Isolated raw
+  `V2SearchTests` reported 26 passing tests but aborted, so that suite is **not**
+  counted in the 184 clean passes. The isolated baseline raw suite also aborted
+  with the same exception, after 27 passing tests. Baseline comparison artifacts and test logs
+  are local under `/tmp/uabs-cp21-sort-test-results/`, not committed.
+
+Reproduce focused production validation with:
+
+```sh
+dotnet test Avalonia/UABS.UnityAssets.Tests/UABS.UnityAssets.Tests.csproj -c Debug --filter 'FullyQualifiedName~V2BundleSearchWorkspaceTests|FullyQualifiedName~V2SearchHeaderSortTests|FullyQualifiedName~V2MemoIntegrationTests'
+dotnet run --project tools/windows-ui-poc/tests/EvidenceChecks.csproj
+dotnet build tools/windows-ui-poc/WindowsUiPoc.csproj -c Release
+pwsh -File tools/windows-ui-poc/tests/ScenarioConfiguration.Tests.ps1
+actionlint .github/workflows/windows-ui-poc.yml
+```
+
+Windows acceptance is pending. Manually dispatch
+[Windows UI POC](https://github.com/PapayaModding/UABS/actions/workflows/windows-ui-poc.yml)
+on `v2-recovery` at the published implementation SHA. The existing workflow
+checks the exact dispatch SHA, builds Debug UABS, prepares the SHA-verified
+disposable Smoke package and independent oracle, and runs Smoke/V1/expanded V2
+with evidence upload. Inspect both CP21-08 direction reports and input steps,
+all per-case `acceptance.json` results, and Smoke/V1 artifacts. Compilation and
+headless provider tests do not prove real Windows UIA or final acceptance.
 
 ## Evidence and current implementation
 
@@ -149,4 +234,5 @@ This proposal does not resolve the [separate acceptance gaps](CHECKPOINT-2.1.md)
 (nontrivial Package sorting, non-default numeric/type retention, text before
 admission, metadata/mixed-exclusion and indeterminate coverage feedback).
 No issue status or final user acceptance changes, even if Name sorting later
-passes. Implementation awaits separate authorization of the visible change.
+passes. The visible change was separately authorized as recorded above; actual
+Windows acceptance remains pending.

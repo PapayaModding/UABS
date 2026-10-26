@@ -620,6 +620,11 @@ public sealed class SearchWorkspaceViewModel : ViewModelBase, IDisposable
         await ExecuteV2SearchAsync(scope, version, criteria, request);
     }
 
+    internal PackageSearchSortDirection NextV2SortDirection(PackageSearchSortField field) =>
+        (_sortBasis is not null ? _v2SortBy : _displayedSortBy) == field
+        && (_sortBasis is not null ? _v2SortDirection : _displayedSortDirection) == PackageSearchSortDirection.Ascending
+            ? PackageSearchSortDirection.Descending : PackageSearchSortDirection.Ascending;
+
     public Task SortV2Async(PackageSearchSortField field)
     {
         if (_useBundleProjection && field is not (PackageSearchSortField.SourceName or PackageSearchSortField.PackageName))
@@ -627,13 +632,10 @@ public sealed class SearchWorkspaceViewModel : ViewModelBase, IDisposable
         if (!CanChangeV2Sort || (field == PackageSearchSortField.AssetName && !CanSortV2AssetName)
             || field is not (PackageSearchSortField.AssetName or PackageSearchSortField.PackageName or PackageSearchSortField.SourceName or PackageSearchSortField.PathId))
             return Task.CompletedTask;
-        bool pending = _sortBasis is not null;
+        var nextDirection = NextV2SortDirection(field);
         var basis = _sortBasis ??= new(PackageScopes.Where(p => p.IsSelected).ToArray(), _v2Criteria!,
             _v2Operation!.Session.Criteria, _v2Operation.Session.Revisions);
-        var request = basis.Request with { SortBy = field,
-            SortDirection = (pending ? _v2SortBy : _displayedSortBy) == field
-                && (pending ? _v2SortDirection : _displayedSortDirection) == PackageSearchSortDirection.Ascending
-                ? PackageSearchSortDirection.Descending : PackageSearchSortDirection.Ascending };
+        var request = basis.Request with { SortBy = field, SortDirection = nextDirection };
         CancelAndDisposeSearch(); int version = ++_searchVersion;
         IsLoadingPage = false; Error = null;
         _v2SortBy = request.SortBy; _v2SortDirection = request.SortDirection;

@@ -14,9 +14,39 @@ internal sealed record UiBounds(double Left, double Top, double Width, double He
     public bool Valid => new[] { Left, Top, Width, Height, Right, Bottom }.All(double.IsFinite) && Width > 0 && Height > 0;
 }
 internal sealed record PositionedRow(ExpectedRow Identity, UiBounds Bounds, bool Offscreen);
+internal sealed record NameSortState(string Current, string Next, bool Busy);
 
 internal static class SearchAccessibility
 {
+    internal static NameSortState ReadNameSortState(string? help)
+    {
+        var match = Regex.Match(help ?? "", @"\A(?<busy>Sorting in progress\. )?Current Name order: (?<current>Ascending|Descending|not active \([^)]+\))\. Next Name order: (?<next>Ascending|Descending)\.\z");
+        if (!match.Success) throw new AccessibilityUnavailable("Name-sort current/next direction is unavailable or ambiguous: " + help);
+        var state = new NameSortState(match.Groups["current"].Value, match.Groups["next"].Value, match.Groups["busy"].Success);
+        if (!state.Busy && state.Next != (state.Current == "Ascending" ? "Descending" : "Ascending"))
+            throw new AccessibilityUnavailable("Name-sort current/next direction evidence conflicts: " + help);
+        return state;
+    }
+
+    internal static ExpectedRow[] NameOrderOracle(ExpectedRow[] expected, string direction)
+    {
+        if (expected.Length < 2 || expected.Any(row => string.IsNullOrWhiteSpace(row.Name) || string.IsNullOrWhiteSpace(row.Package))
+            || expected.Select(row => row.Name).Distinct(StringComparer.Ordinal).Count() != expected.Length)
+            throw new AccessibilityUnavailable("Name sorting requires an independent multirow oracle with distinct names and exact packages.");
+        var ascending = expected.OrderBy(row => row.Name, StringComparer.Ordinal).ToArray();
+        return direction switch {
+            "Ascending" => ascending,
+            "Descending" => ascending.Reverse().ToArray(),
+            _ => throw new AccessibilityUnavailable("Unrecognized Name sort direction: " + direction)
+        };
+    }
+
+    internal static void VerifyNameOrder(ExpectedRow[] visual, ExpectedRow[] expected, string direction)
+    {
+        if (!visual.SequenceEqual(NameOrderOracle(expected, direction)))
+            throw new InvalidOperationException("Visual Name/Package sequence differs from independent " + direction + " oracle.");
+    }
+
     internal static void PrepareMaximizedWindow(bool windowPattern, bool alreadyMaximized, bool canMaximize, Action maximize)
     {
         if (!windowPattern) throw new AccessibilityUnavailable("Owned test window lacks UIA Window pattern.");
@@ -74,16 +104,16 @@ internal static class SearchAccessibility
         return new(expected, copy, details, fields, duplicates.ToArray(), checks, matches, error);
     }
 
-    internal static void RequireSortInvoke(bool supported)
+    internal static void RequireNameSortTarget(bool isButton, bool visible, bool enabled, bool owned, bool invoke)
     {
-        if (!supported) throw new AccessibilityUnavailable(
-            "Name HeaderItem lacks Invoke. Avalonia 11.3.3 header has no keyboard sort handler and DataGrid has no sort key; supported coordinate-free sorting remains unavailable. See name-sort-capabilities.json.");
+        if (!isButton || !visible || !enabled || !owned || !invoke)
+            throw new AccessibilityUnavailable("A unique visible, enabled, owned Sort Name Button with Invoke is required. See name-sort-capabilities.json.");
     }
 
-    internal static void GuardedSelectionKeys(Action focus, Func<bool> hasOwnedFocus, Action sendKeys)
+    internal static void GuardedSelectionKeys(Action focus, Func<bool> hasOwnedFocus, Action sendKeys, string target = "DataGrid")
     {
         focus();
-        if (!hasOwnedFocus()) throw new AccessibilityUnavailable("Owned foreground DataGrid keyboard focus could not be verified; no keys sent.");
+        if (!hasOwnedFocus()) throw new AccessibilityUnavailable($"Owned foreground {target} keyboard focus could not be verified; no keys sent.");
         sendKeys();
     }
 

@@ -204,13 +204,15 @@
                 <TextBlock x:Name="SearchErrorText" Text="{Binding Error}" ToolTip.Tip="{Binding ErrorDetails}"
                            Foreground="#9A2020" TextWrapping="Wrap"/>
             </Border>
-            <StackPanel Grid.Row="3" Orientation="Horizontal" Spacing="8">
+            <WrapPanel Grid.Row="3" Orientation="Horizontal" ItemSpacing="8" LineSpacing="6">
                 <Button x:Name="RefreshSearchButton" Content="Refresh Search" Command="{Binding RefreshSearchCommand}"/>
+                <Button x:Name="SearchNameSortButton" Content="Sort Name" AutomationProperties.Name="Sort Name"
+                        IsVisible="{Binding IsBundleSearch}" IsEnabled="False" Click="OnNameSortClick"/>
                 <Button x:Name="RetrySearchPageButton" Content="Retry loading" Command="{Binding RetryPageCommand}" IsVisible="{Binding CanRetryPage}"/>
                 <TextBlock Text="Loading more…" IsVisible="{Binding IsLoadingPage}" VerticalAlignment="Center"/>
                 <TextBlock Text="Selected result retained outside this window" IsVisible="{Binding IsSelectionOutsideWindow}" TextWrapping="Wrap" VerticalAlignment="Center"/>
                 <TextBlock Text="Stale — refresh required" IsVisible="{Binding IsStale}" VerticalAlignment="Center"/>
-            </StackPanel>
+            </WrapPanel>
         </Grid>
 
         <GridSplitter x:Name="SearchInspectorSplitter"

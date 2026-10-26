@@ -17,7 +17,7 @@ using UABS.ViewModels;
 
 namespace UABS.UnityAssets.Tests;
 
-public sealed class V2BundleSearchWorkspaceTests
+public sealed partial class V2BundleSearchWorkspaceTests
 {
     private static void Configure(SearchWorkspaceViewModel search)
     {
@@ -162,6 +162,17 @@ public sealed class V2BundleSearchWorkspaceTests
                 Assert.Contains(descending ? ":sortdescending" : ":sortascending", header.Classes); descending = !descending;
             }
             Assert.Empty(grid.CollectionView.SortDescriptions);
+            // The accessible route must agree with both Name and Package header state,
+            // then use the same guarded global Name path (never a local collection sort).
+            var button = view.FindControl<Button>("SearchNameSortButton")!;
+            Assert.Contains(field == PackageSearchSortField.SourceName ? "Current Name order: Descending."
+                : "Current Name order: not active (PackageName Ascending).", Avalonia.Automation.AutomationProperties.GetHelpText(button));
+            Assert.Contains("Next Name order: Ascending.", Avalonia.Automation.AutomationProperties.GetHelpText(button));
+            InvokeSort(button); await view.HeaderSortTask; window.UpdateLayout(); Dispatcher.UIThread.RunJobs();
+            Assert.Equal(PackageSearchSortField.SourceName, search.DisplayedSortBy);
+            Assert.Equal(PackageSearchSortDirection.Ascending, search.DisplayedSortDirection);
+            Assert.Same(selected, search.SelectedResult); Assert.Same(selected, grid.SelectedItem);
+            Assert.Empty(grid.CollectionView.SortDescriptions);
         }
         finally { window.Close(); }
     }
@@ -219,7 +230,8 @@ public sealed class V2BundleSearchWorkspaceTests
         Assert.Equal(42, Assert.Single(search.Results).PathId);
         var view = new SearchWorkspaceView { DataContext = search };
         var window = new Window { Content = view, Width = 1300, Height = 700 }; window.Show();
-        try { window.UpdateLayout(); Dispatcher.UIThread.RunJobs(); Assert.Equal(6, view.FindControl<DataGrid>("ResultsGrid")!.Columns.Count(c => c.IsVisible)); }
+        try { window.UpdateLayout(); Dispatcher.UIThread.RunJobs(); Assert.Equal(6, view.FindControl<DataGrid>("ResultsGrid")!.Columns.Count(c => c.IsVisible));
+            Assert.False(view.FindControl<Button>("SearchNameSortButton")!.IsVisible); }
         finally { window.Close(); }
     }
 
