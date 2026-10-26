@@ -15,8 +15,16 @@ The user subsequently confirmed [run 40249915733](https://github.com/PapayaModdi
 Smoke and fresh V1 passed; the implemented V2 cases passed except CP21-08 and
 CP21-09, which were BLOCKED by missing Invoke and SelectionItem respectively.
 These are user-confirmed previous-run outcomes; this session's API access is
-still Forbidden and the new keyboard strategy has not run on Windows.
-Source tests/builds do not establish UI acceptance for the updated commit.
+still Forbidden. Subsequent outcomes are recorded below; source tests/builds
+do not establish UI acceptance for a newer commit.
+
+Latest user-confirmed baseline: [run 40256326602](https://github.com/PapayaModding/UABS/actions/runs/40256326602)
+passed Smoke, V1, and 12 implemented V2 cases. CP21-09 selection retention
+and CP21-10 mixed-format rejection PASS; only CP21-08 Name sorting is BLOCKED.
+This investigation has not independently downloaded or rerun those artifacts.
+See the [Name-sort accessibility proposal](NAME-SORT-ACCESSIBILITY-PROPOSAL.md)
+for a separately reviewed production option. No production change is made or
+authorized by that proposal, and no checkpoint or separate coverage gap closes.
 
 | Documented requirement | Scenario/case | User-confirmed Windows result before this change | Evidence / remaining validation |
 | --- | --- | --- | --- |
@@ -29,8 +37,8 @@ Source tests/builds do not establish UI acceptance for the updated commit.
 | Explicit choices survive catalog reload | CP21-06 | PASS | Exact disposable catalog path, native folder Edit Value readback, Refresh Invoke, retained criteria |
 | Explicit Refresh unchanged; editing criteria alone does not rerun | CP21-07 | PASS | Prior row retained, Refresh publishes exact empty result, second Refresh restores Unicode result |
 | Search sorting unchanged | CP21-08 | BLOCKED; remains blocked without Invoke | Capability JSON plus independently indexed three-bundle oracle. Nontrivial Package sorting remains uncovered |
-| Selection retained including after rejection | CP21-09 | BLOCKED in latest run: no usable viewport; maximized-layout setup pending | Strict positional bounds, UIA focus and Ctrl+Home/End, exact Inspector identity/retention |
-| Mixed V1/V2 scope rejects rather than guesses | CP21-10 | Previously PASS; latest run failed on a provider COM exception | Fresh bounded UIA reads and provider BLOCKED classification pending Windows rerun; rejection must still be exercised |
+| Selection retained including after rejection | CP21-09 | PASS, user-confirmed run 40256326602 | Strict positional bounds, UIA focus and Ctrl+Home/End, exact Inspector identity/retention |
+| Mixed V1/V2 scope rejects rather than guesses | CP21-10 | PASS, user-confirmed run 40256326602 | Fresh bounded UIA reads and exact dialog/catalog identity; actual rejection exercised per reported outcome |
 | Fresh V1-only original mixed/Names defaults and Search behavior | separate `checkpoint21-v1`, CP21-11 | PASS | SHA-checked LegacyPackage copy, six-column exact portrait/LegacyPackage/character.ab/1001/memo row and exact count |
 
 The metadata/mixed-exclusion and indeterminate-coverage guidance described in
@@ -72,6 +80,9 @@ Final acceptance requires inspection of every applicable actual case result
 and resolution of remaining gaps. Checkpoint 2.1 and issue #1 remain open.
 
 ## Two UIA blockers: source investigation and isolated runner change
+
+The sections below preserve the historical investigation. Pending-run statements
+describe those revisions; the latest user-confirmed outcome is recorded above.
 
 Avalonia DataGrid 11.3.3's
 [header peer](https://github.com/AvaloniaUI/Avalonia.Controls.DataGrid/blob/11.3.3/src/Avalonia.Controls.DataGrid/Automation/Peers/DataGridColumnHeaderAutomationPeer.cs)

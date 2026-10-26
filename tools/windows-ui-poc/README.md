@@ -233,19 +233,22 @@ The workflow now has independent `smoke`, `checkpoint21-v2`, and
 set optional `acceptance` in a generated scenario and use a 600-second
 watchdog. Each uploads separate artifacts, including per-case
 `acceptance.json`. The user confirmed a later remote run passed Smoke, V1,
-and all implemented V2 cases except sorting and selection. The latest
-[coverage matrix](CHECKPOINT-2.1.md#two-uia-blockers-source-investigation-and-isolated-runner-change)
-records those outcomes and the source investigation. CP21-09 now has a guarded
-UIA-focus/keyboard selection path with exact Inspector identity retention;
-that new path still needs Windows execution. CP21-08 remains BLOCKED without
-a supported header Invoke action. No production accessibility code changed.
+and 12 implemented V2 cases, including selection and mixed-format rejection. The latest
+[coverage matrix](CHECKPOINT-2.1.md)
+records those user-confirmed outcomes and the source investigation. CP21-09 has
+a guarded UIA-focus/keyboard selection path with exact Inspector identity
+retention. CP21-08 remains BLOCKED without a supported sorting action. The
+[Name-sort accessibility proposal](NAME-SORT-ACCESSIBILITY-PROPOSAL.md) requires
+separate approval before production implementation. No production accessibility
+code changed, and separate Checkpoint 2.1 coverage gaps remain open.
 
 The subsequent CP21-09 comparison confirmed reversed UIA enumeration relative
 to Ctrl+Home navigation. Boundary expectations now come from verified,
 non-overlapping row bounding rectangles below the grid headers, with all
 expected rows fully visible. Bounds are diagnostic evidence only: there is
 no coordinate-based input. See the matrix's confirmed row-order section for
-the strict layout gates and new evidence files. Windows rerun is pending.
+the strict layout gates and evidence files. The latest user-confirmed run
+passed selection; future behavior changes still require their own Windows run.
 
 Hosted layout/provider hardening: CP21-09 alone maximizes the owned test window
 through UIA and logs before/after monitor/window/panel/scroll geometry. It
