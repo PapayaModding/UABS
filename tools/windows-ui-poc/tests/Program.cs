@@ -413,3 +413,67 @@ RetainedResultsContract.Verify(["Name", "Package"], [["b", "Smoke"], ["a", "Smok
 try { RetainedResultsContract.Verify(["Name", "Package"], [["a", "Smoke"], ["a", "Smoke"]], twoState, twoRetained, true); throw new Exception("Wrong duplicate retained multiset accepted."); }
 catch (InvalidOperationException) { }
 Console.WriteLine("PASS: exact retained stale/fresh phase distinction; complete row multisets and unchanged executed criteria; wrong counts/identities/implicit execution FAIL; missing, virtualized or ambiguous evidence BLOCKS; fresh reader unchanged.");
+
+var packageAsc = PackageSortContract.Oracle("Ascending"); var packageDesc = PackageSortContract.Oracle("Descending");
+PackageSortContract.VerifyOrder(packageAsc, "Ascending"); PackageSortContract.VerifyOrder(packageDesc, "Descending");
+Check(!packageDesc.SequenceEqual(packageAsc.Reverse()), "Descending must not reverse ascending ties.");
+foreach (var wrong in new[] { packageAsc.Reverse().ToArray(), new[] { packageDesc[0], packageDesc[2], packageDesc[1] },
+    packageAsc, packageDesc.Take(2).ToArray(), new[] { packageDesc[0], packageDesc[1], new ExpectedRow(packageDesc[2].Name, "Wrong") } })
+{
+    try { PackageSortContract.VerifyOrder(wrong, "Descending"); throw new Exception("Wrong Package primary/tie/complete set accepted."); }
+    catch (InvalidOperationException) { }
+}
+var packageGeometry = new[] { new PositionedRow(packageAsc[2], new(100, 100, 400, 25), false),
+    new PositionedRow(packageAsc[0], new(100, 50, 400, 25), false), new PositionedRow(packageAsc[1], new(100, 75, 400, 25), false) };
+PackageSortContract.VerifyOrder(SearchAccessibility.VisualRowOrder(packageGeometry, viewport), "Ascending");
+foreach (string state in new[] { "Current Package order: Ascending. Next Package order: Descending.",
+    "Current Package order: Descending. Next Package order: Ascending.",
+    "Current Package order: not active (SourceName Ascending). Next Package order: Ascending.",
+    "Sorting in progress. Current Package order: Ascending. Next Package order: Ascending." })
+    PackageSortContract.ReadState(state);
+foreach (string? state in new[] { null, "", "Current Name order: Ascending. Next Name order: Descending.",
+    "Current Package order: Ascending. Next Package order: Ascending.", "Sort all matching V2 results; Descending" })
+{
+    try { PackageSortContract.ReadState(state); throw new Exception("Unsupported/wrong-field/ambiguous Package state accepted."); }
+    catch (AccessibilityUnavailable) { }
+}
+// Structural unit vectors only; these are not databases or fixture-generation claims.
+PackageSortSource SourceVector(int i) => new(PackageSortContract.Names[i], Path.GetFullPath(Path.Combine("fixture-unit", "bundles", PackageSortContract.Names[i])), new string('a', 64), Guid.NewGuid(), Guid.NewGuid(), ["asset witness"]);
+PackageSortFixture[] fixtureVectors = [new("Alpha", Path.GetFullPath("fixture-unit/Alpha.uabs.sqlite"), new string('b', 64), Guid.NewGuid(), Guid.NewGuid(), [SourceVector(2), SourceVector(1)]),
+    new("Zeta", Path.GetFullPath("fixture-unit/Zeta.uabs.sqlite"), new string('c', 64), Guid.NewGuid(), Guid.NewGuid(), [SourceVector(0)])];
+PackageSortContract.Validate(fixtureVectors);
+foreach (var invalid in new[] { fixtureVectors.Take(1).ToArray(), new[] { fixtureVectors[0], fixtureVectors[1] with { Package = "Alpha" } },
+    new[] { fixtureVectors[0], fixtureVectors[1] with { PackageId = fixtureVectors[0].PackageId } },
+    new[] { fixtureVectors[0] with { Path = "relative.sqlite" }, fixtureVectors[1] },
+    new[] { fixtureVectors[0] with { Sha256 = "wrong" }, fixtureVectors[1] },
+    new[] { fixtureVectors[0] with { Sources = [fixtureVectors[0].Sources[0]] }, fixtureVectors[1] },
+    new[] { fixtureVectors[0] with { Sources = fixtureVectors[0].Sources.Select(s => s with { Witnesses = [] }).ToArray() }, fixtureVectors[1] },
+    new[] { fixtureVectors[0] with { Sources = fixtureVectors[0].Sources.Select(s => s with { SourceId = Guid.Empty }).ToArray() }, fixtureVectors[1] } })
+{
+    try { PackageSortContract.Validate(invalid); throw new Exception("Invalid Package allocation/identity/path/hash/witness accepted."); }
+    catch (AccessibilityUnavailable) { }
+}
+if (args.Length != 0)
+{
+    Check(args.Length == 2 && args[0] == "--package-fixture", "Expected --package-fixture <prepared scenario>.");
+    using var fixtureJson = JsonDocument.Parse(File.ReadAllText(args[1]));
+    var metadata = JsonSerializer.Deserialize<PackageSortFixture[]>(fixtureJson.RootElement.GetProperty("packageSortFixtures").GetRawText(), new JsonSerializerOptions { PropertyNameCaseInsensitive = true })!;
+    PackageSortContract.Validate(metadata);
+    Console.WriteLine("PASS: real prepared Alpha/Zeta metadata passes the runner contract (UUID JSON and canonical path round trip).");
+}
+Console.WriteLine("PASS: Package primary/tie oracle, geometry-derived order, active-field state and invalid fixture metadata; independent of Search/comparer/UI enumeration.");
+Check(PackageSortContract.Completed(new("Ascending", "Descending", false), new("Descending", "Ascending", false), false, "Descending",
+    "Sort all matching V2 results; Descending", "Sort all matching V2 results; not the active order"), "Genuine active Package completion rejected.");
+Check(!PackageSortContract.Completed(new("not active (SourceName Ascending)", "Ascending", false), new("not active (SourceName Ascending)", "Ascending", false), false, "Ascending", "", ""), "Old inactive state inferred completion before the action began.");
+try { PackageSortContract.Completed(new("Ascending", "Descending", false), new("not active (SourceName Ascending)", "Ascending", false), false, "Descending",
+    "Sort all matching V2 results; not the active order", "Sort all matching V2 results; Ascending"); throw new Exception("Wrong active primary field accepted."); }
+catch (InvalidOperationException) { }
+Check(!PackageSortContract.Completed(new("Ascending", "Descending", false), new("not active (SourceName Ascending)", "Ascending", false), false, "Descending",
+    "Sort all matching V2 results; Descending", "Sort all matching V2 results; not the active order"), "Conflicting Package state/header evidence inferred completion.");
+PackageSortContract.RequireAction(true, true, true, true, true);
+for (int missing = 0; missing < 5; missing++)
+{
+    bool[] capability = [true, true, true, true, true]; capability[missing] = false;
+    try { PackageSortContract.RequireAction(capability[0], capability[1], capability[2], capability[3], capability[4]); throw new Exception("Unsupported Package action accepted."); }
+    catch (AccessibilityUnavailable) { }
+}

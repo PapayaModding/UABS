@@ -227,6 +227,12 @@ local configuration, DB copies, screenshots, and logs must stay untracked.
 
 ## GitHub-hosted Windows proof of concept
 
+Approved G1 Package sorting: see the [implementation and two-package fixture guide](PACKAGE-SORT-ACCEPTANCE.md).
+An isolated fifth `checkpoint21-package-sort` job uses real Alpha/Zeta databases,
+an independent primary/tie oracle, actual Package Button/keyboard activation and
+validated visible geometry. Its Windows execution is pending; compilation does
+not accept G1. G5/G6/Linux regression disposition and Checkpoint 2.1 remain open.
+
 Checkpoint 2.1 expansion: see the [requirement-to-test matrix](CHECKPOINT-2.1.md).
 The workflow now has independent `smoke`, `checkpoint21-v2`,
 `checkpoint21-v1`, and `checkpoint21-gaps` matrix jobs. The new test-only

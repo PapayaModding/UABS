@@ -34,13 +34,25 @@ the complete G2/G3/G4 slice. These are user-confirmed Windows results, not a
 new artifact inspection. The historical gap investigation below is superseded
 for those executed cases, not for remaining G1/G5/G6/Linux obligations.
 
-G1 Package sorting still has no supported coordinate-free action: the Package
+**Historical G1 investigation at the proposal baseline (superseded by approval below):**
+Package sorting had no supported coordinate-free action: the Package
 header lacks Invoke/keyboard sort and the Name Button targets Name only. The
 [Package accessibility/fixture proposal](PACKAGE-SORT-ACCESSIBILITY-PROPOSAL.md)
 documents the smallest new Button approval scope, a three-row/two-package fixture
 and an independent oracle whose descending order retains ascending tie-breakers.
-No Package action, fixture, workflow or production change is implemented here.
-Separate production approval is required before the automated G1 test can proceed.
+At that point no Package action, fixture, workflow or production change was
+implemented; separate production approval was required before proceeding.
+
+**Approved G1 implementation (Windows pending):** the user separately approved
+the proposal at `571fdf2d3300e2bf4ce95ea87f6668683f6f610f`. The
+[Package acceptance guide](PACKAGE-SORT-ACCEPTANCE.md) records the standard
+V2-only Sort Package button, reused global guards/lifecycle, two independently
+built raw-validated Alpha/Zeta DBs and optional fifth hosted job. It requires
+Invoke/Tab/Enter/Space, active Package field, both independent visual sequences
+with ascending ties, complete identities/counts, canonical Inspector selection,
+confirmed/live criteria and all package paths/hashes. This is implementation,
+not a G1 Windows PASS or checkpoint closure. Existing four jobs remain intact;
+G5/G6/Linux disposition remain explicitly open.
 
 ## Next test-only G2/G3/G4 slice — implemented, Windows pending
 

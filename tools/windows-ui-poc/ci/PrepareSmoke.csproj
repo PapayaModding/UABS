@@ -6,6 +6,7 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Remove="package-sort/**/*.cs" />
     <ProjectReference Include="../../../Avalonia/UABS.PackageV2/UABS.PackageV2.csproj" />
   </ItemGroup>
 </Project>

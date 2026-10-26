@@ -208,6 +208,8 @@
                 <Button x:Name="RefreshSearchButton" Content="Refresh Search" Command="{Binding RefreshSearchCommand}"/>
                 <Button x:Name="SearchNameSortButton" Content="Sort Name" AutomationProperties.Name="Sort Name"
                         IsVisible="{Binding IsBundleSearch}" IsEnabled="False" Click="OnNameSortClick"/>
+                <Button x:Name="SearchPackageSortButton" Content="Sort Package" AutomationProperties.Name="Sort Package"
+                        IsVisible="{Binding IsBundleSearch}" IsEnabled="False" Click="OnPackageSortClick"/>
                 <Button x:Name="RetrySearchPageButton" Content="Retry loading" Command="{Binding RetryPageCommand}" IsVisible="{Binding CanRetryPage}"/>
                 <TextBlock Text="Loading more…" IsVisible="{Binding IsLoadingPage}" VerticalAlignment="Center"/>
                 <TextBlock Text="Selected result retained outside this window" IsVisible="{Binding IsSelectionOutsideWindow}" TextWrapping="Wrap" VerticalAlignment="Center"/>

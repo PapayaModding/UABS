@@ -216,6 +216,14 @@ public partial class SearchWorkspaceView : UserControl
             BeginHeaderSort(vm, field);
     }
 
+    private void OnPackageSortClick(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        if (_observedViewModel is not { IsBundleSearch: true, CanChangeV2Sort: true } vm) return;
+        var column = ResultsGrid.Columns.Single(c => c.SortMemberPath == "PackageName");
+        if (ResultsGrid.CanUserSortColumns && column.IsVisible && column.CanUserSort && GlobalSort(column) is { } field)
+            BeginHeaderSort(vm, field);
+    }
+
     private async Task SortHeaderAsync(SearchWorkspaceViewModel vm, PackageSearchSortField field, int version)
     {
         try { await vm.SortV2Async(field); }
@@ -254,8 +262,14 @@ public partial class SearchWorkspaceView : UserControl
 
     private void UpdateSortHeaders()
     {
-        if (_observedViewModel is not { } vm) { SearchNameSortButton.IsEnabled = false; return; }
+        if (_observedViewModel is not { } vm) { SearchNameSortButton.IsEnabled = false; SearchPackageSortButton.IsEnabled = false; return; }
         SearchNameSortButton.IsEnabled = vm.IsBundleSearch && vm.CanChangeV2Sort;
+        string packageCurrent = vm.DisplayedSortBy == PackageSearchSortField.PackageName
+            ? vm.DisplayedSortDirection.ToString() : $"not active ({vm.DisplayedSortBy} {vm.DisplayedSortDirection})";
+        string packageHelp = (vm.IsSearching ? "Sorting in progress. " : "")
+            + $"Current Package order: {packageCurrent}. Next Package order: {vm.NextV2SortDirection(PackageSearchSortField.PackageName)}.";
+        AutomationProperties.SetHelpText(SearchPackageSortButton, packageHelp);
+        ToolTip.SetTip(SearchPackageSortButton, packageHelp);
         string current = vm.DisplayedSortBy == PackageSearchSortField.SourceName
             ? vm.DisplayedSortDirection.ToString()
             : $"not active ({vm.DisplayedSortBy} {vm.DisplayedSortDirection})";
@@ -313,6 +327,8 @@ public partial class SearchWorkspaceView : UserControl
             finally { _settingIndicators = false; }
         }
         _usingGlobalIndicators = !vm.CanSortResultsLocally;
+        SearchPackageSortButton.IsEnabled = vm.IsBundleSearch && vm.CanChangeV2Sort && ResultsGrid.CanUserSortColumns
+            && ResultsGrid.Columns.Any(column => column.SortMemberPath == "PackageName" && column.IsVisible && column.CanUserSort);
     }
     private void OnResultSelectionChanged(object? sender, SelectionChangedEventArgs e)
     {

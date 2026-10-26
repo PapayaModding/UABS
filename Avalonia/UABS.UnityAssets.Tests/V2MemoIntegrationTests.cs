@@ -106,18 +106,21 @@ public sealed class V2MemoIntegrationTests
         try
         {
             sortWindow.UpdateLayout(); Avalonia.Threading.Dispatcher.UIThread.RunJobs();
-            var sortButton = sortView.FindControl<Avalonia.Controls.Button>("SearchNameSortButton")!;
             var selectedBundle = app.Search.SelectedResult;
-            for (int action = 0; action < 2; action++)
+            foreach (string sortId in new[] { "SearchNameSortButton", "SearchPackageSortButton" })
             {
-                Avalonia.Automation.Peers.ControlAutomationPeer.CreatePeerForElement(sortButton)!
-                    .GetProvider<Avalonia.Automation.Provider.IInvokeProvider>()!.Invoke();
-                Avalonia.Threading.Dispatcher.UIThread.RunJobs(); await sortView.HeaderSortTask;
-                Assert.Same(selectedBundle, app.Search.SelectedResult);
-                Assert.True(PackageMemoIdentityComparer.Same(identity, assetSearch.MemoInspector.Identity));
-                Assert.Equal("shared pending", app.AssetList.MemoInspector.MemoText);
-                Assert.Equal("shared pending", assetSearch.MemoInspector.MemoText);
-                Assert.Equal("shared pending", app.V2.MemoInspector.MemoText);
+                var sortButton = sortView.FindControl<Avalonia.Controls.Button>(sortId)!;
+                for (int action = 0; action < 2; action++)
+                {
+                    Avalonia.Automation.Peers.ControlAutomationPeer.CreatePeerForElement(sortButton)!
+                        .GetProvider<Avalonia.Automation.Provider.IInvokeProvider>()!.Invoke();
+                    Avalonia.Threading.Dispatcher.UIThread.RunJobs(); await sortView.HeaderSortTask;
+                    Assert.Same(selectedBundle, app.Search.SelectedResult);
+                    Assert.True(PackageMemoIdentityComparer.Same(identity, assetSearch.MemoInspector.Identity));
+                    Assert.Equal("shared pending", app.AssetList.MemoInspector.MemoText);
+                    Assert.Equal("shared pending", assetSearch.MemoInspector.MemoText);
+                    Assert.Equal("shared pending", app.V2.MemoInspector.MemoText);
+                }
             }
         }
         finally { sortWindow.Close(); }

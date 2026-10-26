@@ -2,7 +2,13 @@
 
 **Updated:** 2026-10-26
 
-**Current task:** Recovery Checkpoint2.1 — Package sorting accessibility/fixture proposal; separate production approval required. No navigation or issue closure.
+**Current task:** Recovery Checkpoint2.1 — approved Package button and isolated two-package acceptance implementation; Windows verification pending. No navigation or issue closure.
+
+### Checkpoint2.1 — approved G1 implementation (Windows pending)
+
+- Explicit user approval of proposal `571fdf2d3300e2bf4ce95ea87f6668683f6f610f`: one standard V2-only SearchPackageSortButton sharing GlobalSort/BeginHeaderSort and existing availability/selection/revision/queue guards. Name/header pointer/V1/raw-mode behavior preserved; existing wrapping footer reused, no comparator/schema/dependency change.
+- [Implementation guide](../../../tools/windows-ui-poc/PACKAGE-SORT-ACCEPTANCE.md) lists files, commands and evidence. New preparer builds independent Alpha (0001/0002) and Zeta (0000) DBs from hash-verified genuine Smoke bundles, checks raw metadata/witnesses and big-endian UUIDs, closes readers and hashes databases. Independent Python fixture regressions verify real outputs and reject corrupted expectations. No generated datasets published.
+- Optional fifth job `checkpoint21-package-sort` requires actual Invoke/Tab/Enter/Space and Package active-field evidence; strict geometry provides both exact orders with Alpha ties ascending. It verifies complete rows/counts, canonical Inspector UUIDs/paths, retained live/unexecuted versus confirmed criteria and hashes. Original four job/preparation paths stay unchanged. G1 acceptance still requires actual Windows execution; G5/G6/Linux disposition and Checkpoint2.1 remain open. No Checkpoint3.
 
 ### Checkpoint2.1 — G1 Package sorting investigation/proposal
 

@@ -231,7 +231,8 @@ public sealed partial class V2BundleSearchWorkspaceTests
         var view = new SearchWorkspaceView { DataContext = search };
         var window = new Window { Content = view, Width = 1300, Height = 700 }; window.Show();
         try { window.UpdateLayout(); Dispatcher.UIThread.RunJobs(); Assert.Equal(6, view.FindControl<DataGrid>("ResultsGrid")!.Columns.Count(c => c.IsVisible));
-            Assert.False(view.FindControl<Button>("SearchNameSortButton")!.IsVisible); }
+            Assert.False(view.FindControl<Button>("SearchNameSortButton")!.IsVisible);
+            Assert.False(view.FindControl<Button>("SearchPackageSortButton")!.IsVisible); }
         finally { window.Close(); }
     }
 

@@ -1,9 +1,11 @@
 # CP21 G1 — Package sorting accessibility and fixture proposal
 
-Status: **proposal only; separate production approval required**. Audited recovery
-commit `7343b139c20795a4dbc66928663db10987dc97df`. No product, runner, fixture
-preparation or workflow changes implement Package activation in this commit.
-The only executable addition is a headless capability regression.
+Status: **separately approved and implemented; Windows acceptance pending**.
+The user approved this proposal at `571fdf2d3300e2bf4ce95ea87f6668683f6f610f`.
+See the [implementation/evidence guide](PACKAGE-SORT-ACCEPTANCE.md). The original
+investigation/design below records audited recovery commit
+`7343b139c20795a4dbc66928663db10987dc97df`; historical absence/pending-approval
+statements are superseded by the explicit approval, not new Windows evidence.
 
 The user confirms [run 40338427998](https://github.com/PapayaModding/UABS/actions/runs/40338427998)
 at that commit passed all four jobs, including G2/G3/G4. Those are real Windows
@@ -67,8 +69,8 @@ do not meet fully remote automation. An upstream accessible header peer is a
 larger dependency change; internal sort methods are not a supported UABS API.
 An undiscoverable shortcut or repurposed Name button is not recommended.
 
-**Stop here for approval before production implementation.** This proposal does
-not authorize the button. No future Package test should pass without performing
+**Separate approval has now been received for this exact slice.** Further changes
+need their own authorization. No Package test should pass without performing
 its actual supported user action.
 
 ## Minimal deterministic fixture and independent oracle

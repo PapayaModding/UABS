@@ -12,7 +12,7 @@ namespace UABS.UnityAssets.Tests;
 public sealed partial class V2BundleSearchWorkspaceTests
 {
     [AvaloniaFact]
-    public async Task PackageHeaderCurrentlyHasNoInvokeProvider_AndNameButtonIsNotAPackageAction()
+    public async Task PackageHeaderKeepsPointerRoute_AndPackageButtonExposesSupportedInvoke()
     {
         using var corpus = new V2SearchTests.Corpus(); await corpus.Add(2, sourceCount: 3);
         using var packages = V2SearchIntegrationTests.Packages(); using var search = Create(packages);
@@ -34,7 +34,11 @@ public sealed partial class V2BundleSearchWorkspaceTests
             var nameButton = view.FindControl<Button>("SearchNameSortButton")!;
             var namePeer = ControlAutomationPeer.CreatePeerForElement(nameButton)!;
             Assert.Equal("Sort Name", namePeer.GetName()); Assert.NotNull(namePeer.GetProvider<IInvokeProvider>());
-            Assert.Null(view.FindControl<Button>("SearchPackageSortButton"));
+            var packageButton = view.FindControl<Button>("SearchPackageSortButton")!;
+            var packagePeer = ControlAutomationPeer.CreatePeerForElement(packageButton)!;
+            Assert.Equal("Sort Package", packagePeer.GetName()); Assert.NotNull(packagePeer.GetProvider<IInvokeProvider>());
+            Assert.True(packageButton.IsVisible); Assert.True(packageButton.IsEnabled); Assert.True(packageButton.Focusable);
+            Assert.Contains("Current Package order: Ascending. Next Package order: Descending.", packagePeer.GetHelpText());
         }
         finally { window.Close(); }
     }

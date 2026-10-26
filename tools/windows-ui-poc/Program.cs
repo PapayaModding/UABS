@@ -9,7 +9,7 @@ using FlaUI.UIA3;
 
 internal sealed record Scenario(string Repository, string ExpectedCommit, string Package,
     string PackageSha256, string Keyword, ExpectedRow[] ExpectedRows,
-    string? Acceptance = null, ExpectedRow[]? ExpectedSortRows = null);
+    string? Acceptance = null, ExpectedRow[]? ExpectedSortRows = null, PackageSortFixture[]? PackageSortFixtures = null);
 internal sealed class Blocked(string message) : Exception(message);
 
 internal static partial class Program
@@ -35,7 +35,7 @@ internal static partial class Program
         {
             Require(OperatingSystem.IsWindows() && Environment.UserInteractive, "Requires interactive Windows desktop.");
             config = JsonSerializer.Deserialize<Scenario>(File.ReadAllText(args[0]), Json) ?? throw new Blocked("Invalid scenario JSON.");
-            Require(config.Acceptance is null or "checkpoint21-v2" or "checkpoint21-v1" or "checkpoint21-gaps", "Unknown acceptance scenario.");
+            Require(config.Acceptance is null or "checkpoint21-v2" or "checkpoint21-v1" or "checkpoint21-gaps" or "checkpoint21-package-sort", "Unknown acceptance scenario.");
             Require(Git(config.Repository, "branch", "--show-current") == "v2-recovery", "Repository must be on v2-recovery.");
             string remote = Git(config.Repository, "remote", "get-url", "origin").TrimEnd('/');
             Require(remote is "https://github.com/PapayaModding/UABS.git" or "https://github.com/PapayaModding/UABS" or "git@github.com:PapayaModding/UABS.git", "Unexpected origin repository.");
@@ -55,6 +55,7 @@ internal static partial class Program
             }
             string work = Path.Combine(Output, "work"); Directory.CreateDirectory(work);
             string copy = Path.Combine(work, Path.GetFileName(config.Package)); File.Copy(config.Package, copy);
+            if (config.Acceptance == "checkpoint21-package-sort") PreparePackageCopies(config, work);
             Step("preflight", new { commit = config.ExpectedCommit, executableSha256 = Hash(exe), packageSha256 = sourceHash });
             Automation = new UIA3Automation();
             stage = "launch";
@@ -62,6 +63,13 @@ internal static partial class Program
             var attached = FlaUI.Core.Application.Attach(App.Id);
             Wait("main window", () => (Window = attached.GetMainWindow(Automation, TimeSpan.FromSeconds(1))) != null);
             Evidence("initial");
+            if (config.Acceptance == "checkpoint21-package-sort")
+            {
+                stage = "Checkpoint 2.1 Package sorting";
+                status = RunPackageSortAcceptance(config, work);
+                detail = "G1 Package sorting; see acceptance.json. Checkpoint remains open.";
+                goto ScenarioFinished;
+            }
             if (config.Acceptance == "checkpoint21-gaps")
             {
                 stage = "Checkpoint 2.1 pre-admission input";
@@ -239,6 +247,7 @@ internal static partial class Program
             {
                 if (config != null && sourceHash != null && Hash(config.Package) != sourceHash)
                 { status = "FAIL"; detail += " Original package hash changed during execution."; }
+                if (config?.Acceptance == "checkpoint21-package-sort" && PackageCopiesPrepared) VerifyPackageFiles(config, Path.Combine(Output, "work"));
             }
             catch (Exception error) { status = "FAIL"; detail += " Cannot verify original package: " + error.Message; }
             Automation?.Dispose();

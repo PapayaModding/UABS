@@ -5,3 +5,4 @@ artifacts/
 !WindowsUiPoc.csproj
 !tests/EvidenceChecks.csproj
 !ci/PrepareSmoke.csproj
+!ci/package-sort/PreparePackageSort.csproj

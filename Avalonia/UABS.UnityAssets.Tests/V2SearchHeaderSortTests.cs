@@ -74,6 +74,7 @@ public sealed class V2SearchHeaderSortTests
             window.UpdateLayout(); Dispatcher.UIThread.RunJobs();
             var grid = view.FindControl<DataGrid>("ResultsGrid")!;
             Assert.False(view.FindControl<Button>("SearchNameSortButton")!.IsVisible); // raw asset mode unchanged
+            Assert.False(view.FindControl<Button>("SearchPackageSortButton")!.IsVisible);
             var selected = search.Results[0]; grid.SelectedItem = selected; await search.MemoTransitionTask;
             Assert.Same(selected, search.SelectedResult);
             Assert.Same(selected, grid.SelectedItem);
