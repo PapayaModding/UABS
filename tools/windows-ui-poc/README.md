@@ -240,6 +240,13 @@ UIA-focus/keyboard selection path with exact Inspector identity retention;
 that new path still needs Windows execution. CP21-08 remains BLOCKED without
 a supported header Invoke action. No production accessibility code changed.
 
+The subsequent CP21-09 comparison confirmed reversed UIA enumeration relative
+to Ctrl+Home navigation. Boundary expectations now come from verified,
+non-overlapping row bounding rectangles below the grid headers, with all
+expected rows fully visible. Bounds are diagnostic evidence only: there is
+no coordinate-based input. See the matrix's confirmed row-order section for
+the strict layout gates and new evidence files. Windows rerun is pending.
+
 `.github/workflows/windows-ui-poc.yml` runs **manual-only** jobs on
 `windows-latest`. It runs only for `PapayaModding/UABS` on `v2-recovery`, with
 `contents: read`, pinned checkout/setup/upload actions, and no persisted Git

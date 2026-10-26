@@ -193,3 +193,38 @@ using (var reportJson = JsonDocument.Parse(JsonSerializer.Serialize(wrongFirst))
         && reportJson.RootElement.GetProperty("ActualFields").GetProperty("Name").GetString() == selectedRow.Name,
         "Serialized comparison lacks exact expected/actual identities.");
 Console.WriteLine("PASS: Inspector comparison diagnostics retain strict verdicts and report exact row/path/unavailable mismatches.");
+
+var viewport = new UiBounds(100, 50, 400, 300);
+PositionedRow Positioned(string name, double top, bool hidden = false) =>
+    new(new(name, "Smoke"), new(100, top, 400, 25), hidden);
+var reversedEnumeration = new[] { Positioned("0002", 100), Positioned("0001", 75), Positioned("0000", 50) };
+Check(SearchAccessibility.VisualRowOrder(reversedEnumeration, viewport).Select(row => row.Name)
+    .SequenceEqual(new[] { "0000", "0001", "0002" }), "Reversed enumeration became keyboard boundary order.");
+var scrambled = new[] { Positioned("0001", 75), Positioned("0000", 100), Positioned("0002", 50) };
+Check(SearchAccessibility.VisualRowOrder(scrambled, viewport).Select(row => row.Name)
+    .SequenceEqual(new[] { "0002", "0001", "0000" }), "Order was guessed by reversing enumeration or sorting names.");
+Check(SearchAccessibility.VisualRowOrder(reversedEnumeration.Reverse().ToArray(), viewport)
+    .SequenceEqual(SearchAccessibility.VisualRowOrder(reversedEnumeration, viewport)), "Visual order depends on enumeration order.");
+var reportedEnumeration = new[] {
+    Positioned("uabs-smoke-0002.bundle", 100), Positioned("uabs-smoke-0001.bundle", 75),
+    Positioned("uabs-smoke-0000.bundle", 50) };
+var keyboardOrder = SearchAccessibility.VisualRowOrder(reportedEnumeration, viewport);
+Check(!SearchAccessibility.SelectedInspectorMatches(inspector, reportedEnumeration[0].Identity, selectionCopy)
+    && SearchAccessibility.SelectedInspectorMatches(inspector, keyboardOrder[0], selectionCopy),
+    "Reported Ctrl+Home identity must match visual first row, not reversed enumeration first row.");
+void AmbiguousLayout(PositionedRow[] rows, UiBounds? bounds = null)
+{
+    try { SearchAccessibility.VisualRowOrder(rows, bounds ?? viewport); }
+    catch (AccessibilityUnavailable) { return; }
+    throw new Exception("Unreliable visual boundary order accepted.");
+}
+AmbiguousLayout([Positioned("a", 50), Positioned("b", 50)]);
+AmbiguousLayout([Positioned("a", 50), Positioned("b", 60)]);
+AmbiguousLayout([Positioned("a", 40), Positioned("b", 75)]);
+AmbiguousLayout([Positioned("a", 50), Positioned("b", 340)]);
+AmbiguousLayout([Positioned("a", 50), Positioned("b", 75, true)]);
+AmbiguousLayout([Positioned("a", 50), new(new("b", "Smoke"), new(100, 75, 0, 25), false)]);
+AmbiguousLayout([Positioned("a", 50), Positioned("b", double.NaN)]);
+AmbiguousLayout([Positioned("a", 50), Positioned("a", 75)]);
+AmbiguousLayout([Positioned("a", 50), Positioned("b", 75)], new(0, 0, 0, 0));
+Console.WriteLine("PASS: visual bounds determine Home/End boundaries independently of UIA enumeration; ambiguous/clipped/offscreen layouts block.");

@@ -7,9 +7,30 @@ internal sealed record FieldVerdict(string Status, string Reason);
 internal sealed record InspectorComparison(ExpectedRow Expected, string ExpectedPackagePath, string? RawDetails,
     Dictionary<string, string> ActualFields, string[] DuplicateFields, Dictionary<string, bool> Checks,
     bool Matches, string? ReadError);
+internal sealed record UiBounds(double Left, double Top, double Width, double Height)
+{
+    public double Right => Left + Width;
+    public double Bottom => Top + Height;
+    public bool Valid => new[] { Left, Top, Width, Height, Right, Bottom }.All(double.IsFinite) && Width > 0 && Height > 0;
+}
+internal sealed record PositionedRow(ExpectedRow Identity, UiBounds Bounds, bool Offscreen);
 
 internal static class SearchAccessibility
 {
+    internal static ExpectedRow[] VisualRowOrder(PositionedRow[] rows, UiBounds viewport)
+    {
+        if (!viewport.Valid || rows.Length < 2 || rows.Select(row => row.Identity).Distinct().Count() != rows.Length)
+            throw new AccessibilityUnavailable("Visual boundary selection requires a valid viewport and distinct complete row identities.");
+        if (rows.Any(row => row.Offscreen || !row.Bounds.Valid || row.Bounds.Top < viewport.Top
+            || row.Bounds.Bottom > viewport.Bottom || row.Bounds.Left < viewport.Left || row.Bounds.Right > viewport.Right))
+            throw new AccessibilityUnavailable("Row bounds are unavailable, offscreen, clipped, or outside the verified grid viewport.");
+        var ordered = rows.OrderBy(row => row.Bounds.Top).ToArray();
+        for (int index = 1; index < ordered.Length; index++)
+            if (ordered[index].Bounds.Top < ordered[index - 1].Bounds.Bottom)
+                throw new AccessibilityUnavailable("Row bounds overlap or have tied vertical positions; visual order is ambiguous.");
+        return ordered.Select(row => row.Identity).ToArray();
+    }
+
     // Diagnostic only. Keep SelectedInspectorMatches as the independent strict predicate.
     internal static InspectorComparison ExplainInspector(string? details, ExpectedRow expected, string copy)
     {

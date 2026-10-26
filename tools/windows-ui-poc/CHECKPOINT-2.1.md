@@ -29,7 +29,7 @@ Source tests/builds do not establish UI acceptance for the updated commit.
 | Explicit choices survive catalog reload | CP21-06 | PASS | Exact disposable catalog path, native folder Edit Value readback, Refresh Invoke, retained criteria |
 | Explicit Refresh unchanged; editing criteria alone does not rerun | CP21-07 | PASS | Prior row retained, Refresh publishes exact empty result, second Refresh restores Unicode result |
 | Search sorting unchanged | CP21-08 | BLOCKED; remains blocked without Invoke | Capability JSON plus independently indexed three-bundle oracle. Nontrivial Package sorting remains uncovered |
-| Selection retained including after rejection | CP21-09 | BLOCKED; new keyboard path pending | UIA SetFocus and guarded Ctrl+Home/End, exact Inspector identity before/after rejection |
+| Selection retained including after rejection | CP21-09 | BLOCKED in latest run; visual-order correction pending | Verified positional row bounds, UIA SetFocus and guarded Ctrl+Home/End, exact Inspector identity before/after rejection |
 | Mixed V1/V2 scope rejects rather than guesses | CP21-10 | PASS | Exact two disposable scopes, error text, selected states retained |
 | Fresh V1-only original mixed/Names defaults and Search behavior | separate `checkpoint21-v1`, CP21-11 | PASS | SHA-checked LegacyPackage copy, six-column exact portrait/LegacyPackage/character.ab/1001/memo row and exact count |
 
@@ -131,5 +131,45 @@ No functional selection correction is claimed without the actual evidence.
 To diagnose the existing run, provide its V2 artifact ZIP (especially
 acceptance.json, CP21-09-selection-uia.json, CP21-09-selection.png,
 grid-keyboard-capabilities.json, and results.json), or dispatch this diagnostic
-commit and inspect the new comparison JSON. UIA descendant order versus
-logical boundary order remains a hypothesis, not an established root cause.
+commit and inspect the new comparison JSON. At that revision, UIA descendant
+order versus logical boundary order remained a hypothesis; the subsequent
+user-provided evidence below confirms the mismatch.
+
+## Confirmed row-order mismatch and positional correction
+
+The user inspected [run 40252417310](https://github.com/PapayaModding/UABS/actions/runs/40252417310)
+at `11c9489f1a3ecf3ca517273a12a4415f417be844`: UIA descendant order was
+0002, 0001, 0000, whereas Ctrl+Home selected 0000. Package/path/UUID checks
+passed; Name and source-filename checks failed against the assumed 0002.
+Thus the expected boundary row was derived from the wrong kind of ordering.
+No identity check needs to be weakened to correct that assumption.
+
+Avalonia 11.3.3's
+[DataGridRowsPresenter.ArrangeOverride](https://github.com/AvaloniaUI/Avalonia.Controls.DataGrid/blob/11.3.3/src/Avalonia.Controls.DataGrid/Primitives/DataGridRowsPresenter.cs)
+arranges `DisplayData.GetScrollingElements()` in increasing vertical position.
+Its child index provider separately returns each row's logical Index; visual
+child enumeration is not the authoritative navigation order. The grid's
+Ctrl+Home/End handlers select the first/last logical visible slot.
+
+CP21-09 now reads each realized DataItem's two-cell identity and its UIA
+BoundingRectangle from that same row element. It requires the unchanged
+independent complete row-set/count check, then rejects missing, zero/nonfinite,
+offscreen, clipped, overlapping/tied, or out-of-grid bounds. Rows must fit
+fully below the two verified column headers, and identities must be distinct.
+Only then does sorting the observations by Top establish visual boundary
+identities. It does not reverse enumeration or sort bundle names to guess
+boundaries. Unavailable/ambiguous layout is BLOCKED; a wrong complete result
+set remains FAIL.
+
+Rectangles are read-only evidence and are never passed to mouse APIs or used
+to move focus. Input remains UIA SetFocus with process/foreground checks and
+fixed Ctrl+Home/End shortcuts. Inspector matching, copy-path/SHA checks,
+four UUID checks, and full Inspector retention after Names rejection are
+unchanged. Complete row set and visual order are rechecked after each key
+and rejection. `CP21-09-layout-{before-keys,after-home,after-end,after-rejection}.json`
+records rectangles, raw UIA enumeration, derived visual order, and failures;
+first/last identity reports retain both enumeration and visual order.
+Regression tests cover reversed and scrambled enumeration and ambiguous,
+clipped, hidden, invalid, and duplicate-row layouts. Real Windows validation
+of this correction is still required. CP21-08 remains BLOCKED and the
+checkpoint is not closed.

@@ -88,14 +88,17 @@ internal static partial class Program
         SetValue(ById(Controls(), "IncludeSearchTextBox"), "asset"); ExecuteSearch();
         Wait("selection multirow query", () => Grid().FindAllDescendants(Automation!.ConditionFactory.ByControlType(ControlType.DataItem)).Length >= config.ExpectedSortRows!.Length);
         Rows(config.ExpectedSortRows!);
-        var ordered = ReadAccessibleRows(Grid());
+        var enumeration = ReadAccessibleRows(Grid());
+        var visualOrder = CaptureVisualRowOrder("before-keys", config.ExpectedSortRows!);
         string copy = Path.Combine(work, Path.GetFileName(config.Package));
         SelectBoundaryWithKeyboard(false);
-        string first = WaitForInspectorIdentity("first", ordered[0], copy, ordered);
+        string first = WaitForInspectorIdentity("first", visualOrder[0], copy, enumeration, visualOrder);
+        Check(CaptureVisualRowOrder("after-home", config.ExpectedSortRows!).SequenceEqual(visualOrder), "Visual result order changed during Ctrl+Home selection.");
         Step("first selected Inspector", first);
         Evidence("CP21-09-first-selection");
         SelectBoundaryWithKeyboard(true);
-        string last = WaitForInspectorIdentity("last", ordered[^1], copy, ordered);
+        string last = WaitForInspectorIdentity("last", visualOrder[^1], copy, enumeration, visualOrder);
+        Check(CaptureVisualRowOrder("after-end", config.ExpectedSortRows!).SequenceEqual(visualOrder), "Visual result order changed during Ctrl+End selection.");
         Check(first != last, "Keyboard navigation did not change the selected source identity.");
         Step("last selected Inspector", last);
         Evidence("CP21-09-last-selection");
@@ -105,15 +108,18 @@ internal static partial class Program
         Require(retained is not null, "Inspector is unavailable after compatibility rejection.");
         Check(retained == last, "Compatibility rejection changed the selected immutable source Inspector identity.");
         Rows(config.ExpectedSortRows!);
+        Check(CaptureVisualRowOrder("after-rejection", config.ExpectedSortRows!).SequenceEqual(visualOrder), "Compatibility rejection changed visual row order.");
         Check(Hash(copy).Equals(config.PackageSha256, StringComparison.OrdinalIgnoreCase), "Disposable package hash changed during selection test.");
     }
 
-    private static string WaitForInspectorIdentity(string boundary, ExpectedRow expected, string copy, ExpectedRow[] ordered)
+    private static string WaitForInspectorIdentity(string boundary, ExpectedRow expected, string copy,
+        ExpectedRow[] enumeration, ExpectedRow[] visualOrder)
     {
         string? observed = null;
         try
         {
-            Wait(boundary + "-row selected Inspector identity", () => {
+            Wait(boundary + "-row selected Inspector identity", () =>
+            {
                 observed = ReadSelectedInspector();
                 return SearchAccessibility.SelectedInspectorMatches(observed, expected, copy);
             });
@@ -126,7 +132,8 @@ internal static partial class Program
             try
             {
                 var inspectors = Window!.FindAllDescendants(Automation!.ConditionFactory.ByAutomationId("V2SearchDetails"))
-                    .Select(e => new {
+                    .Select(e => new
+                    {
                         name = EvidenceValue.Read(() => e.Name),
                         offscreen = EvidenceValue.Read(() => e.IsOffscreen),
                         text = EvidenceValue.Read(() => e.Patterns.Text.Pattern.DocumentRange.GetText(-1)),
@@ -134,17 +141,89 @@ internal static partial class Program
                     }).ToArray();
                 var headers = Grid().FindAllDescendants(Automation.ConditionFactory.ByControlType(ControlType.HeaderItem))
                     .Select(e => new { name = EvidenceValue.Read(() => e.Name), helpText = EvidenceValue.Read(() => e.Properties.HelpText.Value) }).ToArray();
-                var report = new {
-                    boundary, expected, expectedPackagePath = copy,
-                    uiaDescendantRowOrder = ordered,
+                var report = new
+                {
+                    boundary,
+                    expected,
+                    expectedPackagePath = copy,
+                    uiaDescendantRowOrder = enumeration,
+                    visualRowOrder = visualOrder,
                     comparison = SearchAccessibility.ExplainInspector(observed, expected, copy),
-                    inspectors, headers,
+                    inspectors,
+                    headers,
                     gridHasKeyboardFocus = EvidenceValue.Read(() => Grid().Properties.HasKeyboardFocus.Value)
                 };
                 Step(boundary + " Inspector comparison", report);
                 File.WriteAllText(Path.Combine(Output, "CP21-09-" + boundary + "-identity.json"), JsonSerializer.Serialize(report, Json));
             }
             catch (Exception error) { Step("Inspector comparison diagnostic error", error.ToString()); }
+        }
+    }
+
+    private static ExpectedRow[] CaptureVisualRowOrder(string label, ExpectedRow[] expected)
+    {
+        Rows(expected); // Keep independent complete-set/count validation unchanged.
+        var observations = new List<PositionedRow>();
+        UiBounds? gridBounds = null, viewport = null;
+        UiBounds[]? headers = null;
+        ExpectedRow[]? ordered = null;
+        string? failure = null;
+        bool rowSetMismatch = false;
+        try
+        {
+            var grid = Grid();
+            UiBounds Bounds(AutomationElement element)
+            {
+                var rect = element.BoundingRectangle;
+                return new(rect.Left, rect.Top, rect.Width, rect.Height);
+            }
+            gridBounds = Bounds(grid);
+            headers = grid.FindAllDescendants(Automation!.ConditionFactory.ByControlType(ControlType.HeaderItem)).Select(Bounds).ToArray();
+            Require(gridBounds.Valid && headers.Length == 2 && headers.All(header => header.Valid), "Usable grid and Name/Package header bounds are required.");
+            double top = Math.Max(gridBounds.Top, headers.Max(header => header.Bottom));
+            viewport = new(gridBounds.Left, top, gridBounds.Width, gridBounds.Bottom - top);
+            foreach (var row in grid.FindAllDescendants(Automation.ConditionFactory.ByControlType(ControlType.DataItem)))
+            {
+                var cells = row.FindAllDescendants(Automation.ConditionFactory.ByClassName("DataGridCell"));
+                Require(cells.Length == 2, "Positional row must expose exactly two Name/Package cells.");
+                var identity = cells.Select(cell =>
+                {
+                    var text = cell.FindAllDescendants(Automation.ConditionFactory.ByControlType(ControlType.Text));
+                    Require(text.Length == 1, "Positional cell must expose exactly one readable Text.");
+                    return text[0].Name;
+                }).ToArray();
+                observations.Add(new(new(identity[0], identity[1]), Bounds(row), row.IsOffscreen));
+            }
+            rowSetMismatch = !observations.Select(row => row.Identity).OrderBy(row => row.Name).ThenBy(row => row.Package)
+                .SequenceEqual(expected.OrderBy(row => row.Name).ThenBy(row => row.Package));
+            Check(!rowSetMismatch, "Positional capture differs from the independent complete expected row set.");
+            ordered = SearchAccessibility.VisualRowOrder(observations.ToArray(), viewport);
+            return ordered;
+        }
+        catch (Exception error)
+        {
+            failure = error.ToString();
+            if (error is NotSupportedException or AccessibilityUnavailable or Blocked) throw;
+            // A readable but wrong row multiset is an assertion failure, not a capability gap.
+            if (rowSetMismatch) throw;
+            throw new Blocked("Visual boundary order could not be established: " + error.Message);
+        }
+        finally
+        {
+            var report = new
+            {
+                label,
+                expected,
+                gridBounds,
+                headers,
+                viewport,
+                uiaDescendantRows = observations,
+                visualRowOrder = ordered,
+                failure
+            };
+            Step("visual boundary evidence " + label, report);
+            try { File.WriteAllText(Path.Combine(Output, "CP21-09-layout-" + label + ".json"), JsonSerializer.Serialize(report, Json)); }
+            catch (Exception error) { Step("layout diagnostic write error", error.ToString()); }
         }
     }
 }
