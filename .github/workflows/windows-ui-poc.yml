@@ -14,7 +14,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        scenario: [smoke, checkpoint21-v2, checkpoint21-v1]
+        scenario: [smoke, checkpoint21-v2, checkpoint21-v1, checkpoint21-gaps]
     timeout-minutes: 15
     defaults:
       run:

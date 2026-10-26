@@ -10,5 +10,6 @@
     <Compile Include="../PackageAdmission.cs" Link="PackageAdmission.cs" />
     <Compile Include="../SearchAccessibility.cs" Link="SearchAccessibility.cs" />
     <Compile Include="../UiaRead.cs" Link="UiaRead.cs" />
+    <Compile Include="../CriteriaContract.cs" Link="CriteriaContract.cs" />
   </ItemGroup>
 </Project>

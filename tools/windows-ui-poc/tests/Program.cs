@@ -319,3 +319,38 @@ foreach (var ambiguous in new[] { Array.Empty<ExpectedRow>(), new[] { sortOracle
 try { SearchAccessibility.NameOrderOracle(sortOracle, "unknown"); throw new Exception("Unknown direction accepted."); }
 catch (AccessibilityUnavailable) { }
 Console.WriteLine("PASS: exact independent ascending/descending visual Name order, wrong sets/orders fail, and ambiguous direction/target/oracle evidence blocks.");
+
+CriteriaEdit[] emptyCriteria = CriteriaContract.Watermarks.Select((pair, index) => new CriteriaEdit("runtime-" + index, [pair.Value], true, "")).ToArray();
+var boundCriteria = CriteriaContract.Bind(emptyCriteria.Reverse().ToArray());
+var sentinels = CriteriaContract.Sentinels("テスト");
+var populatedCriteria = emptyCriteria.Select(edit => edit with { Watermarks = [], Value = sentinels[boundCriteria.Single(pair => pair.Value == edit.RuntimeId).Key] }).ToArray();
+CriteriaContract.Equal(sentinels, CriteriaContract.Read(boundCriteria, populatedCriteria.Reverse().ToArray()));
+foreach (var changed in new[] {
+    populatedCriteria.Select(edit => edit with { Value = "" }).ToArray(),
+    populatedCriteria.Select(edit => edit.RuntimeId == boundCriteria["classId"] ? edit with { Value = sentinels["pathId"] } : edit).ToArray(),
+    populatedCriteria.Select(edit => edit.RuntimeId == boundCriteria["include"] ? edit with { Value = "wrong Unicode テスト" } : edit).ToArray() })
+{
+    try { CriteriaContract.Equal(sentinels, CriteriaContract.Read(boundCriteria, changed)); throw new Exception("Changed/default/swapped criteria accepted."); }
+    catch (InvalidOperationException error) { Check(error.Message.Contains("semantic criteria"), "Observed value mismatch did not remain FAIL."); }
+}
+foreach (var unsupported in new[] {
+    emptyCriteria.Skip(1).ToArray(), emptyCriteria.Append(emptyCriteria[0] with { RuntimeId = "duplicate-label" }).ToArray(),
+    emptyCriteria.Select(edit => edit with { RuntimeId = "same-id" }).ToArray(),
+    emptyCriteria.Select(edit => edit with { Writable = false }).ToArray(),
+    emptyCriteria.Select(edit => edit with { Value = "persisted" }).ToArray(),
+    emptyCriteria.Select(edit => edit with { Watermarks = [] }).ToArray(),
+    emptyCriteria.Select(edit => edit with { Watermarks = [edit.Watermarks[0], edit.Watermarks[0]] }).ToArray() })
+{
+    try { CriteriaContract.Bind(unsupported); throw new Exception("Ambiguous/nonempty/unsupported criterion binding accepted."); }
+    catch (AccessibilityUnavailable) { }
+}
+foreach (var unsupported in new[] {
+    populatedCriteria.Skip(1).ToArray(), populatedCriteria.Append(populatedCriteria[0]).ToArray(),
+    populatedCriteria.Select(edit => edit with { RuntimeId = "replacement-" + edit.RuntimeId }).ToArray(),
+    populatedCriteria.Select(edit => edit with { Writable = false }).ToArray() })
+{
+    try { CriteriaContract.Read(boundCriteria, unsupported); throw new Exception("Lost/replaced/ambiguous runtime identity accepted."); }
+    catch (AccessibilityUnavailable) { }
+}
+Check(CriteriaContract.Sentinels("テスト")["pathId"].StartsWith('-') && sentinels.Values.All(value => value.Length > 0), "Non-default signed/numeric/type sentinels missing.");
+Console.WriteLine("PASS: semantic watermark binding, stable runtime identities, reordered discovery, exact Unicode/non-default readback; changed values FAIL and ambiguous/replaced/unavailable controls BLOCK.");

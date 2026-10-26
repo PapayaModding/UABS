@@ -28,6 +28,17 @@ classifies five remaining behavioral coverage gaps, the literal tooltip evidence
 equivalence decision, regression disposition, deferred work and the next slice.
 No checkpoint or unrelated coverage gap closes merely because these jobs pass.
 
+## Next test-only G2/G3/G4 slice — implemented, Windows pending
+
+The additive `checkpoint21-gaps` job and [slice/evidence guide](ACCEPTANCE-GAP-SLICE.md)
+implement five phased cases for G3 pre-admission input/defaulting/known-query,
+G2 non-default criteria retention across every documented scope/workspace/catalog
+transition, and G4 metadata-exclusion rejection/retained state/recovery. The
+existing three jobs and CP21 assertions remain unchanged. Source/headless checks
+do not accept these gaps; actual Windows evidence at the new SHA is required.
+G1 Package order, G5 indeterminate feedback, G6 tooltip equivalence/hover and
+Linux regression disposition remain explicitly open. No checkpoint closure.
+
 | Documented requirement | Scenario/case | User-confirmed Windows result before this change | Evidence / remaining validation |
 | --- | --- | --- | --- |
 | Untouched V2 Sources-only / Assets defaults | unchanged `smoke`; CP21-01 | PASS, user-confirmed baseline | Linked baseline run; fresh SHA gets its own artifact |

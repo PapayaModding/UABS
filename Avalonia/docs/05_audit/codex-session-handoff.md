@@ -4,6 +4,12 @@
 
 **Current task:** Recovery Checkpoint2.1 — final acceptance gap audit; implemented Windows scenarios pass, remaining evidence/signoff pending. No navigation or issue closure.
 
+### Checkpoint2.1 — next test-only G2/G3/G4 slice (Windows pending)
+
+- Added optional `checkpoint21-gaps` hosted job without changing the passing Smoke/V1/V2 paths. [Slice guide](../../../tools/windows-ui-poc/ACCEPTANCE-GAP-SLICE.md) describes real pre-admission input/defaulting, non-default numeric/type/exclude/flag retention across scope/workspace/catalog changes and metadata-exclusion rejection with exact state/result/Inspector preservation.
+- Controls bind by unique actual template watermark evidence while empty, then supported runtime identity, never Edit order or expected values. A headless control-peer regression verifies the existing template/Value provider; actual Windows runtime identity/native picker verification remains pending. No production files, fixtures or result expectations changed.
+- G1 Package ordering, G5 indeterminate-coverage feedback, G6 tooltip-hover/HelpText equivalence and full Linux regression disposition remain open. No Checkpoint2.1 closure, additional accessibility implementation or Checkpoint3 authorization. The final audit remains the acceptance authority.
+
 ### Checkpoint2.1 — final acceptance gap audit (2026-10-26)
 
 - User confirms [Windows run 40259657455](https://github.com/PapayaModding/UABS/actions/runs/40259657455) at `26f38e68511cd6eaf0d0c23b7ce9fac9228aab70` passed Smoke, expanded V2 and fresh V1, including accessible Name sorting. These are real user-confirmed Windows outcomes; this audit's API read returned Forbidden and no artifacts were independently inspected.

@@ -35,7 +35,7 @@ internal static partial class Program
         {
             Require(OperatingSystem.IsWindows() && Environment.UserInteractive, "Requires interactive Windows desktop.");
             config = JsonSerializer.Deserialize<Scenario>(File.ReadAllText(args[0]), Json) ?? throw new Blocked("Invalid scenario JSON.");
-            Require(config.Acceptance is null or "checkpoint21-v2" or "checkpoint21-v1", "Unknown acceptance scenario.");
+            Require(config.Acceptance is null or "checkpoint21-v2" or "checkpoint21-v1" or "checkpoint21-gaps", "Unknown acceptance scenario.");
             Require(Git(config.Repository, "branch", "--show-current") == "v2-recovery", "Repository must be on v2-recovery.");
             string remote = Git(config.Repository, "remote", "get-url", "origin").TrimEnd('/');
             Require(remote is "https://github.com/PapayaModding/UABS.git" or "https://github.com/PapayaModding/UABS" or "git@github.com:PapayaModding/UABS.git", "Unexpected origin repository.");
@@ -62,6 +62,12 @@ internal static partial class Program
             var attached = FlaUI.Core.Application.Attach(App.Id);
             Wait("main window", () => (Window = attached.GetMainWindow(Automation, TimeSpan.FromSeconds(1))) != null);
             Evidence("initial");
+            if (config.Acceptance == "checkpoint21-gaps")
+            {
+                stage = "Checkpoint 2.1 pre-admission input";
+                GapCase("CP21-G3-pre-admission-input", () => PreparePreAdmission(config));
+                if (AcceptanceStatus() != "PASS") { status = AcceptanceStatus(); detail = "Pre-admission prerequisites were not satisfied; see acceptance.json."; goto ScenarioFinished; }
+            }
             if (config.Acceptance == "checkpoint21-v1")
             {
                 stage = "Checkpoint 2.1 V1";
@@ -154,6 +160,11 @@ internal static partial class Program
             var fields = Find(controls, ControlType.ComboBox, null);
             VerifyFieldSelection(fields);
             Step("defaults", new { sources = true, packages = false, assets = false, fields = "Assets" });
+            if (config.Acceptance == "checkpoint21-gaps")
+            {
+                GapCase("CP21-G3-defaulting-retention", () => VerifyPreAdmission(config, copy, sourceHash));
+                if (AcceptanceStatus() != "PASS") { status = AcceptanceStatus(); detail = "Pre-admission retention was not verified; sentinel query was not executed."; goto ScenarioFinished; }
+            }
             stage = "search";
             var include = ById(controls, "IncludeSearchTextBox");
             SetValue(include, config.Keyword);
@@ -196,12 +207,25 @@ internal static partial class Program
                 status = RunCheckpoint21(config, work);
                 detail = "Checkpoint 2.1 V2 checks; see acceptance.json. Checkpoint remains open.";
             }
+            if (config.Acceptance == "checkpoint21-gaps")
+            {
+                stage = "Checkpoint 2.1 gap slice";
+                status = RunAcceptanceGaps(config, work, copy, sourceHash);
+                detail = "G2/G3/G4 test-only slice; see acceptance.json. Other acceptance gaps remain open.";
+            }
         ScenarioFinished:;
         }
         catch (Exception exception)
         {
             status = exception is Blocked or NotSupportedException ? "BLOCKED" : "FAIL";
             detail = $"{stage}: {exception}";
+            if (config?.Acceptance == "checkpoint21-gaps" && Window != null)
+            {
+                // Admission/default/query failures outside subcases still need a case result;
+                // an input-only PASS cannot look like successful G3 acceptance.
+                GapCase("CP21-gap-stage-failure", () => System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(exception).Throw());
+                status = AcceptanceStatus();
+            }
             try { if (Window != null) Evidence("failure"); } catch (Exception evidenceError) { Step("evidence error", evidenceError.ToString()); }
         }
         finally

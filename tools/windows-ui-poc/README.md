@@ -228,22 +228,26 @@ local configuration, DB copies, screenshots, and logs must stay untracked.
 ## GitHub-hosted Windows proof of concept
 
 Checkpoint 2.1 expansion: see the [requirement-to-test matrix](CHECKPOINT-2.1.md).
-The workflow now has independent `smoke`, `checkpoint21-v2`, and
-`checkpoint21-v1` matrix jobs. Smoke keeps its existing path; the latter two
+The workflow now has independent `smoke`, `checkpoint21-v2`,
+`checkpoint21-v1`, and `checkpoint21-gaps` matrix jobs. The new test-only
+[G2/G3/G4 slice](ACCEPTANCE-GAP-SLICE.md) covers non-default retention,
+pre-admission text/defaulting and metadata-exclusion feedback; its Windows
+execution is pending. Smoke keeps its existing path; expanded jobs
 set optional `acceptance` in a generated scenario and use a 600-second
 watchdog. Each uploads separate artifacts, including per-case
 `acceptance.json`. The user confirmed a later remote run passed Smoke, V1,
-and 12 implemented V2 cases, including selection and mixed-format rejection. The latest
+and the original implemented V2 cases, including Name sorting, selection and mixed-format rejection. The latest
 [coverage matrix](CHECKPOINT-2.1.md)
 records those user-confirmed outcomes and the source investigation. CP21-09 has
 a guarded UIA-focus/keyboard selection path with exact Inspector identity
-retention. CP21-08 was BLOCKED in that baseline. The separately approved
+retention. The separately approved
 [Name-sort accessibility implementation](NAME-SORT-ACCESSIBILITY-PROPOSAL.md)
 adds one V2-only standard Sort Name button beside Refresh, with current/next
 direction HelpText and a wrapping results footer. CP21-08 now requires real
 Button Invoke and focused Enter and exact ascending/descending visual order
 against the independent fixture oracle. Complete-set, ownership, visibility and
-geometry gates remain strict. The new case still needs Windows execution;
+geometry gates remain strict. That Name-sort case passed the user-confirmed
+baseline run 40259657455; new G2/G3/G4 cases still need Windows execution;
 separate Checkpoint 2.1 coverage gaps remain open.
 
 The subsequent CP21-09 comparison confirmed reversed UIA enumeration relative
