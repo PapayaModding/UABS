@@ -11,5 +11,6 @@
     <Compile Include="../SearchAccessibility.cs" Link="SearchAccessibility.cs" />
     <Compile Include="../UiaRead.cs" Link="UiaRead.cs" />
     <Compile Include="../CriteriaContract.cs" Link="CriteriaContract.cs" />
+    <Compile Include="../RetainedResultsContract.cs" Link="RetainedResultsContract.cs" />
   </ItemGroup>
 </Project>

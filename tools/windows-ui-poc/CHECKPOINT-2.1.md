@@ -48,6 +48,15 @@ plus retained RuntimeId verification. See the slice guide for identities/tests.
 This correction is not a Windows PASS: G3 and the unexecuted G2/G4 still need
 the updated hosted run. No production Search semantics or other gaps changed.
 
+Subsequently, the user confirms [run 40330005576](https://github.com/PapayaModding/UABS/actions/runs/40330005576)
+at `e12238943933ae817f1953655d6c0b1757f90b86`: original jobs PASS; all three
+G3 phases and G4 PASS; only G2 BLOCKED on the fresh-reader requirement despite
+correct non-default values and an intentional `1 displayed · stale count`.
+The test-only G2 correction separately verifies retained stale rows/count/state,
+last-executed criteria and no query/error activity at every required transition.
+Fresh readers and passing cases stay unchanged. See the slice guide; updated
+Windows G2 execution remains pending. G1/G5/G6 and Linux disposition remain open.
+
 | Documented requirement | Scenario/case | User-confirmed Windows result before this change | Evidence / remaining validation |
 | --- | --- | --- | --- |
 | Untouched V2 Sources-only / Assets defaults | unchanged `smoke`; CP21-01 | PASS, user-confirmed baseline | Linked baseline run; fresh SHA gets its own artifact |

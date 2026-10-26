@@ -367,3 +367,49 @@ CriteriaContract.Equal(sentinels, CriteriaContract.Read(boundCriteria,
 Check(CriteriaContract.Bind(emptyCriteria.Append(new CriteriaEdit("unrelated", null, null, true, "")).ToArray()).Count == 5,
     "An unrelated unnamed Edit was used as a role or blocked verified fields.");
 Console.WriteLine("PASS: unique paired AutomationId/Name binding, stable runtime identities, reordered discovery, exact Unicode/non-default readback; changed values FAIL and missing/duplicate/conflicting/replaced identities BLOCK.");
+
+var retainedBaseline = new RetainedResultsBaseline([new("テスト.bundle", "Smoke")], "Include: テスト; Path ID: (none); packages: 1.");
+var retainedState = new RetainedResultsState(["1 displayed · stale count"], [RetainedResultsContract.StaleIndicator],
+    [RetainedResultsContract.ChangedIndicator], [retainedBaseline.LastExecutedCriteria], [], 0);
+string[][] retainedCells = [["テスト.bundle", "Smoke"]];
+RetainedResultsContract.Verify(["Name", "Package"], retainedCells, retainedState, retainedBaseline, true);
+var freshRetainedState = retainedState with { Summaries = ["1–1 displayed / 1 exact indexed matches"], StaleIndicators = [] };
+RetainedResultsContract.Verify(["Name", "Package"], retainedCells, freshRetainedState, retainedBaseline, false);
+Inaccessible(["Name", "Package"], retainedCells, "1 displayed · stale count"); // Fresh readers remain strictly fresh.
+foreach (var unavailable in new[] {
+    retainedState with { Summaries = [] }, retainedState with { Summaries = ["1 displayed · stale count", "1 displayed · stale count"] },
+    retainedState with { Summaries = ["unknown result state"] }, retainedState with { Summaries = ["one displayed · stale count"] },
+    retainedState with { StaleIndicators = [] }, retainedState with { StaleIndicators = [RetainedResultsContract.StaleIndicator, RetainedResultsContract.StaleIndicator] },
+    retainedState with { ChangedIndicators = [] }, retainedState with { ChangedIndicators = [RetainedResultsContract.ChangedIndicator, RetainedResultsContract.ChangedIndicator] },
+    retainedState with { LastExecutedCriteria = [] }, retainedState with { LastExecutedCriteria = [retainedBaseline.LastExecutedCriteria, retainedBaseline.LastExecutedCriteria] },
+    freshRetainedState with { StaleIndicators = [RetainedResultsContract.StaleIndicator] } })
+{
+    try { RetainedResultsContract.Verify(["Name", "Package"], retainedCells, unavailable, retainedBaseline, false); throw new Exception("Ambiguous/unavailable retained evidence accepted."); }
+    catch (AccessibilityUnavailable) { }
+}
+foreach (var wrong in new[] {
+    retainedState with { Summaries = ["2 displayed · stale count"] }, retainedState with { Summaries = ["0 displayed · stale count"] },
+    retainedState with { Summaries = ["01 displayed · stale count"] }, retainedState with { LastExecutedCriteria = ["Include: changed; Path ID: -42; packages: 1."] },
+    retainedState with { Errors = ["Unexpected automatic Search rejection"] }, retainedState with { ActiveSearches = 1 }, freshRetainedState })
+{
+    try { RetainedResultsContract.Verify(["Name", "Package"], retainedCells, wrong, retainedBaseline, true); throw new Exception("Wrong count or implicit Search evidence accepted."); }
+    catch (InvalidOperationException) { }
+}
+foreach (var wrong in new[] { new[] { new[] { "wrong.bundle", "Smoke" } }, new[] { new[] { "テスト.bundle", "Other" } } })
+{
+    try { RetainedResultsContract.Verify(["Name", "Package"], wrong, retainedState, retainedBaseline, true); throw new Exception("Wrong retained identity accepted."); }
+    catch (InvalidOperationException) { }
+}
+try { RetainedResultsContract.Verify(["Name", "Package"], [["wrong.bundle", "Smoke"]], retainedState with { StaleIndicators = [] }, retainedBaseline, true); throw new Exception("Known incorrect complete rows were hidden by missing status evidence."); }
+catch (InvalidOperationException) { }
+foreach (string[][] incomplete in new string[][][] { [], [["テスト.bundle"]], [["テスト.bundle", "Smoke", "extra"]], [ ["", "Smoke"] ] })
+{
+    try { RetainedResultsContract.Verify(["Name", "Package"], incomplete, retainedState, retainedBaseline, true); throw new Exception("Incomplete retained UIA evidence accepted."); }
+    catch (AccessibilityUnavailable) { }
+}
+var twoRetained = new RetainedResultsBaseline([new("a", "Smoke"), new("b", "Smoke")], retainedBaseline.LastExecutedCriteria);
+var twoState = retainedState with { Summaries = ["2 displayed · stale count"] };
+RetainedResultsContract.Verify(["Name", "Package"], [["b", "Smoke"], ["a", "Smoke"]], twoState, twoRetained, true);
+try { RetainedResultsContract.Verify(["Name", "Package"], [["a", "Smoke"], ["a", "Smoke"]], twoState, twoRetained, true); throw new Exception("Wrong duplicate retained multiset accepted."); }
+catch (InvalidOperationException) { }
+Console.WriteLine("PASS: exact retained stale/fresh phase distinction; complete row multisets and unchanged executed criteria; wrong counts/identities/implicit execution FAIL; missing, virtualized or ambiguous evidence BLOCKS; fresh reader unchanged.");

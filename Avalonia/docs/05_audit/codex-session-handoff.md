@@ -2,7 +2,13 @@
 
 **Updated:** 2026-10-26
 
-**Current task:** Recovery Checkpoint2.1 — approved criteria accessibility metadata and strict runner discovery correction; Windows verification pending. No navigation or issue closure.
+**Current task:** Recovery Checkpoint2.1 — test-only G2 stale retained-result evidence correction; updated Windows retention run pending. No navigation or issue closure.
+
+### Checkpoint2.1 — G2 retained stale-result evidence correction
+
+- User confirms [40330005576](https://github.com/PapayaModding/UABS/actions/runs/40330005576) at `e12238943933ae817f1953655d6c0b1757f90b86`: original three jobs and four gap cases PASS; G2 BLOCKED because its fresh-reader count predicate rejected the intentional `1 displayed · stale count`. Exact non-default values matched. Artifact API Forbidden; no independent tree inspection/new Windows claim.
+- Added a separate retained-result contract/evidence reader for G2 only. It records a real fresh baseline, exact retained row multiset/count, stale count/indicator after invalidation, changed criteria, unchanged last-executed summary and no active query/error feedback at every scope/workspace/catalog/Refresh transition. Missing/ambiguous evidence BLOCKS; wrong readable counts/results or query execution evidence FAILS. No synthetic fresh count or weakened fresh reader. Existing exact criteria, RuntimeId, package identity/SHA guards remain.
+- A headless regression confirms stale rows and non-default criteria survive scope/catalog transitions with one Search session until explicit Refresh admits the second. Production code and other cases unchanged; [slice guide](../../../tools/windows-ui-poc/ACCEPTANCE-GAP-SLICE.md) documents the new reports. G2 still requires updated Windows execution. G1/G5/G6, Linux disposition and Checkpoint2.1 remain open; no Checkpoint3.
 
 ### Checkpoint2.1 — approved Search criteria accessibility correction
 

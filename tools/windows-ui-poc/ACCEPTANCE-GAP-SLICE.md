@@ -27,6 +27,55 @@ signed Path ID `-42424241`, Class ID `114`, type
 They are never submitted to Search. G4 tests validation/rejection before matching
 metadata; no CAB-name hit or additional fixture capability is assumed.
 
+## G2 retained stale-result correction
+
+The user confirms [Windows run 40330005576](https://github.com/PapayaModding/UABS/actions/runs/40330005576)
+at `e12238943933ae817f1953655d6c0b1757f90b86`: Smoke/V1/V2 PASS, four gap
+cases PASS, G2 BLOCKED. All five non-default values matched; the actual count
+was `1 displayed · stale count`. G2 incorrectly called the unchanged **fresh**
+reader, which requires an exact indexed-match summary. Artifact API access is
+Forbidden; this is supplied Windows evidence, not a new artifact inspection.
+
+Source semantics: ordinary criteria edits set `CriteriaChanged` without necessarily
+invalidating the admitted snapshot. Scope/session invalidation calls
+`MarkV2Stale`, preserving rows/selection and displaying `N displayed · stale count`
+and `Stale — refresh required`. Header Status can subsequently be replaced by a
+scope-ready message; the bound stale indicator and count are the state evidence.
+LastExecutedCriteria changes only when actual query results are published.
+
+G2 now first captures its complete **fresh** independent Smoke baseline and exact
+last-executed criteria, then maximizes only its owned test window through the
+existing UIA Window pattern. Every retention checkpoint (changed values, scope
+off/on, workspace return, catalog open, catalog Refresh) records and verifies:
+
+- The complete retained Name/Package multiset and realized row count, against
+  that independently checked baseline; no flattened text or row-order guess.
+- Either a genuine still-current old-query count at the initial edit checkpoint,
+  or the exact stale count plus one exact stale indicator. After scope invalidation,
+  stale state is mandatory. Stale totals are **retained displayed counts**, not
+  a claim about fresh matches for the edited criteria.
+- One unchanged last-executed summary, the exact changed-criteria indicator,
+  no active Search Cancel control and no reported Search error (including clipped
+  error text). Together with
+  retained rows these are user-visible no-implicit-query checks, not invented
+  internal execution telemetry. The headless regression additionally counts
+  admitted Search sessions across those actual ViewModel transitions.
+- All existing exact field/flag/selector, selected scope and copy-path/SHA checks.
+
+Only the final explicitly requested supported Search uses fresh expectations
+again. G3, G4, prior CP21 cases and `ReadAccessibleRows`/`CompleteRows` remain
+unchanged. No production change, synthetic fresh count, catch-and-pass or blanket
+“allow stale” option was added to the fresh reader.
+
+New `CP21-G2-fresh-baseline.json` and per-transition
+`CP21-G2-*-retained-results.json` contain the baseline and observed headers/cells,
+count summaries, state markers, executed criteria and error/activity evidence
+before assertions. Wrong readable retained counts/identities or query activity
+are FAIL. Missing/duplicate/conflicting markers or incomplete/virtualized UIA
+cells are BLOCKED. Fresh presentation after required invalidation is FAIL.
+An updated Windows run is still required for G2; four prior passing gap cases
+must not be confused with a pass of the uncompleted retention sequence.
+
 ## Deterministic control identity, not textbox order
 
 The user reports [Windows run 40326632909](https://github.com/PapayaModding/UABS/actions/runs/40326632909)
@@ -89,12 +138,15 @@ Failures during admission/defaulting/query outside a subcase add an explicit
 
 ## Available validation
 
-- 186 application tests PASS in clean focused runs: bundle workspace/header/memo
-  plus control-peer regressions 63; Search ViewModel 22; integration 18; infinite
+- 187 application tests PASS in clean focused runs: bundle workspace/header/memo
+  plus control-peer/stale-retention regressions 64; Search ViewModel 22; integration 18; infinite
   scroll 7; result window 7; bundle SQL 49; paging/performance 20.
 - Runner contract regressions PASS, including missing/duplicate/conflicting ID/Name,
   unavailable/read-only/nonempty binding, swapped/default/changed values,
   lost/replaced/duplicate RuntimeIds, Unicode readback and enumeration independence.
+  Retained-result regressions also cover fresh/stale phase separation, wrong
+  counts/identity/package/duplicates, missing or ambiguous summaries/markers,
+  incomplete cells, changed executed criteria and unexpected Search activity.
 - PowerShell scenario regressions PASS; Debug solution and Release Windows
   cross-build PASS with zero warnings/errors; workflow actionlint and documentation
   checks PASS. No full Linux suite rerun/green claim: the prior baseline failures/

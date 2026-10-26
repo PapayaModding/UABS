@@ -107,29 +107,33 @@ internal static partial class Program
         GapCase("CP21-G3-independent-query", () => { VerifiedGapScope(copy, hash); Rows(config.ExpectedRows); });
         GapCase("CP21-G2-nondefault-retention", () =>
         {
+            var baseline = CaptureRetainedBaseline(config);
+            PrepareSelectionWindowLayout("CP21-G2");
             ResetSupported(config);
             var expected = CriteriaContract.Sentinels(config.Keyword + "_retention");
+            void RetainedState(string label, bool selected, bool requireStale)
+            {
+                AssertGapState(label, expected, "Names", true, selected, copy, hash);
+                VerifyRetainedResults(label, baseline, requireStale);
+            }
             SetGapValues(expected); Field("Names"); Kind("Packages", true);
             foreach (string flag in GapFlags) Kind(flag, true);
-            AssertGapState("CP21-G2-changed-readback", expected, "Names", true, true, copy, hash);
-            Rows(config.ExpectedRows);
+            RetainedState("CP21-G2-changed-readback", true, false);
             Toggle(VerifiedGapScope(copy, hash), false);
-            AssertGapState("CP21-G2-scope-off", expected, "Names", true, false, copy, hash);
+            RetainedState("CP21-G2-scope-off", false, true);
             Toggle(VerifiedGapScope(copy, hash), true);
-            AssertGapState("CP21-G2-scope-on", expected, "Names", true, true, copy, hash);
+            RetainedState("CP21-G2-scope-on", true, true);
             Select(Find(Window!, ControlType.TabItem, "Assets")); Select(Find(Window!, ControlType.TabItem, "Packages"));
             Select(Find(Window!, ControlType.TabItem, "Search"));
-            AssertGapState("CP21-G2-workspace-return", expected, "Names", true, true, copy, hash);
-            Rows(config.ExpectedRows);
+            RetainedState("CP21-G2-workspace-return", true, true);
             OpenCatalog(work);
             Select(Find(Window!, ControlType.TabItem, "Search"));
-            AssertGapState("CP21-G2-catalog-open", expected, "Names", true, true, copy, hash);
+            RetainedState("CP21-G2-catalog-open", true, true);
             Select(Find(Window!, ControlType.TabItem, "Packages"));
             var refresh = Find(Window!, ControlType.Button, "Refresh"); Require(refresh.IsEnabled, "Catalog Refresh is unavailable.");
             Invoke(refresh); Wait("gap catalog Refresh complete", () => refresh.IsEnabled);
             Select(Find(Window!, ControlType.TabItem, "Search"));
-            AssertGapState("CP21-G2-catalog-refresh", expected, "Names", true, true, copy, hash);
-            Rows(config.ExpectedRows);
+            RetainedState("CP21-G2-catalog-refresh", true, true);
             SetGapValues(SupportedGapValues(config)); ResetSupported(config); Search(config);
         });
         GapCase("CP21-G4-metadata-exclusion", () =>
